@@ -82,17 +82,22 @@ void MaxMatrix::init()
 {
     State = MAXMATRIX_STATE_INIT;
 
+    pinMode(ChipSelectPin, OUTPUT);
+#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
+    digitalWriteFast(ChipSelectPin, HIGH);
+#else
+    digitalWrite(ChipSelectPin, HIGH);
+#endif
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.begin();
-    SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
 #else
     pinMode(DataInPin, OUTPUT);
     pinMode(ClockPin, OUTPUT);
-    pinMode(ChipSelectPin, OUTPUT);
+    /* clock idles low, MAX7219 samples data on the rising edge */
 # if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ClockPin, HIGH);
+    digitalWriteFast(ClockPin, LOW);
 # else
-    digitalWrite(ClockPin, HIGH);
+    digitalWrite(ClockPin, LOW);
 # endif
 #endif
     
@@ -175,11 +180,7 @@ void MaxMatrix::clear()
  *****************************************************************************************************************************************************/
 void MaxMatrix::RegisterWrite(byte RegisterAddress, byte RegisterValue)
 {
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ChipSelectPin, LOW);
-#else
-    digitalWrite(ChipSelectPin, LOW);
-#endif
+    startTransmission();
     for(int Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++)
     {
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -190,13 +191,7 @@ void MaxMatrix::RegisterWrite(byte RegisterAddress, byte RegisterValue)
         shiftOut(DataInPin, ClockPin, MSBFIRST, RegisterValue);
 #endif
     }
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ChipSelectPin, LOW);
-    digitalWriteFast(ChipSelectPin, HIGH);
-#else
-    digitalWrite(ChipSelectPin, LOW);
-    digitalWrite(ChipSelectPin, HIGH);
-#endif
+    stopTransmission();
 } /* RegisterWrite */
 
 
@@ -566,20 +561,21 @@ stdReturnType MaxMatrix::setText(const char* String)
     spriteIndexType SpriteIndex;
     spriteType Sprite;
     int CharColumn = 0;
+    char Char;
 
     /* check for valid string */
     if(String != NULL)
     {
         while(*String != STD_NULL_CHARACTER)
         {
-            if(E_NOT_OK == convertCharToSprite(*String, &SpriteIndex)) { return E_NOT_OK; }
+            String += decodeChar(String, &Char);
+            if(E_NOT_OK == convertCharToSprite(Char, &SpriteIndex)) { return E_NOT_OK; }
             else if(E_NOT_OK == getSprite(SpriteIndex, &Sprite)) { return E_NOT_OK; }
             else {
                 setSprite(CharColumn, 0, Sprite);
                 CharColumn += Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars;
                 if(CharColumn > MAXMATRIX_NUMBER_OF_COLUMNS) break;
             }
-            String++;
         }
         return E_OK;
     } else {
@@ -873,6 +869,51 @@ byte MaxMatrix::reverseByte(byte Input)
 
 
 /******************************************************************************************************************************************************
+  startTransmission()
+******************************************************************************************************************************************************/
+/*! \brief          start transmission to MAX7219
+ *  \details        this function pulls chip select low, in SPI mode the SPI bus will be reserved too
+ *                  
+ *  \return         -
+ *  \post           stopTransmission() has to be called after data was transferred
+ *****************************************************************************************************************************************************/
+void MaxMatrix::startTransmission()
+{
+#if(MAXMATRIX_USE_SPI == STD_ON)
+    SPI.beginTransaction(SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
+#endif
+#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
+    digitalWriteFast(ChipSelectPin, LOW);
+#else
+    digitalWrite(ChipSelectPin, LOW);
+#endif
+} /* startTransmission */
+
+
+/******************************************************************************************************************************************************
+  stopTransmission()
+******************************************************************************************************************************************************/
+/*! \brief          stop transmission to MAX7219
+ *  \details        this function pulls chip select high, so the MAX7219 latches the transferred data.
+ *                  In SPI mode the SPI bus will be released for other devices.
+ *                  
+ *  \return         -
+ *  \pre            startTransmission() has to be called first
+ *****************************************************************************************************************************************************/
+void MaxMatrix::stopTransmission()
+{
+#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
+    digitalWriteFast(ChipSelectPin, HIGH);
+#else
+    digitalWrite(ChipSelectPin, HIGH);
+#endif
+#if(MAXMATRIX_USE_SPI == STD_ON)
+    SPI.endTransaction();
+#endif
+} /* stopTransmission */
+
+
+/******************************************************************************************************************************************************
   reload()
 ******************************************************************************************************************************************************/
 /*! \brief          reload whole matrix
@@ -885,11 +926,7 @@ void MaxMatrix::reload()
     for(int i = 0; i < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; i++)
     {
         int Column = i;
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-#endif
+        startTransmission();
         for(int j = 0; j < MAXMATRIX_NUMBER_OF_MODULES; j++)
         {
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -901,13 +938,7 @@ void MaxMatrix::reload()
 #endif
             Column += MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
         }
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-        digitalWriteFast(ChipSelectPin, HIGH);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-        digitalWrite(ChipSelectPin, HIGH);
-#endif
+        stopTransmission();
     }
 } /* reload */
 
@@ -950,17 +981,19 @@ void MaxMatrix::charShiftTask()
 void MaxMatrix::stringShiftTask()
 {
     spriteIndexType SpriteIndex;
-    
+    char Char;
+
     /* has char shift task finished shifting sprite or char */
     if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY)
     {
         /* If end of string is not reached, load next char */
         if(*String != STD_NULL_CHARACTER) {
-            convertCharToSprite(*String, &SpriteIndex);
-            getSprite(SpriteIndex, &SpriteBuffer);
-            SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
-            charShiftTask();
-            String++;
+            String += decodeChar(String, &Char);
+            /* unknown chars will be skipped */
+            if(E_OK == convertCharToSprite(Char, &SpriteIndex) && E_OK == getSprite(SpriteIndex, &SpriteBuffer)) {
+                SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
+                charShiftTask();
+            }
         } else { /* otherwise task has finished */
             State = MAXMATRIX_STATE_READY;
             shiftLeft(false, true);
@@ -987,19 +1020,46 @@ stdReturnType MaxMatrix::convertCharToSprite(char Char, spriteIndexType* SpriteI
 {
     stdReturnType ReturnValue = E_NOT_OK;
 
-    /* for umlauts we need a special treatment */
-    if('Ä' == Char) { *SpriteIndex = 95; ReturnValue = E_OK; }
-    else if('Ö' == Char) { *SpriteIndex = 96; ReturnValue = E_OK; }
-    else if('Ü' == Char) { *SpriteIndex = 97; ReturnValue = E_OK; }
-    else if('ä' == Char) { *SpriteIndex = 98; ReturnValue = E_OK; }
-    else if('ö' == Char) { *SpriteIndex = 99; ReturnValue = E_OK; }
-    else if('ü' == Char) { *SpriteIndex = 100; ReturnValue = E_OK; }
+    /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
+    if(0xC4 == (byte)Char) { *SpriteIndex = 95; ReturnValue = E_OK; }          // Ã„
+    else if(0xD6 == (byte)Char) { *SpriteIndex = 96; ReturnValue = E_OK; }     // Ã–
+    else if(0xDC == (byte)Char) { *SpriteIndex = 97; ReturnValue = E_OK; }     // Ãœ
+    else if(0xE4 == (byte)Char) { *SpriteIndex = 98; ReturnValue = E_OK; }     // Ã¤
+    else if(0xF6 == (byte)Char) { *SpriteIndex = 99; ReturnValue = E_OK; }     // Ã¶
+    else if(0xFC == (byte)Char) { *SpriteIndex = 100; ReturnValue = E_OK; }    // Ã¼
     /* for all others only add offset */
     else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
         { *SpriteIndex = Char + MAXMATRIX_ASCII_TABLE_OFFSET; ReturnValue = E_OK; }
 
     return ReturnValue;
 } /* convertCharToSprite */
+
+
+/******************************************************************************************************************************************************
+  decodeChar()
+******************************************************************************************************************************************************/
+/*! \brief          decodes the next char of a string
+ *  \details        this function decodes UTF-8 sequences of latin-1 chars (e.g. umlauts) to a single latin-1 char,
+ *                  all other bytes are returned unchanged
+ *
+ *  \param[in]      String          string where the next char should be decoded, must not point to the null character
+ *  \param[out]     Char            decoded char
+ *  \return         number of bytes of the decoded char
+ *****************************************************************************************************************************************************/
+byte MaxMatrix::decodeChar(const char* String, char* Char)
+{
+    byte LeadByte = String[0];
+    byte NextByte = String[1];
+
+    /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
+    if((0xC2 == LeadByte || 0xC3 == LeadByte) && 0x80 == (NextByte & 0xC0)) {
+        *Char = ((LeadByte & 0x03) << 6) | (NextByte & 0x3F);
+        return 2;
+    } else {
+        *Char = LeadByte;
+        return 1;
+    }
+} /* decodeChar */
 
 
 /******************************************************************************************************************************************************
@@ -1113,11 +1173,7 @@ stdReturnType MaxMatrix::setColumnLL(byte Column, byte Value)
     if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
         int Module = Column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
         int ModuleColumn = Column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-#endif
+        startTransmission();
         for(int i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++)
         {
             if (i == Module) {
@@ -1138,13 +1194,7 @@ stdReturnType MaxMatrix::setColumnLL(byte Column, byte Value)
 #endif
             }
         }
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-        digitalWriteFast(ChipSelectPin, HIGH);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-        digitalWrite(ChipSelectPin, HIGH);
-#endif
+        stopTransmission();
         MatrixBuffer[Column] = Value;
         return E_OK;
     } else {
@@ -1187,11 +1237,7 @@ stdReturnType MaxMatrix::setColumnLL(byte Module, byte Column, byte Value)
 stdReturnType MaxMatrix::setColumnOnAllModulesLL(byte Column, byte Value)
 {
     if(Column >= 0 && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-#endif
+        startTransmission();
         for(int i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++)
         {
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -1201,15 +1247,9 @@ stdReturnType MaxMatrix::setColumnOnAllModulesLL(byte Column, byte Value)
             shiftOut(DataInPin, ClockPin, MSBFIRST, Column + 1);
             shiftOut(DataInPin, ClockPin, MSBFIRST, Value);
 #endif
-            MatrixBuffer[Column * i] = Value;
+            MatrixBuffer[(i * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column] = Value;
         }
-#if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-        digitalWriteFast(ChipSelectPin, LOW);
-        digitalWriteFast(ChipSelectPin, HIGH);
-#else
-        digitalWrite(ChipSelectPin, LOW);
-        digitalWrite(ChipSelectPin, HIGH);
-#endif
+        stopTransmission();
         return E_OK;
     } else {
         return E_NOT_OK;
@@ -1231,11 +1271,12 @@ stdReturnType MaxMatrix::setColumnOnAllModulesLL(byte Column, byte Value)
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setRowLL(byte Row, const rowType Value)
 {
-    byte BitPos = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1;
+    byte BitPos;
     
     if(Row < MAXMATRIX_ROW_NUMBER_OF_MODULE)
     {
         for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
+            BitPos = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1;
             for(byte Column = Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column < (Module + 1) * MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++)
             {
                 bitWrite(MatrixBuffer[Column], Row, bitRead(Value[Module], BitPos));
@@ -1295,18 +1336,16 @@ stdReturnType MaxMatrix::setRowLL(byte Module, byte Row, byte Value)
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setRowOnAllModulesLL(byte Row, byte Value)
 {
-    byte BitPos = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1;
-    
     if(Row < MAXMATRIX_ROW_NUMBER_OF_MODULE)
     {
         for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-            for(byte Column = Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column < (Module + 1) * MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++)
+            for(byte Column = 0; Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++)
             {
-                bitWrite(MatrixBuffer[Column], Row, bitRead(Value, BitPos));
-                setColumnOnAllModulesLL(Column, MatrixBuffer[Column]);
-                BitPos--;
+                bitWrite(MatrixBuffer[(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column], Row,
+                bitRead(Value, MAXMATRIX_COLUMN_NUMBER_OF_MODULE - Column - 1));
             }
         }
+        reload();
         return E_OK;
     } else {
         return E_NOT_OK;

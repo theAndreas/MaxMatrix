@@ -32,6 +32,7 @@
 #define MAXMATRIX_NUMBER_OF_MODULES                                 4
 #define MAXMATRIX_USE_SPI                                           STD_OFF
 #define MAXMATRIX_USE_DIGITAL_WRITE_FAST                            STD_OFF
+#define MAXMATRIX_SPI_CLOCK_SPEED                                   10000000   /* MAX7219 supports max. 10 MHz */
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE                    1
 #define MAXMATRIX_INTENSITY_INIT_VALUE                              5
 
@@ -152,7 +153,7 @@ enum {
 };
 
 /* sprite table */
-const char SpriteTable[] PROGMEM = {
+const byte SpriteTable[] PROGMEM = {
   //width,  height, Column1,    Column2,    Column 3,   Column 4,   Column 5,
     3,      8,      B00000000,  B00000000,  B00000000,  B00000000,  B00000000, // space
     1,      8,      B01011111,  B00000000,  B00000000,  B00000000,  B00000000, // !
@@ -249,12 +250,12 @@ const char SpriteTable[] PROGMEM = {
     1,      8,      B01111111,  B00000000,  B00000000,  B00000000,  B00000000, // |
     3,      8,      B01000001,  B00110110,  B00001000,  B00000000,  B00000000, // }
     4,      8,      B00001000,  B00000100,  B00001000,  B00000100,  B00000000, // ~
-    4,      8,      B01111100,  B00010011,  B00010011,  B01111100,  B00000000, // Ä
-    4,      8,      B00111100,  B01000011,  B01000011,  B00111100,  B00000000, // Ö
-    4,      8,      B00111110,  B01000001,  B01000001,  B00111110,  B00000000, // Ü
-    4,      8,      B00100000,  B01010110,  B01010110,  B01111000,  B00000000, // ä
-    4,      8,      B00111000,  B01000110,  B01000110,  B00111000,  B00000000, // ö
-    4,      8,      B00111100,  B01000010,  B01000010,  B01111100,  B00000000, // ü
+    4,      8,      B01111100,  B00010011,  B00010011,  B01111100,  B00000000, // Ã„
+    4,      8,      B00111100,  B01000011,  B01000011,  B00111100,  B00000000, // Ã–
+    4,      8,      B00111101,  B01000000,  B01000000,  B00111101,  B00000000, // Ãœ
+    4,      8,      B00100000,  B01010110,  B01010110,  B01111000,  B00000000, // Ã¤
+    4,      8,      B00111000,  B01000110,  B01000110,  B00111000,  B00000000, // Ã¶
+    4,      8,      B00111100,  B01000010,  B01000010,  B01111100,  B00000000, // Ã¼
 };
 
 
@@ -280,7 +281,10 @@ class MaxMatrix
     void charShiftTask();
     void stringShiftTask();
     stdReturnType convertCharToSprite(char Char, spriteIndexType*);
+    byte decodeChar(const char*, char*);
     byte reverseByte(byte);
+    void startTransmission();
+    void stopTransmission();
 
 
     // Low Level get functions
