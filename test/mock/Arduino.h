@@ -34,6 +34,9 @@ typedef uint8_t byte;
 void pinMode(uint8_t Pin, uint8_t Mode);
 void digitalWrite(uint8_t Pin, uint8_t Value);
 void shiftOut(uint8_t DataPin, uint8_t ClockPin, uint8_t BitOrder, uint8_t Value);
+unsigned long millis();
+unsigned long micros();
+void delay(unsigned long Milliseconds);
 
 namespace Mock {
     const uint8_t NumberOfPins = 64;
@@ -47,6 +50,9 @@ namespace Mock {
     extern std::vector<byte> Frame;
     extern std::vector<byte> LastFrame;
     extern Max7219Chain Chain;
+    /* called after every latched frame and every millisecond delay() waits, so that the simulator can draw
+     * while a sketch blocks in delay(); none in the tests */
+    extern void (*Tick)();
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips);
     void transfer(uint8_t Value);

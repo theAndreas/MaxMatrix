@@ -109,3 +109,11 @@ arduino-cli compile --fqbn arduino:avr:uno --library . examples/ScrollText
 ```
 
 Both run in CI on every pull request, together with `arduino-lint`.
+
+Every example also builds into a simulator, which runs the sketch unchanged on the PC and draws the panel in the terminal, as a module of the given type would show it:
+
+```sh
+build/Simulator-ScrollText-bitbang --wiring FC16
+```
+
+`--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
