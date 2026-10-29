@@ -10,13 +10,16 @@
                 "EditorConfig.EditorConfig",
                 "eamodio.gitlens",
                 "openai.chatgpt"
-            ]
+            ],
+            "settings": {
+                "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         }
     },
     "containerEnv": {
         "GH_HOST": "github.com"
     },
-    "postCreateCommand": "arduino-cli core update-index && arduino-cli core install arduino:avr && arduino-cli version && arduino-lint --version && gh --version",
+    "postCreateCommand": "arduino-cli core update-index && arduino-cli core install arduino:avr && arduino-cli version && arduino-lint --version && gh --version && cmake --preset default",
     "mounts": [
         {
             "source": "maxmatrix-arduino15",

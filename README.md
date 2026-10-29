@@ -86,10 +86,10 @@ While shifting a text, chars which are not part of the font are skipped.
 The host-side tests build the library against a mock of the Arduino core, once with bit banging and once with SPI:
 
 ```sh
-make -C test
+cmake --workflow --preset default
 ```
 
-They need nothing but `g++`. Compiling the examples with the real AVR toolchain needs `arduino-cli` with the `arduino:avr` core:
+They need `g++`, CMake, Ninja and GoogleTest (`apt install cmake ninja-build libgtest-dev`). Compiling the examples with the real AVR toolchain needs `arduino-cli` with the `arduino:avr` core:
 
 ```sh
 arduino-cli compile --fqbn arduino:avr:uno --library . examples/ScrollText

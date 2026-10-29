@@ -11,7 +11,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
-- `test/` — host-side tests against a mock of the Arduino core in `test/mock/`.
+- `test/` — host-side tests on GoogleTest against a mock of the Arduino core in `test/mock/`,
+  built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
   shared editor settings and volumes live in the local `shared/` feature.
@@ -117,8 +118,11 @@ fails on any warning in this repository, from `g++` in the tests (`-Werror`) and
 
 ### Tests
 
-`make -C test` builds the library twice, with bit banging and with SPI, and runs the same
-tests on both. The mock records every frame between a falling and a rising chip select in
+The workflow preset configures into `build/`, builds the library twice, with bit banging and
+with SPI, and runs the same tests on both through `ctest`, each test under a `bitbang/` or
+`spi/` prefix. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
+only the tests are C++17, which GoogleTest needs. A test that loops over the four orientations
+is a `TEST_P` instead. The mock records every frame between a falling and a rising chip select in
 `Mock::LastFrame` and counts a transfer outside a frame or outside an SPI transaction in
 `Mock::Errors`, so a test can check what went to the chain, not just the buffer.
 
@@ -128,7 +132,8 @@ the test names the bug it guards against.
 
 The tests reach private members through `#define private public`, because some of what they
 check has no public path — `setColumnOnAllModulesLL` is only called from `clear()`, which
-zeroes the buffer afterwards and hides a wrong index.
+zeroes the buffer afterwards and hides a wrong index. The define comes after the GoogleTest and
+standard headers, which it would rewrite as well.
 
 ### Hardware
 
