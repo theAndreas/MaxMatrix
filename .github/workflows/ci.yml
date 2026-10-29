@@ -1,7 +1,8 @@
 # What a pull request is checked with. Three jobs, because each answers a different question:
 #
 #   host-tests  does the library do what it should - against a mock of the Arduino core, once with
-#               bit banging and once with SPI, because the two transfer paths are separate code
+#               bit banging and once with SPI, because the two transfer paths are separate code;
+#               and the simulator, down to what a browser gets from its web page
 #   examples    does it compile with the real AVR toolchain, which the host tests cannot say: they
 #               build with the host's g++, where an int is 32 bit and nothing is in flash
 #   lint        does the library meet the rules of the Arduino Library Manager

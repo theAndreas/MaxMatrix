@@ -13,7 +13,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
   `--web` on `localhost:8080` (`WebHost.cpp`, ported from Wordclock; `index.html`, read at run
   time).
-  `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board.
+  `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board;
+  `WebTest.sh` checks what a browser would get from `--web`.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
@@ -155,7 +156,11 @@ The mock also has `millis()`, `micros()` and `delay()` on the host clock, for th
 `delay()` really waits. `Mock::Tick`, called after every frame and every millisecond of
 `delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with
-`simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board.
+`simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test
+`simulator/web` runs it with `--web` on port 18080 and stands in for the browser with `curl` and
+a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `hello`, and a
+change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
+to the page can bring a panel; a new example in its place needs such a pause as well.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above

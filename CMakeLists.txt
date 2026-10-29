@@ -60,6 +60,10 @@ function(add_maxmatrix_variant Variant)
     # Basics shows "Hi!" for its first two seconds; one second in, the panel of an FC-16 board has to read it.
     add_test(NAME ${Variant}/simulator/Basics
              COMMAND Simulator-Basics-${Variant} --for 1 --expect ${PROJECT_SOURCE_DIR}/simulator/Basics.txt)
+    # Off 8080, where a developer's own simulator runs, and one variant at a time, since both need the port.
+    add_test(NAME ${Variant}/simulator/web
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
+    set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
 endfunction()
 
 file(GLOB Examples ${PROJECT_SOURCE_DIR}/examples/*/*.ino)

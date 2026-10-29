@@ -118,4 +118,4 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 
 `--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
 
-With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, and the module type and mounting to switch while the sketch runs.
+With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, and the module type and mounting to switch while the sketch runs. `--port` picks another port, for a second simulator beside it.

@@ -1,6 +1,6 @@
 /* Runs an example sketch from examples/ on the host and draws the LED panel in the terminal.
  *
- *   build/Simulator-ScrollText-bitbang [--wiring FC16] [--upside-down] [--web] [--for SECONDS [--expect FILE]]
+ *   build/Simulator-ScrollText-bitbang [--wiring FC16] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]
  *
  * The sketch is compiled unchanged against the Arduino stand-in and the MAX7219 model in test/mock/: setup() runs
  * once, loop() over and over, millis() and delay() on the host clock. The panel is drawn from the model's LEDs as
@@ -11,7 +11,8 @@
  * once and exits; --expect then compares the printout with a file and fails on a difference.
  *
  * --web draws in a browser instead, on http://localhost:8080/ (simulator/index.html): the panel with the brightness
- * of every module, the frames on the wire, and the wiring and mounting to choose while the sketch runs. */
+ * of every module, the frames on the wire, and the wiring and mounting to choose while the sketch runs. --port picks
+ * another port, so that two simulators, or a simulator and the tests, can run side by side. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,7 @@ static const char* ExpectFile = NULL;
 static int DrawnFrames = -1;
 static unsigned long LastDraw = 0;
 static bool Web = false;
+static unsigned short Port = 8080;
 /* the frames since the page was last sent the panel, as hex pairs, one string per frame */
 static std::vector<std::string> FrameLog;
 static int LoggedFrames = 0;
@@ -152,7 +154,7 @@ static void tick()
 
 static void usage(const char* Program)
 {
-    fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web] [--for SECONDS [--expect FILE]]\n", Program);
+    fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]\n", Program);
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
     exit(2);
 }
@@ -196,6 +198,9 @@ int main(int argc, char** argv)
             UpsideDown = true;
         } else if(strcmp(argv[i], "--web") == 0) {
             Web = true;
+        } else if(strcmp(argv[i], "--port") == 0 && i + 1 < argc) {
+            Port = (unsigned short)atoi(argv[++i]);
+            if(Port == 0) usage(argv[0]);
         } else if(strcmp(argv[i], "--for") == 0 && i + 1 < argc) {
             RunFor = (unsigned long)(atof(argv[++i]) * 1000);
             if(RunFor == 0) usage(argv[0]);
@@ -211,11 +216,11 @@ int main(int argc, char** argv)
     Mock::reset(10, MAXMATRIX_NUMBER_OF_MODULES);
     Mock::Tick = tick;
     if(Web) {
-        if(!WebHost::begin(8080, SIMULATOR_PAGE)) {
-            fprintf(stderr, "port 8080 is taken, maybe by another simulator\n");
+        if(!WebHost::begin(Port, SIMULATOR_PAGE)) {
+            fprintf(stderr, "port %u is taken, maybe by another simulator\n", Port);
             return 1;
         }
-        printf("http://localhost:8080/\n");
+        printf("http://localhost:%u/\n", Port);
         fflush(stdout);
     } else if(!RunFor) {
         printf("\x1b[2J");
