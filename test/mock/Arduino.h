@@ -2,7 +2,8 @@
  *
  * Only what MaxMatrix uses is here. The pins are not simulated as hardware: the mock records what the
  * library sends between a falling and a rising chip select, which is the frame the MAX7219 chain latches,
- * and counts every transfer that happens outside such a frame or outside an SPI transaction as an error. */
+ * and counts every transfer that happens outside such a frame or outside an SPI transaction as an error.
+ * Every byte and every rising chip select also go to the MAX7219 model in Max7219.h, Mock::Chain. */
 #ifndef _MOCK_ARDUINO_H_
 #define _MOCK_ARDUINO_H_
 
@@ -11,6 +12,7 @@
 #include <string.h>
 #include <vector>
 #include "binary.h"
+#include "Max7219.h"
 
 typedef uint8_t byte;
 
@@ -44,8 +46,9 @@ namespace Mock {
     extern int Frames;
     extern std::vector<byte> Frame;
     extern std::vector<byte> LastFrame;
+    extern Max7219Chain Chain;
 
-    void reset(uint8_t sChipSelectPin);
+    void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips);
     void transfer(uint8_t Value);
     bool usesSpi();
 }

@@ -24,8 +24,14 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 enable_testing()
 
-add_library(ArduinoMock STATIC test/mock/Arduino.cpp)
+add_library(ArduinoMock STATIC test/mock/Arduino.cpp test/mock/Max7219.cpp)
 target_include_directories(ArduinoMock PUBLIC test/mock)
+
+# The MAX7219 model on its own, once: it does not depend on the transfer path.
+add_executable(Max7219Test test/Max7219Test.cpp)
+set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
+target_link_libraries(Max7219Test PRIVATE ArduinoMock GTest::gtest_main)
+gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
 # One library and one test binary per variant, because the two transfer paths are separate code.
 function(add_maxmatrix_variant Variant)
