@@ -62,13 +62,16 @@ class MaxMatrixTest : public ::testing::Test {
         EXPECT_EQ(display(), bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer))) << "display differs from MatrixBuffer";
     }
 
+    /* the shiftTask() calls the last shiftWholeText() took, each one a step of the text on the panel */
+    int ShiftCalls = 0;
+
     /* returns the number of frames the shift sent to the chain */
     int shiftWholeText(char* Text)
     {
         Matrix.clear();
         int FramesBefore = Mock::Frames;
         Matrix.setTextWithShift(Text);
-        for(int i = 0; i < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; i++) Matrix.shiftTask();
+        for(ShiftCalls = 0; ShiftCalls < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; ShiftCalls++) Matrix.shiftTask();
         return Mock::Frames - FramesBefore;
     }
 };
@@ -444,14 +447,24 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)
 }
 
 /* an unknown char used to be shifted in all the same, with whatever sprite was left over; that the
- * shift finishes does not show it, so what went to the chain is compared with the text without it */
+ * shift finishes does not show it, so what went to the chain is compared with the text without it.
+ * Skipping it then took a shiftTask() call of its own that sent nothing, and the text stood still for
+ * a step, so the calls are compared as well - in the middle of the text and at its end. */
 TEST_F(MaxMatrixTest, UnknownChars)
 {
     EXPECT_EQ(Matrix.setText("a\x01"), E_NOT_OK);
 
     char Known[] = "ab";
-    char WithUnknown[] = "a\x01" "b";
     int Frames = shiftWholeText(Known);
-    EXPECT_EQ(shiftWholeText(WithUnknown), Frames);
+    int Calls = ShiftCalls;
+
+    char InTheMiddle[] = "a\x01\x02" "b";
+    EXPECT_EQ(shiftWholeText(InTheMiddle), Frames);
+    EXPECT_EQ(ShiftCalls, Calls);
+    EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
+
+    char AtTheEnd[] = "ab\x01";
+    EXPECT_EQ(shiftWholeText(AtTheEnd), Frames);
+    EXPECT_EQ(ShiftCalls, Calls);
     EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
 }
