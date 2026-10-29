@@ -36,11 +36,14 @@ class MaxMatrixTest : public ::testing::Test {
         Matrix.init();
     }
 
-    void shiftWholeText(char* Text)
+    /* returns the number of frames the shift sent to the chain */
+    int shiftWholeText(char* Text)
     {
         Matrix.clear();
+        int FramesBefore = Mock::Frames;
         Matrix.setTextWithShift(Text);
         for(int i = 0; i < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; i++) Matrix.shiftTask();
+        return Mock::Frames - FramesBefore;
     }
 };
 
@@ -229,11 +232,15 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)
     EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
 }
 
+/* an unknown char used to be shifted in all the same, with whatever sprite was left over; that the
+ * shift finishes does not show it, so what went to the chain is compared with the text without it */
 TEST_F(MaxMatrixTest, UnknownChars)
 {
     EXPECT_EQ(Matrix.setText("a\x01"), E_NOT_OK);
 
-    char Text[] = "a\x01" "b";
-    shiftWholeText(Text);
+    char Known[] = "ab";
+    char WithUnknown[] = "a\x01" "b";
+    int Frames = shiftWholeText(Known);
+    EXPECT_EQ(shiftWholeText(WithUnknown), Frames);
     EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
 }
