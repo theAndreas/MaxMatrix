@@ -1,0 +1,37 @@
+{
+    "id": "shared",
+    "version": "1.0.0",
+    "name": "MaxMatrix shared editor configuration",
+    "description": "Extensions, the Arduino AVR core, the toolchain sanity check and the volumes for the Arduino data directory and logins shared by every devcontainer.json variant.",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "EditorConfig.EditorConfig",
+                "eamodio.gitlens",
+                "openai.chatgpt"
+            ]
+        }
+    },
+    "containerEnv": {
+        "GH_HOST": "github.com"
+    },
+    "postCreateCommand": "arduino-cli core update-index && arduino-cli core install arduino:avr && arduino-cli version && arduino-lint --version && gh --version",
+    "mounts": [
+        {
+            "source": "maxmatrix-arduino15",
+            "target": "/home/vscode/.arduino15",
+            "type": "volume"
+        },
+        {
+            "source": "maxmatrix-codex",
+            "target": "/home/vscode/.codex",
+            "type": "volume"
+        },
+        {
+            "source": "maxmatrix-gh",
+            "target": "/home/vscode/.config/gh",
+            "type": "volume"
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "name": "MaxMatrix (WSL2)",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    // Extensions, the Arduino core and the toolchain check live in ../shared.
+    // Nothing is mounted: this variant relies on VS Code's own SSH-agent forwarding.
+    "features": {
+        "./../shared": {}
+    }
+}
