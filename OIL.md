@@ -33,6 +33,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 21 | Control page for simulator and board | 6 | open | |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
+| 24 | No pause for a skipped char | 2 | open | |
 
 ### 1 Build with CMake
 
@@ -291,6 +292,17 @@ is called on every `loop()` and decides itself whether a step is due - as `setSp
 `displayAnimate()` in MD_Parola - takes that out of every sketch. The interrupt must still
 only set a flag: a transfer from inside an ISR would cut into an SPI transaction of the
 sketch.
+
+### 24 No pause for a skipped char
+
+A char that is not in the font is skipped while shifting, but `stringShiftTask()` spends a
+whole `shiftTask()` call on it and sends nothing, so the text stands still for one step per
+unknown char. Found while porting the tests (#5): `"a\x01b"` takes one call more than `"ab"`
+for the same frames. The fix is to read on to the next known char or the end of the string
+within the same call.
+
+*Done when* `UnknownChars` also compares the number of `shiftTask()` calls, and that check is
+red without the fix. If 23 lands first, check whether its timing still shows the pause.
 
 ## Decisions
 
