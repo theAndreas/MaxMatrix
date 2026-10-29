@@ -1,0 +1,8 @@
+# Arduino build output
+build/
+
+# Dev container feature lock files (auto-generated)
+devcontainer-lock.json
+
+# Site-specific dev container variant (local only)
+/.devcontainer/vector/
