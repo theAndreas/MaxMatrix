@@ -23,6 +23,16 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 11 | Wokwi as a complement | – | open | |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | open | |
+| 14 | Chain length at run time | 13 | open | |
+| 15 | Font format | 13 | open | |
+| 16 | Static analysis in CI | 1 | open | |
+| 17 | Documentation from the Doxygen blocks | – | open | |
+| 18 | Releases and the Library Manager | 13 | open | |
+| 19 | More of the MAX7219 in the public API | 3 | open | |
+| 20 | More examples | 5 | open | |
+| 21 | Control page for simulator and board | 6 | open | |
+| 22 | Fast pin access for bit banging | 3 | open | |
+| 23 | The library keeps the shift timing | 13 | open | |
 
 ### 1 Build with CMake
 
@@ -175,6 +185,112 @@ a 2.0 and a decision of its own.
 
 After 3, because only the model's tests check what reaches the wire and so tell whether the
 split changed anything; before 8, which is simpler once the buffer is a class of its own.
+
+The `…LL` suffix goes with it. "Low level" names a height, not what differs: `setColumn` and
+`setColumnLL` work in two coordinate systems, the viewer's and the modules' as wired, and
+only `CLAUDE.md` tells a reader so. Once each layer is a class, both may be called
+`setColumn` and the object says which is meant - as Adafruit GFX's `drawPixel` applies the
+rotation and then writes the buffer. Where a name still has to tell them apart, it names the
+frame of reference ("wired", as graphics says "device space" against "user space"), and the
+translation becomes one function in the facade instead of a part of every public one:
+
+```
+MaxMatrix      viewer's coordinates   setColumn, setDot, shiftLeft …
+  └─ WiredMatrix   buffer as wired    setColumn, setRow, shiftLeft …
+       └─ Max7219Chain  transfer      writeRegister(Module, Address, Value), writeRegisterAll(…)
+```
+
+The `…LL` functions are private, so no sketch notices. The tests reach
+`setColumnOnAllModulesLL` through `#define private public` today; they would test
+`WiredMatrix` directly. `CLAUDE.md`'s "Two layers" and its `LL` naming rule change with it.
+
+### 14 Chain length at run time
+
+The number of modules is `MAXMATRIX_NUMBER_OF_MODULES` in the header, so a chain of another
+length means editing the library. MD_MAX72XX and LEDMatrixDriver take it in the constructor.
+Open: a buffer allocated at run time or one the sketch hands in (LEDMatrixDriver allows
+both), and what that costs on the Uno against today's fixed array.
+
+### 15 Font format
+
+`SpriteTable` is one built-in font. Open: variable-width characters, a font the sketch
+supplies, a second smaller one - and whether to adopt MD_MAX72XX's font format and its
+tooling rather than invent one. Whatever comes keeps the latin-1 lookup behind `decodeChar`.
+
+### 16 Static analysis in CI
+
+`clang-tidy` and `cppcheck` over the library, as Wordclock's `static-analysis.yml` does.
+Needs the `compile_commands.json` from 1.
+
+### 17 Documentation from the Doxygen blocks
+
+Every function already carries a Doxygen block; generate HTML from them, for instance on
+GitHub Pages, together with the pictures in `docu/`.
+
+### 18 Releases and the Library Manager
+
+Version tags, a changelog, and the submission to the Arduino Library Manager -
+`arduino-lint --library-manager submit` already passes. After 13, so the first published
+version has the API that is meant to stay.
+
+### 19 More of the MAX7219 in the public API
+
+Shutdown and display test as public functions, and the decode mode for 7-segment displays,
+which LedControl offers. Today only `RegisterWrite` reaches them. The model from 3 already
+knows the registers, so the tests come with it.
+
+### 20 More examples
+
+Besides `Basics` and `ScrollText`: an animation, sprites, more than one text. Each one is
+compiled by CI on the Uno, and with 5 it can be watched in the simulator.
+
+The libraries collected in `AndreasBur/MaxMatrix` under `LED/LED Anzeige/Max7219/` suggest
+more: `MAX7219_8x8_matrix` has a clock, numbers, a mask and a rotation as examples, the old
+Arduino `Matrix` / `Sprite` pair shows sprites as objects of their own. And a `SerialControl`
+example that takes the commands from 21 over `Serial`.
+
+### 21 Control page for simulator and board
+
+`AndreasBur/Led-Matrix` had a Windows tool (VB.NET, WinForms and WPF) that drove the matrix
+over a serial port: click an LED to set it, a text to show or to shift, sliders for intensity
+and speed. The sketch on the other side (also `MaxMatrix/async/…/Sketch.cpp` in
+`AndreasBur/MaxMatrix`) took one line per command: `text=`, `textShift=`, `intensity=`,
+`speed=`, `space=` / `spaceBetweenChars=`, `setDot=column,row,value`.
+
+The page from 6 can be that tool again, for both ends: against the simulator over the
+WebSocket, and against a real board over the browser's Web Serial API (Chromium-based
+browsers), with the `SerialControl` example from 20 on the board. One page, no installer,
+no Windows. Inside the simulator, the commands reach the sketch through a simulated `Serial`.
+
+### 22 Fast pin access for bit banging
+
+`MAXMATRIX_USE_DIGITAL_WRITE_FAST` changes nothing as it stands. Measured on 2026-10-29
+with `digitalWriteFast` 1.3.1 from the Library Manager (ArminJo's, which is what
+`arduino-cli lib install digitalWriteFast` fetches):
+
+- `digitalWriteFast` is only fast when the pin is a compile-time constant
+  (`__builtin_constant_p`). The pins here are members set at run time, so every call falls
+  back to `digitalWrite`: `Basics` is 4316 bytes with the switch on against 4318 off, and
+  with `-DTHROW_ERROR_IF_NOT_FAST` the build fails on all four calls in `MaxMatrix.cpp`
+  ("Parameter for digitalWriteFast() function is not constant"). NicksonYap's variant of the
+  header fails that way without being asked to.
+- The dependency is not declared: `library.properties` has no `depends=digitalWriteFast`,
+  and no test or CI job builds with the switch on.
+
+The old TODO in `AndreasBur/MaxMatrix` already says "SPI und digitalwritefast testen".
+Options: drop the switch; or look up port register and bit mask once in `init()`
+(`portOutputRegister(digitalPinToPort(Pin))`, `digitalPinToBitMask(Pin)`) and write them
+directly, which is fast with pins chosen at run time. Measure the frame time either way; the
+mock from 3 checks that the bits stay the same.
+
+### 23 The library keeps the shift timing
+
+Every sketch times `shiftTask()` itself: `ScrollText` with `millis()`, the old sketches with
+a TimerOne interrupt that set a flag. A speed setting in the library and a `shiftTask()` that
+is called on every `loop()` and decides itself whether a step is due - as `setSpeed` and
+`displayAnimate()` in MD_Parola - takes that out of every sketch. The interrupt must still
+only set a flag: a transfer from inside an ISR would cut into an SPI transaction of the
+sketch.
 
 ## Decisions
 
