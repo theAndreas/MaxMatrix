@@ -134,6 +134,50 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
     }
 }
 
+/* Which module each orientation is for, as the README tells a user. 0, 90 and 270 rotate every module in its place;
+ * 180 rotates the whole panel, so it fits a board mounted upside down, whose chain then starts on the left. GENERIC
+ * with the chain starting on the right would need each module turned by 180 degrees, and PAROLA and the other three
+ * wirings a mirror image; no orientation gives either (OIL item 9). */
+struct ModuleType {
+    const char* Name;
+    const Max7219WiringType* Wiring;
+    bool InputOnTheLeft;
+    MaxMatrixModuleOrientationType Orientation;
+};
+
+static const ModuleType Modules[] = {
+    { "DR0CR0RR1", &Max7219Wirings[1], false, MAXMATRIX_MODULE_ORIENTATION_0 },
+    { "ICSTATION", &MAX7219_WIRING_ICSTATION, false, MAXMATRIX_MODULE_ORIENTATION_90 },
+    { "GENERIC_upside_down", &MAX7219_WIRING_GENERIC, true, MAXMATRIX_MODULE_ORIENTATION_180 },
+    { "FC16", &MAX7219_WIRING_FC16, false, MAXMATRIX_MODULE_ORIENTATION_270 },
+};
+
+class MaxMatrixModuleTest : public MaxMatrixTest, public ::testing::WithParamInterface<ModuleType> {};
+
+static std::string moduleName(const ::testing::TestParamInfo<ModuleType>& Info)
+{
+    return Info.param.Name;
+}
+
+INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest, ::testing::ValuesIn(Modules), moduleName);
+
+/* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a wrong mapping could hide behind */
+TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
+{
+    const ModuleType& Module = GetParam();
+    auto Pattern = [](unsigned X, unsigned Y) { return (X * X + 3 * Y + X * Y) % 3 == 0; };
+
+    Matrix.setModuleOrientation(Module.Orientation);
+    for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
+        for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) Matrix.setDot(X, Y, Pattern(X, Y));
+    }
+    for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
+        for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+            EXPECT_EQ(Mock::Chain.isLit(*Module.Wiring, X, Y, Module.InputOnTheLeft), Pattern(X, Y)) << "X " << X << ", Y " << Y;
+        }
+    }
+}
+
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip)
 {
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {

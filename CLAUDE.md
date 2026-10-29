@@ -133,6 +133,11 @@ rising edge, so a frame that is too short or a wrong address shows on the model'
 ends by checking that the two agree. A test of what is lit asks the model, not the buffer. The
 model has its own tests against the datasheet, run once under the `model/` prefix.
 
+`Mock::Chain.isLit()` goes one step further, to the LEDs as the viewer sees them: given one of
+the eight module wirings MD_MAX72XX names (`DR0CR0RR0` to `DR1CR1RR1`, `FC16`, `GENERIC`, …)
+and the side the chain starts on. `MaxMatrixModuleTest` pins which orientation fits which
+module; the README's table says the same and changes with it.
+
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above
 the test names the bug it guards against.

@@ -2,8 +2,10 @@
  *
  * The library tests take the model's word for what is lit, so a mistake here would hide one there. */
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <initializer_list>
 #include <utility>
+#include <vector>
 #include "Max7219.h"
 
 typedef std::pair<uint8_t, uint8_t> PairType;
@@ -138,4 +140,73 @@ TEST(Max7219Test, IntensityKeepsFourBits)
 
     sendFrame(Chain, { {0x0A, 0xF7} });
     EXPECT_EQ(Chain.Chips[0].Intensity, 0x07);
+}
+
+static Max7219Chain chainWithOneSegment(uint8_t NumberOfChips, uint8_t Chip, uint8_t Digit, uint8_t Segment)
+{
+    Max7219Chain Chain = chainInNormalOperation(NumberOfChips);
+    Chain.Chips[Chip].Digit[Digit] = 1 << Segment;
+    return Chain;
+}
+
+static std::vector<std::pair<unsigned, unsigned>> litLeds(const Max7219Chain& Chain, const Max7219WiringType& Wiring,
+                                                          bool InputOnTheLeft = false)
+{
+    std::vector<std::pair<unsigned, unsigned>> Leds;
+    for(unsigned X = 0; X < Chain.Chips.size() * Max7219::NumberOfDigits; X++) {
+        for(unsigned Y = 0; Y < Max7219::NumberOfDigits; Y++) {
+            if(Chain.isLit(Wiring, X, Y, InputOnTheLeft)) Leds.push_back(std::make_pair(X, Y));
+        }
+    }
+    return Leds;
+}
+
+/* every digit and segment drives one LED of its own, in every wiring */
+TEST(Max7219Test, EveryWiringLightsEveryLedOnce)
+{
+    for(const Max7219WiringType& Wiring : Max7219Wirings) {
+        SCOPED_TRACE(Wiring.Name);
+        std::vector<std::pair<unsigned, unsigned>> Seen;
+        for(uint8_t Digit = 0; Digit < Max7219::NumberOfDigits; Digit++) {
+            for(uint8_t Segment = 0; Segment < 8; Segment++) {
+                std::vector<std::pair<unsigned, unsigned>> Leds = litLeds(chainWithOneSegment(1, 0, Digit, Segment), Wiring);
+                ASSERT_EQ(Leds.size(), 1u);
+                Seen.push_back(Leds[0]);
+            }
+        }
+        std::sort(Seen.begin(), Seen.end());
+        EXPECT_EQ(std::unique(Seen.begin(), Seen.end()), Seen.end());
+    }
+}
+
+/* digit 0, segment bit 0 - where MD_MAX72XX's setPoint() puts it, with its column 0 on the right */
+TEST(Max7219Test, NamedWiringsMatchMdMax72xx)
+{
+    typedef std::pair<unsigned, unsigned> LedType;
+    const std::pair<const Max7219WiringType*, LedType> Expected[] = {
+        { &MAX7219_WIRING_FC16, LedType(7, 0) },
+        { &MAX7219_WIRING_GENERIC, LedType(7, 7) },
+        { &MAX7219_WIRING_PAROLA, LedType(0, 0) },
+        { &MAX7219_WIRING_ICSTATION, LedType(0, 7) },
+    };
+
+    for(const auto& Case : Expected) {
+        SCOPED_TRACE(Case.first->Name);
+        std::vector<LedType> Leds = litLeds(chainWithOneSegment(1, 0, 0, 0), *Case.first);
+        ASSERT_EQ(Leds.size(), 1u);
+        EXPECT_EQ(Leds[0], Case.second);
+    }
+}
+
+TEST(Max7219Test, ChainRunsFromRightToLeft)
+{
+    Max7219Chain Chain = chainWithOneSegment(2, 0, 0, 0);
+
+    std::vector<std::pair<unsigned, unsigned>> Leds = litLeds(Chain, MAX7219_WIRING_FC16);
+    ASSERT_EQ(Leds.size(), 1u);
+    EXPECT_EQ(Leds[0].first, 15u);
+
+    Leds = litLeds(Chain, MAX7219_WIRING_FC16, true);
+    ASSERT_EQ(Leds.size(), 1u);
+    EXPECT_EQ(Leds[0].first, 7u);
 }

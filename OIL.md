@@ -12,8 +12,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 |----|------|------------|--------|----|
 | 1  | Build with CMake | – | done | #5 |
 | 2  | Tests on GoogleTest | 1 | done | #5 |
-| 3  | MAX7219 model, driven from the wire | 2 | in progress | #6 |
-| 4  | Module wiring variants in the model | 3 | open | |
+| 3  | MAX7219 model, driven from the wire | 2 | done | #6 |
+| 4  | Module wiring variants in the model | 3 | in progress | |
 | 5  | Simulator that runs the example sketches | 3 | open | |
 | 6  | Web front end for the simulator | 5 | open | |
 | 7  | Simulator in CI | 6 | open | |
@@ -118,8 +118,18 @@ example on the Uno are in the PR.
 ### 9 Mirrored modules in the library
 
 `MaxMatrixModuleOrientationType` covers the four rotations; a module wired mirrored is
-probably not reachable with any of them. Decide between adding the mirror and adopting the
+not reachable with any of them. Decide between adding the mirror and adopting the
 three-bit wiring description from 4.
+
+Measured against the model in 4: with the input on the right, orientation 0 fits
+`DR0CR0RR1`, 90 `ICSTATION` and 270 `FC16`. Orientation 180 is not the fourth rotation of a
+module in its place: it rotates the whole panel, module order included, so it fits a board
+mounted upside down (`GENERIC` with the input on the left) and nothing with the input on the
+right. Unreachable: `GENERIC` with the input on the right, which needs each module turned by
+180 degrees, and the mirror images `PAROLA`, `DR0CR0RR0`, `DR0CR1RR1`, `DR1CR0RR1`. The
+three-bit description would cover all eight and
+make "upside down" a separate setting rather than one of the orientations; changing what 180
+means breaks the boards that use it today.
 
 Needs a mirrored module to try it on; the PR says whether it ran on hardware.
 

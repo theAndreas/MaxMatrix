@@ -27,6 +27,29 @@ class Max7219 {
     uint8_t segments(uint8_t DigitIndex) const;
 };
 
+/* How the LEDs of a module are wired to digits and segments, as the viewer sees them, in the three properties
+ * MD_MAX72XX names its hardware types by, DR0CR0RR0_HW to DR1CR1RR1_HW, and with the same meaning, so that a module
+ * MD_MAX72XX has tested is the same module here. As there, a module's column is counted from the right and its row
+ * from the top:
+ *   DigitsAsRows      a digit drives a row of LEDs and a segment bit a column; otherwise a digit drives a column
+ *   ReversedColumns   the segment bit index is reversed, bit 7 - x for x
+ *   ReversedRows      the digit index is reversed, digit 7 - x for x */
+struct Max7219WiringType {
+    const char* Name;
+    bool DigitsAsRows;
+    bool ReversedColumns;
+    bool ReversedRows;
+};
+
+/* the four MD_MAX72XX has names for */
+extern const Max7219WiringType MAX7219_WIRING_FC16;
+extern const Max7219WiringType MAX7219_WIRING_GENERIC;
+extern const Max7219WiringType MAX7219_WIRING_PAROLA;
+extern const Max7219WiringType MAX7219_WIRING_ICSTATION;
+
+/* all eight, DR0CR0RR0 to DR1CR1RR1 */
+extern const Max7219WiringType Max7219Wirings[8];
+
 class Max7219Chain {
   public:
     /* Chips[0] is the chip at DIN, next to the Arduino; a byte reaches the far end last */
@@ -35,6 +58,7 @@ class Max7219Chain {
     void reset(uint8_t NumberOfChips);
     void shift(uint8_t Value);
     void latch();
+    bool isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y, bool InputOnTheLeft = false) const;
 
   private:
     /* two bytes per chip, ShiftRegister[2 * Chip] its data byte and ShiftRegister[2 * Chip + 1] its address byte */
