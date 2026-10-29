@@ -9,6 +9,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
+- `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
+  on an item updates its row.
 - `test/` — host-side tests against a mock of the Arduino core in `test/mock/`.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
