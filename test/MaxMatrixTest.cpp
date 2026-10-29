@@ -26,14 +26,39 @@ static std::vector<byte> bytes(const byte* Data, size_t Size)
     return std::vector<byte>(Data, Data + Size);
 }
 
+/* the library sends the pair of module 0 first, so it ends up in the chip at the far end of the chain */
+static const Max7219& chipOfModule(byte Module)
+{
+    return Mock::Chain.Chips[MAXMATRIX_NUMBER_OF_MODULES - 1 - Module];
+}
+
+/* what the chain shows, laid out like MatrixBuffer: a column of a module is a digit, a row a segment */
+static std::vector<byte> display()
+{
+    std::vector<byte> Columns;
+    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
+        for(byte Column = 0; Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++) {
+            Columns.push_back(chipOfModule(Module).segments(Column));
+        }
+    }
+    return Columns;
+}
+
 class MaxMatrixTest : public ::testing::Test {
   protected:
     MaxMatrix Matrix{DataInPin, ChipSelectPin, ClockPin};
 
     void SetUp() override
     {
-        Mock::reset(ChipSelectPin);
+        Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
         Matrix.init();
+    }
+
+    /* whatever a test did, the LEDs have to show what the buffer says - the get functions read the buffer, because
+     * the MAX7219 cannot be read back, so a buffer that drifts from the display makes them lie */
+    void TearDown() override
+    {
+        EXPECT_EQ(display(), bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer))) << "display differs from MatrixBuffer";
     }
 
     /* returns the number of frames the shift sent to the chain */
@@ -83,6 +108,18 @@ TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
     }
 }
 
+/* the display has to follow the buffer during the shift too, not only once the text has left it */
+TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
+{
+    char Text[] = "Hi \xC4!";
+
+    Matrix.setTextWithShift(Text);
+    for(int Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
+        Matrix.shiftTask();
+        ASSERT_EQ(display(), bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer))) << "after step " << Step;
+    }
+}
+
 TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
 {
     for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
@@ -94,6 +131,27 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
             EXPECT_EQ(Matrix.getDot(Column, Row, &Value), E_OK);
             EXPECT_EQ(Value, Expected);
         }
+    }
+}
+
+TEST_F(MaxMatrixTest, InitConfiguresEveryChip)
+{
+    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
+        SCOPED_TRACE(::testing::Message() << "Module " << int(Module));
+        const Max7219& Chip = chipOfModule(Module);
+        EXPECT_EQ(Chip.Shutdown, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
+        EXPECT_EQ(Chip.DisplayTest, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
+        EXPECT_EQ(Chip.ScanLimit, MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);
+        EXPECT_EQ(Chip.DecodeMode, MAX7219_REG_DECODE_MODE_NO_DECODE);
+        EXPECT_EQ(Chip.Intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
+    }
+}
+
+TEST_F(MaxMatrixTest, IntensityReachesEveryChip)
+{
+    EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE), E_OK);
+    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
+        EXPECT_EQ(chipOfModule(Module).Intensity, MAX7219_REG_INTENSITY_MAX_VALUE) << "Module " << int(Module);
     }
 }
 

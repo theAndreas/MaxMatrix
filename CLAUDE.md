@@ -11,8 +11,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
-- `test/` — host-side tests on GoogleTest against a mock of the Arduino core in `test/mock/`,
-  built by `CMakeLists.txt` in the root.
+- `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
+  the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
   shared editor settings and volumes live in the local `shared/` feature.
@@ -125,6 +125,13 @@ only the tests are C++17, which GoogleTest needs. A test that loops over the fou
 is a `TEST_P` instead. The mock records every frame between a falling and a rising chip select in
 `Mock::LastFrame` and counts a transfer outside a frame or outside an SPI transaction in
 `Mock::Errors`, so a test can check what went to the chain, not just the buffer.
+
+Every byte and every rising chip select also drive `Mock::Chain`, a model of the MAX7219 chain
+(`test/mock/Max7219.h`): it shifts like the hardware and each chip latches its register on the
+rising edge, so a frame that is too short or a wrong address shows on the model's LEDs.
+`display()` in the tests reads them back laid out like `MatrixBuffer`, and every library test
+ends by checking that the two agree. A test of what is lit asks the model, not the buffer. The
+model has its own tests against the datasheet, run once under the `model/` prefix.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above

@@ -10,9 +10,10 @@ namespace Mock {
     int Frames;
     std::vector<byte> Frame;
     std::vector<byte> LastFrame;
+    Max7219Chain Chain;
     bool SpiUsed;
 
-    void reset(uint8_t sChipSelectPin)
+    void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
     {
         memset(PinMode, INPUT, sizeof(PinMode));
         memset(PinLevel, LOW, sizeof(PinLevel));
@@ -23,6 +24,7 @@ namespace Mock {
         Frame.clear();
         LastFrame.clear();
         SpiUsed = false;
+        Chain.reset(NumberOfChips);
     }
 
     /* a byte only reaches the chain while chip select is low, and over SPI only inside a transaction */
@@ -30,6 +32,7 @@ namespace Mock {
     {
         if(PinMode[ChipSelectPin] != OUTPUT || PinLevel[ChipSelectPin] != LOW) Errors++;
         Frame.push_back(Value);
+        Chain.shift(Value);
     }
 
     bool usesSpi() { return SpiUsed; }
@@ -45,6 +48,7 @@ void digitalWrite(uint8_t Pin, uint8_t Value)
         if(Mock::PinLevel[Pin] == LOW && Value == HIGH) {
             Mock::LastFrame = Mock::Frame;
             Mock::Frames++;
+            Mock::Chain.latch();
         }
     }
     Mock::PinLevel[Pin] = Value;
