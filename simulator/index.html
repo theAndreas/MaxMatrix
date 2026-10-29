@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MaxMatrix Simulator</title>
+<style>
+  :root {
+    --background: #16181d;
+    --surface: #1f2229;
+    --text: #e6e8ec;
+    --muted: #9aa0ab;
+    --led: 255, 48, 40;
+    --led-off: #2c1416;
+    --border: #2f333c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: var(--background);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 20px; }
+  .panel {
+    background: #0b0b0d;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  canvas { display: block; width: 100%; height: auto; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    align-items: center;
+    margin: 16px 0;
+  }
+  label { display: inline-flex; gap: 8px; align-items: center; }
+  select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font: inherit;
+  }
+  .status { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .status .error { color: rgb(var(--led)); }
+  h2 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 0;
+    padding: 12px;
+    height: 240px;
+    overflow: auto;
+    font: 13px/1.5 ui-monospace, "Cascadia Code", Menlo, monospace;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>MaxMatrix Simulator</h1>
+  <p class="lead">The sketch runs in the simulator; the panel shows what a module of the chosen wiring would light.</p>
+
+  <div class="panel"><canvas id="matrix" width="960" height="240"></canvas></div>
+
+  <div class="controls">
+    <label>Module
+      <select id="wiring">
+        <option>FC16</option>
+        <option>GENERIC</option>
+        <option>PAROLA</option>
+        <option>ICSTATION</option>
+        <option>DR0CR0RR0</option>
+        <option>DR0CR0RR1</option>
+        <option>DR0CR1RR0</option>
+        <option>DR0CR1RR1</option>
+        <option>DR1CR0RR0</option>
+        <option>DR1CR0RR1</option>
+        <option>DR1CR1RR0</option>
+        <option>DR1CR1RR1</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="upsideDown"> Mounted upside down</label>
+    <span class="status" id="status">connecting...</span>
+  </div>
+
+  <h2>Frames on the wire</h2>
+  <p class="lead">One address and value per module, module 0 first; address 00 is the no-op.</p>
+  <pre id="log"></pre>
+</main>
+<script>
+  const Canvas = document.getElementById("matrix");
+  const Context = Canvas.getContext("2d");
+  const Wiring = document.getElementById("wiring");
+  const UpsideDown = document.getElementById("upsideDown");
+  const Status = document.getElementById("status");
+  const Log = document.getElementById("log");
+  const LogLines = 200;
+  const Style = getComputedStyle(document.body);
+  const LedColor = Style.getPropertyValue("--led").trim();
+  const LedOffColor = Style.getPropertyValue("--led-off").trim();
+  let Socket = null;
+
+  /* the MAX7219 drives a module with a duty cycle of (2 * intensity + 1) / 32; a lit LED never looks dark */
+  function brightness(Intensity) {
+    return 0.35 + 0.65 * (2 * Intensity + 1) / 31;
+  }
+
+  function draw(Panel) {
+    const Cell = 24;
+    const ModuleGap = 8;
+    const Modules = Panel.columns / 8;
+    const Width = Panel.columns * Cell + (Modules - 1) * ModuleGap;
+    const Height = Panel.rows * Cell;
+
+    if (Canvas.width !== Width || Canvas.height !== Height) {
+      Canvas.width = Width;
+      Canvas.height = Height;
+    }
+    Context.clearRect(0, 0, Width, Height);
+    for (let Y = 0; Y < Panel.rows; Y++) {
+      for (let X = 0; X < Panel.columns; X++) {
+        const Module = Math.floor(X / 8);
+        const Lit = Panel.dots[Y * Panel.columns + X] === "1";
+        Context.beginPath();
+        Context.arc(X * Cell + Module * ModuleGap + Cell / 2, Y * Cell + Cell / 2, Cell * 0.38, 0, 2 * Math.PI);
+        Context.fillStyle = Lit ? `rgba(${LedColor}, ${brightness(Panel.intensity[Module])})` : LedOffColor;
+        Context.fill();
+      }
+    }
+  }
+
+  function show(Panel) {
+    draw(Panel);
+    Wiring.value = Panel.wiring;
+    UpsideDown.checked = Panel.upsideDown;
+    Status.innerHTML = `${Panel.frames} frames` +
+      (Panel.errors ? `, <span class="error">${Panel.errors} transfer errors</span>` : "") +
+      `, intensity ${Panel.intensity.join(" ")}`;
+    if (Panel.log.length) {
+      const AtBottom = Log.scrollTop + Log.clientHeight >= Log.scrollHeight - 4;
+      const Lines = (Log.textContent + Panel.log.join("\n") + "\n").split("\n");
+      Log.textContent = Lines.slice(-LogLines - 1).join("\n");
+      if (AtBottom) Log.scrollTop = Log.scrollHeight;
+    }
+  }
+
+  function connect() {
+    Socket = new WebSocket(`ws://${location.host}/ws`);
+    Socket.onopen = () => Socket.send("hello");
+    Socket.onmessage = Event => show(JSON.parse(Event.data));
+    /* the simulator was stopped or restarted; keep asking until it is back */
+    Socket.onclose = () => {
+      Status.textContent = "simulator not running, retrying...";
+      setTimeout(connect, 1000);
+    };
+  }
+
+  Wiring.addEventListener("change", () => Socket.send(`wiring ${Wiring.value}`));
+  UpsideDown.addEventListener("change", () => Socket.send(`upside-down ${UpsideDown.checked ? 1 : 0}`));
+  connect();
+</script>
+</body>
+</html>

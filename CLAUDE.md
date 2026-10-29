@@ -10,7 +10,9 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
-  and draws the panel in the terminal as a module of the chosen wiring would light it.
+  and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
+  `--web` on `localhost:8080` (`WebHost.cpp`, ported from Wordclock; `index.html`, read at run
+  time).
   `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.

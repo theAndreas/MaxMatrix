@@ -91,8 +91,7 @@ bool Max7219Chain::isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y
         Y = Max7219::NumberOfDigits - 1 - Y;
     }
 
-    size_t Module = X / Max7219::NumberOfDigits;
-    const Max7219& Chip = Chips[Chips.size() - 1 - Module];
+    const Max7219& Chip = Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];
     uint8_t Column = Max7219::NumberOfDigits - 1 - X % Max7219::NumberOfDigits;
     uint8_t Digit = Wiring.DigitsAsRows ? Y : Column;
     uint8_t Segment = Wiring.DigitsAsRows ? Column : Y;
@@ -100,4 +99,11 @@ bool Max7219Chain::isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y
     if(Wiring.ReversedRows) Digit = Max7219::NumberOfDigits - 1 - Digit;
     if(Wiring.ReversedColumns) Segment = Max7219::NumberOfDigits - 1 - Segment;
     return (Chip.segments(Digit) >> Segment) & 0x01;
+}
+
+/* the chip that drives the LEDs in column X of the panel, by the same placement as isLit() */
+const Max7219& Max7219Chain::chipAt(unsigned X, bool UpsideDown) const
+{
+    if(UpsideDown) X = Chips.size() * Max7219::NumberOfDigits - 1 - X;
+    return Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];
 }

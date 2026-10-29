@@ -50,8 +50,11 @@ function(add_maxmatrix_variant Variant)
     # included first. gnu++11 like the library, so a sketch that would not build for the Uno fails here as well.
     foreach(Sketch ${Examples})
         get_filename_component(Example ${Sketch} NAME_WE)
-        add_executable(Simulator-${Example}-${Variant} simulator/Simulator.cpp ${Sketch})
+        add_executable(Simulator-${Example}-${Variant} simulator/Simulator.cpp simulator/WebHost.cpp ${Sketch})
         target_link_libraries(Simulator-${Example}-${Variant} PRIVATE MaxMatrix-${Variant})
+        # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
+        target_compile_definitions(Simulator-${Example}-${Variant} PRIVATE
+                                   SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
     endforeach()
 
     # Basics shows "Hi!" for its first two seconds; one second in, the panel of an FC-16 board has to read it.
