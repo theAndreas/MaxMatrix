@@ -210,4 +210,8 @@ TEST(Max7219Test, ChainRunsFromRightToLeft)
     Leds = litLeds(Chain, MAX7219_WIRING_FC16, true);
     ASSERT_EQ(Leds.size(), 1u);
     EXPECT_EQ(Leds[0], std::make_pair(0u, 7u));
+
+    EXPECT_EQ(&Chain.chipAt(0), &Chain.Chips[1]);
+    EXPECT_EQ(&Chain.chipAt(15), &Chain.Chips[0]);
+    EXPECT_EQ(&Chain.chipAt(0, true), &Chain.Chips[0]);
 }
