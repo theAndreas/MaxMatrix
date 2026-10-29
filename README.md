@@ -49,7 +49,7 @@ char Text[] = "Hello World!   ";
 void setup()
 {
     Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_90);
+    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see "Module orientation"
     Matrix.setTextWithShift(Text);
 }
 
@@ -68,6 +68,16 @@ More examples can be found in [examples/](examples/).
 ## Module orientation
 Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical.
 Use `setModuleOrientation()` to select the orientation that matches your modules: if the text is rotated or mirrored, try another orientation.
+
+Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), whose hardware types describe the same wiring. With the input (DIN) on the right:
+
+| Module | Orientation |
+|--------|-------------|
+| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MAXMATRIX_MODULE_ORIENTATION_270` (checked on hardware) |
+| ICStation (`ICSTATION_HW`) | `MAXMATRIX_MODULE_ORIENTATION_90` |
+| `DR0CR0RR1_HW` | `MAXMATRIX_MODULE_ORIENTATION_0` |
+
+`MAXMATRIX_MODULE_ORIENTATION_180` turns the whole display around, not each module: it is for a board of `DR0CR0RR1_HW` modules mounted upside down, with the input on the left. Generic modules (`GENERIC_HW`) with the input on the right would need each module turned by 180 degrees, and Parola modules (`PAROLA_HW`) are a mirror image; neither can be shown upright yet.
 
 Orientation 0 / 180 degrees:
 

@@ -1,6 +1,22 @@
 #include "Max7219.h"
 #include <string.h>
 
+const Max7219WiringType Max7219Wirings[8] = {
+    { "DR0CR0RR0", false, false, false },
+    { "DR0CR0RR1", false, false, true },
+    { "DR0CR1RR0", false, true, false },
+    { "DR0CR1RR1", false, true, true },
+    { "DR1CR0RR0", true, false, false },
+    { "DR1CR0RR1", true, false, true },
+    { "DR1CR1RR0", true, true, false },
+    { "DR1CR1RR1", true, true, true },
+};
+
+const Max7219WiringType MAX7219_WIRING_GENERIC = Max7219Wirings[2];
+const Max7219WiringType MAX7219_WIRING_FC16 = Max7219Wirings[4];
+const Max7219WiringType MAX7219_WIRING_PAROLA = Max7219Wirings[6];
+const Max7219WiringType MAX7219_WIRING_ICSTATION = Max7219Wirings[7];
+
 /* the datasheet's power-up state: control registers reset, which means shut down, one digit scanned, no decode and
  * minimum intensity; the digit registers are undefined there and zero here */
 void Max7219::reset()
@@ -63,4 +79,20 @@ void Max7219Chain::shift(uint8_t Value)
 void Max7219Chain::latch()
 {
     for(size_t Chip = 0; Chip < Chips.size(); Chip++) Chips[Chip].latch(ShiftRegister[2 * Chip + 1], ShiftRegister[2 * Chip]);
+}
+
+/* whether the LED at X, Y of the panel is lit, X from the left across all modules and Y from the top. The modules
+ * are chained from right to left, as MD_MAX72XX has them, so Chips[0] at DIN is the rightmost. InputOnTheLeft turns
+ * the chain around: that is a board mounted upside down, whose modules then show the wiring rotated by 180 degrees. */
+bool Max7219Chain::isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y, bool InputOnTheLeft) const
+{
+    size_t Module = X / Max7219::NumberOfDigits;
+    const Max7219& Chip = Chips[InputOnTheLeft ? Module : Chips.size() - 1 - Module];
+    uint8_t Column = Max7219::NumberOfDigits - 1 - X % Max7219::NumberOfDigits;
+    uint8_t Digit = Wiring.DigitsAsRows ? Y : Column;
+    uint8_t Segment = Wiring.DigitsAsRows ? Column : Y;
+
+    if(Wiring.ReversedRows) Digit = Max7219::NumberOfDigits - 1 - Digit;
+    if(Wiring.ReversedColumns) Segment = Max7219::NumberOfDigits - 1 - Segment;
+    return (Chip.segments(Digit) >> Segment) & 0x01;
 }

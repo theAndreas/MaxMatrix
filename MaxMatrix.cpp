@@ -764,7 +764,7 @@ stdReturnType MaxMatrix::setSpaceBetweenChars(byte sSpaceBetweenChars)
 
 
 /******************************************************************************************************************************************************
-  setOrientation()
+  setModuleOrientation()
 ******************************************************************************************************************************************************/
 /*! \brief          set Orientation of matrix
  *  \details        this function sets the orientation of the matrix
@@ -838,7 +838,7 @@ void MaxMatrix::setModuleOrientation(MaxMatrixModuleOrientationType sOrientation
         for(int i = 0; i < MAXMATRIX_BUFFER_SIZE; i++) MatrixBuffer[i] = MatrixBufferRotated[i];
         reload();
     }
-} /* setOrientation */
+} /* setModuleOrientation */
 
 
 /******************************************************************************************************************************************************

@@ -13,7 +13,7 @@ MaxMatrix Matrix(11, 10, 13);
 void setup()
 {
     Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_90);
+    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see the README
 }
 
 void loop()
