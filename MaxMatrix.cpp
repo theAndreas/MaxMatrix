@@ -878,15 +878,17 @@ void MaxMatrix::stringShiftTask()
     /* has char shift task finished shifting sprite or char */
     if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY)
     {
-        /* If end of string is not reached, load next char */
-        if(*String != STD_NULL_CHARACTER) {
+        /* Unknown chars are skipped within this call: a call spent on one sent nothing, and the text
+         * stood still for a step. So read on to the next known char or to the end of the string. */
+        while(*String != STD_NULL_CHARACTER && SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY) {
             String += decodeChar(String, &Char);
-            /* unknown chars will be skipped */
             if(E_OK == convertCharToSprite(Char, &SpriteIndex) && E_OK == getSprite(SpriteIndex, &SpriteBuffer)) {
                 SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
-                charShiftTask();
             }
-        } else { /* otherwise task has finished */
+        }
+        if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING) {
+            charShiftTask();
+        } else { /* end of string reached, task has finished */
             State = MAXMATRIX_STATE_READY;
             shiftLeft(false, true);
         }

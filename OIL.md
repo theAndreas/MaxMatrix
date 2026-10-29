@@ -16,7 +16,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 4  | Module wiring variants in the model | 3 | done | #7 |
 | 5  | Simulator that runs the example sketches | 3 | done | #9 |
 | 6  | Web front end for the simulator | 5 | done | #10 |
-| 7  | Simulator in CI | 6 | in progress | #11 |
+| 7  | Simulator in CI | 6 | done | #11 |
 | 8  | Batched updates in the library | 13 | open | |
 | 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
@@ -33,7 +33,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 21 | Control page for simulator and board | 6 | open | |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
-| 24 | No pause for a skipped char | 2 | open | |
+| 24 | No pause for a skipped char | 2 | in progress | |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 
 ### 1 Build with CMake
