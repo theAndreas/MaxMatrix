@@ -10,8 +10,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 
 | #  | Item | Depends on | Status | PR |
 |----|------|------------|--------|----|
-| 1  | Build with CMake | – | in progress | |
-| 2  | Tests on GoogleTest | 1 | in progress | |
+| 1  | Build with CMake | – | in progress | #5 |
+| 2  | Tests on GoogleTest | 1 | in progress | #5 |
 | 3  | MAX7219 model, driven from the wire | 2 | open | |
 | 4  | Module wiring variants in the model | 3 | open | |
 | 5  | Simulator that runs the example sketches | 3 | open | |
