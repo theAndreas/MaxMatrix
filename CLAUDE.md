@@ -9,6 +9,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
+- `test/` — host-side tests against a mock of the Arduino core in `test/mock/`.
+- `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
   shared editor settings and volumes live in the local `shared/` feature.
 
@@ -61,6 +63,9 @@ Constants are `#define`s in the header, grouped under a comment. Configuration s
 `STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. Register addresses
 and values of the MAX7219 get a named macro rather than a literal.
 
+Every configuration parameter is wrapped in `#ifndef`, because that is how the tests build the
+SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
+
 ### Return values
 
 A function that can fail returns `stdReturnType` (`E_OK` / `E_NOT_OK`) and passes results
@@ -95,15 +100,35 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 
 ## Build and check
 
-In the dev container:
+In the dev container, the same three things CI runs:
 
 ```bash
+make -C test
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
 ```
 
 Compile every example after a change to the library, not just the one that uses the change —
-the examples are the only code that instantiates the class with the real AVR toolchain.
+the examples are the only code that instantiates the class with the real AVR toolchain. CI
+fails on any warning in this repository, from `g++` in the tests (`-Werror`) and from
+`avr-gcc` in the examples; warnings from the Arduino core are ignored.
+
+### Tests
+
+`make -C test` builds the library twice, with bit banging and with SPI, and runs the same
+tests on both. The mock records every frame between a falling and a rising chip select in
+`Mock::LastFrame` and counts a transfer outside a frame or outside an SPI transaction in
+`Mock::Errors`, so a test can check what went to the chain, not just the buffer.
+
+**A bug fix comes with a test that fails without the fix.** Put the bug back and run the
+tests before committing; a test that stays green then does not test the bug. The comment above
+the test names the bug it guards against.
+
+The tests reach private members through `#define private public`, because some of what they
+check has no public path — `setColumnOnAllModulesLL` is only called from `clear()`, which
+zeroes the buffer afterwards and hides a wrong index.
+
+### Hardware
 
 Nothing here reaches real hardware. A change to the transfer code (chip select, SPI, bit
 banging) is untested until it has run on a matrix, and the pull request says so.
@@ -127,4 +152,5 @@ What the pull request body has to carry is what the commits already argue: what 
 that way rather than the obvious alternative, and what was measured. A body that repeats the
 diff is worth nothing to a reviewer; the numbers — flash and RAM of the examples on the Uno,
 which examples were compiled, whether it ran on hardware — are the part nobody can
-reconstruct from the code.
+reconstruct from the code. The CI job "Examples on arduino:avr:uno" writes flash and RAM of
+every example into its job summary.
