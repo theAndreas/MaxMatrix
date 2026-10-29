@@ -150,12 +150,12 @@ static Max7219Chain chainWithOneSegment(uint8_t NumberOfChips, uint8_t Chip, uin
 }
 
 static std::vector<std::pair<unsigned, unsigned>> litLeds(const Max7219Chain& Chain, const Max7219WiringType& Wiring,
-                                                          bool InputOnTheLeft = false)
+                                                          bool UpsideDown = false)
 {
     std::vector<std::pair<unsigned, unsigned>> Leds;
     for(unsigned X = 0; X < Chain.Chips.size() * Max7219::NumberOfDigits; X++) {
         for(unsigned Y = 0; Y < Max7219::NumberOfDigits; Y++) {
-            if(Chain.isLit(Wiring, X, Y, InputOnTheLeft)) Leds.push_back(std::make_pair(X, Y));
+            if(Chain.isLit(Wiring, X, Y, UpsideDown)) Leds.push_back(std::make_pair(X, Y));
         }
     }
     return Leds;
@@ -204,9 +204,10 @@ TEST(Max7219Test, ChainRunsFromRightToLeft)
 
     std::vector<std::pair<unsigned, unsigned>> Leds = litLeds(Chain, MAX7219_WIRING_FC16);
     ASSERT_EQ(Leds.size(), 1u);
-    EXPECT_EQ(Leds[0].first, 15u);
+    EXPECT_EQ(Leds[0], std::make_pair(15u, 0u));
 
+    /* upside down, the chain starts on the left and the LED is in the opposite corner of its module */
     Leds = litLeds(Chain, MAX7219_WIRING_FC16, true);
     ASSERT_EQ(Leds.size(), 1u);
-    EXPECT_EQ(Leds[0].first, 7u);
+    EXPECT_EQ(Leds[0], std::make_pair(0u, 7u));
 }

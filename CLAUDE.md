@@ -29,13 +29,20 @@ buffer is what `get…` functions read — the MAX7219 cannot be read back.
 ### Two layers
 
 - **Public functions** (`setColumn`, `setRow`, `setDot`, `shiftLeft`, …) take coordinates as
-  the viewer sees them and translate them according to `Orientation`.
+  the viewer sees them.
 - **`…LL` functions** work on the buffer and the hardware as wired and know nothing about
   orientation.
 
-A public function picks the `…LL` function per orientation; an `…LL` function never looks at
-`Orientation`. A new feature that works on coordinates belongs in the public layer and has to
-handle all four orientations.
+Between them, `convertDotToBuffer()` is the only function that knows the two orientations: the
+matrix orientation (0, 180) turns the whole panel, the module orientation (0, 90, 180, 270) then
+every module in its place. It maps one dot as the viewer sees it to a buffer column and bit.
+Lines go through `getLine()`/`setLine()`, which send each changed buffer column once; shifting
+and changing an orientation work on the whole picture in viewer coordinates
+(`getPicture()`/`setPicture()`) and send it with `reload()`.
+
+A new feature that works on coordinates builds on these and never branches on an orientation
+itself. When every function handled the orientations on its own, rows, shifts and dots
+disagreed in all but orientation 0.
 
 ### Hardware access
 
@@ -56,7 +63,8 @@ different taste.
   conversions. Low level functions end in `LL`.
 - Variables, parameters and members `PascalCase`.
 - A setter parameter that collides with its member is prefixed `s`
-  (`setModuleOrientation(MaxMatrixModuleOrientationType sOrientation)` assigning `Orientation`).
+  (`setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)` assigning
+  `ModuleOrientation`).
 - Types end in `Type` (`MaxMatrixStateType`); enum values and macros are upper case and
   prefixed with the module (`MAXMATRIX_STATE_READY`, `MAX7219_REG_INTENSITY_ADDRESS`).
 

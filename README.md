@@ -66,18 +66,21 @@ void loop()
 More examples can be found in [examples/](examples/).
 
 ## Module orientation
-Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical.
-Use `setModuleOrientation()` to select the orientation that matches your modules: if the text is rotated or mirrored, try another orientation.
+Two settings make the text upright:
 
-Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), whose hardware types describe the same wiring. With the input (DIN) on the right:
+- `setModuleOrientation()` turns every module in its place by 0, 90, 180 or 270 degrees. Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical, and this setting follows from the type of module.
+- `setMatrixOrientation()` turns the whole display by 0 or 180 degrees, for a board mounted upside down, with the input (DIN) on the left.
 
-| Module | Orientation |
-|--------|-------------|
+Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), whose hardware types describe the same wiring:
+
+| Module | Module orientation |
+|--------|--------------------|
 | FC-16 (`FC16_HW`), the common 4-in-1 boards | `MAXMATRIX_MODULE_ORIENTATION_270` (checked on hardware) |
 | ICStation (`ICSTATION_HW`) | `MAXMATRIX_MODULE_ORIENTATION_90` |
+| Generic (`GENERIC_HW`) | `MAXMATRIX_MODULE_ORIENTATION_180` |
 | `DR0CR0RR1_HW` | `MAXMATRIX_MODULE_ORIENTATION_0` |
 
-`MAXMATRIX_MODULE_ORIENTATION_180` turns the whole display around, not each module: it is for a board of `DR0CR0RR1_HW` modules mounted upside down, with the input on the left. Generic modules (`GENERIC_HW`) with the input on the right would need each module turned by 180 degrees, and Parola modules (`PAROLA_HW`) are a mirror image; neither can be shown upright yet.
+With the input on the right, the matrix orientation stays at `MAXMATRIX_MATRIX_ORIENTATION_0`; mounted upside down, it is `MAXMATRIX_MATRIX_ORIENTATION_180` with the same module orientation. Parola modules (`PAROLA_HW`) are a mirror image of these and cannot be shown upright yet.
 
 Orientation 0 / 180 degrees:
 

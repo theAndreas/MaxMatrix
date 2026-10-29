@@ -130,15 +130,13 @@ typedef enum {
     MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING
 } MaxMatrixShiftStateType;
 
-/* Type which describes the orientation of the Matrix */
-/*
+/* Type which describes the orientation of the whole Matrix, 180 for a board mounted upside down */
 typedef enum {
     MAXMATRIX_MATRIX_ORIENTATION_0,
     MAXMATRIX_MATRIX_ORIENTATION_180
 } MaxMatrixMatrixOrientationType;
-*/
 
-/* Type which describes the orientation of the Modules */
+/* Type which describes the orientation of every Module in its place */
 typedef enum {
     MAXMATRIX_MODULE_ORIENTATION_0,
     MAXMATRIX_MODULE_ORIENTATION_90,
@@ -283,7 +281,8 @@ class MaxMatrix
     byte ChipSelectPin;
     byte ClockPin;
     MaxMatrixStateType State;
-    MaxMatrixModuleOrientationType Orientation;
+    MaxMatrixModuleOrientationType ModuleOrientation;
+    MaxMatrixMatrixOrientationType MatrixOrientation;
     byte MatrixBuffer[MAXMATRIX_BUFFER_SIZE];
     spriteType SpriteBuffer;
     byte SpriteShiftCounter;
@@ -299,29 +298,16 @@ class MaxMatrix
     byte reverseByte(byte);
     void startTransmission();
     void stopTransmission();
+    void convertDotToBuffer(byte, byte, byte*, byte*);
+    byte getLine(byte, byte, bool);
+    void setLine(byte, byte, bool, byte);
+    void getPicture(byte*);
+    void setPicture(const byte*);
 
 
-    // Low Level get functions
-    stdReturnType getColumnLL(byte, byte*);
-    stdReturnType getColumnLL(byte, byte, byte*);
-    stdReturnType getRowLL(byte, rowType);
-    stdReturnType getRowLL(byte, byte, byte*);
-
-    
     // Low Level set functions
     stdReturnType setColumnLL(byte, byte);
-    stdReturnType setColumnLL(byte, byte, byte);
     stdReturnType setColumnOnAllModulesLL(byte, byte);
-    stdReturnType setRowLL(byte, const rowType);
-    stdReturnType setRowLL(byte, byte, byte);
-    stdReturnType setRowOnAllModulesLL(byte, byte);
-
-
-    // Low Level functions
-    void shiftLeftLL(bool = false, bool = true, bool = false);
-    void shiftRightLL(bool = false, bool = true, bool = false);
-    void shiftUpLL(bool = false, bool = false);
-    void shiftDownLL(bool = false, bool = false);
 
   public:
     MaxMatrix(byte, byte, byte);
@@ -333,7 +319,8 @@ class MaxMatrix
     byte getDataInPin() { return DataInPin; }
     byte getChipSelectPin() { return ChipSelectPin; }
     byte getClockPin() { return ClockPin; }
-    MaxMatrixModuleOrientationType getOrientation() { return Orientation; }
+    MaxMatrixModuleOrientationType getModuleOrientation() { return ModuleOrientation; }
+    MaxMatrixMatrixOrientationType getMatrixOrientation() { return MatrixOrientation; }
     byte getSpaceBetweenChars() { return SpaceBetweenChars; }
 
     stdReturnType getColumn(byte, byte*);
@@ -361,6 +348,7 @@ class MaxMatrix
     stdReturnType setSpaceBetweenChars(byte);
     void setSprite(int, int, const spriteType);
     void setModuleOrientation(MaxMatrixModuleOrientationType);
+    void setMatrixOrientation(MaxMatrixMatrixOrientationType);
 
 
     // methods
