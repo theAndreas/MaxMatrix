@@ -13,7 +13,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 1  | Build with CMake | – | done | #5 |
 | 2  | Tests on GoogleTest | 1 | done | #5 |
 | 3  | MAX7219 model, driven from the wire | 2 | done | #6 |
-| 4  | Module wiring variants in the model | 3 | in progress | #7 |
+| 4  | Module wiring variants in the model | 3 | done | #7 |
 | 5  | Simulator that runs the example sketches | 3 | open | |
 | 6  | Web front end for the simulator | 5 | open | |
 | 7  | Simulator in CI | 6 | open | |
