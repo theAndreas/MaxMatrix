@@ -24,8 +24,8 @@ unsigned long LastShift = 0;
 void setup()
 {
     Matrix.init();
-    /* select the orientation which matches your modules, see docu/ */
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_90);
+    /* 270 for the common 4-in-1 FC-16 boards; the README lists the other modules */
+    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);
     Matrix.setIntensity(2);
     Matrix.setTextWithShift(Text);
 }

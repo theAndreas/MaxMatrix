@@ -49,7 +49,7 @@ char Text[] = "Hello World!   ";
 void setup()
 {
     Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_90);
+    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see "Module orientation"
     Matrix.setTextWithShift(Text);
 }
 
@@ -73,7 +73,7 @@ Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX
 
 | Module | Orientation |
 |--------|-------------|
-| FC-16 (`FC16_HW`) | `MAXMATRIX_MODULE_ORIENTATION_270` |
+| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MAXMATRIX_MODULE_ORIENTATION_270` (checked on hardware) |
 | ICStation (`ICSTATION_HW`) | `MAXMATRIX_MODULE_ORIENTATION_90` |
 | `DR0CR0RR1_HW` | `MAXMATRIX_MODULE_ORIENTATION_0` |
 
