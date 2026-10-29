@@ -18,7 +18,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 6  | Web front end for the simulator | 5 | open | |
 | 7  | Simulator in CI | 6 | open | |
 | 8  | Batched updates in the library | 13 | open | |
-| 9  | Mirrored modules in the library | 4 | open | |
+| 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | open | |
 | 12 | Later ideas | 8 | open | |
@@ -34,6 +34,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
 | 24 | No pause for a skipped char | 2 | open | |
+| 25 | Matrix orientation apart from module orientation | 4 | open | |
 
 ### 1 Build with CMake
 
@@ -117,21 +118,13 @@ example on the Uno are in the PR.
 
 ### 9 Mirrored modules in the library
 
-`MaxMatrixModuleOrientationType` covers the four rotations; a module wired mirrored is
-not reachable with any of them. Decide between adding the mirror and adopting the
-three-bit wiring description from 4.
+`MaxMatrixModuleOrientationType` covers rotations only. The model in 4 shows four wirings
+that are mirror images of the rotations and that no orientation reaches: `PAROLA` and the
+unnamed `DR0CR0RR0`, `DR0CR1RR1`, `DR1CR0RR1`. Decide between a mirror setting next to the
+orientation and the three-bit wiring description from 4 in place of it.
 
-Measured against the model in 4: with the input on the right, orientation 0 fits
-`DR0CR0RR1`, 90 `ICSTATION` and 270 `FC16`. Orientation 180 is not the fourth rotation of a
-module in its place: it rotates the whole panel, module order included, so it fits a board
-mounted upside down (`GENERIC` with the input on the left) and nothing with the input on the
-right. Unreachable: `GENERIC` with the input on the right, which needs each module turned by
-180 degrees, and the mirror images `PAROLA`, `DR0CR0RR0`, `DR0CR1RR1`, `DR1CR0RR1`. The
-three-bit description would cover all eight and
-make "upside down" a separate setting rather than one of the orientations; changing what 180
-means breaks the boards that use it today.
-
-Needs a mirrored module to try it on; the PR says whether it ran on hardware.
+After 25, which gives the rotations their full set. Needs a mirrored module to try it on;
+the PR says whether it ran on hardware.
 
 ### 10 Adafruit GFX as an option
 
@@ -313,6 +306,26 @@ within the same call.
 
 *Done when* `UnknownChars` also compares the number of `shiftTask()` calls, and that check is
 red without the fix. If 23 lands first, check whether its timing still shows the pause.
+
+### 25 Matrix orientation apart from module orientation
+
+Two settings, as first planned (the commented-out `MaxMatrixMatrixOrientationType` in
+`MaxMatrix.h`):
+
+- the module orientation 0, 90, 180, 270 turns every module in its place;
+- the matrix orientation 0, 180 turns the whole panel, module order included, for a board
+  mounted upside down.
+
+Today the module orientation 180 does what the matrix orientation 180 should, as the model
+in 4 showed: 90 and 270 turn each module, 180 the panel. So there is no way to turn a
+module by 180 degrees in its place, and `GENERIC` modules with the input on the right
+cannot be shown upright. With the split, the four rotations each fit one module
+(`DR0CR0RR1`, `ICSTATION`, `GENERIC`, `FC16`), and every one of them also mounted upside
+down. The module orientation 180 changes meaning; a sketch that uses it today switches to the
+matrix orientation 180.
+
+*Done when* `MaxMatrixModuleTest` covers all eight combinations of the two settings, each with
+its wiring and input side, and the README table lists them.
 
 ## Decisions
 
