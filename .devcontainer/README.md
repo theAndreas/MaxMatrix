@@ -15,6 +15,7 @@ Container**:
 | `arduino-cli` with the `arduino:avr` core | compiling the library and its examples with the real AVR toolchain |
 | `arduino-lint` | checking the library layout against the Arduino Library Manager rules |
 | `g++`, `gdb` (from the base image) | host-side tests against a mock of `Arduino.h` |
+| `cmake`, `ninja`, GoogleTest (apt) | building and running those tests: `cmake --workflow --preset default` |
 | `gh` | branches and pull requests from the container |
 
 Compile an example for an Arduino Uno:

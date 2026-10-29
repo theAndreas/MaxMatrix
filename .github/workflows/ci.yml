@@ -33,8 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # From apt, as in the Dockerfile, rather than whatever cmake the runner image carries, so
+      # that CI and the container build with the same versions.
+      - name: Install CMake, Ninja and GoogleTest
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev
+
       - name: Build and run
-        run: make -C test
+        run: cmake --workflow --preset default
 
   examples:
     name: Examples on arduino:avr:uno

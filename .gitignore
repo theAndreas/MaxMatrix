@@ -1,4 +1,4 @@
-# Arduino build output
+# Arduino and CMake build output
 build/
 
 # Dev container feature lock files (auto-generated)

@@ -3,10 +3,18 @@
 #
 # The tag has no hyphen. devcontainers/cpp publishes ubuntu-24.04 and ubuntu24.04 both,
 # but from 26.04 only the unhyphenated form exists, so the older spelling looks like the
-# newest release when it is not. The base image carries build-essential and gdb, which is
-# what the host-side tests against an Arduino mock build with.
+# newest release when it is not. The base image carries build-essential and gdb, which the
+# host-side tests against an Arduino mock build with, together with CMake and GoogleTest below.
 ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/cpp:ubuntu26.04
 FROM ${BASE_IMAGE}
+
+# CMake, Ninja and GoogleTest build and run the host-side tests. From apt rather than pinned
+# like the tools below: the distribution's versions are what CI installs as well, and none of
+# them has a bug that forces a newer release.
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        cmake ninja-build libgtest-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which
 # is the one check the host-side tests cannot replace: they build against a mock of
