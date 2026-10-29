@@ -81,3 +81,18 @@ Orientation 90 / 270 degrees:
 The German umlauts Ä, Ö, Ü, ä, ö and ü are supported in texts. `setText()` and `setTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
 `setChar()` and `setCharWithShift()` take a single `char`, so umlauts have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä.
 While shifting a text, chars which are not part of the font are skipped.
+
+## Development
+The host-side tests build the library against a mock of the Arduino core, once with bit banging and once with SPI:
+
+```sh
+make -C test
+```
+
+They need nothing but `g++`. Compiling the examples with the real AVR toolchain needs `arduino-cli` with the `arduino:avr` core:
+
+```sh
+arduino-cli compile --fqbn arduino:avr:uno --library . examples/ScrollText
+```
+
+Both run in CI on every pull request, together with `arduino-lint`.

@@ -1,0 +1,93 @@
+# What a pull request is checked with. Three jobs, because each answers a different question:
+#
+#   host-tests  does the library do what it should - against a mock of the Arduino core, once with
+#               bit banging and once with SPI, because the two transfer paths are separate code
+#   examples    does it compile with the real AVR toolchain, which the host tests cannot say: they
+#               build with the host's g++, where an int is 32 bit and nothing is in flash
+#   lint        does the library meet the rules of the Arduino Library Manager
+#
+# Not run through the dev container. Building that image on every run would give exact parity,
+# but these jobs are meant to answer in minutes. arduino-cli is pinned to the version the
+# Dockerfile installs, so a compile error here is one the container can reproduce.
+#
+# Every job carries a timeout-minutes, set well above what it takes: they are there for a job
+# that has stopped making progress, which otherwise runs into GitHub's own six-hour limit.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the first answer worthless, so it is cancelled rather
+# than left to occupy a runner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-tests:
+    name: Host tests
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and run
+        run: make -C test
+
+  examples:
+    name: Examples on arduino:avr:uno
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.5.1
+
+      - name: Install the AVR core
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+
+      # arduino-cli has no -Werror, and passing it through a build property would apply it to the
+      # core as well, whose new.cpp warns on every build. So the warnings are filtered to the ones
+      # in this repository, and any of those fails the job. Sizes go into the job summary, which
+      # is where a pull request body can take its flash and RAM figures from.
+      - name: Compile
+        run: |
+          status=0
+          echo '| Example | Flash | RAM |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          for example in examples/*/; do
+            name=$(basename "$example")
+            echo "::group::$name"
+            if ! arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all "$example" 2>&1 | tee build.log; then
+              status=1
+            fi
+            echo "::endgroup::"
+            if grep -E 'warning:' build.log | grep -F "$GITHUB_WORKSPACE/"; then
+              echo "::error::$name: warnings in this repository"
+              status=1
+            fi
+            flash=$(grep -oE 'Sketch uses [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
+            ram=$(grep -oE 'Global variables use [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
+            echo "| $name | $flash | $ram |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit $status
+
+  lint:
+    name: arduino-lint
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # "submit" because the library is not in the Library Manager yet; once it is, "update"
+      # adds the checks for a new release of a registered library.
+      - uses: arduino/arduino-lint-action@v3
+        with:
+          project-type: library
+          library-manager: submit

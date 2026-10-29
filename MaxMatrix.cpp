@@ -142,7 +142,7 @@ void MaxMatrix::shiftTask()
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setIntensity(byte Intensity)
 {
-    if(Intensity >= MAX7219_REG_INTENSITY_MIN_VALUE && Intensity <= MAX7219_REG_INTENSITY_MAX_VALUE) {
+    if(Intensity <= MAX7219_REG_INTENSITY_MAX_VALUE) {
         RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, Intensity);
         return E_OK;
     } else {
@@ -457,7 +457,7 @@ stdReturnType MaxMatrix::getDot(byte Column, byte Row, bool* Value)
 {
     byte ColumnValue;
     
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         /* Dot means Bit in a specific column */
         getColumn(Column, &ColumnValue);
         *Value = bitRead(ColumnValue, Row);
@@ -484,7 +484,7 @@ stdReturnType MaxMatrix::setDot(byte Column, byte Row, bool Value)
 {
     byte ColumnValue;
 
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         /* Dot means Bit in a specific column */
         getColumn(Column, &ColumnValue);
         bitWrite(ColumnValue, Row, Value);
@@ -700,7 +700,7 @@ void MaxMatrix::shiftDown(bool Rotate)
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::getSprite(spriteIndexType SpriteIndex, spriteType* Sprite)
 {
-    if(SpriteIndex >= 0 && SpriteIndex < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
+    if(SpriteIndex < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
         memcpy_P(*Sprite, SpriteTable + MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS * SpriteIndex, MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS);
         return E_OK;
     } else return E_NOT_OK;
@@ -754,16 +754,12 @@ void MaxMatrix::setSprite(int X, int Y, const spriteType Sprite)
  *                  
  *  \param[in]      sSpaceBetweenChars      number of spaces
  *  \return         E_OK
- *                  E_NOT_OK
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setSpaceBetweenChars(byte sSpaceBetweenChars)
 {
-    if(sSpaceBetweenChars >= 0) {
-        SpaceBetweenChars = sSpaceBetweenChars;
-        return E_OK;
-    } else {
-        return E_NOT_OK;
-    }
+    /* every byte value is a valid number of spaces */
+    SpaceBetweenChars = sSpaceBetweenChars;
+    return E_OK;
 } /* setSpaceBetweenChars */
 
 
@@ -1084,7 +1080,7 @@ byte MaxMatrix::decodeChar(const char* String, char* Char)
  *****************************************************************************************************************************************************/
 inline stdReturnType MaxMatrix::getColumnLL(byte Column, byte* Value)
 {
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
+    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
         *Value = MatrixBuffer[Column];
         return E_OK;
     } else return E_NOT_OK;
@@ -1105,7 +1101,7 @@ inline stdReturnType MaxMatrix::getColumnLL(byte Column, byte* Value)
  *****************************************************************************************************************************************************/
 inline stdReturnType MaxMatrix::getColumnLL(byte Module, byte Column, byte* Value)
 {
-    if(Module >= 0 && Module < MAXMATRIX_NUMBER_OF_MODULES && Column >= 0 && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
+    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
         *Value = MatrixBuffer[(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column];
         return E_OK;
     } else return E_NOT_OK;
@@ -1126,7 +1122,7 @@ inline stdReturnType MaxMatrix::getColumnLL(byte Module, byte Column, byte* Valu
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::getRowLL(byte Module, byte Row, byte* Value)
 {
-    if(Module >= 0 && Module < MAXMATRIX_NUMBER_OF_MODULES && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         for(byte Column = 0; Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++)
         {
             bitWrite( *Value, MAXMATRIX_COLUMN_NUMBER_OF_MODULE - Column - 1,
@@ -1170,7 +1166,7 @@ stdReturnType MaxMatrix::getRowLL(byte Row, rowType Value)
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setColumnLL(byte Column, byte Value)
 {
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
+    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
         int Module = Column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
         int ModuleColumn = Column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
         startTransmission();
@@ -1236,7 +1232,7 @@ stdReturnType MaxMatrix::setColumnLL(byte Module, byte Column, byte Value)
  *****************************************************************************************************************************************************/
 stdReturnType MaxMatrix::setColumnOnAllModulesLL(byte Column, byte Value)
 {
-    if(Column >= 0 && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
+    if(Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
         startTransmission();
         for(int i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++)
         {
