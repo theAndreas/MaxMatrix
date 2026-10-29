@@ -35,8 +35,8 @@ gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
 # One library and one test binary per variant, because the two transfer paths are separate code.
 function(add_maxmatrix_variant Variant)
-    add_library(MaxMatrix-${Variant} STATIC MaxMatrix.cpp)
-    target_include_directories(MaxMatrix-${Variant} PUBLIC ${PROJECT_SOURCE_DIR})
+    add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
+    target_include_directories(MaxMatrix-${Variant} PUBLIC ${PROJECT_SOURCE_DIR}/src)
     target_compile_definitions(MaxMatrix-${Variant} PUBLIC ${ARGN})
     target_link_libraries(MaxMatrix-${Variant} PUBLIC ArduinoMock)
 
@@ -66,6 +66,8 @@ function(add_maxmatrix_variant Variant)
     set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
 endfunction()
 
+# The library as the Arduino IDE builds it: everything under src/, each part in a folder of its own.
+file(GLOB_RECURSE LibrarySources CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB Examples ${PROJECT_SOURCE_DIR}/examples/*/*.ino)
 set_source_files_properties(${Examples} PROPERTIES LANGUAGE CXX COMPILE_OPTIONS "-include;Arduino.h")
 

@@ -22,7 +22,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | open | |
 | 12 | Later ideas | 8 | open | |
-| 13 | Split the library into modules | 3 | open | |
+| 13 | Split the library into modules | 3 | in progress | #13 |
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
 | 16 | Static analysis in CI | 1 | open | |
@@ -33,7 +33,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 21 | Control page for simulator and board | 6 | open | |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
-| 24 | No pause for a skipped char | 2 | in progress | #12 |
+| 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 
 ### 1 Build with CMake
@@ -108,7 +108,7 @@ screenshot may follow later.
 ### 8 Batched updates in the library
 
 Separate drawing from sending: today every `setDot` / `setColumn` sends a frame to the whole
-chain at once (see `setColumnLL`). A mode that only updates the buffer and a call that
+chain at once (see `MaxMatrixWired::setColumn`). A mode that only updates the buffer and a call that
 flushes it, as `control(UPDATE, OFF)` / `update()` in MD_MAX72XX, `display()` in
 LEDMatrixDriver and `write()` in Max72xxPanel do. A full refresh is eight frames however much
 was drawn, and animations stop flickering.
@@ -208,6 +208,16 @@ The `…LL` functions are private, so no sketch notices. The tests reach
 `setColumnOnAllModulesLL` through `#define private public` today; they would test
 `WiredMatrix` directly. `CLAUDE.md`'s "Two layers" and its `LL` naming rule change with it.
 
+As built, three things differ from the plan above:
+
+- **Names.** Every class starts with `MaxMatrix` (`MaxMatrixChain`, `MaxMatrixWired`,
+  `MaxMatrixPanel`, `MaxMatrixFont`, `MaxMatrixText`). A sketch shares one namespace with
+  every library it includes, and the mock already has a `Max7219Chain`.
+- **A panel class.** The viewer's coordinates are `MaxMatrixPanel`, not the facade itself,
+  because `Text` draws in them and would otherwise call back into the class that holds it.
+- **No reference.** `MaxMatrixText` is handed the panel by each function that draws: a
+  reference member cost 2 bytes of RAM and 86 bytes of flash in `ScrollText`.
+
 ### 14 Chain length at run time
 
 The number of modules is `MAXMATRIX_NUMBER_OF_MODULES` in the header, so a chain of another
@@ -275,7 +285,7 @@ with `digitalWriteFast` 1.3.1 from the Library Manager (ArminJo's, which is what
 - `digitalWriteFast` is only fast when the pin is a compile-time constant
   (`__builtin_constant_p`). The pins here are members set at run time, so every call falls
   back to `digitalWrite`: `Basics` is 4316 bytes with the switch on against 4318 off, and
-  with `-DTHROW_ERROR_IF_NOT_FAST` the build fails on all four calls in `MaxMatrix.cpp`
+  with `-DTHROW_ERROR_IF_NOT_FAST` the build fails on all four calls (now in `MaxMatrixChain.cpp`)
   ("Parameter for digitalWriteFast() function is not constant"). NicksonYap's variant of the
   header fails that way without being asked to.
 - The dependency is not declared: `library.properties` has no `depends=digitalWriteFast`,
