@@ -16,7 +16,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 4  | Module wiring variants in the model | 3 | done | #7 |
 | 5  | Simulator that runs the example sketches | 3 | done | #9 |
 | 6  | Web front end for the simulator | 5 | done | #10 |
-| 7  | Simulator in CI | 6 | in progress | |
+| 7  | Simulator in CI | 6 | in progress | #11 |
 | 8  | Batched updates in the library | 13 | open | |
 | 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
