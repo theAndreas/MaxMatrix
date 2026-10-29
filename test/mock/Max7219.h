@@ -58,7 +58,7 @@ class Max7219Chain {
     void reset(uint8_t NumberOfChips);
     void shift(uint8_t Value);
     void latch();
-    bool isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y, bool InputOnTheLeft = false) const;
+    bool isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y, bool UpsideDown = false) const;
 
   private:
     /* two bytes per chip, ShiftRegister[2 * Chip] its data byte and ShiftRegister[2 * Chip + 1] its address byte */

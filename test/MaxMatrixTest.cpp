@@ -5,6 +5,7 @@
  * side - whether a real MAX7219 accepts the frames is only known on hardware. */
 #include <gtest/gtest.h>
 #include <string>
+#include <tuple>
 #include <vector>
 #include "Arduino.h"
 
@@ -72,26 +73,38 @@ class MaxMatrixTest : public ::testing::Test {
     }
 };
 
-class MaxMatrixOrientationTest : public MaxMatrixTest,
-                                 public ::testing::WithParamInterface<MaxMatrixModuleOrientationType> {
+static const MaxMatrixMatrixOrientationType MatrixOrientations[] = {
+    MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MATRIX_ORIENTATION_180
+};
+
+static const MaxMatrixModuleOrientationType ModuleOrientations[] = {
+    MAXMATRIX_MODULE_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_90,
+    MAXMATRIX_MODULE_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_270
+};
+
+typedef std::tuple<MaxMatrixMatrixOrientationType, MaxMatrixModuleOrientationType> OrientationType;
+
+/* every test of this fixture runs in all eight combinations of matrix and module orientation */
+class MaxMatrixOrientationTest : public MaxMatrixTest, public ::testing::WithParamInterface<OrientationType> {
   protected:
     void SetUp() override
     {
         MaxMatrixTest::SetUp();
         Matrix.clear();
-        Matrix.setModuleOrientation(GetParam());
+        Matrix.setMatrixOrientation(std::get<0>(GetParam()));
+        Matrix.setModuleOrientation(std::get<1>(GetParam()));
     }
 };
 
-static std::string orientationName(const ::testing::TestParamInfo<MaxMatrixModuleOrientationType>& Info)
+static std::string orientationName(const ::testing::TestParamInfo<OrientationType>& Info)
 {
     static const char* const Names[] = { "0", "90", "180", "270" };
-    return Names[Info.param];
+    return std::string("matrix") + (std::get<0>(Info.param) == MAXMATRIX_MATRIX_ORIENTATION_180 ? "180" : "0") +
+           "_module" + Names[std::get<1>(Info.param)];
 }
 
 INSTANTIATE_TEST_SUITE_P(AllOrientations, MaxMatrixOrientationTest,
-    ::testing::Values(MAXMATRIX_MODULE_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_90,
-                      MAXMATRIX_MODULE_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_270),
+    ::testing::Combine(::testing::ValuesIn(MatrixOrientations), ::testing::ValuesIn(ModuleOrientations)),
     orientationName);
 
 /* the bit position used to run on across modules, so only module 0 got its row */
@@ -120,6 +133,109 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
     }
 }
 
+static bool pattern(int X, int Y)
+{
+    return (X * X + 3 * Y + X * Y) % 3 == 0;
+}
+
+/* a picture as rows of '#' and '.', so that a failure prints both pictures */
+template<typename DotType>
+static std::vector<std::string> picture(DotType Dot)
+{
+    std::vector<std::string> Rows;
+    for(int Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+        std::string Row;
+        for(int X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Row += Dot(X, Y) ? '#' : '.';
+        Rows.push_back(Row);
+    }
+    return Rows;
+}
+
+/* the picture as the library reports it, through getDot */
+static std::vector<std::string> shownPicture(MaxMatrix& Matrix)
+{
+    return picture([&Matrix](int X, int Y) { bool Value = false; Matrix.getDot(X, Y, &Value); return Value; });
+}
+
+static void drawPattern(MaxMatrix& Matrix)
+{
+    for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
+        for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) Matrix.setDot(X, Y, pattern(X, Y));
+    }
+}
+
+/* rows and columns are two views of one picture: in orientation 180 setColumn turned the whole panel while setRow
+ * turned each module */
+TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
+{
+    rowType Row;
+    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Row[Module] = 0x81 ^ (Module * 0x16);
+
+    ASSERT_EQ(Matrix.setRow(2, Row), E_OK);
+    EXPECT_EQ(shownPicture(Matrix), picture([&Row](int X, int Y) {
+        return Y == 2 && bitRead(Row[X / MAXMATRIX_COLUMN_NUMBER_OF_MODULE], 7 - X % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    }));
+
+    Matrix.clear();
+    ASSERT_EQ(Matrix.setColumn(5, 0xA3), E_OK);
+    EXPECT_EQ(shownPicture(Matrix), picture([](int X, int Y) { return X == 5 && bitRead(0xA3, Y); }));
+    for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+        byte Value = 0;
+        EXPECT_EQ(Matrix.getRow(0, Y, &Value), E_OK);
+        EXPECT_EQ(Value, bitRead(0xA3, Y) ? 1 << (7 - 5) : 0) << "Row " << int(Y);
+    }
+}
+
+/* every shift moves the whole picture by one dot as the viewer sees it, across the modules */
+TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
+{
+    const struct {
+        const char* Name;
+        void (*Shift)(MaxMatrix&);
+        int SourceX, SourceY;
+        bool Rotate;
+    } Cases[] = {
+        { "shiftLeft", [](MaxMatrix& M) { M.shiftLeft(false, true); }, 1, 0, false },
+        { "shiftLeft rotating", [](MaxMatrix& M) { M.shiftLeft(true, false); }, 1, 0, true },
+        { "shiftRight", [](MaxMatrix& M) { M.shiftRight(false, true); }, -1, 0, false },
+        { "shiftRight rotating", [](MaxMatrix& M) { M.shiftRight(true, false); }, -1, 0, true },
+        { "shiftUp", [](MaxMatrix& M) { M.shiftUp(false); }, 0, 1, false },
+        { "shiftUp rotating", [](MaxMatrix& M) { M.shiftUp(true); }, 0, 1, true },
+        { "shiftDown", [](MaxMatrix& M) { M.shiftDown(false); }, 0, -1, false },
+        { "shiftDown rotating", [](MaxMatrix& M) { M.shiftDown(true); }, 0, -1, true },
+    };
+    const int Width = MAXMATRIX_NUMBER_OF_COLUMNS, Height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
+
+    for(const auto& Case : Cases) {
+        Matrix.clear();
+        drawPattern(Matrix);
+        Case.Shift(Matrix);
+        EXPECT_EQ(shownPicture(Matrix), picture([&Case, Width, Height](int X, int Y) {
+            int SourceX = X + Case.SourceX, SourceY = Y + Case.SourceY;
+            if(Case.Rotate) return pattern((SourceX + Width) % Width, (SourceY + Height) % Height);
+            return SourceX >= 0 && SourceX < Width && SourceY >= 0 && SourceY < Height && pattern(SourceX, SourceY);
+        })) << Case.Name;
+    }
+}
+
+/* changing an orientation turns the buffer along, so the viewer still sees the same picture; changing the module
+ * orientation to or from 180 turned each module while setColumn had turned the whole panel */
+TEST_P(MaxMatrixOrientationTest, PictureStaysWhenTheOrientationChanges)
+{
+    for(MaxMatrixMatrixOrientationType MatrixOrientation : MatrixOrientations) {
+        for(MaxMatrixModuleOrientationType ModuleOrientation : ModuleOrientations) {
+            Matrix.setMatrixOrientation(std::get<0>(GetParam()));
+            Matrix.setModuleOrientation(std::get<1>(GetParam()));
+            Matrix.clear();
+            drawPattern(Matrix);
+            Matrix.setMatrixOrientation(MatrixOrientation);
+            Matrix.setModuleOrientation(ModuleOrientation);
+            EXPECT_EQ(shownPicture(Matrix), picture(pattern))
+                << "to matrix " << MatrixOrientation << ", module " << ModuleOrientation;
+        }
+    }
+}
+
 TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
 {
     for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
@@ -134,22 +250,26 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
     }
 }
 
-/* Which module each orientation is for, as the README tells a user. 0, 90 and 270 rotate every module in its place;
- * 180 rotates the whole panel, so it fits a board mounted upside down, whose chain then starts on the left. GENERIC
- * with the chain starting on the right would need each module turned by 180 degrees, and PAROLA and the other three
- * wirings a mirror image; no orientation gives either (OIL item 9). */
+/* Which orientations each module needs, as the README tells a user: the module orientation follows from the
+ * wiring, the matrix orientation from whether the board is mounted upside down. PAROLA and the other three wirings
+ * are mirror images, which no orientation gives (OIL item 9). */
 struct ModuleType {
     const char* Name;
     const Max7219WiringType* Wiring;
-    bool InputOnTheLeft;
-    MaxMatrixModuleOrientationType Orientation;
+    bool UpsideDown;
+    MaxMatrixMatrixOrientationType MatrixOrientation;
+    MaxMatrixModuleOrientationType ModuleOrientation;
 };
 
 static const ModuleType Modules[] = {
-    { "DR0CR0RR1", &Max7219Wirings[1], false, MAXMATRIX_MODULE_ORIENTATION_0 },
-    { "ICSTATION", &MAX7219_WIRING_ICSTATION, false, MAXMATRIX_MODULE_ORIENTATION_90 },
-    { "GENERIC_upside_down", &MAX7219_WIRING_GENERIC, true, MAXMATRIX_MODULE_ORIENTATION_180 },
-    { "FC16", &MAX7219_WIRING_FC16, false, MAXMATRIX_MODULE_ORIENTATION_270 },
+    { "DR0CR0RR1", &Max7219Wirings[1], false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_0 },
+    { "ICSTATION", &MAX7219_WIRING_ICSTATION, false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_90 },
+    { "GENERIC", &MAX7219_WIRING_GENERIC, false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_180 },
+    { "FC16", &MAX7219_WIRING_FC16, false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_270 },
+    { "DR0CR0RR1_upside_down", &Max7219Wirings[1], true, MAXMATRIX_MATRIX_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_0 },
+    { "ICSTATION_upside_down", &MAX7219_WIRING_ICSTATION, true, MAXMATRIX_MATRIX_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_90 },
+    { "GENERIC_upside_down", &MAX7219_WIRING_GENERIC, true, MAXMATRIX_MATRIX_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_180 },
+    { "FC16_upside_down", &MAX7219_WIRING_FC16, true, MAXMATRIX_MATRIX_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_270 },
 };
 
 class MaxMatrixModuleTest : public MaxMatrixTest, public ::testing::WithParamInterface<ModuleType> {};
@@ -167,13 +287,14 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
     const ModuleType& Module = GetParam();
     auto Pattern = [](unsigned X, unsigned Y) { return (X * X + 3 * Y + X * Y) % 3 == 0; };
 
-    Matrix.setModuleOrientation(Module.Orientation);
+    Matrix.setMatrixOrientation(Module.MatrixOrientation);
+    Matrix.setModuleOrientation(Module.ModuleOrientation);
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) Matrix.setDot(X, Y, Pattern(X, Y));
     }
     for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-            EXPECT_EQ(Mock::Chain.isLit(*Module.Wiring, X, Y, Module.InputOnTheLeft), Pattern(X, Y)) << "X " << X << ", Y " << Y;
+            EXPECT_EQ(Mock::Chain.isLit(*Module.Wiring, X, Y, Module.UpsideDown), Pattern(X, Y)) << "X " << X << ", Y " << Y;
         }
     }
 }
@@ -223,24 +344,12 @@ TEST_F(MaxMatrixTest, ColumnOnAllModules)
     }
 }
 
-/* iterated over every column of the matrix while only the columns of one module are valid */
-TEST_F(MaxMatrixTest, RowOnAllModules)
-{
-    EXPECT_EQ(Matrix.setRowOnAllModulesLL(2, 0xC1), E_OK);
-    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        SCOPED_TRACE(::testing::Message() << "Module " << int(Module));
-        byte Row = 0;
-        EXPECT_EQ(Matrix.getRowLL(Module, 2, &Row), E_OK);
-        EXPECT_EQ(Row, 0xC1);
-    }
-}
-
 /* one address/value pair per module, and every module but the addressed one gets a no-op */
 TEST_F(MaxMatrixTest, ColumnFrameAddressesOneModule)
 {
     const byte Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
 
-    EXPECT_EQ(Matrix.setColumnLL(Module, 3, 0x5A), E_OK);
+    EXPECT_EQ(Matrix.setColumnLL(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 0x5A), E_OK);
     ASSERT_EQ(Mock::LastFrame.size(), 2u * MAXMATRIX_NUMBER_OF_MODULES);
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) {
         SCOPED_TRACE(::testing::Message() << "Module " << int(i));

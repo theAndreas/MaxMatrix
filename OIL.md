@@ -34,7 +34,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
 | 24 | No pause for a skipped char | 2 | open | |
-| 25 | Matrix orientation apart from module orientation | 4 | open | |
+| 25 | Matrix orientation apart from module orientation | 4 | in progress | |
 
 ### 1 Build with CMake
 
