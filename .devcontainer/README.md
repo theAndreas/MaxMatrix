@@ -87,6 +87,10 @@ prompt. `gh auth setup-git` afterwards lets `git push` over HTTPS use the same t
 
 `gh` is pointed at `github.com` by the shared feature, because an internal base image may
 set `GH_HOST` to a company GitHub, where every call for this repository answers `HTTP 401`.
+The feature's `containerEnv` is not enough with the internal Ignite image: its
+`/etc/environment` carries the company host, and the VS Code server already starts with that
+value, before any shell. Such a variant also needs `"remoteEnv": {"GH_HOST": "github.com"}`
+in its `devcontainer.json`, which VS Code applies last.
 
 **The host key is in the image.** The `Dockerfile` writes GitHub's published ed25519 key
 into `/etc/ssh/ssh_known_hosts` for `github.com`, `ssh.github.com` and
