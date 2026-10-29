@@ -28,13 +28,27 @@
 /******************************************************************************************************************************************************
  *  LOCAL CONSTANT MACROS
  *****************************************************************************************************************************************************/
-/* MaxMatrix Configuration Parameter */
+/* MaxMatrix Configuration Parameter
+ * Each one can be given on the compiler command line instead, which is how the tests build both the bit banging and the
+ * SPI variant. The Arduino IDE does not pass a sketch's defines to a library, so for a sketch they are changed here. */
+#ifndef MAXMATRIX_NUMBER_OF_MODULES
 #define MAXMATRIX_NUMBER_OF_MODULES                                 4
+#endif
+#ifndef MAXMATRIX_USE_SPI
 #define MAXMATRIX_USE_SPI                                           STD_OFF
+#endif
+#ifndef MAXMATRIX_USE_DIGITAL_WRITE_FAST
 #define MAXMATRIX_USE_DIGITAL_WRITE_FAST                            STD_OFF
+#endif
+#ifndef MAXMATRIX_SPI_CLOCK_SPEED
 #define MAXMATRIX_SPI_CLOCK_SPEED                                   10000000   /* MAX7219 supports max. 10 MHz */
+#endif
+#ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE                    1
+#endif
+#ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 #define MAXMATRIX_INTENSITY_INIT_VALUE                              5
+#endif
 
 /* MaxMatrix Parameter */
 #define MAXMATRIX_COLUMN_NUMBER_OF_MODULE                           8
