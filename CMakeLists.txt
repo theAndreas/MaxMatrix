@@ -45,7 +45,22 @@ function(add_maxmatrix_variant Variant)
     target_link_libraries(MaxMatrixTest-${Variant} PRIVATE MaxMatrix-${Variant} GTest::gtest_main)
     # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
     gtest_discover_tests(MaxMatrixTest-${Variant} TEST_PREFIX "${Variant}/" NO_PRETTY_VALUES)
+
+    # One simulator per example, the sketch compiled unchanged: as the Arduino IDE does, as C++ with Arduino.h
+    # included first. gnu++11 like the library, so a sketch that would not build for the Uno fails here as well.
+    foreach(Sketch ${Examples})
+        get_filename_component(Example ${Sketch} NAME_WE)
+        add_executable(Simulator-${Example}-${Variant} simulator/Simulator.cpp ${Sketch})
+        target_link_libraries(Simulator-${Example}-${Variant} PRIVATE MaxMatrix-${Variant})
+    endforeach()
+
+    # Basics shows "Hi!" for its first two seconds; one second in, the panel of an FC-16 board has to read it.
+    add_test(NAME ${Variant}/simulator/Basics
+             COMMAND Simulator-Basics-${Variant} --for 1 --expect ${PROJECT_SOURCE_DIR}/simulator/Basics.txt)
 endfunction()
+
+file(GLOB Examples ${PROJECT_SOURCE_DIR}/examples/*/*.ino)
+set_source_files_properties(${Examples} PROPERTIES LANGUAGE CXX COMPILE_OPTIONS "-include;Arduino.h")
 
 add_maxmatrix_variant(bitbang)
 add_maxmatrix_variant(spi MAXMATRIX_USE_SPI=STD_ON)

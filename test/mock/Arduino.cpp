@@ -1,5 +1,7 @@
 #include "Arduino.h"
 #include "SPI.h"
+#include <chrono>
+#include <thread>
 
 namespace Mock {
     uint8_t PinMode[NumberOfPins];
@@ -11,7 +13,11 @@ namespace Mock {
     std::vector<byte> Frame;
     std::vector<byte> LastFrame;
     Max7219Chain Chain;
+    void (*Tick)() = NULL;
     bool SpiUsed;
+
+    /* the host clock from the first call on, as an Arduino counts from reset */
+    static std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
     {
@@ -49,6 +55,7 @@ void digitalWrite(uint8_t Pin, uint8_t Value)
             Mock::LastFrame = Mock::Frame;
             Mock::Frames++;
             Mock::Chain.latch();
+            if(Mock::Tick) Mock::Tick();
         }
     }
     Mock::PinLevel[Pin] = Value;
@@ -76,4 +83,24 @@ uint8_t SPIClass::transfer(uint8_t Value)
     if(!Mock::TransactionOpen) Mock::Errors++;
     Mock::transfer(Value);
     return 0;
+}
+
+unsigned long micros()
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Mock::Start).count();
+}
+
+unsigned long millis()
+{
+    return micros() / 1000;
+}
+
+/* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator */
+void delay(unsigned long Milliseconds)
+{
+    unsigned long Begin = millis();
+    while(millis() - Begin < Milliseconds) {
+        if(Mock::Tick) Mock::Tick();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }

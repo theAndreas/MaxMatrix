@@ -14,7 +14,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 2  | Tests on GoogleTest | 1 | done | #5 |
 | 3  | MAX7219 model, driven from the wire | 2 | done | #6 |
 | 4  | Module wiring variants in the model | 3 | done | #7 |
-| 5  | Simulator that runs the example sketches | 3 | open | |
+| 5  | Simulator that runs the example sketches | 3 | in progress | |
 | 6  | Web front end for the simulator | 5 | open | |
 | 7  | Simulator in CI | 6 | open | |
 | 8  | Batched updates in the library | 13 | open | |
@@ -34,7 +34,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | open | |
 | 24 | No pause for a skipped char | 2 | open | |
-| 25 | Matrix orientation apart from module orientation | 4 | in progress | #8 |
+| 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 
 ### 1 Build with CMake
 

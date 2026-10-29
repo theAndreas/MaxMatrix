@@ -9,6 +9,9 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
+- `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
+  and draws the panel in the terminal as a module of the chosen wiring would light it.
+  `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
@@ -114,7 +117,7 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 In the dev container, the same three things CI runs:
 
 ```bash
-make -C test
+cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
 ```
@@ -143,8 +146,14 @@ model has its own tests against the datasheet, run once under the `model/` prefi
 
 `Mock::Chain.isLit()` goes one step further, to the LEDs as the viewer sees them: given one of
 the eight module wirings MD_MAX72XX names (`DR0CR0RR0` to `DR1CR1RR1`, `FC16`, `GENERIC`, …)
-and the side the chain starts on. `MaxMatrixModuleTest` pins which orientation fits which
-module; the README's table says the same and changes with it.
+and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which orientations
+fit which module; the README's table says the same and changes with it.
+
+The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
+`delay()` really waits. `Mock::Tick`, called after every frame and every millisecond of
+`delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The test
+`simulator/Basics` runs the `Basics` example for a second and compares the panel with
+`simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above
