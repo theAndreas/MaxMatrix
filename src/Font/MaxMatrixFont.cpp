@@ -8,162 +8,29 @@
  *  ---------------------------------------------------------------------------------------------------------------------------------------------------
  *  FILE DESCRIPTION
  *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrix.h
- *      \brief      Main header file of MaxMatrix library
+/**     \file       MaxMatrixFont.cpp
+ *      \brief      The font of the MaxMatrix library
  *
- *      \details    Arduino library to drive 8x8 LED display Matrix modules with MAX7219
- *                  
+ *      \details    The sprite table, which char has which sprite, and the decoding of UTF-8 into latin-1 chars.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_H_
-#define _MAXMATRIX_H_
+#define _MAXMATRIX_FONT_SOURCE_
 
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
-#include "Arduino.h"
-#include "StandardTypes.h"
+#include "MaxMatrixFont.h"
 
 
 /******************************************************************************************************************************************************
  *  LOCAL CONSTANT MACROS
  *****************************************************************************************************************************************************/
-/* MaxMatrix Configuration Parameter
- * Each one can be given on the compiler command line instead, which is how the tests build both the bit banging and the
- * SPI variant. The Arduino IDE does not pass a sketch's defines to a library, so for a sketch they are changed here. */
-#ifndef MAXMATRIX_NUMBER_OF_MODULES
-#define MAXMATRIX_NUMBER_OF_MODULES                                 4
-#endif
-#ifndef MAXMATRIX_USE_SPI
-#define MAXMATRIX_USE_SPI                                           STD_OFF
-#endif
-#ifndef MAXMATRIX_USE_DIGITAL_WRITE_FAST
-#define MAXMATRIX_USE_DIGITAL_WRITE_FAST                            STD_OFF
-#endif
-#ifndef MAXMATRIX_SPI_CLOCK_SPEED
-#define MAXMATRIX_SPI_CLOCK_SPEED                                   10000000   /* MAX7219 supports max. 10 MHz */
-#endif
-#ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
-#define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE                    1
-#endif
-#ifndef MAXMATRIX_INTENSITY_INIT_VALUE
-#define MAXMATRIX_INTENSITY_INIT_VALUE                              5
-#endif
-
-/* MaxMatrix Parameter */
-#define MAXMATRIX_COLUMN_NUMBER_OF_MODULE                           8
-#define MAXMATRIX_ROW_NUMBER_OF_MODULE                              8
-#define MAXMATRIX_NUMBER_OF_COLUMNS                                 (MAXMATRIX_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
-#define MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS                    7
 #define MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS                       (sizeof(SpriteTable) / MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS)
-#define MAXMATRIX_ASCII_TABLE_OFFSET                                -32
-#define MAXMATRIX_ASCII_CHAR_MIN                                    32
-#define MAXMATRIX_ASCII_CHAR_MAX                                    126
-#define MAXMATRIX_ASCII_CHAR_MAX_WIDTH                              5
-#define MAXMATRIX_BUFFER_SIZE                                       MAXMATRIX_NUMBER_OF_COLUMNS
-
-/* Max7219 Register Address Table */
-#define MAX7219_REG_NO_OP_ADDRESS                                   0x00
-#define MAX7219_REG_DIGIT0_ADDRESS                                  0x01
-#define MAX7219_REG_DIGIT1_ADDRESS                                  0x02
-#define MAX7219_REG_DIGIT2_ADDRESS                                  0x03
-#define MAX7219_REG_DIGIT3_ADDRESS                                  0x04
-#define MAX7219_REG_DIGIT4_ADDRESS                                  0x05
-#define MAX7219_REG_DIGIT5_ADDRESS                                  0x06
-#define MAX7219_REG_DIGIT6_ADDRESS                                  0x07
-#define MAX7219_REG_DIGIT7_ADDRESS                                  0x08
-#define MAX7219_REG_DECODE_MODE_ADDRESS                             0x09
-#define MAX7219_REG_INTENSITY_ADDRESS                               0x0A
-#define MAX7219_REG_SCAN_LIMIT_ADDRESS                              0x0B
-#define MAX7219_REG_SHUTDOWN_ADDRESS                                0x0C
-#define MAX7219_REG_DISPLAY_TEST_ADDRESS                            0x0F
-
-/* Content of Max7219 Decode Mode Register */
-#define MAX7219_REG_DECODE_MODE_NO_DECODE                           0x00
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_0               0x01
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_3_TO_0          0x0F
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_7_TO_0          0xFF
-
-/* Content of Max7219 Intensity Register */
-#define MAX7219_REG_INTENSITY_MIN_VALUE                             0x00
-#define MAX7219_REG_INTENSITY_MAX_VALUE                             0x0F
-
-/* Content of Max7219 Scan Limit Register */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0                      0x00
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_1                 0x01
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_2                 0x02
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_3                 0x03
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_4                 0x04
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_5                 0x05
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_6                 0x06
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7                 0x07
-
-/* Content of Max7219 Shutdown Register */
-#define MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE                     0x00
-#define MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION                  0x01
-
-/* Content of Max7219 Display Test Register */
-#define MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION                   0x00
-#define MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE                  0x01
 
 
 /******************************************************************************************************************************************************
- *  LOCAL FUNCTION MACROS
+ *  LOCAL DATA
  *****************************************************************************************************************************************************/
-
-
-/******************************************************************************************************************************************************
- *  GLOBAL DATA TYPES AND STRUCTURES
- *****************************************************************************************************************************************************/
-/* Type which describes the internal state of the MaxMatrix */
-typedef enum {
-    MAXMATRIX_STATE_NONE,
-    MAXMATRIX_STATE_INIT,
-    MAXMATRIX_STATE_READY,
-    MAXMATRIX_STATE_STRING_SHIFT,
-    MAXMATRIX_STATE_CHAR_SHIFT
-} MaxMatrixStateType;
-
-/* Type which describes the internal state of the MaxMatrix shift task */
-typedef enum {
-    MAXMATRIX_SPRITE_SHIFT_STATE_READY,
-    MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING
-} MaxMatrixShiftStateType;
-
-/* Type which describes the orientation of the whole Matrix, 180 for a board mounted upside down */
-typedef enum {
-    MAXMATRIX_MATRIX_ORIENTATION_0,
-    MAXMATRIX_MATRIX_ORIENTATION_180
-} MaxMatrixMatrixOrientationType;
-
-/* Type which describes the orientation of every Module in its place */
-typedef enum {
-    MAXMATRIX_MODULE_ORIENTATION_0,
-    MAXMATRIX_MODULE_ORIENTATION_90,
-    MAXMATRIX_MODULE_ORIENTATION_180,
-    MAXMATRIX_MODULE_ORIENTATION_270
-} MaxMatrixModuleOrientationType;
-
-/* sprite types */
-typedef byte spriteIndexType;
-
-/* sprite array type */
-typedef byte spriteType[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
-
-/* row array type */
-typedef byte rowType[MAXMATRIX_NUMBER_OF_MODULES];
-
-/* types for sprite table columns */
-enum {
-    ASCII_TABLE_SPRITE_WIDTH,
-    ASCII_TABLE_SPRITE_HEIGHT,
-    ASCII_TABLE_SPRITE_COLUMN1,
-    ASCII_TABLE_SPRITE_COLUMN2,
-    ASCII_TABLE_SPRITE_COLUMN3,
-    ASCII_TABLE_SPRITE_COLUMN4,
-    ASCII_TABLE_SPRITE_COLUMN5
-};
-
 /* sprite table */
 const byte SpriteTable[] PROGMEM = {
   //width,  height, Column1,    Column2,    Column 3,   Column 4,   Column 5,
@@ -272,98 +139,83 @@ const byte SpriteTable[] PROGMEM = {
 
 
 /******************************************************************************************************************************************************
- *  CLASS  MaxMatrix
+ * P U B L I C   F U N C T I O N S
  *****************************************************************************************************************************************************/
-class MaxMatrix
+
+/******************************************************************************************************************************************************
+  getSprite()
+******************************************************************************************************************************************************/
+/*! \brief          get an sprite from the sprite table
+ *  \details        this function returns an sprite by an given sprite index
+ *                  
+ *  \param[in]      SpriteIndex     index of sprite from sprite table
+ *  \param[out]     Sprite          sprite from sprite table (width, height, value column 1 ... 5)
+ *  \return         -
+ *****************************************************************************************************************************************************/
+stdReturnType MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* Sprite)
 {
-  private:
-    byte DataInPin;
-    byte ChipSelectPin;
-    byte ClockPin;
-    MaxMatrixStateType State;
-    MaxMatrixModuleOrientationType ModuleOrientation;
-    MaxMatrixMatrixOrientationType MatrixOrientation;
-    byte MatrixBuffer[MAXMATRIX_BUFFER_SIZE];
-    spriteType SpriteBuffer;
-    byte SpriteShiftCounter;
-    byte SpaceBetweenChars;
-    char* String;
-
-    // functions
-    void reload();
-    void charShiftTask();
-    void stringShiftTask();
-    stdReturnType convertCharToSprite(char Char, spriteIndexType*);
-    byte decodeChar(const char*, char*);
-    byte reverseByte(byte);
-    void startTransmission();
-    void stopTransmission();
-    void convertDotToBuffer(byte, byte, byte*, byte*);
-    byte getLine(byte, byte, bool);
-    void setLine(byte, byte, bool, byte);
-    void getPicture(byte*);
-    void setPicture(const byte*);
+    if(SpriteIndex < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
+        memcpy_P(*Sprite, SpriteTable + MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS * SpriteIndex, MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS);
+        return E_OK;
+    } else return E_NOT_OK;
+} /* getSprite */
 
 
-    // Low Level set functions
-    stdReturnType setColumnLL(byte, byte);
-    stdReturnType setColumnOnAllModulesLL(byte, byte);
+/******************************************************************************************************************************************************
+  convertCharToSprite()
+******************************************************************************************************************************************************/
+/*! \brief          converts char to sprite
+ *  \details        this function converts the ASCII char to sprite index
+ *                  
+ *  \param[in]      Char            char to convert to sprite
+ *  \param[out]     SpriteIndex     appropriate sprite
+ *  \return         E_OK
+ *                  E_NOT_OK
+ *****************************************************************************************************************************************************/
+stdReturnType MaxMatrixFont::convertCharToSprite(char Char, spriteIndexType* SpriteIndex)
+{
+    stdReturnType ReturnValue = E_NOT_OK;
 
-  public:
-    MaxMatrix(byte, byte, byte);
-    ~MaxMatrix();
+    /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
+    if(0xC4 == (byte)Char) { *SpriteIndex = 95; ReturnValue = E_OK; }          // Ä
+    else if(0xD6 == (byte)Char) { *SpriteIndex = 96; ReturnValue = E_OK; }     // Ö
+    else if(0xDC == (byte)Char) { *SpriteIndex = 97; ReturnValue = E_OK; }     // Ü
+    else if(0xE4 == (byte)Char) { *SpriteIndex = 98; ReturnValue = E_OK; }     // ä
+    else if(0xF6 == (byte)Char) { *SpriteIndex = 99; ReturnValue = E_OK; }     // ö
+    else if(0xFC == (byte)Char) { *SpriteIndex = 100; ReturnValue = E_OK; }    // ü
+    /* for all others only add offset */
+    else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
+        { *SpriteIndex = Char + MAXMATRIX_ASCII_TABLE_OFFSET; ReturnValue = E_OK; }
 
-
-    // get methods
-    MaxMatrixStateType getState() { return State; }
-    byte getDataInPin() { return DataInPin; }
-    byte getChipSelectPin() { return ChipSelectPin; }
-    byte getClockPin() { return ClockPin; }
-    MaxMatrixModuleOrientationType getModuleOrientation() { return ModuleOrientation; }
-    MaxMatrixMatrixOrientationType getMatrixOrientation() { return MatrixOrientation; }
-    byte getSpaceBetweenChars() { return SpaceBetweenChars; }
-
-    stdReturnType getColumn(byte, byte*);
-    stdReturnType getColumn(byte, byte, byte*);
-    stdReturnType getRow(byte, rowType);
-    stdReturnType getRow(byte, byte, byte*);
-    stdReturnType getDot(byte, byte, bool*);
-    stdReturnType getSprite(spriteIndexType, spriteType*);
-
-
-    // set methods
-    void setDataInPin(byte sDataInPin) { DataInPin = sDataInPin; }
-    void setChipSelectPin(byte sChipSelectPin) { ChipSelectPin = sChipSelectPin; }
-    void setClockPin(byte sClockPin) { ClockPin = sClockPin; }
-    stdReturnType setIntensity(byte);
-    stdReturnType setColumn(byte, byte);
-    stdReturnType setColumn(byte, byte, byte);
-    stdReturnType setRow(byte, const rowType);
-    stdReturnType setRow(byte, byte, byte);
-    stdReturnType setDot(byte, byte, bool);
-    stdReturnType setChar(int, int, char);
-    stdReturnType setCharWithShift(char);
-    stdReturnType setText(const char*);
-    stdReturnType setTextWithShift(char*);
-    stdReturnType setSpaceBetweenChars(byte);
-    void setSprite(int, int, const spriteType);
-    void setModuleOrientation(MaxMatrixModuleOrientationType);
-    void setMatrixOrientation(MaxMatrixMatrixOrientationType);
+    return ReturnValue;
+} /* convertCharToSprite */
 
 
-    // methods
-    void init();
-    void shiftTask();
-    void clear();
-    void RegisterWrite(byte, byte);
+/******************************************************************************************************************************************************
+  decodeChar()
+******************************************************************************************************************************************************/
+/*! \brief          decodes the next char of a string
+ *  \details        this function decodes UTF-8 sequences of latin-1 chars (e.g. umlauts) to a single latin-1 char,
+ *                  all other bytes are returned unchanged
+ *
+ *  \param[in]      String          string where the next char should be decoded, must not point to the null character
+ *  \param[out]     Char            decoded char
+ *  \return         number of bytes of the decoded char
+ *****************************************************************************************************************************************************/
+byte MaxMatrixFont::decodeChar(const char* String, char* Char)
+{
+    byte LeadByte = String[0];
+    byte NextByte = String[1];
 
-    void shiftLeft(bool = false, bool = true);
-    void shiftRight(bool = false, bool = true);
-    void shiftUp(bool = false);
-    void shiftDown(bool = false);
-};
-
-#endif
+    /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
+    if((0xC2 == LeadByte || 0xC3 == LeadByte) && 0x80 == (NextByte & 0xC0)) {
+        *Char = ((LeadByte & 0x03) << 6) | (NextByte & 0x3F);
+        return 2;
+    } else {
+        *Char = LeadByte;
+        return 1;
+    }
+} /* decodeChar */
 
 /******************************************************************************************************************************************************
  *  E N D   O F   F I L E

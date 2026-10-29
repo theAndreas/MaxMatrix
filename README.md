@@ -27,7 +27,7 @@ or clone it into your `Arduino/libraries` folder.
 In bit banging mode any digital pins can be used. With hardware SPI, DIN and CLK must be connected to the SPI pins of the board (MOSI and SCK).
 
 ## Configuration
-The configuration is done in [MaxMatrix.h](MaxMatrix.h):
+The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 
 | Parameter                                  | Default   | Description                                           |
 |--------------------------------------------|-----------|-------------------------------------------------------|

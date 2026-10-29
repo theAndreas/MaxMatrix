@@ -4,9 +4,16 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 
 ## Layout
 
-- `MaxMatrix.h` / `MaxMatrix.cpp` — the library: configuration macros, the sprite table
-  (font) and the `MaxMatrix` class.
-- `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
+- `src/` — the library, in the Arduino library format 1.5, one part per folder:
+  - `MaxMatrix.h` / `MaxMatrix.cpp` — the `MaxMatrix` class, the facade a sketch includes:
+    the public API, the state of the library and `init()`; the rest it passes on.
+  - `MaxMatrixConfig.h` — the configuration macros and the size of the chain.
+  - `Max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
+  - `Matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
+    coordinates as the viewer sees them.
+  - `Font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `decodeChar()`.
+  - `Text/` — `MaxMatrixText`, text that stands or shifts in.
+  - `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
@@ -32,12 +39,20 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 `docu/LED_Matrix.png`. Every write to the hardware updates the buffer as well, so the
 buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
-### Two layers
+### The parts
 
-- **Public functions** (`setColumn`, `setRow`, `setDot`, `shiftLeft`, …) take coordinates as
+Dependencies point one way: `MaxMatrixText` → `MaxMatrixFont` and `MaxMatrixPanel`,
+`MaxMatrixPanel` → `MaxMatrixWired` → `MaxMatrixChain` → `Arduino.h` / `SPI.h`. Each part is a
+member of the one above it, by value and without virtual functions, so that the parts cost no
+RAM of their own; `MaxMatrixText` is handed the panel by every function that draws, rather
+than keeping a reference, which cost 86 bytes of flash in `ScrollText` (see its header).
+
+### Two coordinate systems
+
+- **`MaxMatrixPanel`** (`setColumn`, `setRow`, `setDot`, `shiftLeft`, …) takes coordinates as
   the viewer sees them.
-- **`…LL` functions** work on the buffer and the hardware as wired and know nothing about
-  orientation.
+- **`MaxMatrixWired`** works on the buffer and the hardware as wired and knows nothing about
+  orientation. Its functions have the same names; the object says which system is meant.
 
 Between them, `convertDotToBuffer()` is the only function that knows the two orientations: the
 matrix orientation (0, 180) turns the whole panel, the module orientation (0, 90, 180, 270) then
@@ -52,11 +67,13 @@ disagreed in all but orientation 0.
 
 ### Hardware access
 
-A transfer to the MAX7219 chain is framed by `startTransmission()` and `stopTransmission()`,
-which drive chip select and, in SPI mode, begin and end the SPI transaction. Every module in
-the chain gets one address/value pair per frame; a module that is not addressed gets
-`MAX7219_REG_NO_OP_ADDRESS`. Bit banging and SPI are selected with `#if` on
-`MAXMATRIX_USE_SPI`, and both branches have to keep working.
+Only `MaxMatrixChain` touches the pins. A transfer to the MAX7219 chain is framed by
+`startTransmission()` and `stopTransmission()`, which drive chip select and, in SPI mode, begin
+and end the SPI transaction. Every module in the chain gets one address/value pair per frame; a
+module that is not addressed gets `MAX7219_REG_NO_OP_ADDRESS`. `writeRegister()`,
+`writeRegisterAll()` and `writeRegisterEach()` are the three kinds of frame. Bit banging and SPI
+are selected with `#if` on `MAXMATRIX_USE_SPI` in `transfer()` and nowhere else, and both
+branches have to keep working.
 
 ## Code conventions
 
@@ -66,7 +83,10 @@ different taste.
 ### Naming
 
 - Functions `lowerCamelCase`; `get`/`set` for accessors, `convert…`/`decode…` for
-  conversions. Low level functions end in `LL`.
+  conversions.
+- Classes start with `MaxMatrix`. A sketch links every library it includes into one namespace,
+  and a class called `Font` or `Text` would collide with the next library that has one; the
+  mock in `test/mock/` already has a `Max7219Chain`.
 - Variables, parameters and members `PascalCase`.
 - A setter parameter that collides with its member is prefixed `s`
   (`setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)` assigning
@@ -167,8 +187,9 @@ tests before committing; a test that stays green then does not test the bug. The
 the test names the bug it guards against.
 
 The tests reach private members through `#define private public`, because some of what they
-check has no public path — `setColumnOnAllModulesLL` is only called from `clear()`, which
-zeroes the buffer afterwards and hides a wrong index. The define comes after the GoogleTest and
+check has no public path — `MaxMatrixWired::setColumnOnAllModules` is only called from
+`clear()`, which zeroes the buffer afterwards and hides a wrong index. The parts are private
+members of `MaxMatrix`, so a test reaches the buffer as `Matrix.Panel.Wired.MatrixBuffer`. The define comes after the GoogleTest and
 standard headers, which it would rewrite as well.
 
 ### Hardware

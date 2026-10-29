@@ -9,10 +9,10 @@
 #include <vector>
 #include "Arduino.h"
 
-/* The low level functions and the matrix buffer are private, and some of what is tested here has no
- * public path: setColumnOnAllModulesLL is only reached through clear(), which zeroes the buffer
- * afterwards and so hides a wrong index. Included after GoogleTest and the standard headers, which must
- * not see it - defined above them, it rewrites their classes too. */
+/* The parts of the library and the matrix buffer are private members of MaxMatrix, and some of what is
+ * tested here has no public path: MaxMatrixWired::setColumnOnAllModules is only reached through clear(),
+ * which zeroes the buffer afterwards and so hides a wrong index. Included after GoogleTest and the
+ * standard headers, which must not see it - defined above them, it rewrites their classes too. */
 #define private public
 #include "MaxMatrix.h"
 #undef private
@@ -59,7 +59,7 @@ class MaxMatrixTest : public ::testing::Test {
      * the MAX7219 cannot be read back, so a buffer that drifts from the display makes them lie */
     void TearDown() override
     {
-        EXPECT_EQ(display(), bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer))) << "display differs from MatrixBuffer";
+        EXPECT_EQ(display(), bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer))) << "display differs from MatrixBuffer";
     }
 
     /* the shiftTask() calls the last shiftWholeText() took, each one a step of the text on the panel */
@@ -132,7 +132,7 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
     Matrix.setTextWithShift(Text);
     for(int Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
         Matrix.shiftTask();
-        ASSERT_EQ(display(), bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer))) << "after step " << Step;
+        ASSERT_EQ(display(), bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer))) << "after step " << Step;
     }
 }
 
@@ -325,24 +325,24 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip)
 
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
 {
-    std::vector<byte> Before = bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer));
+    std::vector<byte> Before = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
 
     EXPECT_EQ(Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true), E_NOT_OK);
     EXPECT_EQ(Matrix.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true), E_NOT_OK);
     EXPECT_EQ(Matrix.setColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF), E_NOT_OK);
     EXPECT_EQ(Matrix.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF), E_NOT_OK);
     EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1), E_NOT_OK);
-    EXPECT_EQ(bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer)), Before);
+    EXPECT_EQ(bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer)), Before);
 }
 
 /* the buffer index was Column * Module, which clear() covers up by zeroing the buffer afterwards */
 TEST_F(MaxMatrixTest, ColumnOnAllModules)
 {
-    EXPECT_EQ(Matrix.setColumnOnAllModulesLL(3, 0x42), E_OK);
+    EXPECT_EQ(Matrix.Panel.Wired.setColumnOnAllModules(3, 0x42), E_OK);
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         for(byte Column = 0; Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++) {
             SCOPED_TRACE(::testing::Message() << "Module " << int(Module) << ", Column " << int(Column));
-            EXPECT_EQ(Matrix.MatrixBuffer[Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + Column], Column == 3 ? 0x42 : 0);
+            EXPECT_EQ(Matrix.Panel.Wired.MatrixBuffer[Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + Column], Column == 3 ? 0x42 : 0);
         }
     }
 }
@@ -352,7 +352,7 @@ TEST_F(MaxMatrixTest, ColumnFrameAddressesOneModule)
 {
     const byte Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
 
-    EXPECT_EQ(Matrix.setColumnLL(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 0x5A), E_OK);
+    EXPECT_EQ(Matrix.Panel.Wired.setColumn(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 0x5A), E_OK);
     ASSERT_EQ(Mock::LastFrame.size(), 2u * MAXMATRIX_NUMBER_OF_MODULES);
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) {
         SCOPED_TRACE(::testing::Message() << "Module " << int(i));
@@ -397,19 +397,19 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match)
 
     Matrix.clear();
     EXPECT_EQ(Matrix.setText("Äöü!"), E_OK);
-    Utf8 = bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer));
+    Utf8 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     Matrix.clear();
     EXPECT_EQ(Matrix.setText("\xC4\xF6\xFC!"), E_OK);
-    Latin1 = bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer));
+    Latin1 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     EXPECT_EQ(Utf8, Latin1);
 
     char ShiftUtf8[] = "Grüße Ä";
     char ShiftLatin1[] = "Gr\xFC\xDF" "e \xC4";
     shiftWholeText(ShiftUtf8);
     EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
-    Utf8 = bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer));
+    Utf8 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     shiftWholeText(ShiftLatin1);
-    Latin1 = bytes(Matrix.MatrixBuffer, sizeof(Matrix.MatrixBuffer));
+    Latin1 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     EXPECT_EQ(Utf8, Latin1);
 }
 
@@ -421,8 +421,8 @@ TEST_F(MaxMatrixTest, EveryUmlautHasItsOwnSprite)
 
     for(byte i = 0; i < 6; i++) {
         SCOPED_TRACE(Umlauts[i]);
-        EXPECT_EQ(Matrix.decodeChar(Umlauts[i], &Char), 2);
-        EXPECT_EQ(Matrix.convertCharToSprite(Char, &SpriteIndex), E_OK);
+        EXPECT_EQ(MaxMatrixFont::decodeChar(Umlauts[i], &Char), 2);
+        EXPECT_EQ(MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex), E_OK);
         EXPECT_EQ(SpriteIndex, 95 + i);
     }
 
@@ -437,9 +437,9 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)
 {
     char Char;
 
-    EXPECT_EQ(Matrix.decodeChar("A", &Char), 1);
+    EXPECT_EQ(MaxMatrixFont::decodeChar("A", &Char), 1);
     EXPECT_EQ(Char, 'A');
-    EXPECT_EQ(Matrix.decodeChar("\xC3", &Char), 1);
+    EXPECT_EQ(MaxMatrixFont::decodeChar("\xC3", &Char), 1);
 
     char Truncated[] = "a\xC3";
     shiftWholeText(Truncated);
