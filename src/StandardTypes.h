@@ -41,11 +41,11 @@
 
 /* read Bit Group */
 #define readBitGroup(Var, BitGroupMask, BitGroupPosition) \
-(Var = ((Var & ((uint8_t)BitGroupMask)) >> BitGroupPosition))
+(Var = ((Var & static_cast<uint8_t>(BitGroupMask)) >> BitGroupPosition))
 
 /* write Bit Group */
 #define writeBitGroup(Var, BitGroupMask, BitGroupPosition, Value) \
-(Var = ((Var & ~((uint8_t)BitGroupMask)) | ((Value << BitGroupPosition) & ((uint8_t)BitGroupMask))))
+(Var = ((Var & ~static_cast<uint8_t>(BitGroupMask)) | ((Value << BitGroupPosition) & static_cast<uint8_t>(BitGroupMask))))
 
 
 /******************************************************************************************************************************************************

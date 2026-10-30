@@ -175,14 +175,15 @@ stdReturnType MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* 
 stdReturnType MaxMatrixFont::convertCharToSprite(char Char, spriteIndexType* SpriteIndex)
 {
     stdReturnType ReturnValue = E_NOT_OK;
+    const byte Latin1 = static_cast<byte>(Char);
 
     /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
-    if(0xC4 == (byte)Char) { *SpriteIndex = 95; ReturnValue = E_OK; }          // Ä
-    else if(0xD6 == (byte)Char) { *SpriteIndex = 96; ReturnValue = E_OK; }     // Ö
-    else if(0xDC == (byte)Char) { *SpriteIndex = 97; ReturnValue = E_OK; }     // Ü
-    else if(0xE4 == (byte)Char) { *SpriteIndex = 98; ReturnValue = E_OK; }     // ä
-    else if(0xF6 == (byte)Char) { *SpriteIndex = 99; ReturnValue = E_OK; }     // ö
-    else if(0xFC == (byte)Char) { *SpriteIndex = 100; ReturnValue = E_OK; }    // ü
+    if(0xC4 == Latin1) { *SpriteIndex = 95; ReturnValue = E_OK; }          // Ä
+    else if(0xD6 == Latin1) { *SpriteIndex = 96; ReturnValue = E_OK; }     // Ö
+    else if(0xDC == Latin1) { *SpriteIndex = 97; ReturnValue = E_OK; }     // Ü
+    else if(0xE4 == Latin1) { *SpriteIndex = 98; ReturnValue = E_OK; }     // ä
+    else if(0xF6 == Latin1) { *SpriteIndex = 99; ReturnValue = E_OK; }     // ö
+    else if(0xFC == Latin1) { *SpriteIndex = 100; ReturnValue = E_OK; }    // ü
     /* for all others only add offset */
     else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
         { *SpriteIndex = Char + MAXMATRIX_ASCII_TABLE_OFFSET; ReturnValue = E_OK; }
