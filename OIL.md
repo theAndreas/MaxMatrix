@@ -22,7 +22,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | open | |
 | 12 | Later ideas | 8 | open | |
-| 13 | Split the library into modules | 3 | in progress | #13 |
+| 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
 | 16 | Static analysis in CI | 1 | open | |
