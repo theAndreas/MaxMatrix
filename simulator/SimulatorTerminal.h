@@ -35,6 +35,9 @@ class SimulatorTerminal
     static stdReturnType readFile(const char*, std::string*);
 
   public:
+    // get methods
+    static std::string getStatusLine(const SimulatorPanel&);
+
     // methods
     static void clear();
     static void draw(const SimulatorPanel&);
