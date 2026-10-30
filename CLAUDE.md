@@ -13,7 +13,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
     coordinates as the viewer sees them.
   - `Font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `decodeChar()`.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
-  - `StandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
+  - `MaxMatrixStandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,

@@ -26,7 +26,7 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
-#include "StandardTypes.h"
+#include "MaxMatrixStandardTypes.h"
 #include "MaxMatrixConfig.h"
 #include "Max7219/MaxMatrixChain.h"
 #include "Matrix/MaxMatrixPanel.h"
