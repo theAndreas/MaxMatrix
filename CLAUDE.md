@@ -55,6 +55,10 @@ column, even one that was empty already, because after power-up the registers ho
 `MaxMatrixBatch` turns `AutoUpdate` off for the life of a block and puts back what it found, so
 that a sketch cannot forget to turn it on again; the sketch-facing docs lead with it.
 
+The facade also keeps the pace of a shifting text: `shiftTask()` returns at once until
+`ShiftInterval` has passed since `LastShift`, so a sketch calls it on every `loop()` and times
+nothing itself.
+
 ### The parts
 
 Dependencies point one way: `MaxMatrixText` → `MaxMatrixFont` and `MaxMatrixPanel`,
@@ -195,7 +199,10 @@ and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which o
 fit which module; the README's table says the same and changes with it.
 
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
-`delay()` really waits. `Mock::Tick`, called after every frame and every millisecond of
+`delay()` really waits. A test that times something holds the clock with `Mock::setMillis()`
+instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library
+tests set the shift interval to 0 in `SetUp()`, so that every `shiftTask()` is a step, and test
+the timing on its own. `Mock::Tick`, called after every frame and every millisecond of
 `delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with
 `simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test

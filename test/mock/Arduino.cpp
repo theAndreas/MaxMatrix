@@ -18,9 +18,19 @@ namespace Mock {
 
     /* the host clock from the first call on, as an Arduino counts from reset */
     static std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+    /* or a clock that a test holds and sets, so that a step 50 ms on does not depend on how fast the host is */
+    static bool ClockHeld = false;
+    static unsigned long HeldMicros = 0;
+
+    void setMillis(unsigned long Milliseconds)
+    {
+        ClockHeld = true;
+        HeldMicros = Milliseconds * 1000;
+    }
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
     {
+        ClockHeld = false;
         memset(PinMode, INPUT, sizeof(PinMode));
         memset(PinLevel, LOW, sizeof(PinLevel));
         ChipSelectPin = sChipSelectPin;
@@ -87,6 +97,7 @@ uint8_t SPIClass::transfer(uint8_t Value)
 
 unsigned long micros()
 {
+    if(Mock::ClockHeld) return Mock::HeldMicros;
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Mock::Start).count();
 }
 
@@ -95,9 +106,17 @@ unsigned long millis()
     return micros() / 1000;
 }
 
-/* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator */
+/* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator; a held clock is
+ * moved on instead, which no waiting would */
 void delay(unsigned long Milliseconds)
 {
+    if(Mock::ClockHeld) {
+        for(unsigned long i = 0; i < Milliseconds; i++) {
+            Mock::HeldMicros += 1000;
+            if(Mock::Tick) Mock::Tick();
+        }
+        return;
+    }
     unsigned long Begin = millis();
     while(millis() - Begin < Milliseconds) {
         if(Mock::Tick) Mock::Tick();

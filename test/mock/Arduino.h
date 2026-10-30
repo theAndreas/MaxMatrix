@@ -55,6 +55,8 @@ namespace Mock {
     extern void (*Tick)();
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips);
+    /* holds millis() at Milliseconds until the next reset(); delay() then moves it on without waiting */
+    void setMillis(unsigned long Milliseconds);
     void transfer(uint8_t Value);
     bool usesSpi();
 }

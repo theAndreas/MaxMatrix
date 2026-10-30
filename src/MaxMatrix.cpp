@@ -44,6 +44,8 @@ MaxMatrix::MaxMatrix(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Pan
 {
     State = MAXMATRIX_STATE_NONE;
     AutoUpdate = true;
+    ShiftInterval = MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE;
+    LastShift = 0;
 } /* MaxMatrix */
 
 
@@ -84,13 +86,21 @@ void MaxMatrix::init()
   shiftTask()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts char or string over the matrix
- *  \details        this function has to be called periodically until state change from 
- *                  MAXMATRIX_STATE_CHAR_SHIFT or MAXMATRIX_STATE_STRING_SHIFT to MAXMATRIX_STATE_READY
+ *  \details        this function may be called on every loop() until the state changes from
+ *                  MAXMATRIX_STATE_CHAR_SHIFT or MAXMATRIX_STATE_STRING_SHIFT to MAXMATRIX_STATE_READY. It takes a step
+ *                  only when ShiftInterval has passed since the last one, and with an interval of 0 on every call.
+ *                  A call that comes late takes one step, not the ones it missed: catching up would make the text
+ *                  jump after loop() was held up, and the interval counts from this step on.
  *  \return         -
  *  \pre            setCharWithShift or setTextWithShift must be called first
  *****************************************************************************************************************************************************/
 void MaxMatrix::shiftTask()
 {
+    const uint32_t Now = millis();
+
+    if(Now - LastShift < ShiftInterval) return;
+    LastShift = Now;
+
     if(MAXMATRIX_STATE_STRING_SHIFT == State) {
         if(!Text.stringShiftTask(Panel)) State = MAXMATRIX_STATE_READY;
     }
@@ -153,7 +163,7 @@ stdReturnType MaxMatrix::setIntensity(byte Intensity)
 stdReturnType MaxMatrix::setCharWithShift(char Char)
 {
     if(E_OK == Text.setCharWithShift(Char)) {
-        State = MAXMATRIX_STATE_CHAR_SHIFT;
+        startShift(MAXMATRIX_STATE_CHAR_SHIFT);
         return E_OK;
     } else return E_NOT_OK;
 } /* setCharWithShift */
@@ -173,10 +183,31 @@ stdReturnType MaxMatrix::setCharWithShift(char Char)
 stdReturnType MaxMatrix::setTextWithShift(char* sString)
 {
     if(E_OK == Text.setTextWithShift(sString)) {
-        State = MAXMATRIX_STATE_STRING_SHIFT;
+        startShift(MAXMATRIX_STATE_STRING_SHIFT);
         return E_OK;
     } else return E_NOT_OK;
 } /* setTextWithShift */
+
+
+/******************************************************************************************************************************************************
+ * P R I V A T E   F U N C T I O N S
+ *****************************************************************************************************************************************************/
+
+/******************************************************************************************************************************************************
+  startShift()
+******************************************************************************************************************************************************/
+/*! \brief          starts shifting a char or a string
+ *  \details        this function sets the state and dates the last step one interval back, so that the first step
+ *                  comes on the next call of shiftTask() rather than an interval later
+ *
+ *  \param[in]      ShiftState      MAXMATRIX_STATE_CHAR_SHIFT or MAXMATRIX_STATE_STRING_SHIFT
+ *  \return         -
+ *****************************************************************************************************************************************************/
+void MaxMatrix::startShift(MaxMatrixStateType ShiftState)
+{
+    State = ShiftState;
+    LastShift = millis() - ShiftInterval;
+} /* startShift */
 
 
 /******************************************************************************************************************************************************

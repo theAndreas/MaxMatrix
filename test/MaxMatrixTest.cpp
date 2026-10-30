@@ -53,6 +53,8 @@ class MaxMatrixTest : public ::testing::Test {
     {
         Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
         Matrix.init();
+        /* the tests step a shifting text with every call; the timing of the steps has tests of its own */
+        Matrix.setShiftInterval(0);
     }
 
     /* whatever a test did, the LEDs have to show what the buffer says - the get functions read the buffer, because
@@ -484,6 +486,81 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff)
     EXPECT_FALSE(Matrix.getAutoUpdate());
     EXPECT_EQ(Mock::Frames, FramesBefore);
     Matrix.update();
+}
+
+TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue)
+{
+    MaxMatrix Fresh(DataInPin, ChipSelectPin, ClockPin);
+
+    EXPECT_EQ(Fresh.getShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
+}
+
+/* The tests below count the steps of a shifting char in SpriteShiftCounter, which charShiftTask() moves on by one per
+ * step, and hold the clock, so that a step 50 ms on does not depend on how fast the host is. */
+
+/* the first step comes at once, every further one an interval after the step before */
+TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int Start = Matrix.Text.SpriteShiftCounter;
+
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1) << "no first step at once";
+    Mock::setMillis(1049);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1) << "a step before the interval had passed";
+    Mock::setMillis(1050);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+}
+
+/* a call after loop() was held up takes one step, not the ones it missed, and the interval counts from there */
+TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int Start = Matrix.Text.SpriteShiftCounter;
+
+    Matrix.shiftTask();
+    Mock::setMillis(1180);
+    Matrix.shiftTask();
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+    Mock::setMillis(1229);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+    Mock::setMillis(1230);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 3);
+}
+
+TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(0);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int Start = Matrix.Text.SpriteShiftCounter;
+
+    for(int Call = 0; Call < 3; Call++) Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 3);
+}
+
+/* a new char or text starts at once, however recently the one before took a step */
+TEST_F(MaxMatrixTest, NewShiftStartsAtOnce)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    Matrix.shiftTask();
+
+    Mock::setMillis(1010);
+    ASSERT_EQ(Matrix.setCharWithShift('+'), E_OK);
+    const int Start = Matrix.Text.SpriteShiftCounter;
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1);
 }
 
 /* chip select was not an output in SPI mode, and the SPI transaction was never ended */
