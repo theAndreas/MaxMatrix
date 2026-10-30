@@ -42,8 +42,16 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 
 `MatrixBuffer` mirrors what is on the LEDs: **one byte per column, one bit per row**
 (bit 0 is row 0), columns of all modules in a row, module 0 first. See
-`docu/LED_Matrix.png`. Every write to the hardware updates the buffer as well, so the
-buffer is what `get…` functions read — the MAX7219 cannot be read back.
+`docu/LED_Matrix.png`. The buffer is what `get…` functions read — the MAX7219 cannot be read
+back.
+
+Drawing only changes the buffer. `MaxMatrixWired` keeps which columns of a module changed, one
+bit each in `ChangedColumns`, and `send()` sends each of them in one frame for all modules:
+eight frames at most for a whole picture. The facade decides when: with `AutoUpdate`, the
+default, every public function that draws calls `updateIfAuto()` before it returns, so that each
+call shows its result; with it off, only `update()` sends. A new public function that draws
+ends with `updateIfAuto()` as well, and nothing below the facade sends. `clear()` marks every
+column, even one that was empty already, because after power-up the registers hold anything.
 
 ### The parts
 
@@ -63,9 +71,8 @@ than keeping a reference, which cost 86 bytes of flash in `ScrollText` (see its 
 Between them, `convertDotToBuffer()` is the only function that knows the two orientations: the
 matrix orientation (0, 180) turns the whole panel, the module orientation (0, 90, 180, 270) then
 every module in its place. It maps one dot as the viewer sees it to a buffer column and bit.
-Lines go through `getLine()`/`setLine()`, which send each changed buffer column once; shifting
-and changing an orientation work on the whole picture in viewer coordinates
-(`getPicture()`/`setPicture()`) and send it with `reload()`.
+Lines go through `getLine()`/`setLine()`; shifting and changing an orientation work on the whole
+picture in viewer coordinates (`getPicture()`/`setPicture()`).
 
 A new feature that works on coordinates builds on these and never branches on an orientation
 itself. When every function handled the orientations on its own, rows, shifts and dots
@@ -75,9 +82,9 @@ disagreed in all but orientation 0.
 
 Only `MaxMatrixChain` touches the pins. A transfer to the MAX7219 chain is framed by
 `startTransmission()` and `stopTransmission()`, which drive chip select and, in SPI mode, begin
-and end the SPI transaction. Every module in the chain gets one address/value pair per frame; a
-module that is not addressed gets `MAX7219_REG_NO_OP_ADDRESS`. `writeRegister()`,
-`writeRegisterAll()` and `writeRegisterEach()` are the three kinds of frame. Bit banging and SPI
+and end the SPI transaction. Every module in the chain gets one address/value pair per frame.
+`writeRegisterAll()` (one value for every module) and `writeRegisterEach()` (one value per
+module) are the two kinds of frame. Bit banging and SPI
 are selected with `#if` on `MAXMATRIX_USE_SPI` in `transfer()` and nowhere else, and both
 branches have to keep working.
 
@@ -204,8 +211,9 @@ tests before committing; a test that stays green then does not test the bug. The
 the test names the bug it guards against.
 
 The tests reach private members through `#define private public`, because some of what they
-check has no public path — `MaxMatrixWired::setColumnOnAllModules` is only called from
-`clear()`, which zeroes the buffer afterwards and hides a wrong index. The parts are private
+check has no public path — which frame a change to one buffer column turns into, for instance,
+is checked by storing the bit with `MaxMatrixWired::storeBit()`, so that the test names the
+buffer column itself rather than reaching it through an orientation. The parts are private
 members of `MaxMatrix`, so a test reaches the buffer as `Matrix.Panel.Wired.MatrixBuffer`. The define comes after the GoogleTest and
 standard headers, which it would rewrite as well.
 

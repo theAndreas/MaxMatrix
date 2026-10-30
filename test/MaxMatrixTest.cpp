@@ -136,6 +136,36 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
     }
 }
 
+/* Whatever a call draws, it sends one frame per changed column of a module at most. Every dot and column used to be a
+ * frame of its own: setText("Hi!") in module orientation 270 sent 64, and each step of a shifting text nine. */
+TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
+{
+    const struct {
+        const char* Name;
+        void (*Draw)(MaxMatrix&);
+    } Calls[] = {
+        { "setText", [](MaxMatrix& M) { M.setText("Hi!"); } },
+        { "setChar off the top row", [](MaxMatrix& M) { M.setChar(9, 1, 'A'); } },
+        { "setRow", [](MaxMatrix& M) { rowType Row = { 0xFF, 0x0F, 0xF0, 0x3C }; M.setRow(5, Row); } },
+        { "setColumn", [](MaxMatrix& M) { M.setColumn(17, 0x5A); } },
+        { "shiftUp", [](MaxMatrix& M) { M.shiftUp(true); } },
+        { "clear", [](MaxMatrix& M) { M.clear(); } },
+    };
+    char Text[] = "Hi \xC4!";
+
+    for(const auto& Call : Calls) {
+        int FramesBefore = Mock::Frames;
+        Call.Draw(Matrix);
+        EXPECT_LE(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE) << Call.Name;
+    }
+    Matrix.setTextWithShift(Text);
+    for(int Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
+        int FramesBefore = Mock::Frames;
+        Matrix.shiftTask();
+        ASSERT_LE(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE) << "shift step " << Step;
+    }
+}
+
 static bool pattern(int X, int Y)
 {
     return (X * X + 3 * Y + X * Y) % 3 == 0;
@@ -326,6 +356,7 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip)
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
 {
     std::vector<byte> Before = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
+    int FramesBefore = Mock::Frames;
 
     EXPECT_EQ(Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true), E_NOT_OK);
     EXPECT_EQ(Matrix.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true), E_NOT_OK);
@@ -333,36 +364,79 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
     EXPECT_EQ(Matrix.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF), E_NOT_OK);
     EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1), E_NOT_OK);
     EXPECT_EQ(bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer)), Before);
+    EXPECT_EQ(Mock::Frames, FramesBefore);
 }
 
-/* the buffer index was Column * Module, which clear() covers up by zeroing the buffer afterwards */
-TEST_F(MaxMatrixTest, ColumnOnAllModules)
-{
-    EXPECT_EQ(Matrix.Panel.Wired.setColumnOnAllModules(3, 0x42), E_OK);
-    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        for(byte Column = 0; Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; Column++) {
-            SCOPED_TRACE(::testing::Message() << "Module " << int(Module) << ", Column " << int(Column));
-            EXPECT_EQ(Matrix.Panel.Wired.MatrixBuffer[Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + Column], Column == 3 ? 0x42 : 0);
-        }
-    }
-}
-
-/* one address/value pair per module, and every module but the addressed one gets a no-op */
-TEST_F(MaxMatrixTest, ColumnFrameAddressesOneModule)
+/* a changed column of a module goes out in one frame with the same column of every other module */
+TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule)
 {
     const byte Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
+    int FramesBefore = Mock::Frames;
 
-    EXPECT_EQ(Matrix.Panel.Wired.setColumn(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 0x5A), E_OK);
+    Matrix.Panel.Wired.storeBit(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 1, true);
+    Matrix.update();
+    EXPECT_EQ(Mock::Frames - FramesBefore, 1);
     ASSERT_EQ(Mock::LastFrame.size(), 2u * MAXMATRIX_NUMBER_OF_MODULES);
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) {
         SCOPED_TRACE(::testing::Message() << "Module " << int(i));
-        if(i == Module) {
-            EXPECT_EQ(Mock::LastFrame[2 * i], MAX7219_REG_DIGIT3_ADDRESS);
-            EXPECT_EQ(Mock::LastFrame[2 * i + 1], 0x5A);
-        } else {
-            EXPECT_EQ(Mock::LastFrame[2 * i], MAX7219_REG_NO_OP_ADDRESS);
-        }
+        EXPECT_EQ(Mock::LastFrame[2 * i], MAX7219_REG_DIGIT3_ADDRESS);
+        EXPECT_EQ(Mock::LastFrame[2 * i + 1], i == Module ? 0x02 : 0x00);
     }
+}
+
+/* clear() has to reach LEDs the buffer knows nothing of: after power-up the registers hold anything while the buffer
+ * is empty, so a clear that sent only what changed in the buffer would send nothing */
+TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft)
+{
+    Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
+    for(Max7219& Chip : Mock::Chain.Chips) {
+        for(byte Digit = 0; Digit < Max7219::NumberOfDigits; Digit++) Chip.Digit[Digit] = 0xA5;
+    }
+    Matrix.init();
+    EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
+}
+
+TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing)
+{
+    Matrix.setText("Hi!");
+    int FramesBefore = Mock::Frames;
+
+    Matrix.setText("Hi!");
+    Matrix.setDot(0, 0, Matrix.Panel.Wired.getColumn(0) & 1);
+    EXPECT_EQ(Mock::Frames, FramesBefore);
+}
+
+/* the same drawing in both modes: a frame for every call that changed something, or none until update(), which sends
+ * each changed column of a module once */
+TEST_F(MaxMatrixTest, DrawingInBothModes)
+{
+    std::vector<byte> Drawn;
+    int FramesBefore = Mock::Frames;
+
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    EXPECT_EQ(Mock::Frames - FramesBefore, MAXMATRIX_NUMBER_OF_COLUMNS);
+    Drawn = display();
+
+    Matrix.clear();
+    Matrix.setAutoUpdate(false);
+    FramesBefore = Mock::Frames;
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    EXPECT_EQ(Mock::Frames, FramesBefore);
+    EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0)) << "shown before update()";
+
+    Matrix.update();
+    EXPECT_EQ(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    EXPECT_EQ(display(), Drawn);
+}
+
+TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn)
+{
+    Matrix.setAutoUpdate(false);
+    Matrix.setText("Hi!");
+    EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
+
+    Matrix.setAutoUpdate(true);
+    EXPECT_NE(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
 }
 
 /* chip select was not an output in SPI mode, and the SPI transaction was never ended */

@@ -11,7 +11,8 @@
 /**     \file       MaxMatrixPanel.h
  *      \brief      The matrix as the viewer sees it
  *
- *      \details    Columns, rows and dots in the viewer's coordinates, on top of the matrix as it is wired.
+ *      \details    Columns, rows and dots in the viewer's coordinates, on top of the matrix as it is wired. Drawing only
+ *                  changes the buffer; MaxMatrix decides when it is sent.
  *
  *****************************************************************************************************************************************************/
 #ifndef _MAXMATRIX_PANEL_H_

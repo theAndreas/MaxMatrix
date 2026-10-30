@@ -251,9 +251,8 @@ stdReturnType MaxMatrixPanel::setDot(byte Column, byte Row, bool Value)
 
     if(Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
-        byte ColumnValue = Wired.getColumn(BufferColumn);
-        bitWrite(ColumnValue, BufferBit, Value);
-        return Wired.setColumn(BufferColumn, ColumnValue);
+        Wired.storeBit(BufferColumn, BufferBit, Value);
+        return E_OK;
     } else return E_NOT_OK;
 } /* setDot */
 
@@ -495,9 +494,7 @@ byte MaxMatrixPanel::getLine(byte Column, byte Row, bool Vertical)
 ******************************************************************************************************************************************************/
 /*! \brief          set eight dots in a line
  *  \details        this function sets eight dots as the viewer sees them, from Column, Row on downwards or to
- *                  the right, and sends every buffer column it changed once. Along a line within a module the
- *                  buffer column either stays the same or changes with every dot, so sending it whenever it
- *                  changes sends one frame where the line is a buffer column and eight where it is a buffer row.
+ *                  the right
  *
  *  \param[in]      Column      column of the first dot
  *  \param[in]      Row         row of the first dot
@@ -509,18 +506,10 @@ byte MaxMatrixPanel::getLine(byte Column, byte Row, bool Vertical)
 void MaxMatrixPanel::setLine(byte Column, byte Row, bool Vertical, byte Value)
 {
     byte BufferColumn, BufferBit;
-    byte SentColumn = MAXMATRIX_NUMBER_OF_COLUMNS;
 
     for(byte Dot = 0; Dot < 8; Dot++) {
         convertDotToBuffer(Vertical ? Column : Column + Dot, Vertical ? Row + Dot : Row, &BufferColumn, &BufferBit);
         Wired.storeBit(BufferColumn, BufferBit, bitRead(Value, Dot));
-    }
-    for(byte Dot = 0; Dot < 8; Dot++) {
-        convertDotToBuffer(Vertical ? Column : Column + Dot, Vertical ? Row + Dot : Row, &BufferColumn, &BufferBit);
-        if(BufferColumn != SentColumn) {
-            Wired.sendColumn(BufferColumn);
-            SentColumn = BufferColumn;
-        }
     }
 } /* setLine */
 
@@ -546,7 +535,7 @@ void MaxMatrixPanel::getPicture(byte* Picture)
   setPicture()
 ******************************************************************************************************************************************************/
 /*! \brief          set the whole picture
- *  \details        this function writes a picture as the viewer sees it into the buffer and sends the buffer
+ *  \details        this function writes a picture as the viewer sees it into the buffer
  *
  *  \param[in]      Picture     one byte per column of the matrix, the top row in bit 0
  *  \return         -
@@ -561,7 +550,6 @@ void MaxMatrixPanel::setPicture(const byte* Picture)
             Wired.storeBit(BufferColumn, BufferBit, bitRead(Picture[Column], Row));
         }
     }
-    Wired.reload();
 } /* setPicture */
 
 

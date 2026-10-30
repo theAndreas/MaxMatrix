@@ -11,7 +11,8 @@
 /**     \file       MaxMatrixWired.h
  *      \brief      The matrix as it is wired
  *
- *      \details    The matrix buffer and what sends it: columns as the MAX7219 drive them, without any orientation.
+ *      \details    The matrix buffer and what sends it: columns as the MAX7219 drive them, without any orientation. Writing
+ *                  only changes the buffer; send() brings the changes to the chain.
  *
  *****************************************************************************************************************************************************/
 #ifndef _MAXMATRIX_WIRED_H_
@@ -28,11 +29,15 @@
 /******************************************************************************************************************************************************
  *  CLASS  MaxMatrixWired
  *****************************************************************************************************************************************************/
+/* A frame carries one register of every module, so the same column of all modules goes out in one frame. The buffer
+ * therefore keeps which columns of a module have changed, as one bit each in ChangedColumns, and send() needs one frame
+ * per changed column: eight at most for a whole picture, however many calls drew it. */
 class MaxMatrixWired
 {
   private:
     MaxMatrixChain Chain;
     byte MatrixBuffer[MAXMATRIX_BUFFER_SIZE];
+    byte ChangedColumns;
 
   public:
     MaxMatrixWired(byte, byte, byte);
@@ -43,15 +48,11 @@ class MaxMatrixWired
     byte getColumn(byte Column) { return MatrixBuffer[Column]; }
 
     // set methods
-    /* the buffer alone, unchecked; sendColumn() or reload() sends it */
-    void storeBit(byte Column, byte Bit, bool Value) { bitWrite(MatrixBuffer[Column], Bit, Value); }
-    stdReturnType setColumn(byte, byte);
-    stdReturnType setColumnOnAllModules(byte, byte);
+    void storeBit(byte, byte, bool);
 
     // methods
-    void sendColumn(byte Column) { setColumn(Column, MatrixBuffer[Column]); }
     void clear();
-    void reload();
+    void send();
 };
 
 #endif
