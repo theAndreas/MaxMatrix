@@ -115,6 +115,15 @@ Feature metadata is baked into the image at build time, so editing
 Reopening the folder keeps the previous metadata, which looks like a newly added extension
 being ignored.
 
+The Linux configuration mounts `/tmp` as a temporary filesystem with mode
+`1777` using `runArgs`. Podman's generated feature build can leave that
+directory at `0755` despite a `chmod` in the Dockerfile or feature installer.
+Setting the permissions at runtime lets `vscode` write its helper scripts and
+`/tmp/user/1000` before VS Code attaches. The SSH and display sockets remain
+separate bind mounts below `/tmp`. Temporary files disappear when the
+container stops. Run **Dev Containers: Rebuild Container** to apply this
+configuration to an existing container.
+
 ## Site-specific variants
 
 An additional configuration directory next to `linux/` and `wsl2/` shows up as another
