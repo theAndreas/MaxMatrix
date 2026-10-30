@@ -117,6 +117,10 @@ Every function has a banner with its name, a Doxygen block (`\brief`, `\details`
 `\param[in]` / `\param[out]`, `\return`, `\pre` where it applies) and ends with
 `} /* functionName */`. Indentation is four spaces.
 
+An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
+header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
+include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`.
+
 ### Comments
 
 Comments say *why*, not what — the reasoning that is not recoverable from the code, such as

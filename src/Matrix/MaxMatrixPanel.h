@@ -21,7 +21,7 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
-#include "../MaxMatrixConfig.h"
+#include "MaxMatrixConfig.h"
 #include "MaxMatrixWired.h"
 
 

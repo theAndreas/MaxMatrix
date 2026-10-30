@@ -21,9 +21,9 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
-#include "../MaxMatrixConfig.h"
-#include "../Font/MaxMatrixFont.h"
-#include "../Matrix/MaxMatrixPanel.h"
+#include "MaxMatrixConfig.h"
+#include "Font/MaxMatrixFont.h"
+#include "Matrix/MaxMatrixPanel.h"
 
 
 /******************************************************************************************************************************************************
