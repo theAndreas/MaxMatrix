@@ -53,6 +53,8 @@ class MaxMatrixTest : public ::testing::Test {
     {
         Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
         Matrix.init();
+        /* the tests step a shifting text with every call; the timing of the steps has tests of its own */
+        Matrix.setShiftInterval(0);
     }
 
     /* whatever a test did, the LEDs have to show what the buffer says - the get functions read the buffer, because
@@ -63,13 +65,13 @@ class MaxMatrixTest : public ::testing::Test {
     }
 
     /* the shiftTask() calls the last shiftWholeText() took, each one a step of the text on the panel */
-    int ShiftCalls = 0;
+    uint16_t ShiftCalls = 0;
 
     /* returns the number of frames the shift sent to the chain */
-    int shiftWholeText(char* Text)
+    int32_t shiftWholeText(char* Text)
     {
         Matrix.clear();
-        int FramesBefore = Mock::Frames;
+        int32_t FramesBefore = Mock::Frames;
         Matrix.setTextWithShift(Text);
         for(ShiftCalls = 0; ShiftCalls < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; ShiftCalls++) Matrix.shiftTask();
         return Mock::Frames - FramesBefore;
@@ -117,7 +119,7 @@ TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) In[Module] = 0xA5 ^ (Module * 0x3C);
 
     for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
-        SCOPED_TRACE(::testing::Message() << "Row " << int(Row));
+        SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(Row));
         EXPECT_EQ(Matrix.setRow(Row, In), E_OK);
         EXPECT_EQ(Matrix.getRow(Row, Out), E_OK);
         EXPECT_EQ(bytes(Out, sizeof(Out)), bytes(In, sizeof(In)));
@@ -130,7 +132,7 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
     char Text[] = "Hi \xC4!";
 
     Matrix.setTextWithShift(Text);
-    for(int Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
+    for(uint16_t Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
         Matrix.shiftTask();
         ASSERT_EQ(display(), bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer))) << "after step " << Step;
     }
@@ -154,19 +156,19 @@ TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
     char Text[] = "Hi \xC4!";
 
     for(const auto& Call : Calls) {
-        int FramesBefore = Mock::Frames;
+        int32_t FramesBefore = Mock::Frames;
         Call.Draw(Matrix);
         EXPECT_LE(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE) << Call.Name;
     }
     Matrix.setTextWithShift(Text);
-    for(int Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
-        int FramesBefore = Mock::Frames;
+    for(uint16_t Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
+        int32_t FramesBefore = Mock::Frames;
         Matrix.shiftTask();
         ASSERT_LE(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE) << "shift step " << Step;
     }
 }
 
-static bool pattern(int X, int Y)
+static bool pattern(int16_t X, int16_t Y)
 {
     return (X * X + 3 * Y + X * Y) % 3 == 0;
 }
@@ -176,9 +178,9 @@ template<typename DotType>
 static std::vector<std::string> picture(DotType Dot)
 {
     std::vector<std::string> Rows;
-    for(int Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+    for(int16_t Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
         std::string Row;
-        for(int X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Row += Dot(X, Y) ? '#' : '.';
+        for(int16_t X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Row += Dot(X, Y) ? '#' : '.';
         Rows.push_back(Row);
     }
     return Rows;
@@ -187,7 +189,7 @@ static std::vector<std::string> picture(DotType Dot)
 /* the picture as the library reports it, through getDot */
 static std::vector<std::string> shownPicture(MaxMatrix& Matrix)
 {
-    return picture([&Matrix](int X, int Y) { bool Value = false; Matrix.getDot(X, Y, &Value); return Value; });
+    return picture([&Matrix](int16_t X, int16_t Y) { bool Value = false; Matrix.getDot(X, Y, &Value); return Value; });
 }
 
 static void drawPattern(MaxMatrix& Matrix)
@@ -205,17 +207,17 @@ TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Row[Module] = 0x81 ^ (Module * 0x16);
 
     ASSERT_EQ(Matrix.setRow(2, Row), E_OK);
-    EXPECT_EQ(shownPicture(Matrix), picture([&Row](int X, int Y) {
+    EXPECT_EQ(shownPicture(Matrix), picture([&Row](int16_t X, int16_t Y) {
         return Y == 2 && bitRead(Row[X / MAXMATRIX_COLUMN_NUMBER_OF_MODULE], 7 - X % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
     }));
 
     Matrix.clear();
     ASSERT_EQ(Matrix.setColumn(5, 0xA3), E_OK);
-    EXPECT_EQ(shownPicture(Matrix), picture([](int X, int Y) { return X == 5 && bitRead(0xA3, Y); }));
+    EXPECT_EQ(shownPicture(Matrix), picture([](int16_t X, int16_t Y) { return X == 5 && bitRead(0xA3, Y); }));
     for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
         byte Value = 0;
         EXPECT_EQ(Matrix.getRow(0, Y, &Value), E_OK);
-        EXPECT_EQ(Value, bitRead(0xA3, Y) ? 1 << (7 - 5) : 0) << "Row " << int(Y);
+        EXPECT_EQ(Value, bitRead(0xA3, Y) ? 1 << (7 - 5) : 0) << "Row " << static_cast<uint16_t>(Y);
     }
 }
 
@@ -225,7 +227,7 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
     const struct {
         const char* Name;
         void (*Shift)(MaxMatrix&);
-        int SourceX, SourceY;
+        int16_t SourceX, SourceY;
         bool Rotate;
     } Cases[] = {
         { "shiftLeft", [](MaxMatrix& M) { M.shiftLeft(false, true); }, 1, 0, false },
@@ -237,14 +239,14 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
         { "shiftDown", [](MaxMatrix& M) { M.shiftDown(false); }, 0, -1, false },
         { "shiftDown rotating", [](MaxMatrix& M) { M.shiftDown(true); }, 0, -1, true },
     };
-    const int Width = MAXMATRIX_NUMBER_OF_COLUMNS, Height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
+    const int16_t Width = MAXMATRIX_NUMBER_OF_COLUMNS, Height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
 
     for(const auto& Case : Cases) {
         Matrix.clear();
         drawPattern(Matrix);
         Case.Shift(Matrix);
-        EXPECT_EQ(shownPicture(Matrix), picture([&Case, Width, Height](int X, int Y) {
-            int SourceX = X + Case.SourceX, SourceY = Y + Case.SourceY;
+        EXPECT_EQ(shownPicture(Matrix), picture([&Case, Width, Height](int16_t X, int16_t Y) {
+            int16_t SourceX = X + Case.SourceX, SourceY = Y + Case.SourceY;
             if(Case.Rotate) return pattern((SourceX + Width) % Width, (SourceY + Height) % Height);
             return SourceX >= 0 && SourceX < Width && SourceY >= 0 && SourceY < Height && pattern(SourceX, SourceY);
         })) << Case.Name;
@@ -273,7 +275,7 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
 {
     for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
         for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
-            SCOPED_TRACE(::testing::Message() << "Column " << int(Column) << ", Row " << int(Row));
+            SCOPED_TRACE(::testing::Message() << "Column " << static_cast<uint16_t>(Column) << ", Row " << static_cast<uint16_t>(Row));
             bool Expected = (Column * 3 + Row) & 1;
             bool Value = !Expected;
             EXPECT_EQ(Matrix.setDot(Column, Row, Expected), E_OK);
@@ -318,15 +320,15 @@ INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest, ::testing::ValuesIn(Modul
 TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
 {
     const ModuleType& Module = GetParam();
-    auto Pattern = [](unsigned X, unsigned Y) { return (X * X + 3 * Y + X * Y) % 3 == 0; };
+    auto Pattern = [](uint16_t X, uint8_t Y) { return (X * X + 3 * Y + X * Y) % 3 == 0; };
 
     Matrix.setMatrixOrientation(Module.MatrixOrientation);
     Matrix.setModuleOrientation(Module.ModuleOrientation);
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) Matrix.setDot(X, Y, Pattern(X, Y));
     }
-    for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
-        for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+    for(uint16_t X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
+        for(uint8_t Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
             EXPECT_EQ(Mock::Chain.isLit(*Module.Wiring, X, Y, Module.UpsideDown), Pattern(X, Y)) << "X " << X << ", Y " << Y;
         }
     }
@@ -335,7 +337,7 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip)
 {
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        SCOPED_TRACE(::testing::Message() << "Module " << int(Module));
+        SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(Module));
         const Max7219& Chip = chipOfModule(Module);
         EXPECT_EQ(Chip.Shutdown, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
         EXPECT_EQ(Chip.DisplayTest, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
@@ -349,14 +351,14 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip)
 {
     EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE), E_OK);
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        EXPECT_EQ(chipOfModule(Module).Intensity, MAX7219_REG_INTENSITY_MAX_VALUE) << "Module " << int(Module);
+        EXPECT_EQ(chipOfModule(Module).Intensity, MAX7219_REG_INTENSITY_MAX_VALUE) << "Module " << static_cast<uint16_t>(Module);
     }
 }
 
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
 {
     std::vector<byte> Before = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     EXPECT_EQ(Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true), E_NOT_OK);
     EXPECT_EQ(Matrix.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true), E_NOT_OK);
@@ -371,14 +373,14 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
 TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule)
 {
     const byte Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     Matrix.Panel.Wired.storeBit(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 1, true);
     Matrix.update();
     EXPECT_EQ(Mock::Frames - FramesBefore, 1);
     ASSERT_EQ(Mock::LastFrame.size(), 2u * MAXMATRIX_NUMBER_OF_MODULES);
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) {
-        SCOPED_TRACE(::testing::Message() << "Module " << int(i));
+        SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
         EXPECT_EQ(Mock::LastFrame[2 * i], MAX7219_REG_DIGIT3_ADDRESS);
         EXPECT_EQ(Mock::LastFrame[2 * i + 1], i == Module ? 0x02 : 0x00);
     }
@@ -399,7 +401,7 @@ TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft)
 TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing)
 {
     Matrix.setText("Hi!");
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     Matrix.setText("Hi!");
     Matrix.setDot(0, 0, Matrix.Panel.Wired.getColumn(0) & 1);
@@ -411,7 +413,7 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing)
 TEST_F(MaxMatrixTest, DrawingInBothModes)
 {
     std::vector<byte> Drawn;
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
     EXPECT_EQ(Mock::Frames - FramesBefore, MAXMATRIX_NUMBER_OF_COLUMNS);
@@ -441,7 +443,7 @@ TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn)
 
 TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock)
 {
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     {
         MaxMatrixBatch Batch(Matrix);
@@ -457,7 +459,7 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock)
 /* the inner batch puts back the state it found, which the outer one had turned off */
 TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost)
 {
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     {
         MaxMatrixBatch Outer(Matrix);
@@ -475,7 +477,7 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost)
 TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff)
 {
     Matrix.setAutoUpdate(false);
-    int FramesBefore = Mock::Frames;
+    int32_t FramesBefore = Mock::Frames;
 
     {
         MaxMatrixBatch Batch(Matrix);
@@ -484,6 +486,81 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff)
     EXPECT_FALSE(Matrix.getAutoUpdate());
     EXPECT_EQ(Mock::Frames, FramesBefore);
     Matrix.update();
+}
+
+TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue)
+{
+    MaxMatrix Fresh(DataInPin, ChipSelectPin, ClockPin);
+
+    EXPECT_EQ(Fresh.getShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
+}
+
+/* The tests below count the steps of a shifting char in SpriteShiftCounter, which charShiftTask() moves on by one per
+ * step, and hold the clock, so that a step 50 ms on does not depend on how fast the host is. */
+
+/* the first step comes at once, every further one an interval after the step before */
+TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1) << "no first step at once";
+    Mock::setMillis(1049);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1) << "a step before the interval had passed";
+    Mock::setMillis(1050);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+}
+
+/* a call after loop() was held up takes one step, not the ones it missed, and the interval counts from there */
+TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+
+    Matrix.shiftTask();
+    Mock::setMillis(1180);
+    Matrix.shiftTask();
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+    Mock::setMillis(1229);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 2);
+    Mock::setMillis(1230);
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 3);
+}
+
+TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(0);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+
+    for(uint8_t Call = 0; Call < 3; Call++) Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 3);
+}
+
+/* a new char or text starts at once, however recently the one before took a step */
+TEST_F(MaxMatrixTest, NewShiftStartsAtOnce)
+{
+    Mock::setMillis(1000);
+    Matrix.setShiftInterval(50);
+    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    Matrix.shiftTask();
+
+    Mock::setMillis(1010);
+    ASSERT_EQ(Matrix.setCharWithShift('+'), E_OK);
+    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+    Matrix.shiftTask();
+    EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1);
 }
 
 /* chip select was not an output in SPI mode, and the SPI transaction was never ended */
@@ -576,8 +653,8 @@ TEST_F(MaxMatrixTest, UnknownChars)
     EXPECT_EQ(Matrix.setText("a\x01"), E_NOT_OK);
 
     char Known[] = "ab";
-    int Frames = shiftWholeText(Known);
-    int Calls = ShiftCalls;
+    int32_t Frames = shiftWholeText(Known);
+    uint16_t Calls = ShiftCalls;
 
     char InTheMiddle[] = "a\x01\x02" "b";
     EXPECT_EQ(shiftWholeText(InTheMiddle), Frames);

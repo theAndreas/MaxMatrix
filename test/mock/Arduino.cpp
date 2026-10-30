@@ -8,8 +8,8 @@ namespace Mock {
     uint8_t PinLevel[NumberOfPins];
     uint8_t ChipSelectPin;
     bool TransactionOpen;
-    int Errors;
-    int Frames;
+    int32_t Errors;
+    int32_t Frames;
     std::vector<byte> Frame;
     std::vector<byte> LastFrame;
     Max7219Chain Chain;
@@ -18,9 +18,19 @@ namespace Mock {
 
     /* the host clock from the first call on, as an Arduino counts from reset */
     static std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+    /* or a clock that a test holds and sets, so that a step 50 ms on does not depend on how fast the host is */
+    static bool ClockHeld = false;
+    static uint32_t HeldMillis = 0;
+
+    void setMillis(uint32_t Milliseconds)
+    {
+        ClockHeld = true;
+        HeldMillis = Milliseconds;
+    }
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
     {
+        ClockHeld = false;
         memset(PinMode, INPUT, sizeof(PinMode));
         memset(PinLevel, LOW, sizeof(PinLevel));
         ChipSelectPin = sChipSelectPin;
@@ -87,6 +97,7 @@ uint8_t SPIClass::transfer(uint8_t Value)
 
 unsigned long micros()
 {
+    if(Mock::ClockHeld) return static_cast<unsigned long>(Mock::HeldMillis) * 1000;
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Mock::Start).count();
 }
 
@@ -95,11 +106,19 @@ unsigned long millis()
     return micros() / 1000;
 }
 
-/* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator */
+/* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator; a held clock is
+ * moved on instead, which no waiting would */
 void delay(unsigned long Milliseconds)
 {
-    unsigned long Begin = millis();
-    while(millis() - Begin < Milliseconds) {
+    if(Mock::ClockHeld) {
+        for(uint32_t i = 0; i < Milliseconds; i++) {
+            Mock::HeldMillis++;
+            if(Mock::Tick) Mock::Tick();
+        }
+        return;
+    }
+    const uint32_t Begin = millis();
+    while(static_cast<uint32_t>(millis()) - Begin < Milliseconds) {
         if(Mock::Tick) Mock::Tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

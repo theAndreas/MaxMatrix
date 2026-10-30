@@ -75,8 +75,8 @@ std::string SimulatorPanel::getText(const char* Lit, const char* Dark, const cha
 {
     std::string Text;
 
-    for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-        for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Text += Mock::Chain.isLit(*Wiring, X, Y, UpsideDown) ? Lit : Dark;
+    for(uint8_t Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
+        for(uint8_t X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Text += Mock::Chain.isLit(*Wiring, X, Y, UpsideDown) ? Lit : Dark;
         Text += EndOfRow;
     }
     return Text;
@@ -92,7 +92,7 @@ std::string SimulatorPanel::getText(const char* Lit, const char* Dark, const cha
  *  \param[in]      Module          the module's place, counted from the left as the viewer sees the panel
  *  \return         the intensity register of its chip
  *****************************************************************************************************************************************************/
-unsigned SimulatorPanel::getIntensity(unsigned Module) const
+uint8_t SimulatorPanel::getIntensity(uint8_t Module) const
 {
     return Mock::Chain.chipAt(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, UpsideDown).Intensity;
 } /* getIntensity */
@@ -147,7 +147,7 @@ void SimulatorPanel::setUpsideDown(bool sUpsideDown)
  *  \param[in]      Now             millis()
  *  \return         true if it is time to draw
  *****************************************************************************************************************************************************/
-bool SimulatorPanel::isDrawDue(unsigned long Now) const
+bool SimulatorPanel::isDrawDue(uint32_t Now) const
 {
     const bool Changed = Mock::Frames != DrawnFrames || DrawRequested;
 
@@ -164,7 +164,7 @@ bool SimulatorPanel::isDrawDue(unsigned long Now) const
  *  \param[in]      Now             millis()
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorPanel::setDrawn(unsigned long Now)
+void SimulatorPanel::setDrawn(uint32_t Now)
 {
     DrawnFrames = Mock::Frames;
     LastDraw = Now;

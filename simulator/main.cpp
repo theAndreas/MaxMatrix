@@ -102,7 +102,7 @@ static void finish()
  *****************************************************************************************************************************************************/
 static void tick()
 {
-    const unsigned long Now = millis();
+    const uint32_t Now = millis();
 
     if(Options.isWeb()) Web.task(Panel);
     if(Options.getRunFor() != 0 && Now >= Options.getRunFor()) finish();

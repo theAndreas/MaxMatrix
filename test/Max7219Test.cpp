@@ -149,13 +149,16 @@ static Max7219Chain chainWithOneSegment(uint8_t NumberOfChips, uint8_t Chip, uin
     return Chain;
 }
 
-static std::vector<std::pair<unsigned, unsigned>> litLeds(const Max7219Chain& Chain, const Max7219WiringType& Wiring,
-                                                          bool UpsideDown = false)
+/* an LED as the viewer sees it, column X and row Y */
+typedef std::pair<uint16_t, uint16_t> LedType;
+
+static std::vector<LedType> litLeds(const Max7219Chain& Chain, const Max7219WiringType& Wiring,
+                                   bool UpsideDown = false)
 {
-    std::vector<std::pair<unsigned, unsigned>> Leds;
-    for(unsigned X = 0; X < Chain.Chips.size() * Max7219::NumberOfDigits; X++) {
-        for(unsigned Y = 0; Y < Max7219::NumberOfDigits; Y++) {
-            if(Chain.isLit(Wiring, X, Y, UpsideDown)) Leds.push_back(std::make_pair(X, Y));
+    std::vector<LedType> Leds;
+    for(uint16_t X = 0; X < Chain.Chips.size() * Max7219::NumberOfDigits; X++) {
+        for(uint8_t Y = 0; Y < Max7219::NumberOfDigits; Y++) {
+            if(Chain.isLit(Wiring, X, Y, UpsideDown)) Leds.push_back(LedType(X, Y));
         }
     }
     return Leds;
@@ -166,10 +169,10 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce)
 {
     for(const Max7219WiringType& Wiring : Max7219Wirings) {
         SCOPED_TRACE(Wiring.Name);
-        std::vector<std::pair<unsigned, unsigned>> Seen;
+        std::vector<LedType> Seen;
         for(uint8_t Digit = 0; Digit < Max7219::NumberOfDigits; Digit++) {
             for(uint8_t Segment = 0; Segment < 8; Segment++) {
-                std::vector<std::pair<unsigned, unsigned>> Leds = litLeds(chainWithOneSegment(1, 0, Digit, Segment), Wiring);
+                std::vector<LedType> Leds = litLeds(chainWithOneSegment(1, 0, Digit, Segment), Wiring);
                 ASSERT_EQ(Leds.size(), 1u);
                 Seen.push_back(Leds[0]);
             }
@@ -182,7 +185,6 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce)
 /* digit 0, segment bit 0 - where MD_MAX72XX's setPoint() puts it, with its column 0 on the right */
 TEST(Max7219Test, NamedWiringsMatchMdMax72xx)
 {
-    typedef std::pair<unsigned, unsigned> LedType;
     const std::pair<const Max7219WiringType*, LedType> Expected[] = {
         { &MAX7219_WIRING_FC16, LedType(7, 0) },
         { &MAX7219_WIRING_GENERIC, LedType(7, 7) },
@@ -202,14 +204,14 @@ TEST(Max7219Test, ChainRunsFromRightToLeft)
 {
     Max7219Chain Chain = chainWithOneSegment(2, 0, 0, 0);
 
-    std::vector<std::pair<unsigned, unsigned>> Leds = litLeds(Chain, MAX7219_WIRING_FC16);
+    std::vector<LedType> Leds = litLeds(Chain, MAX7219_WIRING_FC16);
     ASSERT_EQ(Leds.size(), 1u);
-    EXPECT_EQ(Leds[0], std::make_pair(15u, 0u));
+    EXPECT_EQ(Leds[0], LedType(15, 0));
 
     /* upside down, the chain starts on the left and the LED is in the opposite corner of its module */
     Leds = litLeds(Chain, MAX7219_WIRING_FC16, true);
     ASSERT_EQ(Leds.size(), 1u);
-    EXPECT_EQ(Leds[0], std::make_pair(0u, 7u));
+    EXPECT_EQ(Leds[0], LedType(0, 7));
 
     EXPECT_EQ(&Chain.chipAt(0), &Chain.Chips[1]);
     EXPECT_EQ(&Chain.chipAt(15), &Chain.Chips[0]);

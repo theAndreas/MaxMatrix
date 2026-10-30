@@ -53,7 +53,10 @@ typedef enum {
 /* Every function that draws changes the buffer, and with AutoUpdate, the default, sends what changed before it returns:
  * one frame per changed column of a module, eight at most, however much the call drew. A sketch that builds one picture
  * out of many calls turns AutoUpdate off and calls update() when the picture is complete, so that no half of it is
- * ever shown. The intensity and other registers are sent at once either way: they are not part of the picture. */
+ * ever shown. The intensity and other registers are sent at once either way: they are not part of the picture.
+ *
+ * A shifting text keeps its own pace: shiftTask() may be called on every loop() and takes a step only when ShiftInterval
+ * has passed since the last one, so that no sketch has to time it. */
 class MaxMatrix
 {
   private:
@@ -61,10 +64,13 @@ class MaxMatrix
     MaxMatrixText Text;
     MaxMatrixStateType State;
     bool AutoUpdate;
+    uint16_t ShiftInterval;
+    uint32_t LastShift;
 
     // functions
     void updateIfAuto() { if(AutoUpdate) update(); }
     stdReturnType updateIfAuto(stdReturnType Result) { updateIfAuto(); return Result; }
+    void startShift(MaxMatrixStateType);
 
   public:
     MaxMatrix(byte, byte, byte);
@@ -74,6 +80,7 @@ class MaxMatrix
     // get methods
     MaxMatrixStateType getState() { return State; }
     bool getAutoUpdate() { return AutoUpdate; }
+    uint16_t getShiftInterval() { return ShiftInterval; }
     byte getDataInPin() { return Panel.getWired().getChain().getDataInPin(); }
     byte getChipSelectPin() { return Panel.getWired().getChain().getChipSelectPin(); }
     byte getClockPin() { return Panel.getWired().getChain().getClockPin(); }
@@ -94,18 +101,19 @@ class MaxMatrix
     void setChipSelectPin(byte sChipSelectPin) { Panel.getWired().getChain().setChipSelectPin(sChipSelectPin); }
     void setClockPin(byte sClockPin) { Panel.getWired().getChain().setClockPin(sClockPin); }
     void setAutoUpdate(bool);
+    void setShiftInterval(uint16_t sShiftInterval) { ShiftInterval = sShiftInterval; }
     stdReturnType setIntensity(byte);
     stdReturnType setColumn(byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Column, Value)); }
     stdReturnType setColumn(byte Module, byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Module, Column, Value)); }
     stdReturnType setRow(byte Row, const rowType Value) { return updateIfAuto(Panel.setRow(Row, Value)); }
     stdReturnType setRow(byte Module, byte Row, byte Value) { return updateIfAuto(Panel.setRow(Module, Row, Value)); }
     stdReturnType setDot(byte Column, byte Row, bool Value) { return updateIfAuto(Panel.setDot(Column, Row, Value)); }
-    stdReturnType setChar(int X, int Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
+    stdReturnType setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
     stdReturnType setCharWithShift(char);
     stdReturnType setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
     stdReturnType setTextWithShift(char*);
     stdReturnType setSpaceBetweenChars(byte sSpaceBetweenChars) { return Text.setSpaceBetweenChars(sSpaceBetweenChars); }
-    void setSprite(int X, int Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
+    void setSprite(int16_t X, int16_t Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
     void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); updateIfAuto(); }
     void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); updateIfAuto(); }
 

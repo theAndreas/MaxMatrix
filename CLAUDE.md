@@ -55,6 +55,10 @@ column, even one that was empty already, because after power-up the registers ho
 `MaxMatrixBatch` turns `AutoUpdate` off for the life of a block and puts back what it found, so
 that a sketch cannot forget to turn it on again; the sketch-facing docs lead with it.
 
+The facade also keeps the pace of a shifting text: `shiftTask()` returns at once until
+`ShiftInterval` has passed since `LastShift`, so a sketch calls it on every `loop()` and times
+nothing itself.
+
 ### The parts
 
 Dependencies point one way: `MaxMatrixText` → `MaxMatrixFont` and `MaxMatrixPanel`,
@@ -111,6 +115,22 @@ top and one above each test.
   `ModuleOrientation`).
 - Types end in `Type` (`MaxMatrixStateType`); enum values and macros are upper case and
   prefixed with the module (`MAXMATRIX_STATE_READY`, `MAX7219_REG_INTENSITY_ADDRESS`).
+
+### Integer types
+
+Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `byte` for an
+unsigned 8-bit value, as the Arduino API names it, and `int8_t`, `int16_t`, `uint16_t`,
+`uint32_t` and so on for the rest — never `int`, `unsigned`, `short` or `long`. An `int` is 16
+bits on the Uno and 32 on the host, so the same code would behave differently in the tests
+than on the board. A coordinate that can lie off the panel to the left or above is signed
+(`int16_t`); a `uint8_t` or `byte` that goes into a `std::ostream` is cast to `uint16_t` first,
+or it prints as a char.
+
+The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
+into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as
+the Arduino core declares them (a value from `millis()` is kept in a `uint32_t`, which is what
+it is on the Uno); the result of `strtoul()` until its range is checked; POSIX file descriptors
+and `setsockopt()` options (`int`); and `size_t` for sizes of containers.
 
 ### Constants and configuration
 
@@ -195,7 +215,10 @@ and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which o
 fit which module; the README's table says the same and changes with it.
 
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
-`delay()` really waits. `Mock::Tick`, called after every frame and every millisecond of
+`delay()` really waits. A test that times something holds the clock with `Mock::setMillis()`
+instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library
+tests set the shift interval to 0 in `SetUp()`, so that every `shiftTask()` is a step, and test
+the timing on its own. `Mock::Tick`, called after every frame and every millisecond of
 `delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with
 `simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test

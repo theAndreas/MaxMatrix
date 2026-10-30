@@ -47,6 +47,9 @@
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 #define MAXMATRIX_INTENSITY_INIT_VALUE                              5
 #endif
+#ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
+#define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE                         50         /* ms per column, 0 for a step on every call */
+#endif
 
 /* MaxMatrix Parameter */
 #define MAXMATRIX_COLUMN_NUMBER_OF_MODULE                           8

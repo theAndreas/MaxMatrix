@@ -57,12 +57,12 @@ class MaxMatrixText
     byte getSpaceBetweenChars() { return SpaceBetweenChars; }
 
     // set methods
-    stdReturnType setChar(MaxMatrixPanel&, int, int, char);
+    stdReturnType setChar(MaxMatrixPanel&, int16_t, int16_t, char);
     stdReturnType setCharWithShift(char);
     stdReturnType setText(MaxMatrixPanel&, const char*);
     stdReturnType setTextWithShift(char*);
     stdReturnType setSpaceBetweenChars(byte);
-    void setSprite(MaxMatrixPanel&, int, int, const spriteType);
+    void setSprite(MaxMatrixPanel&, int16_t, int16_t, const spriteType);
 
     // methods
     bool charShiftTask(MaxMatrixPanel&);

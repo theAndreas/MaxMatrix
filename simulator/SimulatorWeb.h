@@ -47,7 +47,7 @@ class SimulatorWeb
     SimulatorWebHost Host;
     /* the frames since the page was last sent the panel, as hex pairs, one string per frame */
     std::vector<std::string> FrameLog;
-    int LoggedFrames;
+    int32_t LoggedFrames;
 
     void logFrame();
     void command(SimulatorPanel&, const std::string&);
@@ -59,7 +59,7 @@ class SimulatorWeb
     SimulatorWeb();
 
     // methods
-    stdReturnType begin(unsigned short, const char*);
+    stdReturnType begin(uint16_t, const char*);
     void task(SimulatorPanel&);
     void send(const SimulatorPanel&);
 };

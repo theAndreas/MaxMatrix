@@ -274,7 +274,7 @@ void MaxMatrixPanel::shiftLeft(bool Rotate, bool FillWithZero)
 
     getPicture(Picture);
     byte ColumnLeft = Picture[0];
-    for(int Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column++) Picture[Column] = Picture[Column + 1];
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column++) Picture[Column] = Picture[Column + 1];
     if(Rotate) Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = ColumnLeft;
     else if(FillWithZero) Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = 0;
     setPicture(Picture);
@@ -299,7 +299,7 @@ void MaxMatrixPanel::shiftRight(bool Rotate, bool FillWithZero)
 
     getPicture(Picture);
     byte ColumnRight = Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1];
-    for(int Column = MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column > 0; Column--) Picture[Column] = Picture[Column - 1];
+    for(byte Column = MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column > 0; Column--) Picture[Column] = Picture[Column - 1];
     if(Rotate) Picture[0] = ColumnRight;
     else if(FillWithZero) Picture[0] = 0;
     setPicture(Picture);
@@ -322,7 +322,7 @@ void MaxMatrixPanel::shiftUp(bool Rotate)
     byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
     getPicture(Picture);
-    for(int Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
         bool TopDot = bitRead(Picture[Column], 0);
         Picture[Column] >>= 1;
         if(Rotate) bitWrite(Picture[Column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, TopDot);
@@ -347,7 +347,7 @@ void MaxMatrixPanel::shiftDown(bool Rotate)
     byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
     getPicture(Picture);
-    for(int Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
         bool BottomDot = bitRead(Picture[Column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
         Picture[Column] <<= 1;
         if(Rotate) bitWrite(Picture[Column], 0, BottomDot);

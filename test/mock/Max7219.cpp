@@ -84,7 +84,7 @@ void Max7219Chain::latch()
 /* whether the LED at X, Y of the panel is lit, X from the left across all modules and Y from the top. The modules
  * are chained from right to left, as MD_MAX72XX has them, so Chips[0] at DIN is the rightmost. A board mounted
  * upside down shows every LED at the opposite place: its chain starts on the left, each module turned around. */
-bool Max7219Chain::isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y, bool UpsideDown) const
+bool Max7219Chain::isLit(const Max7219WiringType& Wiring, uint16_t X, uint8_t Y, bool UpsideDown) const
 {
     if(UpsideDown) {
         X = Chips.size() * Max7219::NumberOfDigits - 1 - X;
@@ -102,7 +102,7 @@ bool Max7219Chain::isLit(const Max7219WiringType& Wiring, unsigned X, unsigned Y
 }
 
 /* the chip that drives the LEDs in column X of the panel, by the same placement as isLit() */
-const Max7219& Max7219Chain::chipAt(unsigned X, bool UpsideDown) const
+const Max7219& Max7219Chain::chipAt(uint16_t X, bool UpsideDown) const
 {
     if(UpsideDown) X = Chips.size() * Max7219::NumberOfDigits - 1 - X;
     return Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];

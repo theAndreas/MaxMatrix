@@ -43,12 +43,12 @@ class SimulatorOptions
     std::string WiringName;
     bool UpsideDown;
     bool Web;
-    unsigned short Port;
-    unsigned long RunFor;
+    uint16_t Port;
+    uint32_t RunFor;
     const char* ExpectFile;
 
     stdReturnType parseOption(int, char**, int*);
-    static stdReturnType convertToPort(const char*, unsigned short*);
+    static stdReturnType convertToPort(const char*, uint16_t*);
 
   public:
     SimulatorOptions();
@@ -57,8 +57,8 @@ class SimulatorOptions
     const std::string& getWiringName() const { return WiringName; }
     bool isUpsideDown() const { return UpsideDown; }
     bool isWeb() const { return Web; }
-    unsigned short getPort() const { return Port; }
-    unsigned long getRunFor() const { return RunFor; }
+    uint16_t getPort() const { return Port; }
+    uint32_t getRunFor() const { return RunFor; }
     const char* getExpectFile() const { return ExpectFile; }
 
     // methods
