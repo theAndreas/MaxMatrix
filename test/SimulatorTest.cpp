@@ -70,3 +70,14 @@ TEST(SimulatorTest, StatusLineListsTheIntensitiesFromTheLeft)
     resetChainWithDistinctIntensities();
     EXPECT_EQ(SimulatorTerminal::getStatusLine(Panel), "FC16, 4 modules, intensity 3 2 1 0, 0 frames");
 }
+
+/* Bug: the terminal listed the intensities in the order of the chain, whatever the mounting, while the page lists
+ * them from the left as the viewer sees the panel; upside down, the terminal had them backwards. */
+TEST(SimulatorTest, StatusLineFollowsTheMounting)
+{
+    SimulatorPanel Panel;
+
+    resetChainWithDistinctIntensities();
+    Panel.setUpsideDown(true);
+    EXPECT_EQ(SimulatorTerminal::getStatusLine(Panel), "FC16, 4 modules, upside down, intensity 0 1 2 3, 0 frames");
+}

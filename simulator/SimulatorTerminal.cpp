@@ -65,7 +65,8 @@ void SimulatorTerminal::clear()
 ******************************************************************************************************************************************************/
 /*! \brief          the line above the panel
  *  \details        this function says which wiring and mounting the panel is drawn for, the intensity of every module
- *                  and how many frames the sketch has sent
+ *                  and how many frames the sketch has sent. The modules are counted from the left as on the page;
+ *                  counting the chips along the chain, as before, had them backwards on a board upside down.
  *
  *  \param[in]      Panel           the panel to describe
  *  \return         the line, without a line break
@@ -76,7 +77,7 @@ std::string SimulatorTerminal::getStatusLine(const SimulatorPanel& Panel)
 
     Line << Panel.getWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (Panel.isUpsideDown() ? ", upside down" : "")
          << ", intensity";
-    for(size_t Chip = Mock::Chain.Chips.size(); Chip > 0; Chip--) Line << ' ' << static_cast<unsigned>(Mock::Chain.Chips[Chip - 1].Intensity);
+    for(unsigned Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Line << ' ' << Panel.getIntensity(Module);
     Line << ", " << Mock::Frames << " frames" << (Mock::Errors ? ", TRANSFER ERRORS" : "");
     return Line.str();
 } /* getStatusLine */
