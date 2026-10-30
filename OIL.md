@@ -32,7 +32,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 20 | More examples | 5 | open | |
 | 21 | Control page for simulator and board | 6 | open | |
 | 22 | Fast pin access for bit banging | 3 | open | |
-| 23 | The library keeps the shift timing | 13 | open | |
+| 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 
