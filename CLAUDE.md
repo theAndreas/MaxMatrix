@@ -15,7 +15,11 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
   - `MaxMatrixStandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
-- `docu/` — how rows, columns and bits map onto a module in each orientation.
+- `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
+  bytes of `MatrixBuffer` lie on a module in each module orientation (`Wiring_*.svg`). None is
+  drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
+  `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
+  change that moves a dot.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
   `--web` on `localhost:8080`. One class per job, as in `src/`:
@@ -41,9 +45,9 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 ### The matrix buffer
 
 `MatrixBuffer` mirrors what is on the LEDs: **one byte per column, one bit per row**
-(bit 0 is row 0), columns of all modules in a row, module 0 first. See
-`docu/LED_Matrix.png`. The buffer is what `get…` functions read — the MAX7219 cannot be read
-back.
+(bit 0 is row 0), columns of all modules in a row, module 0 first — as wired, which in
+module orientation 0 is also how the viewer sees it; `docu/Wiring_*.svg` show the other three.
+The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
 Drawing only changes the buffer. `MaxMatrixWired` keeps which columns of a module changed, one
 bit each in `ChangedColumns`, and `send()` sends each of them in one frame for all modules:
