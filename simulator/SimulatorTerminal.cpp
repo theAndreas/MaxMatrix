@@ -61,21 +61,40 @@ void SimulatorTerminal::clear()
 
 
 /******************************************************************************************************************************************************
+  getStatusLine()
+******************************************************************************************************************************************************/
+/*! \brief          the line above the panel
+ *  \details        this function says which wiring and mounting the panel is drawn for, the intensity of every module
+ *                  and how many frames the sketch has sent
+ *
+ *  \param[in]      Panel           the panel to describe
+ *  \return         the line, without a line break
+ *****************************************************************************************************************************************************/
+std::string SimulatorTerminal::getStatusLine(const SimulatorPanel& Panel)
+{
+    std::ostringstream Line;
+
+    Line << Panel.getWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (Panel.isUpsideDown() ? ", upside down" : "")
+         << ", intensity";
+    for(size_t Chip = Mock::Chain.Chips.size(); Chip > 0; Chip--) Line << ' ' << static_cast<unsigned>(Mock::Chain.Chips[Chip - 1].Intensity);
+    Line << ", " << Mock::Frames << " frames" << (Mock::Errors ? ", TRANSFER ERRORS" : "");
+    return Line.str();
+} /* getStatusLine */
+
+
+/******************************************************************************************************************************************************
   draw()
 ******************************************************************************************************************************************************/
 /*! \brief          draws the panel in place
  *  \details        this function moves the cursor home rather than clearing the terminal, which would flicker, and
- *                  writes a line on the wiring, the intensities and the frames above the panel
+ *                  writes the status line above the panel
  *
  *  \param[in]      Panel           the panel to draw
  *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorTerminal::draw(const SimulatorPanel& Panel)
 {
-    printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s, %d modules%s, intensity", Panel.getWiringName().c_str(), MAXMATRIX_NUMBER_OF_MODULES,
-           Panel.isUpsideDown() ? ", upside down" : "");
-    for(size_t Chip = Mock::Chain.Chips.size(); Chip > 0; Chip--) printf(" %d", Mock::Chain.Chips[Chip - 1].Intensity);
-    printf(", %d frames%s" SIMULATOR_TERMINAL_CLEAR_LINE_END "\n\n", Mock::Frames, Mock::Errors ? ", TRANSFER ERRORS" : "");
+    printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s" SIMULATOR_TERMINAL_CLEAR_LINE_END "\n\n", getStatusLine(Panel).c_str());
     fputs(Panel.getText(SIMULATOR_TERMINAL_LIT, SIMULATOR_TERMINAL_DARK, "\n").c_str(), stdout);
     fflush(stdout);
 } /* draw */
