@@ -40,17 +40,20 @@
   CONSTRUCTOR OF DocuSvg
 ******************************************************************************************************************************************************/
 /*! \brief          DocuSvg constructor
- *  \details        Instantiation of an empty picture with a white background
+ *  \details        Instantiation of an empty picture with a white background. A picture that leaves out what other
+ *                  pictures have at the top shows its shapes from sTop on, so that both can share one layout.
  *
  *  \param[in]      sWidth          width in pixels
  *  \param[in]      sHeight         height in pixels
+ *  \param[in]      sTop            the coordinate shown at the top edge
  *  \return         -
  *****************************************************************************************************************************************************/
-DocuSvg::DocuSvg(uint16_t sWidth, uint16_t sHeight)
+DocuSvg::DocuSvg(uint16_t sWidth, uint16_t sHeight, int16_t sTop)
 {
     Width = sWidth;
     Height = sHeight;
-    addRect(0, 0, Width, Height, "#ffffff");
+    Top = sTop;
+    addRect(0, Top, Width, Height, "#ffffff");
 } /* DocuSvg */
 
 
@@ -67,7 +70,7 @@ std::string DocuSvg::getDocument() const
     std::ostringstream Document;
 
     Document << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << Width << "\" height=\"" << Height
-             << "\" viewBox=\"0 0 " << Width << " " << Height << "\" font-family=\"" << DOCU_SVG_FONT << "\">\n"
+             << "\" viewBox=\"0 " << Top << " " << Width << " " << Height << "\" font-family=\"" << DOCU_SVG_FONT << "\">\n"
              << Body.str() << "</svg>\n";
     return Document.str();
 } /* getDocument */

@@ -49,7 +49,11 @@
 #define DOCU_LEFT                                                   60
 #define DOCU_TOP                                                    86
 #define DOCU_RIGHT                                                  120
-#define DOCU_BOTTOM                                                 126
+#define DOCU_BOTTOM                                                 104
+
+/* the coordinate picture shows the panel only, from just above the module names to just below the function names */
+#define DOCU_COORDINATES_ABOVE                                      40
+#define DOCU_COORDINATES_BELOW                                      60
 
 /* font sizes */
 #define DOCU_FONT_TITLE                                             20
@@ -272,7 +276,7 @@ static uint16_t getPictureWidth()
   getPictureHeight()
 ******************************************************************************************************************************************************/
 /*! \brief          the height of a picture of the whole panel
- *  \details        this function leaves room below the panel for the coordinates and three lines of legend
+ *  \details        this function leaves room below the panel for the coordinates and two lines of legend
  *
  *  \return         pixels
  *****************************************************************************************************************************************************/
@@ -312,7 +316,7 @@ static void drawLed(DocuSvg* Svg, byte X, byte Y, const char* Colour, const std:
  *                  and an arrow into the module that DIN reaches first, which it finds by asking the model
  *
  *  \param[out]     Svg             the picture
- *  \param[in]      Title           the line above the panel
+ *  \param[in]      Title           the line above the panel, or empty for none
  *  \return         -
  *****************************************************************************************************************************************************/
 static void drawPanel(DocuSvg* Svg, const std::string& Title)
@@ -321,7 +325,7 @@ static void drawPanel(DocuSvg* Svg, const std::string& Title)
     const int16_t ModuleHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
     DocuLedType Led;
 
-    Svg->addText(DOCU_LEFT, 30, Title, DOCU_FONT_TITLE, DOCU_COLOUR_TEXT, "start", true);
+    if(!Title.empty()) Svg->addText(DOCU_LEFT, 30, Title, DOCU_FONT_TITLE, DOCU_COLOUR_TEXT, "start", true);
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         const int16_t Left = getCellX(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
         Svg->addRect(Left - 4, DOCU_TOP - 4, ModuleWidth + 8, ModuleHeight + 8, "none", DOCU_COLOUR_FRAME, 4);
@@ -402,15 +406,17 @@ static std::string drawWiring(MaxMatrixModuleOrientationType Orientation, uint16
   drawCoordinates()
 ******************************************************************************************************************************************************/
 /*! \brief          the picture of the coordinates a sketch uses
- *  \details        this function marks which dot each bit of setColumn() and setRow() sets, as getDot() reports it.
- *                  The coordinates are the same in every orientation once it fits the module, so the picture is drawn
- *                  in the one of FC-16 boards.
+ *  \details        this function marks which dot each bit of setColumn() and setRow() sets, as getDot() reports it,
+ *                  and names the function under what it set. The coordinates are the same in every orientation once it
+ *                  fits the module, so the picture is drawn in the one of FC-16 boards. It has no title and no legend:
+ *                  the README explains it right below, so the picture shows the panel only.
  *
  *  \return         the SVG text
  *****************************************************************************************************************************************************/
 static std::string drawCoordinates()
 {
-    DocuSvg Svg(getPictureWidth(), getPictureHeight());
+    const int16_t PanelHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
+    DocuSvg Svg(getPictureWidth(), DOCU_COORDINATES_ABOVE + PanelHeight + DOCU_COORDINATES_BELOW, DOCU_TOP - DOCU_COORDINATES_ABOVE);
     std::string ColumnLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     std::string RowLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     bool Dot;
@@ -433,7 +439,7 @@ static std::string drawCoordinates()
         }
     }
 
-    drawPanel(&Svg, "Coordinates as a sketch uses them, in every module orientation that fits the module");
+    drawPanel(&Svg, "");
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
             if(!ColumnLabels[X][Y].empty()) drawLed(&Svg, X, Y, DOCU_COLOUR_LED, ColumnLabels[X][Y]);
@@ -442,13 +448,12 @@ static std::string drawCoordinates()
         }
     }
 
-    const int16_t Legend = getCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + 56;
-    Svg.addText(DOCU_LEFT, Legend, "setDot(X, Y): X from the left, Y from the top; module 0 is the far end of the chain from DIN.",
-                DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
-    Svg.addText(DOCU_LEFT, Legend + 22, "Red: the bits of setColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value), bit 0 at the top.",
-                DOCU_FONT_LEGEND, DOCU_COLOUR_LED, "start");
-    Svg.addText(DOCU_LEFT, Legend + 44, "Blue: the bits of setRow(" + std::to_string(DOCU_EXAMPLE_ROW_MODULE) + ", "
-                + std::to_string(DOCU_EXAMPLE_ROW) + ", value), one row of one module, bit 7 on the left.", DOCU_FONT_LEGEND, DOCU_COLOUR_ROW, "start");
+    const int16_t Names = DOCU_TOP + PanelHeight + 46;
+    const int16_t RowModuleLeft = getCellX(DOCU_EXAMPLE_ROW_MODULE * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    Svg.addText(getCellX(DOCU_EXAMPLE_COLUMN) + DOCU_CELL / 2, Names, "setColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value)",
+                DOCU_FONT_MODULE, DOCU_COLOUR_LED, "middle", true);
+    Svg.addText(RowModuleLeft + MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL / 2, Names, "setRow(" + std::to_string(DOCU_EXAMPLE_ROW_MODULE)
+                + ", " + std::to_string(DOCU_EXAMPLE_ROW) + ", value)", DOCU_FONT_MODULE, DOCU_COLOUR_ROW, "middle", true);
     return Svg.getDocument();
 } /* drawCoordinates */
 

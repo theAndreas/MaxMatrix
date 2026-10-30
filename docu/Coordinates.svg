@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="436" viewBox="0 0 1160 436" font-family="Helvetica, Arial, sans-serif">
-  <rect x="0" y="0" width="1160" height="436" rx="0" fill="#ffffff" stroke="none" stroke-width="2"/>
-  <text x="60" y="30" font-size="20" fill="#222222" text-anchor="start" font-weight="bold">Coordinates as a sketch uses them, in every module orientation that fits the module</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="324" viewBox="0 46 1160 324" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="46" width="1160" height="324" rx="0" fill="#ffffff" stroke="none" stroke-width="2"/>
   <rect x="56" y="82" width="232" height="232" rx="4" fill="none" stroke="#666666" stroke-width="2"/>
   <text x="172" y="72" font-size="15" fill="#222222" text-anchor="middle" font-weight="bold">Module 0</text>
   <rect x="308" y="82" width="232" height="232" rx="4" fill="none" stroke="#666666" stroke-width="2"/>
@@ -326,7 +325,6 @@
   <rect x="1015" y="229" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
   <rect x="1015" y="257" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
   <rect x="1015" y="285" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
-  <text x="60" y="366" font-size="15" fill="#222222" text-anchor="start">setDot(X, Y): X from the left, Y from the top; module 0 is the far end of the chain from DIN.</text>
-  <text x="60" y="388" font-size="15" fill="#e53935" text-anchor="start">Red: the bits of setColumn(5, value), bit 0 at the top.</text>
-  <text x="60" y="410" font-size="15" fill="#1e88e5" text-anchor="start">Blue: the bits of setRow(2, 2, value), one row of one module, bit 7 on the left.</text>
+  <text x="214" y="356" font-size="15" fill="#e53935" text-anchor="middle" font-weight="bold">setColumn(5, value)</text>
+  <text x="676" y="356" font-size="15" fill="#1e88e5" text-anchor="middle" font-weight="bold">setRow(2, 2, value)</text>
 </svg>
