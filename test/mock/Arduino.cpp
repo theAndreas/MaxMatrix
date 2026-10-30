@@ -8,8 +8,8 @@ namespace Mock {
     uint8_t PinLevel[NumberOfPins];
     uint8_t ChipSelectPin;
     bool TransactionOpen;
-    int Errors;
-    int Frames;
+    int32_t Errors;
+    int32_t Frames;
     std::vector<byte> Frame;
     std::vector<byte> LastFrame;
     Max7219Chain Chain;
@@ -20,12 +20,12 @@ namespace Mock {
     static std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
     /* or a clock that a test holds and sets, so that a step 50 ms on does not depend on how fast the host is */
     static bool ClockHeld = false;
-    static unsigned long HeldMicros = 0;
+    static uint32_t HeldMillis = 0;
 
-    void setMillis(unsigned long Milliseconds)
+    void setMillis(uint32_t Milliseconds)
     {
         ClockHeld = true;
-        HeldMicros = Milliseconds * 1000;
+        HeldMillis = Milliseconds;
     }
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
@@ -97,7 +97,7 @@ uint8_t SPIClass::transfer(uint8_t Value)
 
 unsigned long micros()
 {
-    if(Mock::ClockHeld) return Mock::HeldMicros;
+    if(Mock::ClockHeld) return static_cast<unsigned long>(Mock::HeldMillis) * 1000;
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Mock::Start).count();
 }
 
@@ -111,14 +111,14 @@ unsigned long millis()
 void delay(unsigned long Milliseconds)
 {
     if(Mock::ClockHeld) {
-        for(unsigned long i = 0; i < Milliseconds; i++) {
-            Mock::HeldMicros += 1000;
+        for(uint32_t i = 0; i < Milliseconds; i++) {
+            Mock::HeldMillis++;
             if(Mock::Tick) Mock::Tick();
         }
         return;
     }
-    unsigned long Begin = millis();
-    while(millis() - Begin < Milliseconds) {
+    const uint32_t Begin = millis();
+    while(static_cast<uint32_t>(millis()) - Begin < Milliseconds) {
         if(Mock::Tick) Mock::Tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

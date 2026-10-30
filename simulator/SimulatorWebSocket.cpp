@@ -184,8 +184,8 @@ void SimulatorWebSocket::calculateSha1(const std::string& Message, uint8_t* Dige
     for(size_t Offset = 0; Offset < Padded.size(); Offset += SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH) {
         processSha1Block(reinterpret_cast<const uint8_t*>(Padded.data() + Offset), State);
     }
-    for(unsigned Word = 0; Word < SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH; Word++) {
-        for(unsigned Byte = 0; Byte < 4; Byte++) Digest[Word * 4 + Byte] = static_cast<uint8_t>(State[Word] >> (24 - 8 * Byte));
+    for(uint8_t Word = 0; Word < SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH; Word++) {
+        for(uint8_t Byte = 0; Byte < 4; Byte++) Digest[Word * 4 + Byte] = static_cast<uint8_t>(State[Word] >> (24 - 8 * Byte));
     }
 } /* calculateSha1 */
 
@@ -240,7 +240,7 @@ stdReturnType SimulatorWebSocket::getKey(const std::string& Request, std::string
 {
     std::string Lowered(Request);
 
-    for(size_t i = 0; i < Lowered.size(); i++) Lowered[i] = static_cast<char>(tolower(static_cast<unsigned char>(Lowered[i])));
+    for(size_t i = 0; i < Lowered.size(); i++) Lowered[i] = static_cast<char>(tolower(static_cast<uint8_t>(Lowered[i])));
     const size_t Found = Lowered.find(SIMULATOR_WEB_SOCKET_KEY_HEADER);
     if(Found == std::string::npos) return E_NOT_OK;
 
@@ -271,7 +271,7 @@ std::string SimulatorWebSocket::padSha1Message(const std::string& Message)
 
     Padded.push_back(static_cast<char>(0x80));
     while(Padded.size() % SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH != SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION) Padded.push_back('\0');
-    for(int Shift = 56; Shift >= 0; Shift -= 8) Padded.push_back(static_cast<char>((Bits >> Shift) & 0xFF));
+    for(int8_t Shift = 56; Shift >= 0; Shift -= 8) Padded.push_back(static_cast<char>((Bits >> Shift) & 0xFF));
     return Padded;
 } /* padSha1Message */
 
@@ -291,14 +291,14 @@ void SimulatorWebSocket::processSha1Block(const uint8_t* Block, uint32_t* State)
     uint32_t Word[SIMULATOR_WEB_SOCKET_SHA1_ROUNDS];
     uint32_t A = State[0], B = State[1], C = State[2], D = State[3], E = State[4];
 
-    for(unsigned i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i++) {
+    for(uint8_t i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i++) {
         Word[i] = (static_cast<uint32_t>(Block[4 * i]) << 24) | (static_cast<uint32_t>(Block[4 * i + 1]) << 16) |
                   (static_cast<uint32_t>(Block[4 * i + 2]) << 8) | Block[4 * i + 3];
     }
-    for(unsigned i = SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; i++) {
+    for(uint8_t i = SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; i++) {
         Word[i] = rotateLeft(Word[i - 3] ^ Word[i - 8] ^ Word[i - 14] ^ Word[i - 16], 1);
     }
-    for(unsigned Round = 0; Round < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; Round++) {
+    for(uint8_t Round = 0; Round < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; Round++) {
         const uint32_t Next = rotateLeft(A, 5) + mixSha1(Round, B, C, D) + E + Word[Round];
         E = D;
         D = C;
@@ -327,7 +327,7 @@ void SimulatorWebSocket::processSha1Block(const uint8_t* Block, uint32_t* State)
  *  \param[in]      D               the fourth word of the working state
  *  \return         function and constant, added
  *****************************************************************************************************************************************************/
-uint32_t SimulatorWebSocket::mixSha1(unsigned Round, uint32_t B, uint32_t C, uint32_t D)
+uint32_t SimulatorWebSocket::mixSha1(uint8_t Round, uint32_t B, uint32_t C, uint32_t D)
 {
     if(Round < 20) return ((B & C) | (~B & D)) + 0x5A827999u;
     else if(Round < 40) return (B ^ C ^ D) + 0x6ED9EBA1u;
@@ -346,7 +346,7 @@ uint32_t SimulatorWebSocket::mixSha1(unsigned Round, uint32_t B, uint32_t C, uin
  *  \param[in]      Bits            how far, 1 to 31
  *  \return         the rotated word
  *****************************************************************************************************************************************************/
-uint32_t SimulatorWebSocket::rotateLeft(uint32_t Value, unsigned Bits)
+uint32_t SimulatorWebSocket::rotateLeft(uint32_t Value, uint8_t Bits)
 {
     return (Value << Bits) | (Value >> (32 - Bits));
 } /* rotateLeft */

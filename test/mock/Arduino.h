@@ -45,8 +45,8 @@ namespace Mock {
     extern uint8_t PinLevel[NumberOfPins];
     extern uint8_t ChipSelectPin;
     extern bool TransactionOpen;
-    extern int Errors;
-    extern int Frames;
+    extern int32_t Errors;
+    extern int32_t Frames;
     extern std::vector<byte> Frame;
     extern std::vector<byte> LastFrame;
     extern Max7219Chain Chain;
@@ -56,7 +56,7 @@ namespace Mock {
 
     void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips);
     /* holds millis() at Milliseconds until the next reset(); delay() then moves it on without waiting */
-    void setMillis(unsigned long Milliseconds);
+    void setMillis(uint32_t Milliseconds);
     void transfer(uint8_t Value);
     bool usesSpi();
 }

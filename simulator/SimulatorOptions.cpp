@@ -115,7 +115,7 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
     } else if(Option == "--port" && HasValue) {
         if(E_OK != convertToPort(argv[++*Index], &Port)) return E_NOT_OK;
     } else if(Option == "--for" && HasValue) {
-        RunFor = static_cast<unsigned long>(atof(argv[++*Index]) * 1000);
+        RunFor = static_cast<uint32_t>(atof(argv[++*Index]) * 1000);
         if(RunFor == 0) return E_NOT_OK;
     } else if(Option == "--expect" && HasValue) {
         ExpectFile = argv[++*Index];
@@ -137,14 +137,14 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
  *  \return         E_OK
  *                  E_NOT_OK        the value is no number, or out of range; the port is left as it was
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorOptions::convertToPort(const char* Text, unsigned short* Port)
+stdReturnType SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
 {
     char* End;
     const unsigned long Value = strtoul(Text, &End, 10);
 
     /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range check then refuses */
     if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return E_NOT_OK;
-    *Port = static_cast<unsigned short>(Value);
+    *Port = static_cast<uint16_t>(Value);
     return E_OK;
 } /* convertToPort */
 

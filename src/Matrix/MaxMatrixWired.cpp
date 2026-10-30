@@ -41,7 +41,7 @@
  *****************************************************************************************************************************************************/
 MaxMatrixWired::MaxMatrixWired(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Chain(sDataInPin, sChipSelectPin, sClockPin)
 {
-    for(int i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) MatrixBuffer[i] = 0;
+    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) MatrixBuffer[i] = 0;
     ChangedColumns = 0;
 } /* MaxMatrixWired */
 
@@ -82,7 +82,7 @@ void MaxMatrixWired::storeBit(byte Column, byte Bit, bool Value)
  *****************************************************************************************************************************************************/
 void MaxMatrixWired::clear()
 {
-    for(int i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) MatrixBuffer[i] = 0;
+    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) MatrixBuffer[i] = 0;
     ChangedColumns = 0xFF;
 } /* clear */
 

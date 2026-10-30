@@ -77,7 +77,7 @@ std::string SimulatorTerminal::getStatusLine(const SimulatorPanel& Panel)
 
     Line << Panel.getWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (Panel.isUpsideDown() ? ", upside down" : "")
          << ", intensity";
-    for(unsigned Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Line << ' ' << Panel.getIntensity(Module);
+    for(uint8_t Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Line << ' ' << static_cast<uint16_t>(Panel.getIntensity(Module));
     Line << ", " << Mock::Frames << " frames" << (Mock::Errors ? ", TRANSFER ERRORS" : "");
     return Line.str();
 } /* getStatusLine */

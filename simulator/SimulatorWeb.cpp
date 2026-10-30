@@ -63,7 +63,7 @@ SimulatorWeb::SimulatorWeb()
  *  \return         E_OK
  *                  E_NOT_OK        the port is taken
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWeb::begin(unsigned short Port, const char* PagePath)
+stdReturnType SimulatorWeb::begin(uint16_t Port, const char* PagePath)
 {
     return Host.begin(Port, PagePath);
 } /* begin */
@@ -211,7 +211,7 @@ std::string SimulatorWeb::getIntensities(const SimulatorPanel& Panel)
 {
     std::string Intensities;
 
-    for(unsigned Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
+    for(uint8_t Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         Intensities += (Module > 0 ? "," : "") + std::to_string(Panel.getIntensity(Module));
     }
     return Intensities;

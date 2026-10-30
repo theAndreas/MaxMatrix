@@ -108,12 +108,12 @@ class MaxMatrix
     stdReturnType setRow(byte Row, const rowType Value) { return updateIfAuto(Panel.setRow(Row, Value)); }
     stdReturnType setRow(byte Module, byte Row, byte Value) { return updateIfAuto(Panel.setRow(Module, Row, Value)); }
     stdReturnType setDot(byte Column, byte Row, bool Value) { return updateIfAuto(Panel.setDot(Column, Row, Value)); }
-    stdReturnType setChar(int X, int Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
+    stdReturnType setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
     stdReturnType setCharWithShift(char);
     stdReturnType setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
     stdReturnType setTextWithShift(char*);
     stdReturnType setSpaceBetweenChars(byte sSpaceBetweenChars) { return Text.setSpaceBetweenChars(sSpaceBetweenChars); }
-    void setSprite(int X, int Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
+    void setSprite(int16_t X, int16_t Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
     void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); updateIfAuto(); }
     void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); updateIfAuto(); }
 

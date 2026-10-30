@@ -48,8 +48,8 @@ class SimulatorWebSocket
     static stdReturnType getKey(const std::string&, std::string*);
     static std::string padSha1Message(const std::string&);
     static void processSha1Block(const uint8_t*, uint32_t*);
-    static uint32_t mixSha1(unsigned, uint32_t, uint32_t, uint32_t);
-    static uint32_t rotateLeft(uint32_t, unsigned);
+    static uint32_t mixSha1(uint8_t, uint32_t, uint32_t, uint32_t);
+    static uint32_t rotateLeft(uint32_t, uint8_t);
 
   public:
     // get methods

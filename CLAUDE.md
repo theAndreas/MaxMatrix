@@ -116,6 +116,22 @@ top and one above each test.
 - Types end in `Type` (`MaxMatrixStateType`); enum values and macros are upper case and
   prefixed with the module (`MAXMATRIX_STATE_READY`, `MAX7219_REG_INTENSITY_ADDRESS`).
 
+### Integer types
+
+Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `byte` for an
+unsigned 8-bit value, as the Arduino API names it, and `int8_t`, `int16_t`, `uint16_t`,
+`uint32_t` and so on for the rest — never `int`, `unsigned`, `short` or `long`. An `int` is 16
+bits on the Uno and 32 on the host, so the same code would behave differently in the tests
+than on the board. A coordinate that can lie off the panel to the left or above is signed
+(`int16_t`); a `uint8_t` or `byte` that goes into a `std::ostream` is cast to `uint16_t` first,
+or it prints as a char.
+
+The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
+into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as
+the Arduino core declares them (a value from `millis()` is kept in a `uint32_t`, which is what
+it is on the Uno); the result of `strtoul()` until its range is checked; POSIX file descriptors
+and `setsockopt()` options (`int`); and `size_t` for sizes of containers.
+
 ### Constants and configuration
 
 Constants are `#define`s in the header, grouped under a comment. Configuration switches are

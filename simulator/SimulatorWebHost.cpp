@@ -61,7 +61,7 @@ SimulatorWebHost::SimulatorWebHost()
 {
     Listener = SIMULATOR_WEB_HOST_NO_SOCKET;
     PagePath = nullptr;
-    for(unsigned Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) Clients[Slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
+    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) Clients[Slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
 } /* SimulatorWebHost */
 
 
@@ -77,7 +77,7 @@ SimulatorWebHost::SimulatorWebHost()
  *  \return         E_OK
  *                  E_NOT_OK        the port is taken, so that the caller can say so
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebHost::begin(unsigned short Port, const char* sPagePath)
+stdReturnType SimulatorWebHost::begin(uint16_t Port, const char* sPagePath)
 {
     PagePath = sPagePath;
     Listener = openListener(Port);
@@ -99,7 +99,7 @@ void SimulatorWebHost::task(std::vector<std::string>* Messages)
     if(Listener == SIMULATOR_WEB_HOST_NO_SOCKET) return;
 
     acceptClients();
-    for(unsigned Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
+    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
         if(Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET) readClient(Slot, Messages);
     }
 } /* task */
@@ -118,7 +118,7 @@ void SimulatorWebHost::broadcast(const std::string& Text)
 {
     const std::string Frame = SimulatorWebSocket::encodeFrame(Text);
 
-    for(unsigned Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
+    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
         if(Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET && !sendAll(Clients[Slot], Frame)) dropClient(Slot);
     }
 } /* broadcast */
@@ -143,7 +143,7 @@ void SimulatorWebHost::acceptClients()
 
     while((Accepted = accept(Listener, nullptr, nullptr)) >= 0) {
         const std::string Request = readRequest(Accepted);
-        const unsigned Slot = findFreeSlot();
+        const uint8_t Slot = findFreeSlot();
 
         if(Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && answerRequest(Accepted, Request)) {
             setNonBlocking(Accepted);
@@ -164,7 +164,7 @@ void SimulatorWebHost::acceptClients()
  *  \param[out]     Messages        every complete text message is appended
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::readClient(unsigned Slot, std::vector<std::string>* Messages)
+void SimulatorWebHost::readClient(uint8_t Slot, std::vector<std::string>* Messages)
 {
     char Chunk[SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH];
     const ssize_t Read = recv(Clients[Slot], Chunk, sizeof(Chunk), 0);
@@ -242,9 +242,9 @@ void SimulatorWebHost::sendPage(int Socket)
  *
  *  \return         the first free slot, or SIMULATOR_WEB_HOST_MAX_CLIENTS when all are taken
  *****************************************************************************************************************************************************/
-unsigned SimulatorWebHost::findFreeSlot() const
+uint8_t SimulatorWebHost::findFreeSlot() const
 {
-    unsigned Slot = 0;
+    uint8_t Slot = 0;
 
     while(Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET) Slot++;
     return Slot;
@@ -260,7 +260,7 @@ unsigned SimulatorWebHost::findFreeSlot() const
  *  \param[in]      Slot            the client's slot
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::dropClient(unsigned Slot)
+void SimulatorWebHost::dropClient(uint8_t Slot)
 {
     close(Clients[Slot]);
     Clients[Slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
@@ -278,7 +278,7 @@ void SimulatorWebHost::dropClient(unsigned Slot)
  *  \param[in]      Port            the port to listen on
  *  \return         the socket, or SIMULATOR_WEB_HOST_NO_SOCKET when the port is taken
  *****************************************************************************************************************************************************/
-int SimulatorWebHost::openListener(unsigned short Port)
+int SimulatorWebHost::openListener(uint16_t Port)
 {
     const int Socket = socket(AF_INET, SOCK_STREAM, 0);
     const int Reuse = 1;
@@ -378,7 +378,7 @@ void SimulatorWebHost::setNonBlocking(int Socket)
  *  \param[in]      Milliseconds    how long one recv() may wait for the next bytes
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::setReceiveTimeout(int Socket, unsigned Milliseconds)
+void SimulatorWebHost::setReceiveTimeout(int Socket, uint32_t Milliseconds)
 {
     timeval Timeout = timeval();
 

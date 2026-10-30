@@ -15,7 +15,7 @@
 #include <vector>
 #include "SimulatorWebHost.h"
 
-static const unsigned short Port = 18081;
+static const uint16_t Port = 18081;
 
 /* a connection that is opened and sends nothing is what a browser does when it opens a socket ahead of a request it
  * may never make; task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
