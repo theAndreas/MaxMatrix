@@ -44,6 +44,7 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | use the digitalWriteFast library for the chip select  |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `init()` (0 to 15)                |
+| `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
 
 ## Usage
 
@@ -62,11 +63,15 @@ void setup()
 
 void loop()
 {
-    Matrix.shiftTask();     // shifts the text one column per call
+    Matrix.shiftTask();     // shifts the text one column every 50 ms
     if(Matrix.getState() == MAXMATRIX_STATE_READY) Matrix.setTextWithShift(Text);
-    delay(50);
 }
 ```
+
+`shiftTask()` keeps the pace itself: call it on every `loop()`, and it takes a step only when the shift interval has
+passed since the last one. `setShiftInterval()` sets the interval in milliseconds per column; with `0` every call is a
+step, for a sketch that times the steps itself. A call that comes late, because `loop()` was busy, takes one step and
+does not catch up.
 
 `setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MAXMATRIX_STATE_READY`.
 

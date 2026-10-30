@@ -164,7 +164,8 @@ Not planned yet, collected so they are not lost:
 - More than one row of modules, as `setPosition` in Max72xxPanel.
 - Other architectures: an `SPIClass&` instead of the global `SPI`, and more than `avr` in
   `library.properties`.
-- Text effects and zones, as in MD_Parola.
+- Text effects and zones, as in MD_Parola, and a shifting text that starts over by itself
+  (`ScrollText` restarts it when the state is `MAXMATRIX_STATE_READY`).
 
 ### 13 Split the library into modules
 
@@ -318,6 +319,14 @@ is called on every `loop()` and decides itself whether a step is due - as `setSp
 `displayAnimate()` in MD_Parola - takes that out of every sketch. The interrupt must still
 only set a flag: a transfer from inside an ISR would cut into an SPI transaction of the
 sketch.
+
+As built, `setShiftInterval()` takes milliseconds per column, as `setSpeed` in MD_Parola does,
+and starts at `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`, 50. So the library keeps the pace out of
+the box; a sketch that timed itself at 50 ms or slower, as `ScrollText` and the README did,
+behaves as before, and one that wants a step on every call sets 0. The first step comes on the
+first call after `setTextWithShift()`; a late call takes one step and does not catch up, so
+that the text never jumps after `loop()` was held up. Starting a text over by itself was left
+for 12, beside the text effects.
 
 ### 24 No pause for a skipped char
 

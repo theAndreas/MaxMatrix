@@ -3,6 +3,8 @@ MaxMatrixBatch	KEYWORD1
 init	KEYWORD2
 clear	KEYWORD2
 shiftTask	KEYWORD2
+setShiftInterval	KEYWORD2
+getShiftInterval	KEYWORD2
 update	KEYWORD2
 getState	KEYWORD2
 setAutoUpdate	KEYWORD2
