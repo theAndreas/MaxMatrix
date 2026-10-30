@@ -33,6 +33,19 @@ set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
 target_link_libraries(Max7219Test PRIVATE ArduinoMock GTest::gtest_main)
 gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
+# The simulator's web host once as well: it knows neither the library nor the sketch, and its WebSocket half is tested
+# on its own, without a network.
+add_library(SimulatorWebHost STATIC simulator/SimulatorWebHost.cpp simulator/SimulatorWebSocket.cpp)
+target_include_directories(SimulatorWebHost PUBLIC simulator src)
+add_executable(SimulatorWebSocketTest test/SimulatorWebSocketTest.cpp)
+set_target_properties(SimulatorWebSocketTest PROPERTIES CXX_STANDARD 17)
+target_link_libraries(SimulatorWebSocketTest PRIVATE SimulatorWebHost GTest::gtest_main)
+gtest_discover_tests(SimulatorWebSocketTest TEST_PREFIX "simulator/")
+
+# the part of the simulator that reads the model, built per variant with the library
+set(SimulatorSources simulator/main.cpp simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp
+                     simulator/SimulatorTerminal.cpp simulator/SimulatorWeb.cpp)
+
 # One library and one test binary per variant, because the two transfer paths are separate code.
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
@@ -50,8 +63,8 @@ function(add_maxmatrix_variant Variant)
     # included first. gnu++11 like the library, so a sketch that would not build for the Uno fails here as well.
     foreach(Sketch ${Examples})
         get_filename_component(Example ${Sketch} NAME_WE)
-        add_executable(Simulator-${Example}-${Variant} simulator/Simulator.cpp simulator/WebHost.cpp ${Sketch})
-        target_link_libraries(Simulator-${Example}-${Variant} PRIVATE MaxMatrix-${Variant})
+        add_executable(Simulator-${Example}-${Variant} ${SimulatorSources} ${Sketch})
+        target_link_libraries(Simulator-${Example}-${Variant} PRIVATE MaxMatrix-${Variant} SimulatorWebHost)
         # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
         target_compile_definitions(Simulator-${Example}-${Variant} PRIVATE
                                    SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
