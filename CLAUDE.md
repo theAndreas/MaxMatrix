@@ -18,8 +18,14 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `docu/` — how rows, columns and bits map onto a module in each orientation.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
-  `--web` on `localhost:8080` (`WebHost.cpp`, ported from Wordclock; `index.html`, read at run
-  time).
+  `--web` on `localhost:8080`. One class per job, as in `src/`:
+  - `main.cpp` — `setup()` once, `loop()` over and over, and `tick()`, which `Mock::Tick` calls.
+  - `SimulatorOptions` — the command line.
+  - `SimulatorPanel` — the model's LEDs for a wiring and mounting, and whether to draw again.
+  - `SimulatorTerminal` — the panel redrawn in place, or printed once at the end of `--for`.
+  - `SimulatorWeb` — the JSON for `index.html` (read at run time) and its commands.
+  - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
+    ported from Wordclock; the protocol works on strings only, so it is tested without a network.
   `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board;
   `WebTest.sh` checks what a browser would get from `--web`.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
@@ -78,7 +84,9 @@ branches have to keep working.
 ## Code conventions
 
 These are observed throughout the existing code — follow them rather than reformatting to a
-different taste.
+different taste. They hold for `simulator/` as much as for `src/`: host code that runs beside
+the library is read beside it. Only the tests in `test/` keep a lighter style, a comment at the
+top and one above each test.
 
 ### Naming
 
@@ -86,7 +94,8 @@ different taste.
   conversions.
 - Classes start with `MaxMatrix`. A sketch links every library it includes into one namespace,
   and a class called `Font` or `Text` would collide with the next library that has one; the
-  mock in `test/mock/` already has a `Max7219Chain`.
+  mock in `test/mock/` already has a `Max7219Chain`. The simulator is linked with the sketch
+  too, so its classes start with `Simulator`.
 - Variables, parameters and members `PascalCase`.
 - A setter parameter that collides with its member is prefixed `s`
   (`setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)` assigning
@@ -185,6 +194,8 @@ The mock also has `millis()`, `micros()` and `delay()` on the host clock, for th
 a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `hello`, and a
 change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
 to the page can bring a panel; a new example in its place needs such a pause as well.
+`SimulatorWebSocketTest` checks the rest of the protocol a browser may use, against the examples
+of the RFCs, once under the `simulator/` prefix.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above
