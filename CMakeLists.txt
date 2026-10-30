@@ -96,3 +96,9 @@ set_source_files_properties(${Examples} PROPERTIES LANGUAGE CXX COMPILE_OPTIONS 
 
 add_maxmatrix_variant(bitbang)
 add_maxmatrix_variant(spi MAXMATRIX_USE_SPI=STD_ON)
+
+# The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
+# test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.
+add_executable(DocuPictures docu/DocuPictures.cpp docu/DocuSvg.cpp)
+target_link_libraries(DocuPictures PRIVATE MaxMatrix-bitbang)
+add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/docu)
