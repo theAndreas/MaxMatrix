@@ -33,6 +33,25 @@ TEST(SimulatorTest, PortInRangeIsTaken)
     EXPECT_EQ(Options.getPort(), 65535);
 }
 
+/* Bug: atoi() and a cast to unsigned short turned --port 70000 into port 4464, so the simulator listened somewhere
+ * else than asked, without a word. */
+TEST(SimulatorTest, PortOutOfRangeIsRefused)
+{
+    SimulatorOptions Options;
+
+    EXPECT_EQ(parse(Options, { "--port", "70000" }), E_NOT_OK);
+    EXPECT_EQ(parse(Options, { "--port", "-1" }), E_NOT_OK);
+    EXPECT_EQ(parse(Options, { "--port", "0" }), E_NOT_OK);
+}
+
+TEST(SimulatorTest, PortThatIsNoNumberIsRefused)
+{
+    SimulatorOptions Options;
+
+    EXPECT_EQ(parse(Options, { "--port", "web" }), E_NOT_OK);
+    EXPECT_EQ(parse(Options, { "--port", "80x" }), E_NOT_OK);
+}
+
 /* chipAt() places the chips as the viewer sees them: upright the leftmost module is the chip at the far end */
 TEST(SimulatorTest, IntensityIsCountedFromTheLeft)
 {

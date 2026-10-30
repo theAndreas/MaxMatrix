@@ -99,7 +99,7 @@ void SimulatorOptions::printUsage(const char* Program)
  *  \param[in]      argv            the arguments
  *  \param[in,out]  Index           the option's index; on return the index of its value, if it has one
  *  \return         E_OK
- *                  E_NOT_OK        the option is unknown, lacks its value or has a value of zero
+ *                  E_NOT_OK        the option is unknown, lacks its value or has a value it cannot take
  *****************************************************************************************************************************************************/
 stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
 {
@@ -113,8 +113,7 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
     } else if(Option == "--wiring" && HasValue) {
         WiringName = argv[++*Index];
     } else if(Option == "--port" && HasValue) {
-        Port = static_cast<unsigned short>(atoi(argv[++*Index]));
-        if(Port == 0) return E_NOT_OK;
+        if(E_OK != convertToPort(argv[++*Index], &Port)) return E_NOT_OK;
     } else if(Option == "--for" && HasValue) {
         RunFor = static_cast<unsigned long>(atof(argv[++*Index]) * 1000);
         if(RunFor == 0) return E_NOT_OK;
@@ -123,6 +122,31 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
     } else return E_NOT_OK;
     return E_OK;
 } /* parseOption */
+
+
+/******************************************************************************************************************************************************
+  convertToPort()
+******************************************************************************************************************************************************/
+/*! \brief          converts the value of --port
+ *  \details        this function takes a decimal number from 1 to 65535 and nothing else. atoi() and a cast, as before,
+ *                  turned 70000 into port 4464 and "80x" into port 80, so the simulator listened somewhere else than
+ *                  asked without a word.
+ *
+ *  \param[in]      Text            the value as given on the command line
+ *  \param[out]     Port            the port
+ *  \return         E_OK
+ *                  E_NOT_OK        the value is no number, or out of range; the port is left as it was
+ *****************************************************************************************************************************************************/
+stdReturnType SimulatorOptions::convertToPort(const char* Text, unsigned short* Port)
+{
+    char* End;
+    const unsigned long Value = strtoul(Text, &End, 10);
+
+    /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range check then refuses */
+    if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return E_NOT_OK;
+    *Port = static_cast<unsigned short>(Value);
+    return E_OK;
+} /* convertToPort */
 
 
 /******************************************************************************************************************************************************

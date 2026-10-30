@@ -30,6 +30,7 @@
  *****************************************************************************************************************************************************/
 /* SimulatorOptions Parameter */
 #define SIMULATOR_OPTIONS_DEFAULT_PORT                              8080u
+#define SIMULATOR_OPTIONS_MAX_PORT                                  65535u
 
 
 /******************************************************************************************************************************************************
@@ -47,6 +48,7 @@ class SimulatorOptions
     const char* ExpectFile;
 
     stdReturnType parseOption(int, char**, int*);
+    static stdReturnType convertToPort(const char*, unsigned short*);
 
   public:
     SimulatorOptions();
