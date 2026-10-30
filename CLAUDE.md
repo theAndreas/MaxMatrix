@@ -13,6 +13,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
     coordinates as the viewer sees them.
   - `Font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `decodeChar()`.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
+  - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
+    (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
   - `MaxMatrixStandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
@@ -70,6 +72,11 @@ Dependencies point one way: `MaxMatrixText` → `MaxMatrixFont` and `MaxMatrixPa
 member of the one above it, by value and without virtual functions, so that the parts cost no
 RAM of their own; `MaxMatrixText` is handed the panel by every function that draws, rather
 than keeping a reference, which cost 86 bytes of flash in `ScrollText` (see its header).
+
+`MaxMatrixCommand` sits on top of the facade rather than in it: the sketch owns it beside its
+`MaxMatrix` and hands it the matrix with every char, as the panel is handed to the text. A sketch
+that does not use it pays nothing, because the linker drops what no one calls; `Basics` and
+`ScrollText` are the same size with it as without.
 
 ### Two coordinate systems
 
@@ -218,6 +225,9 @@ the eight module wirings MD_MAX72XX names (`DR0CR0RR0` to `DR1CR1RR1`, `FC16`, `
 and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which orientations
 fit which module; the README's table says the same and changes with it.
 
+The mock has a `Serial` that reads `Mock::SerialInput` and appends what the sketch prints to
+`Mock::SerialOutput`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()` and
+`strcmp_P()` take strings in RAM there, as the host has no separate flash.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `Mock::setMillis()`
 instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library
