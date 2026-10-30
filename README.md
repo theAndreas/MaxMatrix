@@ -10,12 +10,14 @@ This is an Arduino library for chained 8x8 LED dot matrix modules driven by the 
 
 Features:
 
-- set and get single dots, rows and columns
+- set and get single dots, rows and columns, in the same coordinates on every type of module
 - print chars and text (ASCII 32 to 126 and German umlauts, variable char width)
-- scroll a char or a text over the matrix without blocking `loop()`
+- shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps
 - shift the matrix content left, right, up and down, with or without rotation
-- module orientation of 0, 90, 180 and 270 degrees
+- send a picture drawn with many calls at once, in at most eight frames
+- module orientation of 0, 90, 180 and 270 degrees, and a board mounted upside down
 - bit banging (any pins) or hardware SPI
+- a simulator that runs the examples on the PC, in the terminal or in a browser
 
 ## Installation
 Download the repository as ZIP and add it in the Arduino IDE with *Sketch > Include Library > Add .ZIP Library...*,
@@ -41,7 +43,7 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_NUMBER_OF_MODULES`              | `4`       | number of chained 8x8 modules                         |
 | `MAXMATRIX_USE_SPI`                        | `STD_OFF` | use hardware SPI instead of `shiftOut()`              |
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
-| `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | use the digitalWriteFast library for the chip select  |
+| `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | meant for the digitalWriteFast library; has no effect yet, see [OIL.md](OIL.md) item 22 |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `init()` (0 to 15)                |
 | `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
@@ -76,6 +78,42 @@ does not catch up.
 `setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MAXMATRIX_STATE_READY`.
 
 More examples can be found in [examples/](examples/).
+
+## Coordinates
+
+![Coordinates as a sketch uses them](docu/Coordinates.svg)
+
+`setDot(X, Y)` counts X from the left and Y from the top, across all modules: X from 0 to
+`MAXMATRIX_NUMBER_OF_COLUMNS - 1`, Y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
+This holds for every type of module once the orientation fits it, see [Module orientation](#module-orientation).
+
+The two functions that set eight LEDs at once read their byte in different directions:
+
+- `setColumn(X, Value)` sets a column, **bit 0 at the top**.
+- `setRow(Module, Row, Value)` sets the row of one module, **bit 7 on the left**, so the byte reads as it is
+  written: `0b10000000` lights the leftmost LED. `setRow(Row, Values)` sets a whole row, one byte per module,
+  module 0 first.
+
+## Functions
+
+| Function | What it does |
+|----------|--------------|
+| `init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
+| `clear()` | turns every LED off |
+| `setDot(X, Y, Value)`, `getDot(X, Y, &Value)` | one LED |
+| `setColumn(X, Value)`, `setColumn(Module, Column, Value)`, `getColumn(…)` | a column, bit 0 at the top |
+| `setRow(Row, Values)`, `setRow(Module, Row, Value)`, `getRow(…)` | a row, bit 7 on the left |
+| `setChar(X, Y, Char)`, `setText(Text)` | a char at X, Y, or a text from the left edge |
+| `setSprite(X, Y, Sprite)`, `getSprite(Index, &Sprite)` | a sprite of the font, or one of your own |
+| `setCharWithShift(Char)`, `setTextWithShift(Text)`, `shiftTask()`, `getState()` | a char or a text that shifts in from the right |
+| `setShiftInterval(Milliseconds)`, `setSpaceBetweenChars(Columns)` | how fast a text shifts and how far apart its chars are |
+| `shiftLeft()`, `shiftRight()`, `shiftUp()`, `shiftDown()` | moves the whole picture by one dot, rotating or filling up |
+| `setIntensity(Intensity)` | brightness of every module, 0 to 15 |
+| `MaxMatrixBatch`, `setAutoUpdate(On)`, `update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
+| `setModuleOrientation(…)`, `setMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
+| `RegisterWrite(Address, Value)` | writes a register of every MAX7219, past the picture |
+
+A function that can fail returns `E_OK` or `E_NOT_OK`; a coordinate out of range changes nothing.
 
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
@@ -115,13 +153,8 @@ Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX
 
 With the input on the right, the matrix orientation stays at `MAXMATRIX_MATRIX_ORIENTATION_0`; mounted upside down, it is `MAXMATRIX_MATRIX_ORIENTATION_180` with the same module orientation. Parola modules (`PAROLA_HW`) are a mirror image of these and cannot be shown upright yet.
 
-Orientation 0 / 180 degrees:
-
-![Matrix Orientation 0](docu/LED_Matrix_Orientation_0.jpg)
-
-Orientation 90 / 270 degrees:
-
-![Matrix Orientation 90](docu/LED_Matrix_Orientation_90_270.jpg)
+How the bytes of the MAX7219 lie on the LEDs in each module orientation is drawn in [docu/](docu/README.md); a sketch
+does not need it, only work on the library does.
 
 ## Umlauts
 The German umlauts Ä, Ö, Ü, ä, ö and ü are supported in texts. `setText()` and `setTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
@@ -152,3 +185,6 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 `--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
 
 With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, and the module type and mounting to switch while the sketch runs. `--port` picks another port, for a second simulator beside it.
+
+The pictures in [docu/](docu/README.md) are drawn from the library and the MAX7219 model, not by hand. After a change
+that moves a dot, `build/DocuPictures --write docu` draws them again; until then the test `docu/pictures` fails.
