@@ -195,8 +195,9 @@ a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `he
 change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
 to the page can bring a panel; a new example in its place needs such a pause as well.
 `SimulatorWebSocketTest` checks the rest of the protocol a browser may use, against the examples
-of the RFCs, and `SimulatorTest` the command line and the status line against the model, both
-once under the `simulator/` prefix: all of the simulator but `main.cpp` is one library, built
+of the RFCs, `SimulatorWebHostTest` that a client which connects and says nothing cannot stop
+the host (on port 18081, so it needs no lock with `simulator/web`), and `SimulatorTest` the
+command line and the status line against the model, all once under the `simulator/` prefix: all of the simulator but `main.cpp` is one library, built
 once, because it reads the model and never the library.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
