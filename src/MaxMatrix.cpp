@@ -13,8 +13,8 @@
  *
  *      \details    Arduino library to drive 8x8 LED display Matrix modules with MAX7219
  *
- *                  What the facade does itself: setting the whole chain up, and the state of the library, which the
- *                  shifting text only reports into.
+ *                  What the facade does itself: setting the whole chain up, the state of the library, which the
+ *                  shifting text only reports into, and when what was drawn is sent.
  *
  *****************************************************************************************************************************************************/
 #define _MAXMATRIX_SOURCE_
@@ -43,6 +43,7 @@
 MaxMatrix::MaxMatrix(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Panel(sDataInPin, sChipSelectPin, sClockPin)
 {
     State = MAXMATRIX_STATE_NONE;
+    AutoUpdate = true;
 } /* MaxMatrix */
 
 
@@ -60,7 +61,8 @@ MaxMatrix::~MaxMatrix()
 ******************************************************************************************************************************************************/
 /*! \brief          initialization of the Matrix hardware
  *  \details        this function initializes the IO hardware and the MAX7219 controller
- *                  all LEDs of the matrix will be cleared and intensity will be set to init value
+ *                  all LEDs of the matrix will be cleared and intensity will be set to init value.
+ *                  The cleared matrix is sent even with AutoUpdate off: after power-up the LEDs show anything.
  *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrix::init()
@@ -70,8 +72,9 @@ void MaxMatrix::init()
     Panel.getWired().getChain().init();
 
     /* initialize registers, turn all LEDs off */
-    clear();
-    
+    Panel.getWired().clear();
+    update();
+
     setIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
     State = MAXMATRIX_STATE_READY;
 } /* init */
@@ -94,7 +97,25 @@ void MaxMatrix::shiftTask()
     if(MAXMATRIX_STATE_CHAR_SHIFT == State) {
         if(!Text.charShiftTask(Panel)) State = MAXMATRIX_STATE_READY;
     }
+    updateIfAuto();
 } /* shiftTask */
+
+
+/******************************************************************************************************************************************************
+  setAutoUpdate()
+******************************************************************************************************************************************************/
+/*! \brief          sets whether drawing is sent at once
+ *  \details        this function switches between sending after every call that draws, the default, and sending only
+ *                  when update() is called. Switching it on sends what was drawn while it was off.
+ *
+ *  \param[in]      sAutoUpdate     true to send after every call that draws
+ *  \return         -
+ *****************************************************************************************************************************************************/
+void MaxMatrix::setAutoUpdate(bool sAutoUpdate)
+{
+    AutoUpdate = sAutoUpdate;
+    updateIfAuto();
+} /* setAutoUpdate */
 
 
 /******************************************************************************************************************************************************

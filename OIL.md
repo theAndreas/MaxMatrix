@@ -17,7 +17,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 5  | Simulator that runs the example sketches | 3 | done | #9 |
 | 6  | Web front end for the simulator | 5 | done | #10 |
 | 7  | Simulator in CI | 6 | done | #11 |
-| 8  | Batched updates in the library | 13 | open | |
+| 8  | Batched updates in the library | 13 | done | #20 |
 | 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | open | |
@@ -115,6 +115,19 @@ was drawn, and animations stop flickering.
 
 *Done when* a test counts the frames of a drawing in both modes, and flash and RAM of every
 example on the Uno are in the PR.
+
+As built, sending immediately stays the default, as in MD_MAX72XX: a sketch that never heard of
+`update()` keeps working. What changed underneath is that no call sends a frame per dot or
+column any more. Drawing only changes the buffer, which keeps which columns of a module changed;
+every public function that draws sends those before it returns, one frame per changed column
+for all modules. So a call sends eight frames at most, and nothing when it changed nothing.
+`setAutoUpdate(false)` stops the sending until `update()`, for a picture made of many calls.
+`MaxMatrixBatch` does the same for one block, as `std::lock_guard` holds a mutex: it puts back
+what it found when the block ends, so nothing has to be turned on again. A default parameter
+`Update = true` on every function that draws was weighed and dropped: with it,
+`setColumn(Module, Column, Value)` became ambiguous with `setColumn(Column, Value, Update)` and
+no longer compiled.
+`writeRegister()` and its no-op frames are gone: nothing sends to a single module any more.
 
 ### 9 Mirrored modules in the library
 

@@ -91,30 +91,6 @@ void MaxMatrixChain::init()
 
 
 /******************************************************************************************************************************************************
-  writeRegister()
-******************************************************************************************************************************************************/
-/*! \brief          write a register of one MAX7219
- *  \details        this function sends one frame, in which every other module gets the no-op
- *
- *  \param[in]      Module              module whose register is written, 0 is the first one in the frame
- *  \param[in]      RegisterAddress     address of the MAX7219 register
- *  \param[in]      RegisterValue       register value
- *  \return         -
- *  \pre            Module is within the chain
- *****************************************************************************************************************************************************/
-void MaxMatrixChain::writeRegister(byte Module, byte RegisterAddress, byte RegisterValue)
-{
-    startTransmission();
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++)
-    {
-        if(i == Module) transfer(RegisterAddress, RegisterValue);
-        else transfer(MAX7219_REG_NO_OP_ADDRESS, 0);
-    }
-    stopTransmission();
-} /* writeRegister */
-
-
-/******************************************************************************************************************************************************
   writeRegisterAll()
 ******************************************************************************************************************************************************/
 /*! \brief          write the same register of every MAX7219

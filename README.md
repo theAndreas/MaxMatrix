@@ -72,6 +72,27 @@ void loop()
 
 More examples can be found in [examples/](examples/).
 
+## Drawing a picture in one go
+Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
+the chain, however much it drew. A picture made of many calls would still be shown half drawn in between. For that,
+draw it inside a block that starts with a `MaxMatrixBatch`; the picture is sent at the end of the block:
+
+```cpp
+{
+    MaxMatrixBatch Batch(Matrix);   // nothing is sent until the end of this block
+    Matrix.clear();
+    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % 8, true);
+}                                   // the whole picture at once, in at most eight frames
+```
+
+The batch needs a name: `MaxMatrixBatch{Matrix};` on its own is gone again before the next line and holds nothing
+back. Batches can be nested; only the outermost one sends.
+
+A picture that is built over several calls of `loop()` does not fit into a block. There, turn the automatic update
+off with `setAutoUpdate(false)` and send with `update()` whenever the picture is complete.
+
+`setIntensity()` takes effect at once either way. `init()` always clears the LEDs, whatever the setting.
+
 ## Module orientation
 Two settings make the text upright:
 

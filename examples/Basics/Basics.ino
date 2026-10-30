@@ -1,7 +1,7 @@
 /*
  * Basics
  *
- * Shows text, single dots, rows and the intensity setting.
+ * Shows text, single dots, rows, a picture drawn in one go and the intensity setting.
  *
  * Wiring (Arduino Uno / Nano):
  *   DIN -> 11, CS -> 10, CLK -> 13
@@ -34,6 +34,21 @@ void loop()
     /* fill row 3 on every module */
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         Matrix.setRow(Module, 3, 0xFF);
+    }
+    delay(1000);
+
+    /* draw a frame from many dots and show it at once, rather than dot by dot */
+    {
+        MaxMatrixBatch Batch(Matrix);   // nothing is sent until the end of this block
+        Matrix.clear();
+        for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
+            Matrix.setDot(Column, 0, true);
+            Matrix.setDot(Column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
+        }
+        for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
+            Matrix.setDot(0, Row, true);
+            Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, Row, true);
+        }
     }
     delay(1000);
 

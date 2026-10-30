@@ -50,12 +50,21 @@ typedef enum {
 /******************************************************************************************************************************************************
  *  CLASS  MaxMatrix
  *****************************************************************************************************************************************************/
+/* Every function that draws changes the buffer, and with AutoUpdate, the default, sends what changed before it returns:
+ * one frame per changed column of a module, eight at most, however much the call drew. A sketch that builds one picture
+ * out of many calls turns AutoUpdate off and calls update() when the picture is complete, so that no half of it is
+ * ever shown. The intensity and other registers are sent at once either way: they are not part of the picture. */
 class MaxMatrix
 {
   private:
     MaxMatrixPanel Panel;
     MaxMatrixText Text;
     MaxMatrixStateType State;
+    bool AutoUpdate;
+
+    // functions
+    void updateIfAuto() { if(AutoUpdate) update(); }
+    stdReturnType updateIfAuto(stdReturnType Result) { updateIfAuto(); return Result; }
 
   public:
     MaxMatrix(byte, byte, byte);
@@ -64,6 +73,7 @@ class MaxMatrix
 
     // get methods
     MaxMatrixStateType getState() { return State; }
+    bool getAutoUpdate() { return AutoUpdate; }
     byte getDataInPin() { return Panel.getWired().getChain().getDataInPin(); }
     byte getChipSelectPin() { return Panel.getWired().getChain().getChipSelectPin(); }
     byte getClockPin() { return Panel.getWired().getChain().getClockPin(); }
@@ -83,32 +93,62 @@ class MaxMatrix
     void setDataInPin(byte sDataInPin) { Panel.getWired().getChain().setDataInPin(sDataInPin); }
     void setChipSelectPin(byte sChipSelectPin) { Panel.getWired().getChain().setChipSelectPin(sChipSelectPin); }
     void setClockPin(byte sClockPin) { Panel.getWired().getChain().setClockPin(sClockPin); }
+    void setAutoUpdate(bool);
     stdReturnType setIntensity(byte);
-    stdReturnType setColumn(byte Column, byte Value) { return Panel.setColumn(Column, Value); }
-    stdReturnType setColumn(byte Module, byte Column, byte Value) { return Panel.setColumn(Module, Column, Value); }
-    stdReturnType setRow(byte Row, const rowType Value) { return Panel.setRow(Row, Value); }
-    stdReturnType setRow(byte Module, byte Row, byte Value) { return Panel.setRow(Module, Row, Value); }
-    stdReturnType setDot(byte Column, byte Row, bool Value) { return Panel.setDot(Column, Row, Value); }
-    stdReturnType setChar(int X, int Y, char Char) { return Text.setChar(Panel, X, Y, Char); }
+    stdReturnType setColumn(byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Column, Value)); }
+    stdReturnType setColumn(byte Module, byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Module, Column, Value)); }
+    stdReturnType setRow(byte Row, const rowType Value) { return updateIfAuto(Panel.setRow(Row, Value)); }
+    stdReturnType setRow(byte Module, byte Row, byte Value) { return updateIfAuto(Panel.setRow(Module, Row, Value)); }
+    stdReturnType setDot(byte Column, byte Row, bool Value) { return updateIfAuto(Panel.setDot(Column, Row, Value)); }
+    stdReturnType setChar(int X, int Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
     stdReturnType setCharWithShift(char);
-    stdReturnType setText(const char* String) { return Text.setText(Panel, String); }
+    stdReturnType setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
     stdReturnType setTextWithShift(char*);
     stdReturnType setSpaceBetweenChars(byte sSpaceBetweenChars) { return Text.setSpaceBetweenChars(sSpaceBetweenChars); }
-    void setSprite(int X, int Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); }
-    void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); }
-    void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); }
+    void setSprite(int X, int Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
+    void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); updateIfAuto(); }
+    void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); updateIfAuto(); }
 
 
     // methods
     void init();
     void shiftTask();
-    void clear() { Panel.getWired().clear(); }
+    void update() { Panel.getWired().send(); }
+    void clear() { Panel.getWired().clear(); updateIfAuto(); }
     void RegisterWrite(byte RegisterAddress, byte RegisterValue) { Panel.getWired().getChain().writeRegisterAll(RegisterAddress, RegisterValue); }
 
-    void shiftLeft(bool Rotate = false, bool FillWithZero = true) { Panel.shiftLeft(Rotate, FillWithZero); }
-    void shiftRight(bool Rotate = false, bool FillWithZero = true) { Panel.shiftRight(Rotate, FillWithZero); }
-    void shiftUp(bool Rotate = false) { Panel.shiftUp(Rotate); }
-    void shiftDown(bool Rotate = false) { Panel.shiftDown(Rotate); }
+    void shiftLeft(bool Rotate = false, bool FillWithZero = true) { Panel.shiftLeft(Rotate, FillWithZero); updateIfAuto(); }
+    void shiftRight(bool Rotate = false, bool FillWithZero = true) { Panel.shiftRight(Rotate, FillWithZero); updateIfAuto(); }
+    void shiftUp(bool Rotate = false) { Panel.shiftUp(Rotate); updateIfAuto(); }
+    void shiftDown(bool Rotate = false) { Panel.shiftDown(Rotate); updateIfAuto(); }
+};
+
+
+/******************************************************************************************************************************************************
+ *  CLASS  MaxMatrixBatch
+ *****************************************************************************************************************************************************/
+/* Holds the sending back for as long as it exists, as std::lock_guard holds a mutex: the constructor turns AutoUpdate
+ * off, the destructor puts back what was there before. So the picture is sent at the end of the block, also on a
+ * return or break out of it, and of nested ones only the outermost sends. It has to be a named variable: an unnamed
+ * MaxMatrixBatch{Matrix}; is destroyed at once and holds nothing back. A picture built over several calls of loop()
+ * does not fit into a block; that is what setAutoUpdate() and update() are for. */
+class MaxMatrixBatch
+{
+  private:
+    MaxMatrix& Matrix;
+    bool PreviousAutoUpdate;
+
+  public:
+    explicit MaxMatrixBatch(MaxMatrix& sMatrix) : Matrix(sMatrix)
+    {
+        PreviousAutoUpdate = Matrix.getAutoUpdate();
+        Matrix.setAutoUpdate(false);
+    }
+    ~MaxMatrixBatch() { Matrix.setAutoUpdate(PreviousAutoUpdate); }
+
+    /* a copy would restore the state twice */
+    MaxMatrixBatch(const MaxMatrixBatch&) = delete;
+    MaxMatrixBatch& operator=(const MaxMatrixBatch&) = delete;
 };
 
 #endif
