@@ -47,6 +47,9 @@
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 #define MAXMATRIX_INTENSITY_INIT_VALUE                              5
 #endif
+#ifndef MAXMATRIX_COMMAND_LINE_LENGTH
+#define MAXMATRIX_COMMAND_LINE_LENGTH                               64         /* chars of a command line, RAM twice over */
+#endif
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
 #define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE                         50         /* ms per column, 0 for a step on every call */
 #endif

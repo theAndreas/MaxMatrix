@@ -29,7 +29,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 17 | Documentation from the Doxygen blocks | – | open | |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
-| 20 | More examples | 5 | open | |
+| 20 | More examples | 5 | in progress | |
 | 21 | Control page for simulator and board | 6 | open | |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | done | #22 |
@@ -277,6 +277,12 @@ The libraries collected in `AndreasBur/MaxMatrix` under `LED/LED Anzeige/Max7219
 more: `MAX7219_8x8_matrix` has a clock, numbers, a mask and a rotation as examples, the old
 Arduino `Matrix` / `Sprite` pair shows sprites as objects of their own. And a `SerialControl`
 example that takes the commands from 21 over `Serial`.
+
+`SerialControl` is built. The commands are a class of the library, `MaxMatrixCommand`, rather
+than code in the example: so they are tested with GoogleTest, and 21, 26 and the simulator rely
+on one implementation of the lines. The sketch feeds it the chars from `Serial` and answers each
+line with `ok` or `error`, at 115200 baud. Of the old tool's names, `spaceBetweenChars=` is left
+out beside `space=`; `clear` is new. The animation, the sprites and more than one text are open.
 
 ### 21 Control page for simulator and board
 

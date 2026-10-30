@@ -666,3 +666,131 @@ TEST_F(MaxMatrixTest, UnknownChars)
     EXPECT_EQ(ShiftCalls, Calls);
     EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY);
 }
+
+class MaxMatrixCommandTest : public MaxMatrixTest {
+  protected:
+    MaxMatrixCommand Command;
+
+    /* feeds a line char by char, as Serial would; every char but the last has to leave the line pending */
+    MaxMatrixCommandResultType feedLine(const std::string& Text)
+    {
+        for(size_t i = 0; i + 1 < Text.size(); i++) {
+            EXPECT_EQ(Command.feed(Matrix, Text[i]), MAXMATRIX_COMMAND_PENDING) << "char " << i << " of " << Text;
+        }
+        return Command.feed(Matrix, Text.back());
+    }
+
+    /* the display after every step of the shift running now, until it is done */
+    std::vector<std::vector<byte>> shiftSteps()
+    {
+        std::vector<std::vector<byte>> Steps;
+        for(uint16_t Step = 0; Step < 1000 && Matrix.getState() != MAXMATRIX_STATE_READY; Step++) {
+            Matrix.shiftTask();
+            Steps.push_back(display());
+        }
+        return Steps;
+    }
+};
+
+TEST_F(MaxMatrixCommandTest, TextShowsWhatSetTextShows)
+{
+    Matrix.setText("xx");
+    ASSERT_EQ(feedLine("text=Hi!\n"), MAXMATRIX_COMMAND_DONE);
+    const std::vector<byte> Shown = display();
+
+    Matrix.clear();
+    Matrix.setText("Hi!");
+    EXPECT_EQ(Shown, display());
+}
+
+TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix)
+{
+    bool Dot = false;
+
+    EXPECT_EQ(feedLine("intensity=8\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(chipOfModule(0).Intensity, 8);
+    EXPECT_EQ(feedLine("speed=120\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(Matrix.getShiftInterval(), 120);
+    EXPECT_EQ(feedLine("space=3\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(Matrix.getSpaceBetweenChars(), 3);
+
+    EXPECT_EQ(feedLine("setDot=5,3,1\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(Matrix.getDot(5, 3, &Dot), E_OK);
+    EXPECT_TRUE(Dot);
+    EXPECT_EQ(feedLine("setDot=5,3,0\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(Matrix.getDot(5, 3, &Dot), E_OK);
+    EXPECT_FALSE(Dot);
+
+    Matrix.setText("Hi");
+    EXPECT_EQ(feedLine("clear\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
+}
+
+/* setTextWithShift() keeps only a pointer: a shift that read its text out of the line buffer would shift whatever
+ * line came next */
+TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow)
+{
+    char Text[] = "AB";
+
+    ASSERT_EQ(feedLine("textShift=AB\n"), MAXMATRIX_COMMAND_DONE);
+    ASSERT_EQ(feedLine("intensity=3\n"), MAXMATRIX_COMMAND_DONE);
+    const std::vector<std::vector<byte>> Commanded = shiftSteps();
+
+    Matrix.clear();
+    ASSERT_EQ(Matrix.setTextWithShift(Text), E_OK);
+    EXPECT_EQ(Commanded, shiftSteps());
+}
+
+TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused)
+{
+    const struct {
+        const char* Line;
+        MaxMatrixCommandResultType Result;
+    } Cases[] = {
+        { "blink\n", MAXMATRIX_COMMAND_UNKNOWN },
+        { "clear=1\n", MAXMATRIX_COMMAND_UNKNOWN },
+        { "intensity=16\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "intensity=\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "intensity=x\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "speed=65536\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "speed=99999999999999999999\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        /* 2^32, which a count in 32 bits wraps round to 0, a speed it would take */
+        { "speed=4294967296\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "space=-1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "setDot=1,2\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "setDot=32,0,1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "setDot=1,8,1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "setDot=1,2,2\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "textShift=\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "text=a\x01\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+    };
+
+    for(const auto& Case : Cases) EXPECT_EQ(feedLine(Case.Line), Case.Result) << Case.Line;
+    EXPECT_EQ(Matrix.getShiftInterval(), 0) << "changed by a refused speed=";
+}
+
+TEST_F(MaxMatrixCommandTest, LineEndsInNewlineOrCarriageReturnNewline)
+{
+    EXPECT_EQ(feedLine("intensity=4\r\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(chipOfModule(0).Intensity, 4);
+    EXPECT_EQ(feedLine("\n"), MAXMATRIX_COMMAND_PENDING) << "an empty line";
+    EXPECT_EQ(feedLine("intensity=5\n"), MAXMATRIX_COMMAND_DONE);
+}
+
+/* a line cut short would carry out a different command, so a line too long is dropped whole; the next one is read */
+TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
+{
+    const std::string Long = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
+
+    EXPECT_EQ(feedLine(Long), MAXMATRIX_COMMAND_TOO_LONG);
+    EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
+    EXPECT_EQ(feedLine("intensity=2\n"), MAXMATRIX_COMMAND_DONE);
+    EXPECT_EQ(chipOfModule(0).Intensity, 2);
+}
+
+TEST_F(MaxMatrixCommandTest, LineOfFullLengthIsTaken)
+{
+    const std::string Text = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n";
+
+    EXPECT_EQ(feedLine(Text), MAXMATRIX_COMMAND_DONE);
+}

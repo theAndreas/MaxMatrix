@@ -13,6 +13,8 @@ namespace Mock {
     std::vector<byte> Frame;
     std::vector<byte> LastFrame;
     Max7219Chain Chain;
+    std::string SerialInput;
+    std::string SerialOutput;
     void (*Tick)() = NULL;
     bool SpiUsed;
 
@@ -40,6 +42,8 @@ namespace Mock {
         Frame.clear();
         LastFrame.clear();
         SpiUsed = false;
+        SerialInput.clear();
+        SerialOutput.clear();
         Chain.reset(NumberOfChips);
     }
 
@@ -72,6 +76,36 @@ void digitalWrite(uint8_t Pin, uint8_t Value)
 }
 
 void shiftOut(uint8_t, uint8_t, uint8_t, uint8_t Value) { Mock::transfer(Value); }
+
+HardwareSerial Serial;
+
+void HardwareSerial::begin(unsigned long) {}
+
+int HardwareSerial::available()
+{
+    return static_cast<int>(Mock::SerialInput.size());
+}
+
+/* -1 when nothing is waiting, as on the board */
+int HardwareSerial::read()
+{
+    if(Mock::SerialInput.empty()) return -1;
+    const uint8_t Byte = static_cast<uint8_t>(Mock::SerialInput[0]);
+    Mock::SerialInput.erase(0, 1);
+    return Byte;
+}
+
+size_t HardwareSerial::print(const char* Text)
+{
+    Mock::SerialOutput += Text;
+    return strlen(Text);
+}
+
+/* a line ends in \r\n, as the Arduino core prints it */
+size_t HardwareSerial::println(const char* Text)
+{
+    return print(Text) + print("\r\n");
+}
 
 SPIClass SPI;
 

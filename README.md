@@ -47,6 +47,7 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `init()` (0 to 15)                |
 | `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
+| `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `MaxMatrixCommand`, in chars   |
 
 ## Usage
 
@@ -112,6 +113,7 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `MaxMatrixBatch`, `setAutoUpdate(On)`, `update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
 | `setModuleOrientation(…)`, `setMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
 | `RegisterWrite(Address, Value)` | writes a register of every MAX7219, past the picture |
+| `MaxMatrixCommand`, `feed(Matrix, Char)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 A function that can fail returns `E_OK` or `E_NOT_OK`; a coordinate out of range changes nothing.
 
@@ -135,6 +137,42 @@ A picture that is built over several calls of `loop()` does not fit into a block
 off with `setAutoUpdate(false)` and send with `update()` whenever the picture is complete.
 
 `setIntensity()` takes effect at once either way. `init()` always clears the LEDs, whatever the setting.
+
+## Control over Serial
+`MaxMatrixCommand` carries out commands that arrive as lines of text, one command per line:
+
+| Command | What it does |
+|---------|--------------|
+| `text=Hello` | shows a text from the left edge, on a cleared matrix |
+| `textShift=Hello` | shifts a text in from the right |
+| `intensity=8` | brightness, 0 to 15 |
+| `speed=50` | milliseconds per column of a shifting text |
+| `space=1` | empty columns between chars |
+| `setDot=5,3,1` | column, row, `1` for on and `0` for off |
+| `clear` | turns every LED off |
+
+A line ends in `\n` or `\r\n`. The [SerialControl](examples/SerialControl/SerialControl.ino) example reads them from
+`Serial` at 115200 baud and answers each with `ok` or `error`; the serial monitor of the Arduino IDE sends them with
+"Newline" as line ending:
+
+```cpp
+MaxMatrixCommand Command;
+
+void loop()
+{
+    while(Serial.available() > 0) {
+        MaxMatrixCommandResultType Result = Command.feed(Matrix, Serial.read());
+        if(Result == MAXMATRIX_COMMAND_DONE) Serial.println(F("ok"));
+        else if(Result != MAXMATRIX_COMMAND_PENDING) Serial.println(F("error"));
+    }
+    Matrix.shiftTask();
+}
+```
+
+`feed()` tells an unknown command, a wrong value and a line too long apart, for a sketch that wants to say more than
+`error`. A line longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The
+class keeps the line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it
+pays nothing.
 
 ## Module orientation
 Two settings make the text upright:

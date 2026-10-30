@@ -15,8 +15,9 @@
  *
  *                  The class MaxMatrix is the facade over the parts in the folders beside this file, one per subject:
  *                  Max7219/ the transfer to the chain, Matrix/ the buffer as wired and the coordinates as the viewer
- *                  sees them, Font/ the sprites of the chars, Text/ the text that stands or shifts. A function here
- *                  that only passes a call on is documented where the call goes.
+ *                  sees them, Font/ the sprites of the chars, Text/ the text that stands or shifts, Command/ the lines a
+ *                  control page sends over Serial, built on this class. A function here that only passes a call on is
+ *                  documented where the call goes.
  *
  *****************************************************************************************************************************************************/
 #ifndef _MAXMATRIX_H_
@@ -32,6 +33,7 @@
 #include "Matrix/MaxMatrixPanel.h"
 #include "Font/MaxMatrixFont.h"
 #include "Text/MaxMatrixText.h"
+#include "Command/MaxMatrixCommand.h"
 
 
 /******************************************************************************************************************************************************

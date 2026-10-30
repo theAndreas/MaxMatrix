@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <string>
 #include <vector>
 #include "binary.h"
 #include "Max7219.h"
@@ -18,6 +19,9 @@ typedef uint8_t byte;
 
 #define PROGMEM
 #define memcpy_P memcpy
+#define PSTR(Text) (Text)
+#define strcmp_P strcmp
+#define F(Text) (Text)
 
 #define HIGH 1
 #define LOW 0
@@ -38,6 +42,19 @@ unsigned long millis();
 unsigned long micros();
 void delay(unsigned long Milliseconds);
 
+/* Serial as far as the examples use it, declared with the types of the Arduino core: it reads what a test or the
+ * simulator has put into Mock::SerialInput and appends what the sketch prints to Mock::SerialOutput */
+class HardwareSerial {
+  public:
+    void begin(unsigned long Baud);
+    int available();
+    int read();
+    size_t print(const char* Text);
+    size_t println(const char* Text);
+};
+
+extern HardwareSerial Serial;
+
 namespace Mock {
     const uint8_t NumberOfPins = 64;
 
@@ -50,6 +67,9 @@ namespace Mock {
     extern std::vector<byte> Frame;
     extern std::vector<byte> LastFrame;
     extern Max7219Chain Chain;
+    /* the bytes Serial has yet to read, and what the sketch has printed */
+    extern std::string SerialInput;
+    extern std::string SerialOutput;
     /* called after every latched frame and every millisecond delay() waits, so that the simulator can draw
      * while a sketch blocks in delay(); none in the tests */
     extern void (*Tick)();
