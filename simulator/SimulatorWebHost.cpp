@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <fstream>
 #include <sstream>
@@ -40,6 +41,7 @@
 #define SIMULATOR_WEB_HOST_BACKLOG                                  4
 #define SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH                     4096u
 #define SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH                       2048u
+#define SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS                       100u
 #define SIMULATOR_WEB_HOST_WEB_SOCKET_PATH                          "/ws"
 
 
@@ -304,15 +306,21 @@ int SimulatorWebHost::openListener(unsigned short Port)
 ******************************************************************************************************************************************************/
 /*! \brief          reads an HTTP request
  *  \details        this function reads up to the blank line after the headers. A request is one packet on loopback,
- *                  so it is read here and now rather than collected over several calls.
+ *                  so it is read here and now rather than collected over several calls - but never waited for without
+ *                  end. A connection that is opened and says nothing is what a browser does when it opens a socket
+ *                  ahead of a request it may never make, and every recv() here blocks the sketch, so such a socket used
+ *                  to stop the simulator until the browser closed it. A receive timeout rather than a select() before
+ *                  every recv(): the loop already ends on a recv() that returns nothing.
  *
  *  \param[in]      Socket          the new connection
- *  \return         the request, or what arrived of it before the connection closed
+ *  \return         the request, or what arrived of it before the connection closed or went quiet
  *****************************************************************************************************************************************************/
 std::string SimulatorWebHost::readRequest(int Socket)
 {
     std::string Request;
     char Chunk[SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH];
+
+    setReceiveTimeout(Socket, SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS);
 
     while(Request.find("\r\n\r\n") == std::string::npos) {
         const ssize_t Read = recv(Socket, Chunk, sizeof(Chunk), 0);
@@ -358,6 +366,26 @@ void SimulatorWebHost::setNonBlocking(int Socket)
 {
     fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
 } /* setNonBlocking */
+
+
+/******************************************************************************************************************************************************
+  setReceiveTimeout()
+******************************************************************************************************************************************************/
+/*! \brief          lets recv() on a blocking socket give up after a while
+ *  \details        this function sets SO_RCVTIMEO; a recv() that has waited that long returns -1 with EAGAIN
+ *
+ *  \param[in]      Socket          the socket
+ *  \param[in]      Milliseconds    how long one recv() may wait for the next bytes
+ *  \return         -
+ *****************************************************************************************************************************************************/
+void SimulatorWebHost::setReceiveTimeout(int Socket, unsigned Milliseconds)
+{
+    timeval Timeout = timeval();
+
+    Timeout.tv_sec = static_cast<time_t>(Milliseconds / 1000);
+    Timeout.tv_usec = static_cast<suseconds_t>((Milliseconds % 1000) * 1000);
+    setsockopt(Socket, SOL_SOCKET, SO_RCVTIMEO, &Timeout, sizeof(Timeout));
+} /* setReceiveTimeout */
 
 
 /******************************************************************************************************************************************************

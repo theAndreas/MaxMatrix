@@ -41,6 +41,10 @@ add_executable(SimulatorWebSocketTest test/SimulatorWebSocketTest.cpp)
 set_target_properties(SimulatorWebSocketTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorWebSocketTest PRIVATE SimulatorWebHost GTest::gtest_main)
 gtest_discover_tests(SimulatorWebSocketTest TEST_PREFIX "simulator/")
+add_executable(SimulatorWebHostTest test/SimulatorWebHostTest.cpp)
+set_target_properties(SimulatorWebHostTest PROPERTIES CXX_STANDARD 17)
+target_link_libraries(SimulatorWebHostTest PRIVATE SimulatorWebHost GTest::gtest_main)
+gtest_discover_tests(SimulatorWebHostTest TEST_PREFIX "simulator/")
 
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
 # difference to it, and its tests need no sketch.

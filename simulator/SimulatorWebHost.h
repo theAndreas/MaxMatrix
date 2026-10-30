@@ -57,6 +57,7 @@ class SimulatorWebHost
     static std::string readRequest(int);
     static stdReturnType getPath(const std::string&, std::string*);
     static void setNonBlocking(int);
+    static void setReceiveTimeout(int, unsigned);
     static bool sendAll(int, const std::string&);
     static void sendResponse(int, const char*, const char*, const std::string&);
 
