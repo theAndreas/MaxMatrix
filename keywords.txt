@@ -2,7 +2,10 @@ MaxMatrix	KEYWORD1
 init	KEYWORD2
 clear	KEYWORD2
 shiftTask	KEYWORD2
+update	KEYWORD2
 getState	KEYWORD2
+setAutoUpdate	KEYWORD2
+getAutoUpdate	KEYWORD2
 setIntensity	KEYWORD2
 setDot	KEYWORD2
 getDot	KEYWORD2

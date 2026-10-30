@@ -72,6 +72,21 @@ void loop()
 
 More examples can be found in [examples/](examples/).
 
+## Drawing a picture in one go
+Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
+the chain, however much it drew. A picture made of many calls would still be shown half drawn in between. For that,
+turn the automatic update off and send the picture with `update()` once it is complete:
+
+```cpp
+Matrix.setAutoUpdate(false);
+Matrix.clear();
+for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % 8, true);
+Matrix.update();                // the whole picture at once, in at most eight frames
+Matrix.setAutoUpdate(true);     // back to showing every call
+```
+
+`setIntensity()` takes effect at once either way. `init()` always clears the LEDs, whatever the setting.
+
 ## Module orientation
 Two settings make the text upright:
 

@@ -116,6 +116,14 @@ was drawn, and animations stop flickering.
 *Done when* a test counts the frames of a drawing in both modes, and flash and RAM of every
 example on the Uno are in the PR.
 
+As built, sending immediately stays the default, as in MD_MAX72XX: a sketch that never heard of
+`update()` keeps working. What changed underneath is that no call sends a frame per dot or
+column any more. Drawing only changes the buffer, which keeps which columns of a module changed;
+every public function that draws sends those before it returns, one frame per changed column
+for all modules. So a call sends eight frames at most, and nothing when it changed nothing.
+`setAutoUpdate(false)` stops the sending until `update()`, for a picture made of many calls.
+`writeRegister()` and its no-op frames went with it: nothing sends to a single module any more.
+
 ### 9 Mirrored modules in the library
 
 `MaxMatrixModuleOrientationType` covers rotations only. The model in 4 shows four wirings
