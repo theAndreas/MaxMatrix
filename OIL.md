@@ -17,7 +17,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 5  | Simulator that runs the example sketches | 3 | done | #9 |
 | 6  | Web front end for the simulator | 5 | done | #10 |
 | 7  | Simulator in CI | 6 | done | #11 |
-| 8  | Batched updates in the library | 13 | open | |
+| 8  | Batched updates in the library | 13 | done | #20 |
 | 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | open | |
