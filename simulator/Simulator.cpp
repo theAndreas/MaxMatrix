@@ -15,7 +15,6 @@
  * another port, so that two simulators, or a simulator and the tests, can run side by side. */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <chrono>
 #include <fstream>
 #include <sstream>
@@ -29,7 +28,16 @@
 void setup();
 void loop();
 
-static const struct {
+namespace {
+
+/* the examples put chip select on pin 10 */
+const int ChipSelectPin = 10;
+/* about 30 pictures a second; neither a terminal nor a page keeps up with every frame */
+const unsigned long RedrawInterval = 33;
+/* the most frames the page is sent at once; more would scroll past before anyone read them */
+const size_t FrameLogLength = 16;
+
+const struct {
     const char* Name;
     const Max7219WiringType* Wiring;
 } NamedWirings[] = {
@@ -39,49 +47,64 @@ static const struct {
     { "ICSTATION", &MAX7219_WIRING_ICSTATION },
 };
 
-static std::string WiringName = "FC16";
-static const Max7219WiringType* Wiring = &MAX7219_WIRING_FC16;
-static bool UpsideDown = false;
-static unsigned long RunFor = 0;
-static const char* ExpectFile = NULL;
-static int DrawnFrames = -1;
-static unsigned long LastDraw = 0;
-static bool Web = false;
-static unsigned short Port = 8080;
-/* the frames since the page was last sent the panel, as hex pairs, one string per frame */
-static std::vector<std::string> FrameLog;
-static int LoggedFrames = 0;
-static bool SettingsChanged = true;
+/* what the command line chooses; the wiring and the mounting the page can change later */
+std::string WiringName = "FC16";
+const Max7219WiringType* Wiring = &MAX7219_WIRING_FC16;
+bool UpsideDown = false;
+bool Web = false;
+unsigned short Port = 8080;
+unsigned long RunFor = 0;
+const char* ExpectFile = nullptr;
 
-/* the panel as text, one line per row; Lit and Dark are one dot each */
-static std::string panel(const char* Lit, const char* Dark)
+/* what was drawn last, so that a picture is only drawn again when it changed */
+int DrawnFrames = -1;
+unsigned long LastDraw = 0;
+bool SettingsChanged = true;
+
+/* the frames since the page was last sent the panel, as hex pairs, one string per frame */
+std::vector<std::string> FrameLog;
+int LoggedFrames = 0;
+
+const Max7219WiringType* findWiring(const std::string& Name)
+{
+    for(const auto& Named : NamedWirings) {
+        if(Name == Named.Name) return Named.Wiring;
+    }
+    for(const Max7219WiringType& Each : Max7219Wirings) {
+        if(Name == Each.Name) return &Each;
+    }
+    return nullptr;
+}
+
+/* the panel as text, row after row; Lit and Dark are one dot each, EndOfRow follows every row */
+std::string panel(const char* Lit, const char* Dark, const char* EndOfRow)
 {
     std::string Text;
+
     for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
         for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Text += Mock::Chain.isLit(*Wiring, X, Y, UpsideDown) ? Lit : Dark;
-        Text += '\n';
+        Text += EndOfRow;
     }
     return Text;
 }
 
 /* redraws in place: cursor home rather than clearing, which would flicker */
-static void draw()
+void draw()
 {
     printf("\x1b[H%s, %d modules%s, intensity", WiringName.c_str(), MAXMATRIX_NUMBER_OF_MODULES, UpsideDown ? ", upside down" : "");
     for(size_t Chip = Mock::Chain.Chips.size(); Chip > 0; Chip--) printf(" %d", Mock::Chain.Chips[Chip - 1].Intensity);
     printf(", %d frames%s\x1b[K\n\n", Mock::Frames, Mock::Errors ? ", TRANSFER ERRORS" : "");
-    fputs(panel("\u2588\u2588", "\u00b7 ").c_str(), stdout);
+    fputs(panel("\u2588\u2588", "\u00b7 ", "\n").c_str(), stdout);
     fflush(stdout);
-    DrawnFrames = Mock::Frames;
-    LastDraw = millis();
 }
 
-static void finish()
+/* the end of a run with --for: the panel once, and the exit code says whether it is the one expected */
+void finish()
 {
-    std::string Picture = panel("#", ".");
+    std::string Picture = panel("#", ".", "\n");
 
     fputs(Picture.c_str(), stdout);
-    if(ExpectFile != NULL) {
+    if(ExpectFile != nullptr) {
         std::ifstream File(ExpectFile);
         std::stringstream Expected;
         Expected << File.rdbuf();
@@ -93,91 +116,53 @@ static void finish()
     exit(Mock::Errors ? 1 : 0);
 }
 
-static void command(const std::string& Text);
-
 /* tick() follows every frame, so each one gets logged; the page shows them as they pass */
-static void logFrame()
+void logFrame()
 {
     std::string Line = "#" + std::to_string(Mock::Frames) + ":";
     char Pair[8];
 
     for(size_t i = 0; i + 1 < Mock::LastFrame.size(); i += 2) {
         snprintf(Pair, sizeof(Pair), "%02X %02X", Mock::LastFrame[i], Mock::LastFrame[i + 1]);
-        Line += (i == 0 ? " " : " | ") + std::string(Pair);
+        Line += i == 0 ? " " : " | ";
+        Line += Pair;
     }
     FrameLog.push_back(Line);
-    if(FrameLog.size() > 16) FrameLog.erase(FrameLog.begin());
+    if(FrameLog.size() > FrameLogLength) FrameLog.erase(FrameLog.begin());
     LoggedFrames = Mock::Frames;
 }
 
 /* the panel for the page, the brightness of each module position from the left and the frames since last time */
-static void sendToPage()
+void sendToPage()
 {
-    std::string Message = "{\"wiring\":\"" + WiringName + "\",\"upsideDown\":" + (UpsideDown ? "true" : "false") +
-                          ",\"columns\":" + std::to_string(MAXMATRIX_NUMBER_OF_COLUMNS) +
-                          ",\"rows\":" + std::to_string(MAXMATRIX_ROW_NUMBER_OF_MODULE) + ",\"dots\":\"";
+    std::ostringstream Json;
 
-    for(unsigned Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-        for(unsigned X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) Message += Mock::Chain.isLit(*Wiring, X, Y, UpsideDown) ? '1' : '0';
-    }
-    Message += "\",\"intensity\":[";
+    Json << "{\"wiring\":\"" << WiringName << "\",\"upsideDown\":" << (UpsideDown ? "true" : "false")
+         << ",\"columns\":" << MAXMATRIX_NUMBER_OF_COLUMNS << ",\"rows\":" << MAXMATRIX_ROW_NUMBER_OF_MODULE
+         << ",\"dots\":\"" << panel("1", "0", "") << "\",\"intensity\":[";
     for(unsigned Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        if(Module > 0) Message += ",";
-        Message += std::to_string(Mock::Chain.chipAt(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, UpsideDown).Intensity);
+        Json << (Module > 0 ? "," : "")
+             << static_cast<unsigned>(Mock::Chain.chipAt(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, UpsideDown).Intensity);
     }
-    Message += "],\"frames\":" + std::to_string(Mock::Frames) + ",\"errors\":" + std::to_string(Mock::Errors) + ",\"log\":[";
-    for(size_t i = 0; i < FrameLog.size(); i++) Message += (i > 0 ? ",\"" : "\"") + FrameLog[i] + "\"";
-    Message += "]}";
+    Json << "],\"frames\":" << Mock::Frames << ",\"errors\":" << Mock::Errors << ",\"log\":[";
+    for(size_t i = 0; i < FrameLog.size(); i++) Json << (i > 0 ? "," : "") << '"' << FrameLog[i] << '"';
+    Json << "]}";
 
-    WebHost::broadcast(Message);
+    WebHost::broadcast(Json.str());
     FrameLog.clear();
-    DrawnFrames = Mock::Frames;
-    LastDraw = millis();
-    SettingsChanged = false;
-}
-
-/* called after every frame and every millisecond of delay(); neither a terminal nor a page keeps up with every frame */
-static void tick()
-{
-    unsigned long Now = millis();
-
-    if(Web) {
-        if(Mock::Frames != LoggedFrames) logFrame();
-        WebHost::task(command);
-    }
-    if(RunFor && Now >= RunFor) finish();
-    if((Mock::Frames != DrawnFrames || SettingsChanged) && Now - LastDraw >= 33) {
-        if(Web) sendToPage();
-        else if(!RunFor) draw();
-    }
-}
-
-static void usage(const char* Program)
-{
-    fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]\n", Program);
-    fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
-    exit(2);
-}
-
-static const Max7219WiringType* findWiring(const char* Name)
-{
-    for(const auto& Named : NamedWirings) {
-        if(strcmp(Named.Name, Name) == 0) return Named.Wiring;
-    }
-    for(const Max7219WiringType& Each : Max7219Wirings) {
-        if(strcmp(Each.Name, Name) == 0) return &Each;
-    }
-    return NULL;
 }
 
 /* what the page sends: "wiring NAME", "upside-down 0|1", and "hello" when it opens, which asks for the panel */
-static void command(const std::string& Text)
+void command(const std::string& Text)
 {
-    if(Text.compare(0, 7, "wiring ") == 0) {
-        const Max7219WiringType* Found = findWiring(Text.c_str() + 7);
-        if(Found != NULL) {
+    const std::string WiringCommand = "wiring ";
+
+    if(Text.compare(0, WiringCommand.size(), WiringCommand) == 0) {
+        std::string Name = Text.substr(WiringCommand.size());
+        const Max7219WiringType* Found = findWiring(Name);
+        if(Found != nullptr) {
             Wiring = Found;
-            WiringName = Text.substr(7);
+            WiringName = Name;
         }
     } else if(Text == "upside-down 1") {
         UpsideDown = true;
@@ -187,33 +172,64 @@ static void command(const std::string& Text)
     SettingsChanged = true;
 }
 
+/* called after every frame and every millisecond of delay() */
+void tick()
+{
+    unsigned long Now = millis();
+
+    if(Web) {
+        if(Mock::Frames != LoggedFrames) logFrame();
+        WebHost::task(command);
+    }
+    if(RunFor && Now >= RunFor) finish();
+
+    bool Changed = Mock::Frames != DrawnFrames || SettingsChanged;
+    if(!Changed || Now - LastDraw < RedrawInterval) return;
+    if(Web) sendToPage();
+    else if(!RunFor) draw();
+    DrawnFrames = Mock::Frames;
+    LastDraw = Now;
+    SettingsChanged = false;
+}
+
+void usage(const char* Program)
+{
+    fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]\n", Program);
+    fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
+    exit(2);
+}
+
+}
+
 int main(int argc, char** argv)
 {
     for(int i = 1; i < argc; i++) {
-        if(strcmp(argv[i], "--wiring") == 0 && i + 1 < argc) {
+        const std::string Option = argv[i];
+        const bool HasValue = i + 1 < argc;
+
+        if(Option == "--wiring" && HasValue) {
             WiringName = argv[++i];
-            Wiring = findWiring(WiringName.c_str());
-            if(Wiring == NULL) usage(argv[0]);
-        } else if(strcmp(argv[i], "--upside-down") == 0) {
+            Wiring = findWiring(WiringName);
+            if(Wiring == nullptr) usage(argv[0]);
+        } else if(Option == "--upside-down") {
             UpsideDown = true;
-        } else if(strcmp(argv[i], "--web") == 0) {
+        } else if(Option == "--web") {
             Web = true;
-        } else if(strcmp(argv[i], "--port") == 0 && i + 1 < argc) {
-            Port = (unsigned short)atoi(argv[++i]);
+        } else if(Option == "--port" && HasValue) {
+            Port = static_cast<unsigned short>(atoi(argv[++i]));
             if(Port == 0) usage(argv[0]);
-        } else if(strcmp(argv[i], "--for") == 0 && i + 1 < argc) {
-            RunFor = (unsigned long)(atof(argv[++i]) * 1000);
+        } else if(Option == "--for" && HasValue) {
+            RunFor = static_cast<unsigned long>(atof(argv[++i]) * 1000);
             if(RunFor == 0) usage(argv[0]);
-        } else if(strcmp(argv[i], "--expect") == 0 && i + 1 < argc) {
+        } else if(Option == "--expect" && HasValue) {
             ExpectFile = argv[++i];
         } else {
             usage(argv[0]);
         }
     }
-    if(ExpectFile != NULL && RunFor == 0) usage(argv[0]);
+    if(ExpectFile != nullptr && RunFor == 0) usage(argv[0]);
 
-    /* the examples select chip select on pin 10 */
-    Mock::reset(10, MAXMATRIX_NUMBER_OF_MODULES);
+    Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
     Mock::Tick = tick;
     if(Web) {
         if(!WebHost::begin(Port, SIMULATOR_PAGE)) {
