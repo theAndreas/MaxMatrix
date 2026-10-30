@@ -35,6 +35,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
+| 26 | Control program for Linux and Windows | 20 | open | |
 
 ### 1 Build with CMake
 
@@ -289,6 +290,7 @@ The page from 6 can be that tool again, for both ends: against the simulator ove
 WebSocket, and against a real board over the browser's Web Serial API (Chromium-based
 browsers), with the `SerialControl` example from 20 on the board. One page, no installer,
 no Windows. Inside the simulator, the commands reach the sketch through a simulated `Serial`.
+A program of its own beside the page, for Firefox users and without a browser, is 26.
 
 ### 22 Fast pin access for bit banging
 
@@ -359,11 +361,47 @@ matrix orientation 180.
 *Done when* `MaxMatrixModuleTest` covers all eight combinations of the two settings, each with
 its wiring and input side, and the README table lists them.
 
+### 26 Control program for Linux and Windows
+
+The control of 21 as a program of its own, beside the page: for a browser without Web
+Serial, and for whoever wants a program rather than a page. wxWidgets in C++, as Wordclock's
+simulator window. It drives a board over its serial port and the simulator over TCP, with the
+lines of 21 (`text=`, `textShift=`, `intensity=`, `speed=`, `space=`, `setDot=column,row,value`),
+so that to the program both ends look alike, and to the sketch the program and the page.
+
+- **Serial port:** a small class of its own, over `termios` on Linux and
+  `CreateFile`/`SetCommState` on Windows, rather than libserialport: one port, text only, and
+  no further dependency.
+- **Simulator:** a plain TCP port beside the WebSocket of 6, which takes the same lines as the
+  simulated `Serial` of 21. wxWidgets has `wxSocketClient`, but no WebSocket.
+- **A thin window:** the commands, the protocol and the connections are classes without
+  wxWidgets, tested with GoogleTest like the rest. The window itself is checked by hand, or
+  under `xvfb-run` in CI.
+- **Dev container:** wxWidgets from apt in the `Dockerfile`; showing the window needs a
+  display from the host, which WSLg gives the `wsl2` variant and the `linux` variant has to
+  forward.
+
+How it is shipped, a Windows `.exe` and an AppImage, is decided with 18.
+
+*Done when* the program drives a board running `SerialControl` and the simulator, built from
+the same CMake on Linux and Windows, its classes without a window have tests, and the PR says
+on which systems and boards it ran.
+
+After 20, which defines the lines and `SerialControl`; beside 21, which uses the same lines.
+
 ## Decisions
 
 Why it is planned this way rather than the obvious alternative.
 
 - **Browser, not wxWidgets, for the simulator (6).** See the item.
+- **wxWidgets, not Qt, Tauri or Electron, for the control program (26).** Native controls and
+  a small program, on Windows a single `.exe`, as its licence allows static linking; and the
+  toolkit Wordclock already uses. What Qt has and wxWidgets lacks is a serial port class and a
+  WebSocket; a serial class of its own and a TCP port in the simulator make up for both.
+  Tauri would bring Rust into the project and needs a serial plugin on Linux anyway, where its
+  webview has no Web Serial; Electron is 100 MB for a few lines over a port. The browser
+  restriction of 6 was about the simulator: no GUI packages in the container and no check in
+  CI. Here the window stays thin and everything behind it is tested.
 - **CMake, not Bazel (1).** Bazel pays off for large multi-language builds; here it would
   bring its own toolchain and build language for three source files, in an ecosystem where
   nobody uses it. CMake gives `ctest`, `compile_commands.json` and the same layout as
