@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="436" viewBox="0 0 1160 436" font-family="Helvetica, Arial, sans-serif">
-  <rect x="0" y="0" width="1160" height="436" rx="0" fill="#ffffff" stroke="none" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="414" viewBox="0 0 1160 414" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1160" height="414" rx="0" fill="#ffffff" stroke="none" stroke-width="2"/>
   <text x="60" y="30" font-size="20" fill="#222222" text-anchor="start" font-weight="bold">Module orientation 270: DR1CR0RR0 (FC-16)</text>
   <rect x="56" y="82" width="232" height="232" rx="4" fill="none" stroke="#666666" stroke-width="2"/>
   <text x="172" y="72" font-size="15" fill="#222222" text-anchor="middle" font-weight="bold">Module 0</text>

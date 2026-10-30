@@ -34,10 +34,11 @@ class DocuSvg
   private:
     uint16_t Width;
     uint16_t Height;
+    int16_t Top;
     std::ostringstream Body;
 
   public:
-    DocuSvg(uint16_t, uint16_t);
+    DocuSvg(uint16_t, uint16_t, int16_t = 0);
 
     // get methods
     std::string getDocument() const;
