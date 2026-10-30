@@ -52,6 +52,8 @@ default, every public function that draws calls `updateIfAuto()` before it retur
 call shows its result; with it off, only `update()` sends. A new public function that draws
 ends with `updateIfAuto()` as well, and nothing below the facade sends. `clear()` marks every
 column, even one that was empty already, because after power-up the registers hold anything.
+`MaxMatrixBatch` turns `AutoUpdate` off for the life of a block and puts back what it found, so
+that a sketch cannot forget to turn it on again; the sketch-facing docs lead with it.
 
 ### The parts
 

@@ -1,4 +1,5 @@
 MaxMatrix	KEYWORD1
+MaxMatrixBatch	KEYWORD1
 init	KEYWORD2
 clear	KEYWORD2
 shiftTask	KEYWORD2

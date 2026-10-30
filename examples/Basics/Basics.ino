@@ -38,18 +38,18 @@ void loop()
     delay(1000);
 
     /* draw a frame from many dots and show it at once, rather than dot by dot */
-    Matrix.setAutoUpdate(false);
-    Matrix.clear();
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-        Matrix.setDot(Column, 0, true);
-        Matrix.setDot(Column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
+    {
+        MaxMatrixBatch Batch(Matrix);   // nothing is sent until the end of this block
+        Matrix.clear();
+        for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
+            Matrix.setDot(Column, 0, true);
+            Matrix.setDot(Column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
+        }
+        for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
+            Matrix.setDot(0, Row, true);
+            Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, Row, true);
+        }
     }
-    for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
-        Matrix.setDot(0, Row, true);
-        Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, Row, true);
-    }
-    Matrix.update();
-    Matrix.setAutoUpdate(true);
     delay(1000);
 
     /* fade the intensity */

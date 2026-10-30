@@ -123,6 +123,34 @@ class MaxMatrix
     void shiftDown(bool Rotate = false) { Panel.shiftDown(Rotate); updateIfAuto(); }
 };
 
+
+/******************************************************************************************************************************************************
+ *  CLASS  MaxMatrixBatch
+ *****************************************************************************************************************************************************/
+/* Holds the sending back for as long as it exists, as std::lock_guard holds a mutex: the constructor turns AutoUpdate
+ * off, the destructor puts back what was there before. So the picture is sent at the end of the block, also on a
+ * return or break out of it, and of nested ones only the outermost sends. It has to be a named variable: an unnamed
+ * MaxMatrixBatch{Matrix}; is destroyed at once and holds nothing back. A picture built over several calls of loop()
+ * does not fit into a block; that is what setAutoUpdate() and update() are for. */
+class MaxMatrixBatch
+{
+  private:
+    MaxMatrix& Matrix;
+    bool PreviousAutoUpdate;
+
+  public:
+    explicit MaxMatrixBatch(MaxMatrix& sMatrix) : Matrix(sMatrix)
+    {
+        PreviousAutoUpdate = Matrix.getAutoUpdate();
+        Matrix.setAutoUpdate(false);
+    }
+    ~MaxMatrixBatch() { Matrix.setAutoUpdate(PreviousAutoUpdate); }
+
+    /* a copy would restore the state twice */
+    MaxMatrixBatch(const MaxMatrixBatch&) = delete;
+    MaxMatrixBatch& operator=(const MaxMatrixBatch&) = delete;
+};
+
 #endif
 
 /******************************************************************************************************************************************************

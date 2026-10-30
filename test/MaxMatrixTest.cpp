@@ -439,6 +439,53 @@ TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn)
     EXPECT_NE(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
 }
 
+TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock)
+{
+    int FramesBefore = Mock::Frames;
+
+    {
+        MaxMatrixBatch Batch(Matrix);
+        for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+        EXPECT_FALSE(Matrix.getAutoUpdate());
+        EXPECT_EQ(Mock::Frames, FramesBefore);
+        EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0)) << "shown inside the block";
+    }
+    EXPECT_TRUE(Matrix.getAutoUpdate());
+    EXPECT_EQ(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+}
+
+/* the inner batch puts back the state it found, which the outer one had turned off */
+TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost)
+{
+    int FramesBefore = Mock::Frames;
+
+    {
+        MaxMatrixBatch Outer(Matrix);
+        {
+            MaxMatrixBatch Inner(Matrix);
+            Matrix.setDot(1, 1, true);
+        }
+        EXPECT_EQ(Mock::Frames, FramesBefore) << "sent at the end of the inner block";
+        Matrix.setDot(2, 2, true);
+    }
+    EXPECT_GT(Mock::Frames, FramesBefore);
+}
+
+/* a batch inside a sketch that sends with update() itself leaves it that way */
+TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff)
+{
+    Matrix.setAutoUpdate(false);
+    int FramesBefore = Mock::Frames;
+
+    {
+        MaxMatrixBatch Batch(Matrix);
+        Matrix.setDot(1, 1, true);
+    }
+    EXPECT_FALSE(Matrix.getAutoUpdate());
+    EXPECT_EQ(Mock::Frames, FramesBefore);
+    Matrix.update();
+}
+
 /* chip select was not an output in SPI mode, and the SPI transaction was never ended */
 TEST_F(MaxMatrixTest, TransfersAreFramed)
 {

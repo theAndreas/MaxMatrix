@@ -122,7 +122,12 @@ column any more. Drawing only changes the buffer, which keeps which columns of a
 every public function that draws sends those before it returns, one frame per changed column
 for all modules. So a call sends eight frames at most, and nothing when it changed nothing.
 `setAutoUpdate(false)` stops the sending until `update()`, for a picture made of many calls.
-`writeRegister()` and its no-op frames went with it: nothing sends to a single module any more.
+`MaxMatrixBatch` does the same for one block, as `std::lock_guard` holds a mutex: it puts back
+what it found when the block ends, so nothing has to be turned on again. A default parameter
+`Update = true` on every function that draws was weighed and dropped: with it,
+`setColumn(Module, Column, Value)` became ambiguous with `setColumn(Column, Value, Update)` and
+no longer compiled.
+`writeRegister()` and its no-op frames are gone: nothing sends to a single module any more.
 
 ### 9 Mirrored modules in the library
 
