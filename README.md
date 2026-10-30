@@ -1,4 +1,11 @@
 # MaxMatrix
+
+[![CI](https://img.shields.io/github/actions/workflow/status/theAndreas/MaxMatrix/ci.yml?branch=main&label=CI&logo=github)](https://github.com/theAndreas/MaxMatrix/actions/workflows/ci.yml)
+[![issues](https://img.shields.io/github/issues/theAndreas/MaxMatrix)](https://github.com/theAndreas/MaxMatrix/issues)
+
+[![license](https://img.shields.io/github/license/theAndreas/MaxMatrix)](LICENSE)
+[![release](https://img.shields.io/github/v/release/theAndreas/MaxMatrix)](https://github.com/theAndreas/MaxMatrix/releases)
+
 This is an Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 
 Features:
