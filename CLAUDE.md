@@ -243,8 +243,9 @@ to the page can bring a panel; a new example in its place needs such a pause as 
 `SimulatorWebSocketTest` checks the rest of the protocol a browser may use, against the examples
 of the RFCs, `SimulatorWebHostTest` that a client which connects and says nothing cannot stop
 the host (on port 18081, so it needs no lock with `simulator/web`), and `SimulatorTest` the
-command line and the status line against the model, all once under the `simulator/` prefix: all of the simulator but `main.cpp` is one library, built
-once, because it reads the model and never the library.
+command line and the status line against the model, all once under the `simulator/` prefix: 
+all of the simulator but `main.cpp` is one library, built once, because it reads the model and 
+never the library.
 
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above
@@ -254,8 +255,8 @@ The tests reach private members through `#define private public`, because some o
 check has no public path — which frame a change to one buffer column turns into, for instance,
 is checked by storing the bit with `MaxMatrixWired::storeBit()`, so that the test names the
 buffer column itself rather than reaching it through an orientation. The parts are private
-members of `MaxMatrix`, so a test reaches the buffer as `Matrix.Panel.Wired.MatrixBuffer`. The define comes after the GoogleTest and
-standard headers, which it would rewrite as well.
+members of `MaxMatrix`, so a test reaches the buffer as `Matrix.Panel.Wired.MatrixBuffer`. 
+The define comes after the GoogleTest and standard headers, which it would rewrite as well.
 
 ### Hardware
 
