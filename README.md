@@ -174,6 +174,17 @@ void loop()
 class keeps the line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it
 pays nothing.
 
+The simulator's page has buttons for the commands, and a click on an LED switches it. They drive the simulator when it
+runs SerialControl, and a board running SerialControl as well, connected with *Connect board* over the browser's Web
+Serial API: every command goes to both, so the panel shows what the board should. Web Serial needs Chrome or Edge, and
+the page served by the simulator on `localhost` is enough for it, even with a board alone:
+
+```sh
+build/Simulator-SerialControl-bitbang --web
+```
+
+Opening the port resets an Uno; the page sends the board nothing until SerialControl has said `ready`.
+
 ## Module orientation
 Two settings make the text upright:
 
@@ -222,7 +233,7 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 
 `--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
 
-With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, and the module type and mounting to switch while the sketch runs. `--port` picks another port, for a second simulator beside it.
+With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it.
 
 The pictures in [docu/](docu/README.md) are drawn from the library and the MAX7219 model, not by hand. After a change
 that moves a dot, `build/DocuPictures --write docu` draws them again; until then the test `docu/pictures` fails.

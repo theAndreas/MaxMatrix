@@ -298,6 +298,16 @@ browsers), with the `SerialControl` example from 20 on the board. One page, no i
 no Windows. Inside the simulator, the commands reach the sketch through a simulated `Serial`.
 A program of its own beside the page, for Firefox users and without a browser, is 26.
 
+As built, every command goes to the simulator and to the board at once, whichever is
+connected, so with `SerialControl` in both the panel shows what the board should. The page
+sends `serial LINE` over the WebSocket, the simulator appends the line to the sketch's `Serial`,
+and what the sketch prints returns with the next panel; an answer that lights nothing asks for
+a panel of its own rather than waiting for the next frame. A click on an LED sends `setDot=`.
+The page is served by the simulator on `localhost`, which Web Serial takes as secure, so it
+drives a board alone as well; a page on GitHub Pages would be 17. Opening the port resets an
+Uno, so nothing goes to the board until `SerialControl` has said `ready`. The Web Serial side is
+tested against a fake port under Node, not yet with a board.
+
 ### 22 Fast pin access for bit banging
 
 `MAXMATRIX_USE_DIGITAL_WRITE_FAST` changes nothing as it stands. Measured on 2026-10-29

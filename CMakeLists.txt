@@ -56,6 +56,16 @@ set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
 gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
 
+# The script of the simulator's page, against stand-ins for the DOM, the WebSocket and a board on Web Serial. Node is no
+# part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
+find_program(NodeExecutable node)
+if(NodeExecutable)
+    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/PageTest.js
+                                         ${PROJECT_SOURCE_DIR}/simulator/index.html)
+else()
+    message(STATUS "node not found: the test simulator/page is left out")
+endif()
+
 # One library and one test binary per variant, because the two transfer paths are separate code.
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
