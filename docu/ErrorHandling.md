@@ -228,3 +228,54 @@ does not belong in a display library.
 - **Open, and first:** whether a dot off the panel is an error at all. If `setDot()`, `setColumn()`
   and `setRow()` clip as `setChar()` and `embedded-graphics` do, out of range is left for the
   intensity and the commands, and `MaxMatrixCommand` checks the coordinates it is sent itself.
+- **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
+  `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
+  wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the
+  library ever pass through it: commands a sketch registers with errors of its own, or a transfer that
+  can fail, such as I²C with a NACK. A domain in `PROGMEM` with an id byte in its contents would be the
+  choice then.
+
+## Beyond this library: embedded projects in general
+
+What the comparison suggests for other embedded projects, where the answer differs from MaxMatrix's.
+
+**First, tell errors from violations.** A violation is a programming error or a state that cannot
+be: an index off its array, a broken invariant. It belongs to an assert or a fatal handler that
+records it and resets in a defined way, not into an error code. An error the program can recover
+from (a bus NACK, a timeout, a sensor gone) is a value in the return type. AUTOSAR keeps the two
+apart (violations and `ErrorCode`), as ErrorKit does (`fatal()` and `Result`); where they are mixed,
+half of the error codes are asserts in disguise.
+
+**Within one component or library: an enum, statically.** The set of errors is closed, so the
+cheapest and safest form fits: one enum per component and `Result<T, E>` with exactly that `E`. This
+is Rust's model, and what MaxMatrix does.
+
+**Across the components of an application: a domain id and a code.** Once errors pass through
+layers (drivers, middleware, application) and no layer should map them, they need one type. An id
+rather than an address:
+
+- Errors in embedded systems nearly always leave the device: a fault memory in EEPROM or flash,
+  logs, telemetry, diagnostics in the field. An address means nothing there; an id does.
+- Two bytes, no RAM, no text on the target; the host decodes, as with `defmt`.
+- The application keeps the registry, as an enum of ids rather than loose constants, so that they are
+  unique by construction. A library takes its id as a configuration parameter or gets a reserved
+  range. At the level of the application the set is closed again, since the application knows its
+  components; Rust collapses the errors of its crates into one enum of the application the same way.
+
+**The address as an identity fits a niche:** errors that never leave the program, texts wanted on
+the target (a console on the device), and libraries developed apart that cannot agree on ids, for
+which the linker hands out unique addresses for free. A domain object that carries an id byte
+serves both: the address within the program, the id on the wire.
+
+**What does not carry over from the AVR:** the RAM a vtable costs. On Cortex-M, ESP32, RISC-V and the
+Nano Every, `.rodata` and with it every vtable stays in flash, and a virtual domain costs no RAM; what
+remains are its texts, always linked, and the singleton trap. A design like `ara::core` is sound on a
+Cortex-M with 256 KB of flash.
+
+**Under a safety standard** (ASIL, MISRA), unions are restricted or banned, so a `Result` built on a
+union, as ErrorKit's is, would need a deviation; the rule and its exceptions are for the standard in
+use to say. A `struct` with the value and the error side by side costs a few bytes and complies.
+
+In short: an enum within a component; between components an id and a code, with a registry and the
+texts on the host; the address only when errors never leave the program and no one can hand out
+ids.
