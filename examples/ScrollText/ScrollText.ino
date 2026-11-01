@@ -6,7 +6,7 @@
  * Wiring (Arduino Uno / Nano):
  *   DIN -> 11, CS -> 10, CLK -> 13
  *
- * The number of modules is configured with MAXMATRIX_NUMBER_OF_MODULES in MaxMatrix.h.
+ * The number of modules is configured with MAXMATRIX_NUMBER_OF_MODULES in MaxMatrixConfig.h.
  */
 #include <MaxMatrix.h>
 
