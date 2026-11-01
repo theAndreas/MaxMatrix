@@ -428,6 +428,9 @@ a buffer cannot fail there. If `setDot()`, `setColumn()` and `setRow()` clip as 
 range is left for the intensity and the commands, and `MaxMatrixCommand` checks the coordinates
 it is sent itself. That decides how many errors there are, so it comes before the enum.
 
+The alternatives weighed, AUTOSAR's error domains and Rust's enums among them, and what each
+costs on the Uno are in `docu/ErrorHandling.md`.
+
 *Done when* every function that can fail says why, the tests check each reason in both
 variants and with the switch on, and the PR gives flash and RAM of every example against
 today.

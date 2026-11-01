@@ -21,7 +21,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   bytes of `MatrixBuffer` lie on a module in each module orientation (`Wiring_*.svg`). None is
   drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
   `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
-  change that moves a dot.
+  change that moves a dot. `ErrorHandling.md` records what was weighed, and measured, for the
+  errors of OIL item 27.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
   `--web` on `localhost:8080`. One class per job, as in `src/`:
