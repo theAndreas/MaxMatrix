@@ -158,6 +158,35 @@ Rust: trait bounds (concepts need C++20 and GCC 10; avr-gcc is 7.3), `?` and `#[
 pays off only with error sources the library does not know, such as a transfer that can fail. Rust on
 AVR itself is no option for an Arduino library: the target is tier 3 and needs nightly.
 
+Both domain patterns can be built in Rust without a heap; the sketches below were not compiled here.
+
+- **An id and a code**, as ErrorKit: a trait `Domain` with `const ID: u8`, and `impl<E: Domain>
+  From<E> for ErrorCode`. Rust closes ErrorKit's gaps: `?` converts through `From` without a macro,
+  `#[must_use]` warns under every edition, and `err.downcast::<I2cErrc>()` returns the typed enum,
+  whose `match` is exhaustive again. It does not check that ids are unique either.
+- **An address**, as `ErrorCode { domain: &'static DomainInfo, value: u8 }`, compared with
+  `core::ptr::eq()`. The domain has to be a `static`: a `const` is copied into every place it is
+  used and has no address of its own, as a `const` in a C++ header has one per translation unit. A
+  domain with contents (a name, an id byte) does not rely on two empty statics being kept apart.
+
+A trait object works differently from a C++ object with virtual functions. The object carries no
+vptr; `&dyn Trait` is a fat pointer of two words, the data and the vtable. The cost moves from the
+object into every stored reference:
+
+- **For it:** objects stay as small as their data, any type can get a trait afterwards (a foreign
+  one, a `u8`), several traits need no adjusted pointers or thunks, and there is no vptr that changes
+  while a constructor runs.
+- **Against it:** every pointer is twice as large. On the AVR a domain as `&'static dyn ErrorDomain`
+  makes the error 5 bytes, where C++ has 3; a `&'static DomainInfo` without `dyn` stays a thin
+  pointer and keeps it at 3. An object does not know its type from its address alone, so a fat
+  pointer does not fit a C callback's `void* context`, an `AtomicPtr` shared with an interrupt, or an
+  intrusive list of different types. Converting between trait objects is clumsier than a cast to a
+  base class, and a vtable may exist once per codegen unit, so two `&dyn` to the same object can
+  differ: compare them with `core::ptr::addr_eq()`.
+
+Many objects with few stored references favour Rust's way; few objects with many long-lived
+references, or pointers that have to pass through C, atomics or intrusive structures, favour C++'s.
+
 ## Readable errors
 
 - **`getErrorText()`** returns a `const __FlashStringHelper*` from `PROGMEM`, which `Serial.print`
