@@ -455,13 +455,16 @@ Why it is planned this way rather than the obvious alternative.
   with `ctest` and VS Code's test view without extra scripts. Wordclock keeps its own harness
   for reasons that do not apply here: its tests depend on their order through singletons, and
   the same cases are built by two harnesses without CMake.
-- **A flat enum, not an error domain with a virtual function (27).** Measured on 2026-11-01
-  with two sketches on the Uno: a flat enum takes 486 bytes of flash and 9 of RAM, an error of
-  `const ErrorDomain*` and `uint8_t` with two domains 684 and 69. The error itself is 3 bytes
-  and returns in registers; what costs is that avr-gcc copies every vtable (8 bytes for two
-  virtual functions) and every domain object into RAM, and that the vtable keeps every message
-  linked although no one asks for it, 40 bytes of text here. That breaks "the parts cost no RAM"
-  and "a sketch that does not use it pays nothing". What the vtable buys, an open set of
-  domains, has no user: every error comes from the library itself. A static `kind()` per error
-  type, as `embedded-hal` has it, pays off only with error sources the library does not know,
-  such as a transfer that can fail.
+- **A flat enum, not an error domain (27).** Measured on 2026-11-01 with sketches on the Uno,
+  two domains each: a flat enum takes 486 bytes of flash and 9 of RAM. An error of a domain
+  pointer and a `uint8_t` takes 684 and 69 with a virtual function for the text, 628 and 9 with
+  the domain as a table in `PROGMEM`, and 580 and 9 with that table's texts switched off. The
+  error itself is 3 bytes and returns in registers. The vtable costs RAM because the ATmega328P
+  reads flash only with `LPM`, so avr-gcc keeps all of `.rodata`, vtables included, in RAM
+  (`avr5.x`); a table read with `pgm_read_ptr()` avoids that. Either way the domain keeps its
+  texts linked, as every error takes its address, so only a switch takes them out. And the
+  domain pointer is then a flash address that must not be dereferenced, which the tests on the
+  host cannot see; the public header would have to declare the domain type only. What a domain
+  buys, an open set of errors, has no user: every error comes from the library itself. A
+  static `kind()` per error type, as `embedded-hal` has it, pays off only with error sources
+  the library does not know, such as a transfer that can fail.
