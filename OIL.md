@@ -30,7 +30,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
 | 20 | More examples | 5 | in progress | |
-| 21 | Control page for simulator and board | 6 | open | |
+| 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
