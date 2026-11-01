@@ -87,6 +87,33 @@ inline bool operator==(const MaxMatrixError& Error, MaxMatrixFontErrorType Code)
 }
 ```
 
+The address of a static object as an identity is a known pattern well beyond AUTOSAR:
+
+- **`std::error_category`** (C++11, from Boost.System): two categories are equal when they are the same
+  object, `this == &rhs`, and `std::error_code` is `{int, const error_category*}`. `ara::core` took it
+  from there.
+- **LLVM's `static char ID`**: the passes of the legacy pass manager and `llvm::Error` with
+  `ErrorInfo<T>` know their type by the address of a `static char ID;`, a hand-made RTTI.
+  `isA<MyError>()` compares addresses.
+- **Go's sentinel errors**: `var ErrNotFound = errors.New("not found")`, tested with
+  `err == ErrNotFound`, a pointer comparison with the text attached. The closest to a domain with its
+  texts.
+- **`static char key;` in C APIs** such as Lua's registry: an object that exists only to have an
+  address.
+
+It has two known traps:
+
+1. **Shared libraries.** A singleton exists once per DLL or `.so`, with an address of its own in each,
+   and the comparison fails across them; it did so with `std::system_category()` across DLLs. Boost.System
+   then gave its categories a 64-bit id, and `status_code` (P1028) uses ids from the start; it is the
+   reason for AUTOSAR's 64 bits as well. An Arduino sketch has no shared libraries.
+2. **Identical constants may be merged.** With `-fmerge-all-constants`, or a linker's identical code
+   folding (lld and gold `--icf=all`, MSVC `/OPT:ICF`), two `const` objects with the same contents may
+   end up at one address; that is why LLVM's `ID` is not `const`. Here it would hit the domains with
+   their texts switched off, which are both `{nullptr, nullptr}`. The Arduino toolchain links with
+   GNU ld without folding and does not set `-fmerge-all-constants`, but domains that differ in their
+   contents, by an id byte for instance, do not depend on that.
+
 **By an id**, as AUTOSAR does with 64 bits and ErrorKit with 8. Needed as soon as an error leaves the
 program, over `Serial` or into EEPROM, where an address means nothing. Then no one guarantees that ids
 are unique; AUTOSAR fixes the ids of its own domains in the standard and reserves ranges for vendors.
