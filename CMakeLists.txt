@@ -87,6 +87,10 @@ function(add_maxmatrix_variant Variant)
     add_test(NAME ${Variant}/simulator/web
              COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
     set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
+    # SerialControl controlled the way the control page does it, on a port of its own.
+    add_test(NAME ${Variant}/simulator/control
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
+    set_tests_properties(${Variant}/simulator/control PROPERTIES RESOURCE_LOCK SimulatorControlPort)
 endfunction()
 
 # The library as the Arduino IDE builds it: everything under src/, each part in a folder of its own.

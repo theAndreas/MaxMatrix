@@ -11,8 +11,8 @@
 /**     \file       SimulatorWeb.cpp
  *      \brief      The simulator's panel in a browser
  *
- *      \details    The page is sent JSON; it sends back "wiring NAME", "upside-down 0|1", and "hello" when it opens, which
- *                  asks for the panel.
+ *      \details    The page is sent JSON; it sends back "wiring NAME", "upside-down 0|1", "serial LINE", which reaches the
+ *                  sketch's Serial as a line, and "hello" when it opens, which asks for the panel.
  *
  *****************************************************************************************************************************************************/
 #define _SIMULATOR_WEB_SOURCE_
@@ -32,6 +32,11 @@
 #define SIMULATOR_WEB_COMMAND_WIRING                                "wiring "
 #define SIMULATOR_WEB_COMMAND_UPRIGHT                               "upside-down 0"
 #define SIMULATOR_WEB_COMMAND_UPSIDE_DOWN                           "upside-down 1"
+#define SIMULATOR_WEB_COMMAND_SERIAL                                "serial "
+
+/* JSON, RFC 8259: the printable ASCII range; the rest is written as \u00XX */
+#define SIMULATOR_WEB_JSON_FIRST_PLAIN                              0x20u
+#define SIMULATOR_WEB_JSON_LAST_PLAIN                               0x7Eu
 
 
 /******************************************************************************************************************************************************
@@ -74,7 +79,8 @@ stdReturnType SimulatorWeb::begin(uint16_t Port, const char* PagePath)
 ******************************************************************************************************************************************************/
 /*! \brief          follows the sketch and the page
  *  \details        this function logs a new frame and carries out what the page has sent. It is called after every
- *                  frame, so each one gets logged and the page shows them as they pass.
+ *                  frame, so each one gets logged and the page shows them as they pass. What the sketch has printed asks
+ *                  for the panel too: an answer such as "ok" changes no LED, and would otherwise wait for the next frame.
  *
  *  \param[in,out]  Panel           the panel the page's commands change
  *  \return         -
@@ -86,6 +92,7 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
     if(Mock::Frames != LoggedFrames) logFrame();
     Host.task(&Messages);
     for(const std::string& Message : Messages) command(Panel, Message);
+    if(!Mock::SerialOutput.empty()) Panel.requestDraw();
 } /* task */
 
 
@@ -93,7 +100,8 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
   send()
 ******************************************************************************************************************************************************/
 /*! \brief          sends the panel to the page
- *  \details        this function sends the panel with the frames logged since the last time, and starts a new log
+ *  \details        this function sends the panel with the frames logged and what the sketch printed since the last time,
+ *                  and starts over with both
  *
  *  \param[in]      Panel           the panel to send
  *  \return         -
@@ -102,7 +110,40 @@ void SimulatorWeb::send(const SimulatorPanel& Panel)
 {
     Host.broadcast(getMessage(Panel));
     FrameLog.clear();
+    Mock::SerialOutput.clear();
 } /* send */
+
+
+/******************************************************************************************************************************************************
+  convertToJsonString()
+******************************************************************************************************************************************************/
+/*! \brief          converts text into the inside of a JSON string
+ *  \details        this function escapes quotes and backslashes and writes every byte outside printable ASCII as \u00XX.
+ *                  A sketch may print anything, latin-1 included, and a WebSocket text frame that is not valid UTF-8 makes
+ *                  the browser close the connection; read as latin-1, every byte is a valid char.
+ *
+ *  \param[in]      Text            the bytes, as the sketch printed them
+ *  \return         the text for between the quotes of a JSON string
+ *****************************************************************************************************************************************************/
+std::string SimulatorWeb::convertToJsonString(const std::string& Text)
+{
+    std::string Json;
+    char Escaped[8];
+
+    for(const char Char : Text) {
+        const uint8_t Byte = static_cast<uint8_t>(Char);
+        if(Char == '"' || Char == '\\') {
+            Json += '\\';
+            Json += Char;
+        } else if(Byte >= SIMULATOR_WEB_JSON_FIRST_PLAIN && Byte <= SIMULATOR_WEB_JSON_LAST_PLAIN) {
+            Json += Char;
+        } else {
+            snprintf(Escaped, sizeof(Escaped), "\\u%04X", static_cast<uint16_t>(Byte));
+            Json += Escaped;
+        }
+    }
+    return Json;
+} /* convertToJsonString */
 
 
 /******************************************************************************************************************************************************
@@ -138,8 +179,9 @@ void SimulatorWeb::logFrame()
   command()
 ******************************************************************************************************************************************************/
 /*! \brief          carries out a command of the page
- *  \details        this function changes the wiring or the mounting. Every message asks for the panel, also one that
- *                  changes nothing, which is what "hello" is for; an unknown wiring keeps the one the panel has.
+ *  \details        this function changes the wiring or the mounting, or hands a line to the sketch's Serial, as a
+ *                  control program would send it to a board. Every message asks for the panel, also one that changes
+ *                  nothing, which is what "hello" is for; an unknown wiring keeps the one the panel has.
  *
  *  \param[in,out]  Panel           the panel to change
  *  \param[in]      Message         the command
@@ -148,8 +190,10 @@ void SimulatorWeb::logFrame()
 void SimulatorWeb::command(SimulatorPanel& Panel, const std::string& Message)
 {
     const std::string WiringCommand = SIMULATOR_WEB_COMMAND_WIRING;
+    const std::string SerialCommand = SIMULATOR_WEB_COMMAND_SERIAL;
 
     if(Message.compare(0, WiringCommand.size(), WiringCommand) == 0) Panel.setWiring(Message.substr(WiringCommand.size()));
+    else if(Message.compare(0, SerialCommand.size(), SerialCommand) == 0) Mock::SerialInput += Message.substr(SerialCommand.size()) + "\n";
     else if(Message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) Panel.setUpsideDown(true);
     else if(Message == SIMULATOR_WEB_COMMAND_UPRIGHT) Panel.setUpsideDown(false);
     Panel.requestDraw();
@@ -161,8 +205,8 @@ void SimulatorWeb::command(SimulatorPanel& Panel, const std::string& Message)
 ******************************************************************************************************************************************************/
 /*! \brief          the message for the page
  *  \details        this function writes the panel as JSON: the wiring and the mounting, the size, the dots row after row
- *                  as '1' and '0', the brightness of each module from the left, the frame count, the transfer errors
- *                  and the frames since the last message
+ *                  as '1' and '0', the brightness of each module from the left, the frame count, the transfer errors,
+ *                  the frames since the last message and what the sketch printed since then
  *
  *  \param[in]      Panel           the panel to send
  *  \return         the JSON text
@@ -176,7 +220,8 @@ std::string SimulatorWeb::getMessage(const SimulatorPanel& Panel) const
          << ",\"dots\":\"" << Panel.getText("1", "0", "") << "\""
          << ",\"intensity\":[" << getIntensities(Panel) << "]"
          << ",\"frames\":" << Mock::Frames << ",\"errors\":" << Mock::Errors
-         << ",\"log\":[" << getLog() << "]}";
+         << ",\"log\":[" << getLog() << "]"
+         << ",\"serial\":\"" << convertToJsonString(Mock::SerialOutput) << "\"}";
     return Json.str();
 } /* getMessage */
 
