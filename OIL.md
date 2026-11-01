@@ -36,6 +36,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
+| 27 | Errors that say what went wrong | 13 | open | |
 
 ### 1 Build with CMake
 
@@ -395,6 +396,42 @@ on which systems and boards it ran.
 
 After 20, which defines the lines and `SerialControl`; beside 21, which uses the same lines.
 
+### 27 Errors that say what went wrong
+
+`stdReturnType` says only that a call failed, and as `E_OK` is 0, `if(Matrix.setDot(…))` is
+true on an error. Five reasons lie behind `E_NOT_OK` today: a coordinate, module or intensity
+out of range, a char the font lacks, a `NULL` text, and in `MaxMatrixCommand` a value that is
+empty, no number or too large. The command answers all of them with
+`MAXMATRIX_COMMAND_INVALID_VALUE`, and no example checks a return value at all.
+
+- **One flat enum of one byte**, `MaxMatrixErrorType`, in a wrapper with `isOk()` and no
+  conversion to `bool`. A getter of a single value returns the value and the error together
+  (`MaxMatrixResult<T>`) rather than through a pointer; both fit into registers on the AVR.
+  `getRow()` and `getSprite()` keep their pointer, as C++ cannot return an array.
+- **`getErrorText()`** returns the text from `PROGMEM` as a `const __FlashStringHelper*`, which
+  `Serial.print` reads from flash. A sketch that does not call it pays nothing; the linker
+  drops it. `MaxMatrixCommand` passes the error on, so that `SerialControl` and the page of 21
+  can say what was wrong.
+- **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where
+  a check fails, the library reports the function and the error to a `weak`
+  `maxMatrixReportError()`, so that a sketch which checks nothing still learns where it went
+  wrong. The default prints on `Serial`; `SerialControl` brings its own, as its `Serial` carries
+  the protocol of the page. Switched off, the preprocessor removes every call. The Arduino IDE
+  has no debug build and does not pass a sketch's defines to the library, so it is switched in
+  `MaxMatrixConfig.h` or with `--build-property "compiler.cpp.extra_flags=-D…"`
+  (`build.extra_flags` carries the USB flags of some boards). The tests build a third variant
+  with it on and check that every `E_NOT_OK` is reported.
+
+Open first: whether a dot off the panel is an error at all. `setChar()` already clips a char
+that lies partly off the panel, and `embedded-graphics` in Rust clips every pixel: drawing into
+a buffer cannot fail there. If `setDot()`, `setColumn()` and `setRow()` clip as well, out of
+range is left for the intensity and the commands, and `MaxMatrixCommand` checks the coordinates
+it is sent itself. That decides how many errors there are, so it comes before the enum.
+
+*Done when* every function that can fail says why, the tests check each reason in both
+variants and with the switch on, and the PR gives flash and RAM of every example against
+today.
+
 ## Decisions
 
 Why it is planned this way rather than the obvious alternative.
@@ -418,3 +455,13 @@ Why it is planned this way rather than the obvious alternative.
   with `ctest` and VS Code's test view without extra scripts. Wordclock keeps its own harness
   for reasons that do not apply here: its tests depend on their order through singletons, and
   the same cases are built by two harnesses without CMake.
+- **A flat enum, not an error domain with a virtual function (27).** Measured on 2026-11-01
+  with two sketches on the Uno: a flat enum takes 486 bytes of flash and 9 of RAM, an error of
+  `const ErrorDomain*` and `uint8_t` with two domains 684 and 69. The error itself is 3 bytes
+  and returns in registers; what costs is that avr-gcc copies every vtable (8 bytes for two
+  virtual functions) and every domain object into RAM, and that the vtable keeps every message
+  linked although no one asks for it, 40 bytes of text here. That breaks "the parts cost no RAM"
+  and "a sketch that does not use it pays nothing". What the vtable buys, an open set of
+  domains, has no user: every error comes from the library itself. A static `kind()` per error
+  type, as `embedded-hal` has it, pays off only with error sources the library does not know,
+  such as a transfer that can fail.
