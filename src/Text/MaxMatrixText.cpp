@@ -171,23 +171,18 @@ void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, const
     byte SpriteWidth = Sprite[ASCII_TABLE_SPRITE_WIDTH];
     byte SpriteHeight = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
     
-    /* if height of Sprite = height of Matrix set whole column */
+    /* if height of Sprite = height of Matrix set whole column; the panel leaves out what lies off it */
     if(SpriteHeight == MAXMATRIX_ROW_NUMBER_OF_MODULE && Y == 0) {
         for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
         {
-            int16_t Column = X + SpriteColumn;
-            if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS)
-                Panel.setColumn(Column, Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1]);
-        } 
+            Panel.setColumn(X + SpriteColumn, Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1]);
+        }
     } else { /* otherwise we have to set every single dot */
         for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
         {
             for(byte SpriteRow = 0; SpriteRow < SpriteHeight; SpriteRow++)
             {
-                int16_t Column = X + SpriteColumn;
-                int16_t Row = Y + SpriteRow;
-                if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE)
-                    Panel.setDot(Column, Row, bitRead(Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1], SpriteRow));
+                Panel.setDot(X + SpriteColumn, Y + SpriteRow, bitRead(Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1], SpriteRow));
             }
         }
     }

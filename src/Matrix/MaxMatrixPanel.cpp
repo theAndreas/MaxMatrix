@@ -90,19 +90,16 @@ stdReturnType MaxMatrixPanel::getColumn(byte Module, byte Column, byte* Value)
 ******************************************************************************************************************************************************/
 /*! \brief          set a given column on whole matrix
  *  \details        this function sets a column on the LED matrix as the viewer sees it
- *                  column reaches from zero to number of modules multiplied by eight
+ *                  column reaches from zero to number of modules multiplied by eight; a column off the panel is
+ *                  left out, as setDot() explains
  *
  *  \param[in]      Column      column on matrix which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::setColumn(byte Column, byte Value)
+void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
 {
-    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
-        setLine(Column, 0, true, Value);
-        return E_OK;
-    } else return E_NOT_OK;
+    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) setLine(Column, 0, true, Value);
 } /* setColumn */
 
 
@@ -110,19 +107,20 @@ stdReturnType MaxMatrixPanel::setColumn(byte Column, byte Value)
   setColumn()
 ******************************************************************************************************************************************************/
 /*! \brief          set a given column on a module
- *  \details        this function sets a column on a module as the viewer sees it
+ *  \details        this function sets a column on a module as the viewer sees it; a module or column that does
+ *                  not exist is left out. The column is checked against the module, not the panel, or column 8 of
+ *                  module 0 would be drawn on module 1.
  *
  *  \param[in]      Module      module where column should be set
  *  \param[in]      Column      column on module which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
+void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        return setColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column, Value);
-    } else return E_NOT_OK;
+        setColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column, Value);
+    }
 } /* setColumn */
 
 
@@ -172,19 +170,18 @@ stdReturnType MaxMatrixPanel::getRow(byte Module, byte Row, byte* Value)
   setRow()
 ******************************************************************************************************************************************************/
 /*! \brief          set a given row on whole matrix
- *  \details        this function sets a row on the LED matrix as the viewer sees it, one byte per module
+ *  \details        this function sets a row on the LED matrix as the viewer sees it, one byte per module; a row
+ *                  off the panel is left out, as setDot() explains
  *
  *  \param[in]      Row         row on matrix
  *  \param[in]      Value       led value in row, bit 7 of each byte is the leftmost column of its module
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::setRow(byte Row, const rowType Value)
+void MaxMatrixPanel::setRow(int16_t Row, const rowType Value)
 {
-    if(Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) setRow(Module, Row, Value[Module]);
-        return E_OK;
-    } else return E_NOT_OK;
+    }
 } /* setRow */
 
 
@@ -192,20 +189,19 @@ stdReturnType MaxMatrixPanel::setRow(byte Row, const rowType Value)
   setRow()
 ******************************************************************************************************************************************************/
 /*! \brief          set a given row on a module
- *  \details        this function sets a row on a module as the viewer sees it
+ *  \details        this function sets a row on a module as the viewer sees it; a module or row that does not
+ *                  exist is left out
  *
  *  \param[in]      Module      module where row should be set
  *  \param[in]      Row         row on module which contains eight LEDs
  *  \param[in]      Value       led value in row, bit 7 is the leftmost column
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
+void MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         setLine(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, Row, false, reverseByte(Value));
-        return E_OK;
-    } else return E_NOT_OK;
+    }
 } /* setRow */
 
 
@@ -237,23 +233,24 @@ stdReturnType MaxMatrixPanel::getDot(byte Column, byte Row, bool* Value)
   setDot()
 ******************************************************************************************************************************************************/
 /*! \brief          set a Pixel (LED) on the matrix
- *  \details        this function sets a dot as the viewer sees it
+ *  \details        this function sets a dot as the viewer sees it. A dot off the panel is left out rather than
+ *                  reported: a sprite, a line or a text that lies partly off the panel is drawn every day while
+ *                  something moves in or out, and a sketch would only have to clip it itself. Adafruit GFX's
+ *                  drawPixel() and Rust's embedded-graphics do the same; setChar() always did.
  *
- *  \param[in]      Column      column where to set the pixel
- *  \param[in]      Row         row where to set the pixel
+ *  \param[in]      Column      column where to set the pixel, negative to the left of the panel
+ *  \param[in]      Row         row where to set the pixel, negative above the panel
  *  \param[in]      Value       value of the pixel
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::setDot(byte Column, byte Row, bool Value)
+void MaxMatrixPanel::setDot(int16_t Column, int16_t Row, bool Value)
 {
     byte BufferColumn, BufferBit;
 
-    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
         Wired.storeBit(BufferColumn, BufferBit, Value);
-        return E_OK;
-    } else return E_NOT_OK;
+    }
 } /* setDot */
 
 /******************************************************************************************************************************************************

@@ -80,11 +80,11 @@ class MaxMatrixPanel
     stdReturnType getDot(byte, byte, bool*);
 
     // set methods
-    stdReturnType setColumn(byte, byte);
-    stdReturnType setColumn(byte, byte, byte);
-    stdReturnType setRow(byte, const rowType);
-    stdReturnType setRow(byte, byte, byte);
-    stdReturnType setDot(byte, byte, bool);
+    void setColumn(int16_t, byte);
+    void setColumn(byte, byte, byte);
+    void setRow(int16_t, const rowType);
+    void setRow(byte, byte, byte);
+    void setDot(int16_t, int16_t, bool);
     void setModuleOrientation(MaxMatrixModuleOrientationType);
     void setMatrixOrientation(MaxMatrixMatrixOrientationType);
 

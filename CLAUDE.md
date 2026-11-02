@@ -157,7 +157,12 @@ SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
 
 A function that can fail returns `stdReturnType` (`E_OK` / `E_NOT_OK`) and passes results
 through a pointer parameter. Coordinates and indices are range checked before the buffer is
-touched; an out-of-range call returns `E_NOT_OK` and changes nothing.
+touched. A function that draws leaves out what lies off the panel rather than failing, because
+drawing partly off the panel is what a moving sprite or text does all the time (see
+`MaxMatrixPanel::setDot()`); `setDot`, `setColumn` and `setRow` cannot fail at all and return
+`void`, while `setChar` and `setText` still fail on a char the font lacks. A getter or a
+setting out of range returns `E_NOT_OK` and changes nothing. `MaxMatrixCommand`
+checks the coordinates it is sent itself, so that a typed line that would do nothing says so.
 
 ### Layout of a source file
 

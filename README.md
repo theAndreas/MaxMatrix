@@ -115,7 +115,9 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `RegisterWrite(Address, Value)` | writes a register of every MAX7219, past the picture |
 | `MaxMatrixCommand`, `feed(Matrix, Char)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
-A function that can fail returns `E_OK` or `E_NOT_OK`; a coordinate out of range changes nothing.
+Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
+in or out: `setDot(-1, 0, true)` does nothing, and a char at X = -2 shows its right part. X and Y may be negative.
+A getter or a setting that can fail returns `E_OK` or `E_NOT_OK`; out of range, it changes nothing.
 
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to

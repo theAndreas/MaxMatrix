@@ -168,7 +168,9 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeText(MaxMatrix& Matrix, cons
   executeDot()
 ******************************************************************************************************************************************************/
 /*! \brief          setDot=COLUMN,ROW,VALUE sets one dot
- *  \details        this function reads three numbers separated by commas; the value is 0 or 1
+ *  \details        this function reads three numbers separated by commas; the value is 0 or 1. The dot is checked
+ *                  against the panel here, because setDot() leaves a dot off the panel out without a word, and
+ *                  whoever typed the line should learn that it did nothing.
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in,out]  Value       the three numbers; the commas are overwritten with ends of text
@@ -184,9 +186,11 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char*
     if(LitText == NULL) return MAXMATRIX_COMMAND_INVALID_VALUE;
     *RowText++ = STD_NULL_CHARACTER;
     *LitText++ = STD_NULL_CHARACTER;
-    if(E_OK != convertToNumber(Value, MAXMATRIX_COMMAND_MAX_BYTE, &Column) || E_OK != convertToNumber(RowText, MAXMATRIX_COMMAND_MAX_BYTE, &Row) ||
+    if(E_OK != convertToNumber(Value, MAXMATRIX_NUMBER_OF_COLUMNS - 1, &Column) ||
+       E_OK != convertToNumber(RowText, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, &Row) ||
        E_OK != convertToNumber(LitText, 1, &Lit)) return MAXMATRIX_COMMAND_INVALID_VALUE;
-    return E_OK == Matrix.setDot(Column, Row, Lit == 1) ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
+    Matrix.setDot(Column, Row, Lit == 1);
+    return MAXMATRIX_COMMAND_DONE;
 } /* executeDot */
 
 
