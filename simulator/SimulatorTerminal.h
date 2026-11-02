@@ -21,7 +21,6 @@
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
-#include "MaxMatrixStandardTypes.h"
 #include "SimulatorPanel.h"
 
 
@@ -32,7 +31,7 @@
 class SimulatorTerminal
 {
   private:
-    static stdReturnType readFile(const char*, std::string*);
+    static bool readFile(const char*, std::string*);
 
   public:
     // get methods
@@ -41,7 +40,7 @@ class SimulatorTerminal
     // methods
     static void clear();
     static void draw(const SimulatorPanel&);
-    static stdReturnType printResult(const SimulatorPanel&, const char*);
+    static bool printResult(const SimulatorPanel&, const char*);
 };
 
 #endif

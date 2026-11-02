@@ -109,21 +109,21 @@ void SimulatorTerminal::draw(const SimulatorPanel& Panel)
  *
  *  \param[in]      Panel           the panel to print
  *  \param[in]      ExpectFile      the file with the expected panel, or nullptr
- *  \return         E_OK
- *                  E_NOT_OK        the panel differs from the file, or the file cannot be read
+ *  \return         true
+ *                  false           the panel differs from the file, or the file cannot be read
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorTerminal::printResult(const SimulatorPanel& Panel, const char* ExpectFile)
+bool SimulatorTerminal::printResult(const SimulatorPanel& Panel, const char* ExpectFile)
 {
     const std::string Result = Panel.getText(SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
     std::string Expected;
 
     fputs(Result.c_str(), stdout);
-    if(ExpectFile == nullptr) return E_OK;
+    if(ExpectFile == nullptr) return true;
 
-    if(E_OK != readFile(ExpectFile, &Expected) || Expected != Result) {
+    if(!readFile(ExpectFile, &Expected) || Expected != Result) {
         fprintf(stderr, "differs from %s:\n%s", ExpectFile, Expected.c_str());
-        return E_NOT_OK;
-    } else return E_OK;
+        return false;
+    } else return true;
 } /* printResult */
 
 
@@ -139,17 +139,17 @@ stdReturnType SimulatorTerminal::printResult(const SimulatorPanel& Panel, const 
  *
  *  \param[in]      Path            the file
  *  \param[out]     Text            what it holds
- *  \return         E_OK
- *                  E_NOT_OK        the file cannot be read
+ *  \return         true
+ *                  false           the file cannot be read
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorTerminal::readFile(const char* Path, std::string* Text)
+bool SimulatorTerminal::readFile(const char* Path, std::string* Text)
 {
     std::ifstream File(Path);
     std::stringstream Content;
 
     Content << File.rdbuf();
     *Text = Content.str();
-    return File ? E_OK : E_NOT_OK;
+    return static_cast<bool>(File);
 } /* readFile */
 
 

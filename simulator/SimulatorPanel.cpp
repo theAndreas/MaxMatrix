@@ -105,10 +105,10 @@ uint8_t SimulatorPanel::getIntensity(uint8_t Module) const
  *  \details        this function accepts the four names MD_MAX72XX has and DR0CR0RR0 ... DR1CR1RR1
  *
  *  \param[in]      Name            the wiring's name
- *  \return         E_OK
- *                  E_NOT_OK        no wiring has this name; the panel keeps the one it has
+ *  \return         true
+ *                  false           no wiring has this name; the panel keeps the one it has
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorPanel::setWiring(const std::string& Name)
+bool SimulatorPanel::setWiring(const std::string& Name)
 {
     const Max7219WiringType* Found = findWiring(Name);
 
@@ -116,8 +116,8 @@ stdReturnType SimulatorPanel::setWiring(const std::string& Name)
         Wiring = Found;
         WiringName = Name;
         DrawRequested = true;
-        return E_OK;
-    } else return E_NOT_OK;
+        return true;
+    } else return false;
 } /* setWiring */
 
 

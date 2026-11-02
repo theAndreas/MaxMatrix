@@ -20,7 +20,7 @@ obvious ones from AUTOSAR and Rust do not carry over as they are. Measured on 20
 
 | Alternative | Size | Fixed RAM | Texts only when used | Errors from outside the library | For MaxMatrix |
 |---|---|---|---|---|---|
-| `stdReturnType` (today) | 1 B | 0 | – | no | the trap of `E_OK == 0` |
+| `stdReturnType` (until #30) | 1 B | 0 | – | no | the trap of `E_OK == 0` |
 | `bool` for the setters | 1 B | 0 | – | no | simple, the Arduino idiom |
 | **Flat enum of one byte**, in a wrapper without a conversion to `bool` | 1 B | 0 | yes, a free function | no | **chosen** |
 | Domain with a vtable, `{const Domain*, uint8_t}` | 3 B | vtable and object per domain | no | yes | no: costs RAM |
@@ -292,6 +292,10 @@ does not belong in a display library.
     and 179 of RAM more, `ScrollText` 840 and 175, both for `Serial` they did not use before;
     `SerialControl`, which has it, 126 bytes of flash and no RAM. A sketch with a report of its own
     that blinks paid 10 bytes of flash and no RAM.
+- **`stdReturnType` gone**, a fifth step: the simulator and `DocuPictures` return `bool`, as each of
+  their functions fails for one reason only, which its documentation names. `MaxMatrixErrorType` has no
+  word for a port that is taken, and `std::optional` would need C++17. The examples are the same to the
+  byte.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
   `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the

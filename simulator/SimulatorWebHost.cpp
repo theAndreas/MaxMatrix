@@ -74,14 +74,14 @@ SimulatorWebHost::SimulatorWebHost()
  *
  *  \param[in]      Port            the port to listen on
  *  \param[in]      sPagePath       the page to serve on /
- *  \return         E_OK
- *                  E_NOT_OK        the port is taken, so that the caller can say so
+ *  \return         true
+ *                  false           the port is taken, so that the caller can say so
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebHost::begin(uint16_t Port, const char* sPagePath)
+bool SimulatorWebHost::begin(uint16_t Port, const char* sPagePath)
 {
     PagePath = sPagePath;
     Listener = openListener(Port);
-    return Listener == SIMULATOR_WEB_HOST_NO_SOCKET ? E_NOT_OK : E_OK;
+    return Listener != SIMULATOR_WEB_HOST_NO_SOCKET;
 } /* begin */
 
 
@@ -177,7 +177,7 @@ void SimulatorWebHost::readClient(uint8_t Slot, std::vector<std::string>* Messag
     }
     if(Read > 0) Pending[Slot].append(Chunk, static_cast<size_t>(Read));
 
-    while(E_OK == SimulatorWebSocket::decodeFrame(&Pending[Slot], &Opcode, &Payload)) {
+    while(SimulatorWebSocket::decodeFrame(&Pending[Slot], &Opcode, &Payload)) {
         if(Opcode == SIMULATOR_WEB_SOCKET_OPCODE_CLOSE) {
             dropClient(Slot);
             return;
@@ -203,10 +203,10 @@ bool SimulatorWebHost::answerRequest(int Socket, const std::string& Request)
     std::string Path;
     std::string Answer;
 
-    if(E_OK != getPath(Request, &Path)) return false;
+    if(!getPath(Request, &Path)) return false;
 
     if(Path == SIMULATOR_WEB_HOST_WEB_SOCKET_PATH) {
-        return E_OK == SimulatorWebSocket::getHandshakeAnswer(Request, &Answer) && sendAll(Socket, Answer);
+        return SimulatorWebSocket::getHandshakeAnswer(Request, &Answer) && sendAll(Socket, Answer);
     }
     if(Path == "/" || Path == "/index.html") sendPage(Socket);
     else sendResponse(Socket, "404 Not Found", "text/plain", "no such route on the simulator\n");
@@ -339,17 +339,17 @@ std::string SimulatorWebHost::readRequest(int Socket)
  *
  *  \param[in]      Request         the whole request
  *  \param[out]     Path            the path
- *  \return         E_OK
- *                  E_NOT_OK        the request line has no path
+ *  \return         true
+ *                  false           the request line has no path
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebHost::getPath(const std::string& Request, std::string* Path)
+bool SimulatorWebHost::getPath(const std::string& Request, std::string* Path)
 {
     const size_t Start = Request.find(' ');
     const size_t End = Start == std::string::npos ? std::string::npos : Request.find(' ', Start + 1);
 
-    if(End == std::string::npos) return E_NOT_OK;
+    if(End == std::string::npos) return false;
     *Path = Request.substr(Start + 1, End - Start - 1);
-    return E_OK;
+    return true;
 } /* getPath */
 
 

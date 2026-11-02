@@ -62,18 +62,18 @@
  *
  *  \param[in]      Request         the whole HTTP request, headers included
  *  \param[out]     Answer          the response to send back
- *  \return         E_OK
- *                  E_NOT_OK        the request has no Sec-WebSocket-Key
+ *  \return         true
+ *                  false           the request has no Sec-WebSocket-Key
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebSocket::getHandshakeAnswer(const std::string& Request, std::string* Answer)
+bool SimulatorWebSocket::getHandshakeAnswer(const std::string& Request, std::string* Answer)
 {
     std::string Key;
 
-    if(E_OK == getKey(Request, &Key)) {
+    if(getKey(Request, &Key)) {
         *Answer = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
                   "Sec-WebSocket-Accept: " + convertKeyToAcceptKey(Key) + "\r\n\r\n";
-        return E_OK;
-    } else return E_NOT_OK;
+        return true;
+    } else return false;
 } /* getHandshakeAnswer */
 
 
@@ -113,14 +113,14 @@ std::string SimulatorWebSocket::encodeFrame(const std::string& Payload)
  *  \param[in,out]  Buffer          what has arrived on the connection and is not yet decoded
  *  \param[out]     Opcode          the opcode of the frame
  *  \param[out]     Payload         the payload of the frame, unmasked
- *  \return         E_OK
- *                  E_NOT_OK        no complete frame in the buffer
+ *  \return         true
+ *                  false           no complete frame in the buffer
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebSocket::decodeFrame(std::string* Buffer, uint8_t* Opcode, std::string* Payload)
+bool SimulatorWebSocket::decodeFrame(std::string* Buffer, uint8_t* Opcode, std::string* Payload)
 {
     const std::string& Frame = *Buffer;
 
-    if(Frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH) return E_NOT_OK;
+    if(Frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH) return false;
 
     const size_t MaskLength = (static_cast<uint8_t>(Frame[1]) & SIMULATOR_WEB_SOCKET_MASK_FLAG) ? SIMULATOR_WEB_SOCKET_MASK_LENGTH : 0;
     size_t Length = static_cast<uint8_t>(Frame[1]) & SIMULATOR_WEB_SOCKET_LENGTH_MASK;
@@ -129,14 +129,14 @@ stdReturnType SimulatorWebSocket::decodeFrame(std::string* Buffer, uint8_t* Opco
     if(Length == SIMULATOR_WEB_SOCKET_LENGTH_64_BIT) {
         /* no command is this long; dropping what arrived is better than trying to read it */
         Buffer->clear();
-        return E_NOT_OK;
+        return false;
     }
     if(Length == SIMULATOR_WEB_SOCKET_LENGTH_16_BIT) {
-        if(Frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT) return E_NOT_OK;
+        if(Frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT) return false;
         Length = (static_cast<size_t>(static_cast<uint8_t>(Frame[2])) << 8) | static_cast<uint8_t>(Frame[3]);
         Offset = SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT;
     }
-    if(Frame.size() < Offset + MaskLength + Length) return E_NOT_OK;
+    if(Frame.size() < Offset + MaskLength + Length) return false;
 
     Payload->assign(Frame, Offset + MaskLength, Length);
     if(MaskLength > 0) {
@@ -144,7 +144,7 @@ stdReturnType SimulatorWebSocket::decodeFrame(std::string* Buffer, uint8_t* Opco
     }
     *Opcode = static_cast<uint8_t>(Frame[0]) & SIMULATOR_WEB_SOCKET_OPCODE_MASK;
     Buffer->erase(0, Offset + MaskLength + Length);
-    return E_OK;
+    return true;
 } /* decodeFrame */
 
 
@@ -233,24 +233,24 @@ std::string SimulatorWebSocket::convertToBase64(const uint8_t* Bytes, size_t Len
  *
  *  \param[in]      Request         the whole HTTP request, headers included
  *  \param[out]     Key             the value of Sec-WebSocket-Key
- *  \return         E_OK
- *                  E_NOT_OK        the request has no such header
+ *  \return         true
+ *                  false           the request has no such header
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWebSocket::getKey(const std::string& Request, std::string* Key)
+bool SimulatorWebSocket::getKey(const std::string& Request, std::string* Key)
 {
     std::string Lowered(Request);
 
     for(size_t i = 0; i < Lowered.size(); i++) Lowered[i] = static_cast<char>(tolower(static_cast<uint8_t>(Lowered[i])));
     const size_t Found = Lowered.find(SIMULATOR_WEB_SOCKET_KEY_HEADER);
-    if(Found == std::string::npos) return E_NOT_OK;
+    if(Found == std::string::npos) return false;
 
     size_t Start = Found + sizeof(SIMULATOR_WEB_SOCKET_KEY_HEADER) - 1;
     while(Start < Request.size() && Request[Start] == ' ') Start++;
     const size_t End = Request.find("\r\n", Start);
-    if(End == std::string::npos) return E_NOT_OK;
+    if(End == std::string::npos) return false;
 
     *Key = Request.substr(Start, End - Start);
-    return E_OK;
+    return true;
 } /* getKey */
 
 

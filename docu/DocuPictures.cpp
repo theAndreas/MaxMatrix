@@ -131,10 +131,10 @@ static const struct {
  *  \details        this function reads the digit registers of every chip in the model
  *
  *  \param[out]     Led             the chip, digit and bit of the lit LED
- *  \return         E_OK
- *                  E_NOT_OK        no LED or more than one is lit
+ *  \return         true
+ *                  false           no LED or more than one is lit
  *****************************************************************************************************************************************************/
-static stdReturnType findLed(DocuLedType* Led)
+static bool findLed(DocuLedType* Led)
 {
     byte Lit = 0;
 
@@ -150,7 +150,7 @@ static stdReturnType findLed(DocuLedType* Led)
             }
         }
     }
-    return Lit == 1 ? E_OK : E_NOT_OK;
+    return Lit == 1;
 } /* findLed */
 
 
@@ -163,10 +163,10 @@ static stdReturnType findLed(DocuLedType* Led)
  *  \param[in]      X               column as the viewer sees it
  *  \param[in]      Y               row as the viewer sees it
  *  \param[out]     Led             the chip, digit and bit
- *  \return         E_OK
- *                  E_NOT_OK        the dot did not light exactly one LED
+ *  \return         true
+ *                  false           the dot did not light exactly one LED
  *****************************************************************************************************************************************************/
-static stdReturnType findLedOfDot(byte X, byte Y, DocuLedType* Led)
+static bool findLedOfDot(byte X, byte Y, DocuLedType* Led)
 {
     Matrix.clear();
     Matrix.setDot(X, Y, true);
@@ -331,7 +331,7 @@ static void drawPanel(DocuSvg* Svg, const std::string& Title)
         Svg->addRect(Left - 4, DOCU_TOP - 4, ModuleWidth + 8, ModuleHeight + 8, "none", DOCU_COLOUR_FRAME, 4);
         Svg->addText(Left + ModuleWidth / 2, DOCU_TOP - 14, "Module " + std::to_string(Module), DOCU_FONT_MODULE, DOCU_COLOUR_TEXT, "middle", true);
 
-        if(E_OK == findLedOfDot(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0, &Led) && Led.Chip == 0) {
+        if(findLedOfDot(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0, &Led) && Led.Chip == 0) {
             const bool Right = Module == MAXMATRIX_NUMBER_OF_MODULES - 1;
             const int16_t Edge = Right ? Left + ModuleWidth + 8 : Left - 8;
             const int16_t Outside = Right ? Edge + 70 : Edge - 70;
@@ -370,7 +370,7 @@ static std::string drawWiring(MaxMatrixModuleOrientationType Orientation, uint16
     Matrix.setModuleOrientation(Orientation);
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-            if(E_OK != findLedOfDot(X, Y, &Leds[X][Y])) return "";
+            if(!findLedOfDot(X, Y, &Leds[X][Y])) return "";
         }
     }
 

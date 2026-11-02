@@ -23,7 +23,6 @@
  *****************************************************************************************************************************************************/
 #include <string>
 #include <vector>
-#include "MaxMatrixStandardTypes.h"
 #include "SimulatorPanel.h"
 #include "SimulatorWebHost.h"
 
@@ -59,7 +58,7 @@ class SimulatorWeb
     SimulatorWeb();
 
     // methods
-    stdReturnType begin(uint16_t, const char*);
+    bool begin(uint16_t, const char*);
     void task(SimulatorPanel&);
     void send(const SimulatorPanel&);
     static std::string convertToJsonString(const std::string&);

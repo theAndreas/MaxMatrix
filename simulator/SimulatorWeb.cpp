@@ -65,10 +65,10 @@ SimulatorWeb::SimulatorWeb()
  *
  *  \param[in]      Port            the port to listen on
  *  \param[in]      PagePath        the page to serve
- *  \return         E_OK
- *                  E_NOT_OK        the port is taken
+ *  \return         true
+ *                  false           the port is taken
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorWeb::begin(uint16_t Port, const char* PagePath)
+bool SimulatorWeb::begin(uint16_t Port, const char* PagePath)
 {
     return Host.begin(Port, PagePath);
 } /* begin */
