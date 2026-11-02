@@ -233,8 +233,8 @@ warning under `--warnings all`, 1652 bytes of flash and 202 of RAM with `Serial`
    `constexpr` and `!= 0`; two enums with the same id compile, and their errors compare equal
    (confirmed in the sketch). Within one project an enum of ids makes them unique by construction;
    between libraries it remains a matter of agreement.
-2. **An ignored `Result` is silent under gnu++11**: `[[nodiscard]]` applies from C++17 only
-   (confirmed).
+2. **An ignored `Result` is silent under gnu++11** (confirmed). Not for want of the compiler:
+   avr-gcc 7.3 takes `[[nodiscard]]` on a type under gnu++11 as well, see Utl below.
 3. **`kHex` in `printTo()` sits in RAM**, 17 bytes in `.data`, for the reason above. Computing the
    digit (`d < 10 ? '0' + d : 'A' + d - 10`) needs no table.
 4. **The macro `TRY`** is short enough to collide: every library of a sketch shares the preprocessor.
@@ -248,6 +248,52 @@ For MaxMatrix, ErrorKit itself would mean an outside dependency (`depends=`), a 
 conventions here, and a domain id the user has to configure. A fatal handler that resets the board
 does not belong in a display library.
 
+## Tried out: the domain by its address, in Utl
+
+The variant "by its address" above was built out on its own in November 2026, as the library
+[Utl](https://github.com/theAndreas/Utl), to see how it reads and what it costs beyond a table.
+Measured with `arduino-cli` and Arduino AVR Boards 1.8.8 on `arduino:avr:uno`; it has run in simavr,
+not on a board.
+
+- **What it is.** `utl::Error` is a pointer to its group and a code, 3 bytes. A group is a class
+  derived from `ErrorGroup` with a virtual `Name()` and `Message()`, one object per program, defined
+  in one `.cpp` and declared `extern`. A `GetErrorGroup()` beside a group's enum, found by ADL, lets
+  a code convert to an `Error`: `return FontError::kUnknownChar;`. `Status` is ok or an `Error`,
+  `Result<T>` a value or one, side by side, with a fluent API after Rust (`AndThen()`, `Map()`,
+  `OrElse()`, `ValueOr()`); a chain of three steps costs 14 bytes of flash more than the same `if`s
+  written out, and no RAM.
+- **"Ok" is not an error.** A first version had `Error()` mean "no error", as `std::error_code`
+  does with 0, and it read as a contradiction. Splitting `Status`, ok or an error, from `Error`,
+  always one, cleared it at no cost: a `Status` keeps an `Error` with a null group for "ok", which
+  only `Status` can make, and stays 3 bytes. `MaxMatrixStatus` makes the same split already.
+- **The vtables can move to flash.** The GCC plugin
+  [avr-flash-vtbl](https://github.com/jcmvbkbc/avr-flash-vtbl), two lines that give the vtable types
+  the address space `__flash`, loads into the `cc1plus` of the Arduino toolchain, and a virtual call
+  then reads its function pointer with `LPM`. In Utl's `Basics`, with two groups, RAM falls from 208
+  to 174 bytes for 2 bytes of flash: the 8 bytes of each group's vtable and the 18 of
+  `HardwareSerial`. A group object keeps its 2 bytes of vptr in RAM, as its address is the group.
+  The cost moves into the build: every C++ file has to be compiled with the plugin, the core
+  included, or a virtual call reads a vtable in flash from RAM and jumps anywhere, which the linker
+  does not notice; the IDE passes no flags per sketch, so the plugin goes into `platform.local.txt`;
+  and it loads only into the `cc1plus` it was built for.
+- **The texts stay linked, unless switched off.** A virtual `Message()` keeps every group's texts,
+  whether anything prints them or not: GCC cannot drop an unused virtual function, only Clang can
+  (`-fvirtual-function-elimination`). A switch, `UTL_ERROR_TEXTS`, leaves them out without a change
+  to any group: the lookup no longer reads the table, so the table is unused and the linker drops
+  it, and an error prints its code, `bus: 0`. It saves 46 bytes of flash in Utl's `Basics` and 62
+  in its `SelfCheck`, once the code is printed with digits counted off: `Print::print(code)` pulled
+  in the core's printing of an `unsigned long` and made `Basics` 62 bytes larger without texts than
+  with them, and `code / 100` brought two division routines of libgcc, 80 bytes.
+- **`[[nodiscard]]` on a type works under gnu++11.** avr-gcc 7.3 takes it and warns where a returned
+  `Status` or `Result` is dropped, and nowhere else (checked with a sketch).
+- **arduino-cli finds a library only by a header directly in its `src/`.** Utl's headers lie in
+  `src/utl/`, so a sketch includes `<Utl.h>` first, before any header of its own that includes
+  `<utl/...>`: the includes are gone through in order.
+
+For MaxMatrix it changes the reason given below for not taking domains: with the vtables in flash a
+group costs 2 bytes of RAM, and the texts can be switched off. What it does not change is that no
+error comes from outside the library yet. Whether MaxMatrix takes Utl over is OIL item 28.
+
 ## Decided, and open
 
 - **Chosen:** a flat enum of one byte, `MaxMatrixErrorType`, in a wrapper with `isOk()` and no
@@ -256,6 +302,8 @@ does not belong in a display library.
 - **Not domains**, because no one needs the open set they buy: every error comes from the library
   itself. A domain costs RAM with a vtable, or keeps its texts linked in `PROGMEM`; either breaks "the
   parts cost no RAM" and "a sketch that does not use it pays nothing".
+  With the vtables in flash a group costs 2 bytes of RAM, at the price of a plugin in every build,
+  and its texts can be switched off; see Utl above and OIL item 28.
 - **Drawing clips**, decided first: `setDot()`, `setColumn()` and `setRow()` take `int16_t`, leave out
   what lies off the panel as `setChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
   Out of range is left for the getters, the intensity and the commands, and `MaxMatrixCommand` checks
