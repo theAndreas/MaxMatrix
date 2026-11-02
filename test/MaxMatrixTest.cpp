@@ -120,7 +120,7 @@ TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
 
     for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
         SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(Row));
-        EXPECT_EQ(Matrix.setRow(Row, In), E_OK);
+        Matrix.setRow(Row, In);
         EXPECT_EQ(Matrix.getRow(Row, Out), E_OK);
         EXPECT_EQ(bytes(Out, sizeof(Out)), bytes(In, sizeof(In)));
     }
@@ -206,13 +206,13 @@ TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
     rowType Row;
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Row[Module] = 0x81 ^ (Module * 0x16);
 
-    ASSERT_EQ(Matrix.setRow(2, Row), E_OK);
+    Matrix.setRow(2, Row);
     EXPECT_EQ(shownPicture(Matrix), picture([&Row](int16_t X, int16_t Y) {
         return Y == 2 && bitRead(Row[X / MAXMATRIX_COLUMN_NUMBER_OF_MODULE], 7 - X % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
     }));
 
     Matrix.clear();
-    ASSERT_EQ(Matrix.setColumn(5, 0xA3), E_OK);
+    Matrix.setColumn(5, 0xA3);
     EXPECT_EQ(shownPicture(Matrix), picture([](int16_t X, int16_t Y) { return X == 5 && bitRead(0xA3, Y); }));
     for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
         byte Value = 0;
@@ -278,7 +278,7 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
             SCOPED_TRACE(::testing::Message() << "Column " << static_cast<uint16_t>(Column) << ", Row " << static_cast<uint16_t>(Row));
             bool Expected = (Column * 3 + Row) & 1;
             bool Value = !Expected;
-            EXPECT_EQ(Matrix.setDot(Column, Row, Expected), E_OK);
+            Matrix.setDot(Column, Row, Expected);
             EXPECT_EQ(Matrix.getDot(Column, Row, &Value), E_OK);
             EXPECT_EQ(Value, Expected);
         }
@@ -360,13 +360,65 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
     std::vector<byte> Before = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     int32_t FramesBefore = Mock::Frames;
 
-    EXPECT_EQ(Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true), E_NOT_OK);
-    EXPECT_EQ(Matrix.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true), E_NOT_OK);
-    EXPECT_EQ(Matrix.setColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF), E_NOT_OK);
-    EXPECT_EQ(Matrix.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF), E_NOT_OK);
     EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1), E_NOT_OK);
     EXPECT_EQ(bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer)), Before);
     EXPECT_EQ(Mock::Frames, FramesBefore);
+}
+
+/* drawing off the panel leaves the panel as it was and sends nothing; column 8 of module 0 used to be checked
+ * against the panel alone, which would have drawn it on module 1 */
+TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
+{
+    rowType Row = { 0xFF, 0xFF, 0xFF, 0xFF };
+    const struct {
+        const char* Name;
+        void (*Draw)(MaxMatrix&, const rowType);
+    } Cases[] = {
+        { "setDot left", [](MaxMatrix& M, const rowType) { M.setDot(-1, 0, true); } },
+        { "setDot right", [](MaxMatrix& M, const rowType) { M.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true); } },
+        { "setDot above", [](MaxMatrix& M, const rowType) { M.setDot(0, -1, true); } },
+        { "setDot below", [](MaxMatrix& M, const rowType) { M.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true); } },
+        { "setColumn left", [](MaxMatrix& M, const rowType) { M.setColumn(-1, 0xFF); } },
+        { "setColumn right", [](MaxMatrix& M, const rowType) { M.setColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF); } },
+        { "setColumn no module", [](MaxMatrix& M, const rowType) { M.setColumn(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "setColumn off its module", [](MaxMatrix& M, const rowType) { M.setColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF); } },
+        { "setRow above", [](MaxMatrix& M, const rowType R) { M.setRow(-1, R); } },
+        { "setRow below", [](MaxMatrix& M, const rowType R) { M.setRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, R); } },
+        { "setRow no module", [](MaxMatrix& M, const rowType) { M.setRow(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "setRow off its module", [](MaxMatrix& M, const rowType) { M.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF); } },
+    };
+
+    for(const auto& Case : Cases) {
+        Matrix.clear();
+        int32_t FramesBefore = Mock::Frames;
+        Case.Draw(Matrix, Row);
+        EXPECT_EQ(shownPicture(Matrix), picture([](int16_t, int16_t) { return false; })) << Case.Name;
+        EXPECT_EQ(Mock::Frames, FramesBefore) << Case.Name;
+    }
+}
+
+/* a char partly off the panel shows the part on it, through either path of setSprite(): whole columns for a char
+ * at the top, single dots for one moved down */
+TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
+{
+    spriteIndexType Index;
+    spriteType Sprite;
+    ASSERT_EQ(MaxMatrixFont::convertCharToSprite('A', &Index), E_OK);
+    ASSERT_EQ(MaxMatrixFont::getSprite(Index, &Sprite), E_OK);
+    const int16_t Width = Sprite[ASCII_TABLE_SPRITE_WIDTH], Height = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
+    const struct {
+        int16_t X, Y;
+    } Places[] = { { -2, 0 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 0 }, { -2, -3 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 5 } };
+
+    for(const auto& Place : Places) {
+        Matrix.clear();
+        ASSERT_EQ(Matrix.setChar(Place.X, Place.Y, 'A'), E_OK);
+        EXPECT_EQ(shownPicture(Matrix), picture([&Sprite, &Place, Width, Height](int16_t X, int16_t Y) {
+            int16_t SpriteX = X - Place.X, SpriteY = Y - Place.Y;
+            return SpriteX >= 0 && SpriteX < Width && SpriteY >= 0 && SpriteY < Height &&
+                   bitRead(Sprite[ASCII_TABLE_SPRITE_COLUMN1 + SpriteX], SpriteY);
+        })) << "X " << Place.X << ", Y " << Place.Y;
+    }
 }
 
 /* a changed column of a module goes out in one frame with the same column of every other module */

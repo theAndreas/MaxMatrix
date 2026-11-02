@@ -105,11 +105,11 @@ class MaxMatrix
     void setAutoUpdate(bool);
     void setShiftInterval(uint16_t sShiftInterval) { ShiftInterval = sShiftInterval; }
     stdReturnType setIntensity(byte);
-    stdReturnType setColumn(byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Column, Value)); }
-    stdReturnType setColumn(byte Module, byte Column, byte Value) { return updateIfAuto(Panel.setColumn(Module, Column, Value)); }
-    stdReturnType setRow(byte Row, const rowType Value) { return updateIfAuto(Panel.setRow(Row, Value)); }
-    stdReturnType setRow(byte Module, byte Row, byte Value) { return updateIfAuto(Panel.setRow(Module, Row, Value)); }
-    stdReturnType setDot(byte Column, byte Row, bool Value) { return updateIfAuto(Panel.setDot(Column, Row, Value)); }
+    void setColumn(int16_t Column, byte Value) { Panel.setColumn(Column, Value); updateIfAuto(); }
+    void setColumn(byte Module, byte Column, byte Value) { Panel.setColumn(Module, Column, Value); updateIfAuto(); }
+    void setRow(int16_t Row, const rowType Value) { Panel.setRow(Row, Value); updateIfAuto(); }
+    void setRow(byte Module, byte Row, byte Value) { Panel.setRow(Module, Row, Value); updateIfAuto(); }
+    void setDot(int16_t Column, int16_t Row, bool Value) { Panel.setDot(Column, Row, Value); updateIfAuto(); }
     stdReturnType setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
     stdReturnType setCharWithShift(char);
     stdReturnType setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }

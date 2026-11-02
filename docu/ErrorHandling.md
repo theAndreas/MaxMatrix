@@ -254,9 +254,12 @@ does not belong in a display library.
 - **Not domains**, because no one needs the open set they buy: every error comes from the library
   itself. A domain costs RAM with a vtable, or keeps its texts linked in `PROGMEM`; either breaks "the
   parts cost no RAM" and "a sketch that does not use it pays nothing".
-- **Open, and first:** whether a dot off the panel is an error at all. If `setDot()`, `setColumn()`
-  and `setRow()` clip as `setChar()` and `embedded-graphics` do, out of range is left for the
-  intensity and the commands, and `MaxMatrixCommand` checks the coordinates it is sent itself.
+- **Drawing clips**, decided first: `setDot()`, `setColumn()` and `setRow()` take `int16_t`, leave out
+  what lies off the panel as `setChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
+  Out of range is left for the getters, the intensity and the commands, and `MaxMatrixCommand` checks
+  the coordinates it is sent itself. Measured on the Uno: `Basics` 28 bytes of flash more for the
+  checks against negative coordinates, `ScrollText` 4 and `SerialControl` 34 less, as `setSprite()`
+  no longer checks on its own; RAM the same.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
   `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the

@@ -36,7 +36,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
-| 27 | Errors that say what went wrong | 13 | open | |
+| 27 | Errors that say what went wrong | 13 | in progress | #29 |
 
 ### 1 Build with CMake
 
@@ -422,11 +422,15 @@ empty, no number or too large. The command answers all of them with
   (`build.extra_flags` carries the USB flags of some boards). The tests build a third variant
   with it on and check that every `E_NOT_OK` is reported.
 
-Open first: whether a dot off the panel is an error at all. `setChar()` already clips a char
-that lies partly off the panel, and `embedded-graphics` in Rust clips every pixel: drawing into
-a buffer cannot fail there. If `setDot()`, `setColumn()` and `setRow()` clip as well, out of
-range is left for the intensity and the commands, and `MaxMatrixCommand` checks the coordinates
-it is sent itself. That decides how many errors there are, so it comes before the enum.
+Drawing clips, decided first because it decides how many errors there are: `setDot()`,
+`setColumn()` and `setRow()` take `int16_t` as `setChar()` does, leave out what lies off the
+panel and return nothing, as `embedded-graphics` in Rust and Adafruit GFX's `drawPixel()` do.
+Out of range is left for the getters, the intensity and the commands; `MaxMatrixCommand` checks
+the coordinates it is sent itself, so that a typed line that would do nothing says so.
+
+In four steps, a PR each: drawing clips; the enum, the wrapper and `MaxMatrixResult<T>`;
+`getErrorText()` with the reason in the answer of `SerialControl`, after 21 is merged, as the
+page of 21 reads those answers; `MAXMATRIX_DEV_ERROR_DETECT`.
 
 The alternatives weighed, AUTOSAR's error domains and Rust's enums among them, and what each
 costs on the Uno are in `docu/ErrorHandling.md`.
