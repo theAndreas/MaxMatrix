@@ -419,7 +419,6 @@ static std::string drawCoordinates()
     DocuSvg Svg(getPictureWidth(), DOCU_COORDINATES_ABOVE + PanelHeight + DOCU_COORDINATES_BELOW, DOCU_TOP - DOCU_COORDINATES_ABOVE);
     std::string ColumnLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     std::string RowLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
-    bool Dot;
 
     Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);
     for(byte Bit = 0; Bit < 8; Bit++) {
@@ -427,14 +426,14 @@ static std::string drawCoordinates()
         Matrix.setColumn(DOCU_EXAMPLE_COLUMN, 1 << Bit);
         for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
             for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-                if(E_OK == Matrix.getDot(X, Y, &Dot) && Dot) ColumnLabels[X][Y] = std::to_string(Bit);
+                if(Matrix.getDot(X, Y).getValue()) ColumnLabels[X][Y] = std::to_string(Bit);
             }
         }
         Matrix.clear();
         Matrix.setRow(DOCU_EXAMPLE_ROW_MODULE, DOCU_EXAMPLE_ROW, 1 << Bit);
         for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
             for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-                if(E_OK == Matrix.getDot(X, Y, &Dot) && Dot) RowLabels[X][Y] = std::to_string(Bit);
+                if(Matrix.getDot(X, Y).getValue()) RowLabels[X][Y] = std::to_string(Bit);
             }
         }
     }

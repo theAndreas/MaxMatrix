@@ -150,15 +150,37 @@ const byte SpriteTable[] PROGMEM = {
  *                  
  *  \param[in]      SpriteIndex     index of sprite from sprite table
  *  \param[out]     Sprite          sprite from sprite table (width, height, value column 1 ... 5)
- *  \return         -
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the table has no sprite with this index; Sprite is left as it was
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* Sprite)
+MaxMatrixStatus MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* Sprite)
 {
     if(SpriteIndex < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
         memcpy_P(*Sprite, SpriteTable + MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS * SpriteIndex, MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS);
-        return E_OK;
-    } else return E_NOT_OK;
+        return MAXMATRIX_E_OK;
+    } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getSprite */
+
+
+/******************************************************************************************************************************************************
+  getCharSprite()
+******************************************************************************************************************************************************/
+/*! \brief          get the sprite of a char
+ *  \details        this function looks the char up and copies its sprite, what every function of MaxMatrixText that
+ *                  draws a char needs
+ *
+ *  \param[in]      Char            latin-1 char, as decodeChar() returns it
+ *  \param[out]     Sprite          sprite of the char (width, height, value column 1 ... 5)
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; Sprite is left as it was
+ *****************************************************************************************************************************************************/
+MaxMatrixStatus MaxMatrixFont::getCharSprite(char Char, spriteType* Sprite)
+{
+    MaxMatrixResult<spriteIndexType> SpriteIndex = convertCharToSprite(Char);
+
+    if(SpriteIndex.isOk()) return getSprite(SpriteIndex.getValue(), Sprite);
+    else return SpriteIndex.getError();
+} /* getCharSprite */
 
 
 /******************************************************************************************************************************************************
@@ -166,29 +188,26 @@ stdReturnType MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* 
 ******************************************************************************************************************************************************/
 /*! \brief          converts char to sprite
  *  \details        this function converts the ASCII char to sprite index
- *                  
+ *
  *  \param[in]      Char            char to convert to sprite
- *  \param[out]     SpriteIndex     appropriate sprite
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         index of the sprite in the sprite table
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixFont::convertCharToSprite(char Char, spriteIndexType* SpriteIndex)
+MaxMatrixResult<spriteIndexType> MaxMatrixFont::convertCharToSprite(char Char)
 {
-    stdReturnType ReturnValue = E_NOT_OK;
     const byte Latin1 = static_cast<byte>(Char);
 
     /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
-    if(0xC4 == Latin1) { *SpriteIndex = 95; ReturnValue = E_OK; }          // Ä
-    else if(0xD6 == Latin1) { *SpriteIndex = 96; ReturnValue = E_OK; }     // Ö
-    else if(0xDC == Latin1) { *SpriteIndex = 97; ReturnValue = E_OK; }     // Ü
-    else if(0xE4 == Latin1) { *SpriteIndex = 98; ReturnValue = E_OK; }     // ä
-    else if(0xF6 == Latin1) { *SpriteIndex = 99; ReturnValue = E_OK; }     // ö
-    else if(0xFC == Latin1) { *SpriteIndex = 100; ReturnValue = E_OK; }    // ü
+    if(0xC4 == Latin1) return static_cast<spriteIndexType>(95);             // Ä
+    else if(0xD6 == Latin1) return static_cast<spriteIndexType>(96);        // Ö
+    else if(0xDC == Latin1) return static_cast<spriteIndexType>(97);        // Ü
+    else if(0xE4 == Latin1) return static_cast<spriteIndexType>(98);        // ä
+    else if(0xF6 == Latin1) return static_cast<spriteIndexType>(99);        // ö
+    else if(0xFC == Latin1) return static_cast<spriteIndexType>(100);       // ü
     /* for all others only add offset */
     else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
-        { *SpriteIndex = Char + MAXMATRIX_ASCII_TABLE_OFFSET; ReturnValue = E_OK; }
-
-    return ReturnValue;
+        return static_cast<spriteIndexType>(Char + MAXMATRIX_ASCII_TABLE_OFFSET);
+    else return MAXMATRIX_E_UNKNOWN_CHAR;
 } /* convertCharToSprite */
 
 

@@ -53,20 +53,16 @@ MaxMatrixText::MaxMatrixText()
  *  \param[in]      X           x coordinate
  *  \param[in]      Y           y coordinate
  *  \param[in]      Char        char to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; nothing is drawn
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixText::setChar(MaxMatrixPanel& Panel, int16_t X, int16_t Y, char Char)
-{   
-    spriteIndexType SpriteIndex;
+MaxMatrixStatus MaxMatrixText::setChar(MaxMatrixPanel& Panel, int16_t X, int16_t Y, char Char)
+{
     spriteType Sprite;
-    
-    if(E_OK == MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex)) {
-        if(E_OK == MaxMatrixFont::getSprite(SpriteIndex, &Sprite)) {
-            setSprite(Panel, X, Y, Sprite);
-            return E_OK;
-        } else return E_NOT_OK;
-    } else return E_NOT_OK;
+    MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &Sprite);
+
+    if(Status.isOk()) setSprite(Panel, X, Y, Sprite);
+    return Status;
 } /* setChar */
 
 
@@ -78,19 +74,15 @@ stdReturnType MaxMatrixText::setChar(MaxMatrixPanel& Panel, int16_t X, int16_t Y
  *                  Every shift process will be triggered by calling the shiftMainFunction. 
  *                  
  *  \param[in]      Char        char to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; nothing starts
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixText::setCharWithShift(char Char)
+MaxMatrixStatus MaxMatrixText::setCharWithShift(char Char)
 {
-    spriteIndexType SpriteIndex;
-    
-    if(E_OK == MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex)) {
-        if(E_OK == MaxMatrixFont::getSprite(SpriteIndex, &SpriteBuffer)) {
-            SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
-            return E_OK;
-        } else return E_NOT_OK;
-    } else return E_NOT_OK;
+    MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &SpriteBuffer);
+
+    if(Status.isOk()) SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
+    return Status;
 } /* setCharWithShift */
 
 
@@ -102,34 +94,27 @@ stdReturnType MaxMatrixText::setCharWithShift(char Char)
  *                  
  *  \param[in]      Panel       the matrix the text is drawn on
  *  \param[in]      String        string to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_NO_TEXT         the string is NULL
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font lacks a char; the chars before it are drawn
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String)
-{   
-    spriteIndexType SpriteIndex;
+MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String)
+{
     spriteType Sprite;
     int16_t CharColumn = 0;
     char Char;
 
-    /* check for valid string */
-    if(String != NULL)
+    if(String == NULL) return MAXMATRIX_E_NO_TEXT;
+    while(*String != STD_NULL_CHARACTER)
     {
-        while(*String != STD_NULL_CHARACTER)
-        {
-            String += MaxMatrixFont::decodeChar(String, &Char);
-            if(E_NOT_OK == MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex)) { return E_NOT_OK; }
-            else if(E_NOT_OK == MaxMatrixFont::getSprite(SpriteIndex, &Sprite)) { return E_NOT_OK; }
-            else {
-                setSprite(Panel, CharColumn, 0, Sprite);
-                CharColumn += Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars;
-                if(CharColumn > MAXMATRIX_NUMBER_OF_COLUMNS) break;
-            }
-        }
-        return E_OK;
-    } else {
-        return E_NOT_OK;
+        String += MaxMatrixFont::decodeChar(String, &Char);
+        MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &Sprite);
+        if(!Status.isOk()) return Status;
+        setSprite(Panel, CharColumn, 0, Sprite);
+        CharColumn += Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars;
+        if(CharColumn > MAXMATRIX_NUMBER_OF_COLUMNS) break;
     }
+    return MAXMATRIX_E_OK;
 } /* setText */
 
 
@@ -141,16 +126,15 @@ stdReturnType MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String)
  *                  when the last char appears on the matrix.
  *
  *  \param[in]      sString     string to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_NO_TEXT         the string is NULL; nothing starts
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixText::setTextWithShift(char* sString)
+MaxMatrixStatus MaxMatrixText::setTextWithShift(char* sString)
 {
-    if(sString != NULL) {
-        SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_READY;
-        String = sString;
-        return E_OK;
-    } else return E_NOT_OK;
+    if(sString == NULL) return MAXMATRIX_E_NO_TEXT;
+    SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_READY;
+    String = sString;
+    return MAXMATRIX_E_OK;
 } /* setTextWithShift */
 
 
@@ -196,13 +180,12 @@ void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, const
  *  \details        this function sets the number of spaces between chars
  *                  
  *  \param[in]      sSpaceBetweenChars      number of spaces
- *  \return         E_OK
+ *  \return         -
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixText::setSpaceBetweenChars(byte sSpaceBetweenChars)
+void MaxMatrixText::setSpaceBetweenChars(byte sSpaceBetweenChars)
 {
-    /* every byte value is a valid number of spaces */
+    /* every byte value is a valid number of spaces, so it cannot fail */
     SpaceBetweenChars = sSpaceBetweenChars;
-    return E_OK;
 } /* setSpaceBetweenChars */
 
 
@@ -244,7 +227,6 @@ bool MaxMatrixText::charShiftTask(MaxMatrixPanel& Panel)
  *****************************************************************************************************************************************************/
 bool MaxMatrixText::stringShiftTask(MaxMatrixPanel& Panel)
 {
-    spriteIndexType SpriteIndex;
     char Char;
 
     /* has char shift task finished shifting sprite or char */
@@ -254,9 +236,7 @@ bool MaxMatrixText::stringShiftTask(MaxMatrixPanel& Panel)
          * stood still for a step. So read on to the next known char or to the end of the string. */
         while(*String != STD_NULL_CHARACTER && SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY) {
             String += MaxMatrixFont::decodeChar(String, &Char);
-            if(E_OK == MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex) && E_OK == MaxMatrixFont::getSprite(SpriteIndex, &SpriteBuffer)) {
-                SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
-            }
+            if(MaxMatrixFont::getCharSprite(Char, &SpriteBuffer).isOk()) SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
         }
         if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING) {
             charShiftTask(Panel);

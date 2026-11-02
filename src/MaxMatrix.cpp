@@ -135,17 +135,14 @@ void MaxMatrix::setAutoUpdate(bool sAutoUpdate)
  *  \details        
  *                  
  *  \param[in]      Intensity       intensity value from 0 to 15
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_OUT_OF_RANGE    above 15; the intensity stays as it was
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrix::setIntensity(byte Intensity)
+MaxMatrixStatus MaxMatrix::setIntensity(byte Intensity)
 {
-    if(Intensity <= MAX7219_REG_INTENSITY_MAX_VALUE) {
-        RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, Intensity);
-        return E_OK;
-    } else {
-        return E_NOT_OK; 
-    }
+    if(Intensity > MAX7219_REG_INTENSITY_MAX_VALUE) return MAXMATRIX_E_OUT_OF_RANGE;
+    RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, Intensity);
+    return MAXMATRIX_E_OK;
 } /* setIntensity */
 
 
@@ -157,15 +154,15 @@ stdReturnType MaxMatrix::setIntensity(byte Intensity)
  *                  Every shift process will be triggered by calling the shiftMainFunction. 
  *                  
  *  \param[in]      Char        char to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; nothing starts
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrix::setCharWithShift(char Char)
+MaxMatrixStatus MaxMatrix::setCharWithShift(char Char)
 {
-    if(E_OK == Text.setCharWithShift(Char)) {
-        startShift(MAXMATRIX_STATE_CHAR_SHIFT);
-        return E_OK;
-    } else return E_NOT_OK;
+    MaxMatrixStatus Status = Text.setCharWithShift(Char);
+
+    if(Status.isOk()) startShift(MAXMATRIX_STATE_CHAR_SHIFT);
+    return Status;
 } /* setCharWithShift */
 
 
@@ -177,15 +174,15 @@ stdReturnType MaxMatrix::setCharWithShift(char Char)
  *                  when the last char appears on the matrix.
  *
  *  \param[in]      sString     string to print on matrix
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_NO_TEXT         the string is NULL; nothing starts
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrix::setTextWithShift(char* sString)
+MaxMatrixStatus MaxMatrix::setTextWithShift(char* sString)
 {
-    if(E_OK == Text.setTextWithShift(sString)) {
-        startShift(MAXMATRIX_STATE_STRING_SHIFT);
-        return E_OK;
-    } else return E_NOT_OK;
+    MaxMatrixStatus Status = Text.setTextWithShift(sString);
+
+    if(Status.isOk()) startShift(MAXMATRIX_STATE_STRING_SHIFT);
+    return Status;
 } /* setTextWithShift */
 
 

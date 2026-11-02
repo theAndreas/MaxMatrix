@@ -22,6 +22,7 @@
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixStandardTypes.h"
+#include "MaxMatrixError.h"
 
 
 /******************************************************************************************************************************************************
@@ -63,8 +64,9 @@ enum {
 class MaxMatrixFont
 {
   public:
-    static stdReturnType getSprite(spriteIndexType, spriteType*);
-    static stdReturnType convertCharToSprite(char, spriteIndexType*);
+    static MaxMatrixStatus getSprite(spriteIndexType, spriteType*);
+    static MaxMatrixStatus getCharSprite(char, spriteType*);
+    static MaxMatrixResult<spriteIndexType> convertCharToSprite(char);
     static byte decodeChar(const char*, char*);
 };
 

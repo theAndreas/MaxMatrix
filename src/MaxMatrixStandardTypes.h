@@ -51,7 +51,7 @@
 /******************************************************************************************************************************************************
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
-  /* standard return type for functions */
+  /* standard return type for functions of the simulator and DocuPictures; the library says why in MaxMatrixError.h */
 typedef enum {
     E_OK = 0,
     E_NOT_OK = 1

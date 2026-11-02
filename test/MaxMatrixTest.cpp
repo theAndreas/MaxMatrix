@@ -21,6 +21,16 @@ static const byte DataInPin = 11;
 static const byte ChipSelectPin = 10;
 static const byte ClockPin = 13;
 
+/* GoogleTest would print an error as its number */
+static void PrintTo(MaxMatrixErrorType Error, std::ostream* Out)
+{
+    static const char* const Names[] = {
+        "MAXMATRIX_E_OK", "MAXMATRIX_E_OUT_OF_RANGE", "MAXMATRIX_E_UNKNOWN_CHAR", "MAXMATRIX_E_NO_TEXT", "MAXMATRIX_E_NOT_A_NUMBER"
+    };
+    if(Error < sizeof(Names) / sizeof(Names[0])) *Out << Names[Error];
+    else *Out << "error " << static_cast<uint16_t>(Error);
+}
+
 /* GoogleTest prints a vector element by element, where a failed memcmp only says that something differs */
 static std::vector<byte> bytes(const byte* Data, size_t Size)
 {
@@ -121,7 +131,7 @@ TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
     for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
         SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(Row));
         Matrix.setRow(Row, In);
-        EXPECT_EQ(Matrix.getRow(Row, Out), E_OK);
+        EXPECT_EQ(Matrix.getRow(Row, Out).getError(), MAXMATRIX_E_OK);
         EXPECT_EQ(bytes(Out, sizeof(Out)), bytes(In, sizeof(In)));
     }
 }
@@ -189,7 +199,7 @@ static std::vector<std::string> picture(DotType Dot)
 /* the picture as the library reports it, through getDot */
 static std::vector<std::string> shownPicture(MaxMatrix& Matrix)
 {
-    return picture([&Matrix](int16_t X, int16_t Y) { bool Value = false; Matrix.getDot(X, Y, &Value); return Value; });
+    return picture([&Matrix](int16_t X, int16_t Y) { return Matrix.getDot(X, Y).getValue(); });
 }
 
 static void drawPattern(MaxMatrix& Matrix)
@@ -215,9 +225,9 @@ TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
     Matrix.setColumn(5, 0xA3);
     EXPECT_EQ(shownPicture(Matrix), picture([](int16_t X, int16_t Y) { return X == 5 && bitRead(0xA3, Y); }));
     for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-        byte Value = 0;
-        EXPECT_EQ(Matrix.getRow(0, Y, &Value), E_OK);
-        EXPECT_EQ(Value, bitRead(0xA3, Y) ? 1 << (7 - 5) : 0) << "Row " << static_cast<uint16_t>(Y);
+        MaxMatrixResult<byte> Value = Matrix.getRow(0, Y);
+        EXPECT_EQ(Value.getError(), MAXMATRIX_E_OK);
+        EXPECT_EQ(Value.getValue(), bitRead(0xA3, Y) ? 1 << (7 - 5) : 0) << "Row " << static_cast<uint16_t>(Y);
     }
 }
 
@@ -277,10 +287,10 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
         for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
             SCOPED_TRACE(::testing::Message() << "Column " << static_cast<uint16_t>(Column) << ", Row " << static_cast<uint16_t>(Row));
             bool Expected = (Column * 3 + Row) & 1;
-            bool Value = !Expected;
             Matrix.setDot(Column, Row, Expected);
-            EXPECT_EQ(Matrix.getDot(Column, Row, &Value), E_OK);
-            EXPECT_EQ(Value, Expected);
+            MaxMatrixResult<bool> Value = Matrix.getDot(Column, Row);
+            EXPECT_EQ(Value.getError(), MAXMATRIX_E_OK);
+            EXPECT_EQ(Value.getValue(), Expected);
         }
     }
 }
@@ -349,7 +359,7 @@ TEST_F(MaxMatrixTest, InitConfiguresEveryChip)
 
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip)
 {
-    EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE), E_OK);
+    EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE).getError(), MAXMATRIX_E_OK);
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         EXPECT_EQ(chipOfModule(Module).Intensity, MAX7219_REG_INTENSITY_MAX_VALUE) << "Module " << static_cast<uint16_t>(Module);
     }
@@ -360,9 +370,56 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
     std::vector<byte> Before = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     int32_t FramesBefore = Mock::Frames;
 
-    EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1), E_NOT_OK);
+    EXPECT_EQ(Matrix.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).getError(), MAXMATRIX_E_OUT_OF_RANGE);
     EXPECT_EQ(bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer)), Before);
     EXPECT_EQ(Mock::Frames, FramesBefore);
+}
+
+/* every way a call can fail, with the reason it gives: with stdReturnType a test stayed green when another check
+ * than the one meant failed. A failing call changes nothing, draws nothing and starts no shift. "999x" is no number
+ * rather than too large, although the digits run past the maximum before the letter comes. */
+TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
+{
+    const struct {
+        const char* Name;
+        MaxMatrixErrorType (*Call)(MaxMatrix&);
+        MaxMatrixErrorType Expected;
+    } Cases[] = {
+        { "getColumn left", [](MaxMatrix& M) { return M.getColumn(-1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getColumn right", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_COLUMNS).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getColumn no module", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getColumn off its module", [](MaxMatrix& M) { return M.getColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getRow above", [](MaxMatrix& M) { rowType Row; return M.getRow(-1, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getRow below", [](MaxMatrix& M) { rowType Row; return M.getRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getRow no module", [](MaxMatrix& M) { return M.getRow(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getRow off its module", [](MaxMatrix& M) { return M.getRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getDot left", [](MaxMatrix& M) { return M.getDot(-1, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getDot right", [](MaxMatrix& M) { return M.getDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getDot above", [](MaxMatrix& M) { return M.getDot(0, -1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getDot below", [](MaxMatrix& M) { return M.getDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "getSprite", [](MaxMatrix& M) { spriteType Sprite; return M.getSprite(255, &Sprite).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "setIntensity", [](MaxMatrix& M) { return M.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "setChar", [](MaxMatrix& M) { return M.setChar(0, 0, '\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
+        { "setText unknown char", [](MaxMatrix& M) { return M.setText("\x01").getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
+        { "setText NULL", [](MaxMatrix& M) { return M.setText(NULL).getError(); }, MAXMATRIX_E_NO_TEXT },
+        { "setCharWithShift", [](MaxMatrix& M) { return M.setCharWithShift('\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
+        { "setTextWithShift NULL", [](MaxMatrix& M) { return M.setTextWithShift(NULL).getError(); }, MAXMATRIX_E_NO_TEXT },
+        { "number empty", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
+        { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("12a", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
+        { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("256", 255).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
+        { "number too large, then a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("999x", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
+    };
+
+    for(const auto& Case : Cases) {
+        Matrix.clear();
+        int32_t FramesBefore = Mock::Frames;
+        byte IntensityBefore = chipOfModule(0).Intensity;
+        EXPECT_EQ(Case.Call(Matrix), Case.Expected) << Case.Name;
+        EXPECT_EQ(shownPicture(Matrix), picture([](int16_t, int16_t) { return false; })) << Case.Name;
+        EXPECT_EQ(Mock::Frames, FramesBefore) << Case.Name;
+        EXPECT_EQ(chipOfModule(0).Intensity, IntensityBefore) << Case.Name;
+        EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY) << Case.Name;
+    }
 }
 
 /* drawing off the panel leaves the panel as it was and sends nothing; column 8 of module 0 used to be checked
@@ -401,10 +458,8 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
  * at the top, single dots for one moved down */
 TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 {
-    spriteIndexType Index;
     spriteType Sprite;
-    ASSERT_EQ(MaxMatrixFont::convertCharToSprite('A', &Index), E_OK);
-    ASSERT_EQ(MaxMatrixFont::getSprite(Index, &Sprite), E_OK);
+    ASSERT_EQ(MaxMatrixFont::getCharSprite('A', &Sprite).getError(), MAXMATRIX_E_OK);
     const int16_t Width = Sprite[ASCII_TABLE_SPRITE_WIDTH], Height = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
     const struct {
         int16_t X, Y;
@@ -412,7 +467,7 @@ TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 
     for(const auto& Place : Places) {
         Matrix.clear();
-        ASSERT_EQ(Matrix.setChar(Place.X, Place.Y, 'A'), E_OK);
+        ASSERT_EQ(Matrix.setChar(Place.X, Place.Y, 'A').getError(), MAXMATRIX_E_OK);
         EXPECT_EQ(shownPicture(Matrix), picture([&Sprite, &Place, Width, Height](int16_t X, int16_t Y) {
             int16_t SpriteX = X - Place.X, SpriteY = Y - Place.Y;
             return SpriteX >= 0 && SpriteX < Width && SpriteY >= 0 && SpriteY < Height &&
@@ -555,7 +610,7 @@ TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval)
 {
     Mock::setMillis(1000);
     Matrix.setShiftInterval(50);
-    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
     const int16_t Start = Matrix.Text.SpriteShiftCounter;
 
     Matrix.shiftTask();
@@ -573,7 +628,7 @@ TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp)
 {
     Mock::setMillis(1000);
     Matrix.setShiftInterval(50);
-    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
     const int16_t Start = Matrix.Text.SpriteShiftCounter;
 
     Matrix.shiftTask();
@@ -593,7 +648,7 @@ TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall)
 {
     Mock::setMillis(1000);
     Matrix.setShiftInterval(0);
-    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
     const int16_t Start = Matrix.Text.SpriteShiftCounter;
 
     for(uint8_t Call = 0; Call < 3; Call++) Matrix.shiftTask();
@@ -605,11 +660,11 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce)
 {
     Mock::setMillis(1000);
     Matrix.setShiftInterval(50);
-    ASSERT_EQ(Matrix.setCharWithShift('#'), E_OK);
+    ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
     Matrix.shiftTask();
 
     Mock::setMillis(1010);
-    ASSERT_EQ(Matrix.setCharWithShift('+'), E_OK);
+    ASSERT_EQ(Matrix.setCharWithShift('+').getError(), MAXMATRIX_E_OK);
     const int16_t Start = Matrix.Text.SpriteShiftCounter;
     Matrix.shiftTask();
     EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1);
@@ -646,10 +701,10 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match)
     std::vector<byte> Utf8, Latin1;
 
     Matrix.clear();
-    EXPECT_EQ(Matrix.setText("Äöü!"), E_OK);
+    EXPECT_EQ(Matrix.setText("Äöü!").getError(), MAXMATRIX_E_OK);
     Utf8 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     Matrix.clear();
-    EXPECT_EQ(Matrix.setText("\xC4\xF6\xFC!"), E_OK);
+    EXPECT_EQ(Matrix.setText("\xC4\xF6\xFC!").getError(), MAXMATRIX_E_OK);
     Latin1 = bytes(Matrix.Panel.Wired.MatrixBuffer, sizeof(Matrix.Panel.Wired.MatrixBuffer));
     EXPECT_EQ(Utf8, Latin1);
 
@@ -667,19 +722,19 @@ TEST_F(MaxMatrixTest, EveryUmlautHasItsOwnSprite)
 {
     const char* Umlauts[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü" };
     char Char;
-    spriteIndexType SpriteIndex;
 
     for(byte i = 0; i < 6; i++) {
         SCOPED_TRACE(Umlauts[i]);
         EXPECT_EQ(MaxMatrixFont::decodeChar(Umlauts[i], &Char), 2);
-        EXPECT_EQ(MaxMatrixFont::convertCharToSprite(Char, &SpriteIndex), E_OK);
-        EXPECT_EQ(SpriteIndex, 95 + i);
+        MaxMatrixResult<spriteIndexType> SpriteIndex = MaxMatrixFont::convertCharToSprite(Char);
+        EXPECT_EQ(SpriteIndex.getError(), MAXMATRIX_E_OK);
+        EXPECT_EQ(SpriteIndex.getValue(), 95 + i);
     }
 
     /* the Ü sprite used to be a copy of the O */
     spriteType Ue, O;
-    EXPECT_EQ(Matrix.getSprite(97, &Ue), E_OK);
-    EXPECT_EQ(Matrix.getSprite('O' + MAXMATRIX_ASCII_TABLE_OFFSET, &O), E_OK);
+    EXPECT_EQ(Matrix.getSprite(97, &Ue).getError(), MAXMATRIX_E_OK);
+    EXPECT_EQ(Matrix.getSprite('O' + MAXMATRIX_ASCII_TABLE_OFFSET, &O).getError(), MAXMATRIX_E_OK);
     EXPECT_NE(bytes(Ue, sizeof(Ue)), bytes(O, sizeof(O)));
 }
 
@@ -702,7 +757,7 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)
  * a step, so the calls are compared as well - in the middle of the text and at its end. */
 TEST_F(MaxMatrixTest, UnknownChars)
 {
-    EXPECT_EQ(Matrix.setText("a\x01"), E_NOT_OK);
+    EXPECT_EQ(Matrix.setText("a\x01").getError(), MAXMATRIX_E_UNKNOWN_CHAR);
 
     char Known[] = "ab";
     int32_t Frames = shiftWholeText(Known);
@@ -757,8 +812,6 @@ TEST_F(MaxMatrixCommandTest, TextShowsWhatSetTextShows)
 
 TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix)
 {
-    bool Dot = false;
-
     EXPECT_EQ(feedLine("intensity=8\n"), MAXMATRIX_COMMAND_DONE);
     EXPECT_EQ(chipOfModule(0).Intensity, 8);
     EXPECT_EQ(feedLine("speed=120\n"), MAXMATRIX_COMMAND_DONE);
@@ -767,11 +820,11 @@ TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix)
     EXPECT_EQ(Matrix.getSpaceBetweenChars(), 3);
 
     EXPECT_EQ(feedLine("setDot=5,3,1\n"), MAXMATRIX_COMMAND_DONE);
-    EXPECT_EQ(Matrix.getDot(5, 3, &Dot), E_OK);
-    EXPECT_TRUE(Dot);
+    EXPECT_EQ(Matrix.getDot(5, 3).getError(), MAXMATRIX_E_OK);
+    EXPECT_TRUE(Matrix.getDot(5, 3).getValue());
     EXPECT_EQ(feedLine("setDot=5,3,0\n"), MAXMATRIX_COMMAND_DONE);
-    EXPECT_EQ(Matrix.getDot(5, 3, &Dot), E_OK);
-    EXPECT_FALSE(Dot);
+    EXPECT_EQ(Matrix.getDot(5, 3).getError(), MAXMATRIX_E_OK);
+    EXPECT_FALSE(Matrix.getDot(5, 3).getValue());
 
     Matrix.setText("Hi");
     EXPECT_EQ(feedLine("clear\n"), MAXMATRIX_COMMAND_DONE);
@@ -789,7 +842,7 @@ TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow)
     const std::vector<std::vector<byte>> Commanded = shiftSteps();
 
     Matrix.clear();
-    ASSERT_EQ(Matrix.setTextWithShift(Text), E_OK);
+    ASSERT_EQ(Matrix.setTextWithShift(Text).getError(), MAXMATRIX_E_OK);
     EXPECT_EQ(Commanded, shiftSteps());
 }
 
