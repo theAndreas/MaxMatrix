@@ -52,16 +52,13 @@ MaxMatrixPanel::MaxMatrixPanel(byte sDataInPin, byte sChipSelectPin, byte sClock
  *                  column reaches from zero to number of modules multiplied by eight
  *
  *  \param[in]      Column      column on matrix which contains eight LEDs
- *  \param[out]     Value       led value in column, bit 0 is the top row
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         led value in column, bit 0 is the top row
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the column is off the panel
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::getColumn(byte Column, byte* Value)
+MaxMatrixResult<byte> MaxMatrixPanel::getColumn(int16_t Column)
 {
-    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS) {
-        *Value = getLine(Column, 0, true);
-        return E_OK;
-    } else return E_NOT_OK;
+    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) return getLine(Column, 0, true);
+    else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getColumn */
 
 
@@ -73,15 +70,14 @@ stdReturnType MaxMatrixPanel::getColumn(byte Column, byte* Value)
  *
  *  \param[in]      Module      module where column will be returned
  *  \param[in]      Column      column on module which contains eight LEDs
- *  \param[out]     Value       led value in column, bit 0 is the top row
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         led value in column, bit 0 is the top row
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the module or the column does not exist
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::getColumn(byte Module, byte Column, byte* Value)
+MaxMatrixResult<byte> MaxMatrixPanel::getColumn(byte Module, byte Column)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        return getColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column, Value);
-    } else return E_NOT_OK;
+        return getColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column);
+    } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getColumn */
 
 
@@ -128,19 +124,21 @@ void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
   getRow()
 ******************************************************************************************************************************************************/
 /*! \brief          get a given row of the matrix
- *  \details        this function returns a row of the LED matrix as the viewer sees it, one byte per module
+ *  \details        this function returns a row of the LED matrix as the viewer sees it, one byte per module.
+ *                  The row is taken by reference rather than as a pointer: getRow(Module, 0) would otherwise be
+ *                  ambiguous, as a literal 0 is a null pointer as well.
  *
  *  \param[in]      Row         row on matrix
  *  \param[out]     Value       led value in row, bit 7 of each byte is the leftmost column of its module
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the row is off the panel; Value is left as it was
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::getRow(byte Row, rowType Value)
+MaxMatrixStatus MaxMatrixPanel::getRow(int16_t Row, rowType& Value)
 {
-    if(Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) getRow(Module, Row, &Value[Module]);
-        return E_OK;
-    } else return E_NOT_OK;
+    if(Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Value[Module] = getRow(Module, Row).getValue();
+        return MAXMATRIX_E_OK;
+    } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getRow */
 
 
@@ -153,16 +151,14 @@ stdReturnType MaxMatrixPanel::getRow(byte Row, rowType Value)
  *
  *  \param[in]      Module      module where row should be returned
  *  \param[in]      Row         row on module which contains eight LEDs
- *  \param[out]     Value       led value in row, bit 7 is the leftmost column
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \return         led value in row, bit 7 is the leftmost column
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the module or the row does not exist
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::getRow(byte Module, byte Row, byte* Value)
+MaxMatrixResult<byte> MaxMatrixPanel::getRow(byte Module, byte Row)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        *Value = reverseByte(getLine(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, Row, false));
-        return E_OK;
-    } else return E_NOT_OK;
+        return reverseByte(getLine(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, Row, false));
+    } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getRow */
 
 
@@ -211,21 +207,19 @@ void MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
 /*! \brief          get a Pixel (LED) on the matrix
  *  \details        this function returns a dot as the viewer sees it
  *
- *  \param[in]      Column      column where to get the pixel
- *  \param[in]      Row         row where to get the pixel
- *  \param[out]     Value       value of the pixel
- *  \return         E_OK
- *                  E_NOT_OK
+ *  \param[in]      Column      column where to get the pixel, negative to the left of the panel
+ *  \param[in]      Row         row where to get the pixel, negative above the panel
+ *  \return         value of the pixel
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the dot is off the panel
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixPanel::getDot(byte Column, byte Row, bool* Value)
+MaxMatrixResult<bool> MaxMatrixPanel::getDot(int16_t Column, int16_t Row)
 {
     byte BufferColumn, BufferBit;
 
-    if(Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
-        *Value = bitRead(Wired.getColumn(BufferColumn), BufferBit);
-        return E_OK;
-    } else return E_NOT_OK;
+        return static_cast<bool>(bitRead(Wired.getColumn(BufferColumn), BufferBit));
+    } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getDot */
 
 

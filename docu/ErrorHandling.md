@@ -260,6 +260,12 @@ does not belong in a display library.
   the coordinates it is sent itself. Measured on the Uno: `Basics` 28 bytes of flash more for the
   checks against negative coordinates, `ScrollText` 4 and `SerialControl` 34 less, as `setSprite()`
   no longer checks on its own; RAM the same.
+- **The enum and its wrappers**, the second step: `MaxMatrixErrorType`, `MaxMatrixStatus` and
+  `MaxMatrixResult<T>` in `src/MaxMatrixError.h`, in place of `stdReturnType` throughout the library.
+  Measured on the Uno: `Basics` 18 bytes of flash less, `ScrollText` the same, `SerialControl` 80
+  less, RAM the same. A getter returning its value in registers costs less than one writing it through
+  a pointer, and `MaxMatrixFont::getCharSprite()` replaced four copies of the lookup in
+  `MaxMatrixText`.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
   `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the

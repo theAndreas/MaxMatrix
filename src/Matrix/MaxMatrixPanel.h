@@ -23,6 +23,7 @@
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
+#include "MaxMatrixError.h"
 #include "MaxMatrixWired.h"
 
 
@@ -73,11 +74,11 @@ class MaxMatrixPanel
     MaxMatrixModuleOrientationType getModuleOrientation() { return ModuleOrientation; }
     MaxMatrixMatrixOrientationType getMatrixOrientation() { return MatrixOrientation; }
 
-    stdReturnType getColumn(byte, byte*);
-    stdReturnType getColumn(byte, byte, byte*);
-    stdReturnType getRow(byte, rowType);
-    stdReturnType getRow(byte, byte, byte*);
-    stdReturnType getDot(byte, byte, bool*);
+    MaxMatrixResult<byte> getColumn(int16_t);
+    MaxMatrixResult<byte> getColumn(byte, byte);
+    MaxMatrixStatus getRow(int16_t, rowType&);
+    MaxMatrixResult<byte> getRow(byte, byte);
+    MaxMatrixResult<bool> getDot(int16_t, int16_t);
 
     // set methods
     void setColumn(int16_t, byte);

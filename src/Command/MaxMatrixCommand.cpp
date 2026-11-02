@@ -139,7 +139,7 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix,
 {
     if(*Value == STD_NULL_CHARACTER) return MAXMATRIX_COMMAND_INVALID_VALUE;
     strcpy(ShiftText, Value);
-    return E_OK == Matrix.setTextWithShift(ShiftText) ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
+    return Matrix.setTextWithShift(ShiftText).isOk() ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
 } /* executeTextShift */
 
 
@@ -160,7 +160,7 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeText(MaxMatrix& Matrix, cons
     MaxMatrixBatch Batch(Matrix);
 
     Matrix.clear();
-    return E_OK == Matrix.setText(Value) ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
+    return Matrix.setText(Value).isOk() ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
 } /* executeText */
 
 
@@ -181,15 +181,15 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char*
 {
     char* RowText = strchr(Value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
     char* LitText = RowText == NULL ? NULL : strchr(RowText + 1, MAXMATRIX_COMMAND_LIST_SEPARATOR);
-    uint16_t Column, Row, Lit;
 
     if(LitText == NULL) return MAXMATRIX_COMMAND_INVALID_VALUE;
     *RowText++ = STD_NULL_CHARACTER;
     *LitText++ = STD_NULL_CHARACTER;
-    if(E_OK != convertToNumber(Value, MAXMATRIX_NUMBER_OF_COLUMNS - 1, &Column) ||
-       E_OK != convertToNumber(RowText, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, &Row) ||
-       E_OK != convertToNumber(LitText, 1, &Lit)) return MAXMATRIX_COMMAND_INVALID_VALUE;
-    Matrix.setDot(Column, Row, Lit == 1);
+    MaxMatrixResult<uint16_t> Column = convertToNumber(Value, MAXMATRIX_NUMBER_OF_COLUMNS - 1);
+    MaxMatrixResult<uint16_t> Row = convertToNumber(RowText, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
+    MaxMatrixResult<uint16_t> Lit = convertToNumber(LitText, 1);
+    if(!Column.isOk() || !Row.isOk() || !Lit.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+    Matrix.setDot(Column.getValue(), Row.getValue(), Lit.getValue() == 1);
     return MAXMATRIX_COMMAND_DONE;
 } /* executeDot */
 
@@ -210,17 +210,18 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char*
  *****************************************************************************************************************************************************/
 MaxMatrixCommandResultType MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, const char* Name, const char* Value)
 {
-    uint16_t Number;
-
     if(0 == strcmp_P(Name, PSTR("intensity"))) {
-        if(E_OK != convertToNumber(Value, MAX7219_REG_INTENSITY_MAX_VALUE, &Number)) return MAXMATRIX_COMMAND_INVALID_VALUE;
-        Matrix.setIntensity(Number);
+        MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAX7219_REG_INTENSITY_MAX_VALUE);
+        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        Matrix.setIntensity(Number.getValue());
     } else if(0 == strcmp_P(Name, PSTR("speed"))) {
-        if(E_OK != convertToNumber(Value, MAXMATRIX_COMMAND_MAX_INTERVAL, &Number)) return MAXMATRIX_COMMAND_INVALID_VALUE;
-        Matrix.setShiftInterval(Number);
+        MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAXMATRIX_COMMAND_MAX_INTERVAL);
+        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        Matrix.setShiftInterval(Number.getValue());
     } else if(0 == strcmp_P(Name, PSTR("space"))) {
-        if(E_OK != convertToNumber(Value, MAXMATRIX_COMMAND_MAX_BYTE, &Number)) return MAXMATRIX_COMMAND_INVALID_VALUE;
-        Matrix.setSpaceBetweenChars(Number);
+        MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAXMATRIX_COMMAND_MAX_BYTE);
+        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        Matrix.setSpaceBetweenChars(Number.getValue());
     } else return MAXMATRIX_COMMAND_UNKNOWN;
     return MAXMATRIX_COMMAND_DONE;
 } /* executeSetting */
@@ -231,26 +232,26 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, c
 ******************************************************************************************************************************************************/
 /*! \brief          converts a decimal number
  *  \details        this function takes digits only, at least one, and stops counting as soon as the number is past
- *                  Maximum, so that a long run of digits cannot overflow into a small number
+ *                  Maximum, so that a long run of digits cannot overflow into a small number. It reads on to the
+ *                  end all the same, so that "999x" is no number rather than too large.
  *
  *  \param[in]      Text        the digits
  *  \param[in]      Maximum     the largest number taken
- *  \param[out]     Number      the number
- *  \return         E_OK
- *                  E_NOT_OK    the text is empty, holds anything but digits, or the number is larger than Maximum
+ *  \return         the number
+ *                  MAXMATRIX_E_NOT_A_NUMBER    the text is empty or holds anything but digits
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the number is larger than Maximum
  *****************************************************************************************************************************************************/
-stdReturnType MaxMatrixCommand::convertToNumber(const char* Text, uint16_t Maximum, uint16_t* Number)
+MaxMatrixResult<uint16_t> MaxMatrixCommand::convertToNumber(const char* Text, uint16_t Maximum)
 {
     uint32_t Value = 0;
 
-    if(*Text == STD_NULL_CHARACTER) return E_NOT_OK;
+    if(*Text == STD_NULL_CHARACTER) return MAXMATRIX_E_NOT_A_NUMBER;
     for(; *Text != STD_NULL_CHARACTER; Text++) {
-        if(*Text < '0' || *Text > '9') return E_NOT_OK;
-        Value = Value * 10 + (*Text - '0');
-        if(Value > Maximum) return E_NOT_OK;
+        if(*Text < '0' || *Text > '9') return MAXMATRIX_E_NOT_A_NUMBER;
+        if(Value <= Maximum) Value = Value * 10 + (*Text - '0');
     }
-    *Number = static_cast<uint16_t>(Value);
-    return E_OK;
+    if(Value > Maximum) return MAXMATRIX_E_OUT_OF_RANGE;
+    return static_cast<uint16_t>(Value);
 } /* convertToNumber */
 
 

@@ -15,7 +15,10 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
   - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
-  - `MaxMatrixStandardTypes.h` — `stdReturnType`, `STD_ON`/`STD_OFF` and bit macros.
+  - `MaxMatrixError.h` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
+    what a function that can fail returns.
+  - `MaxMatrixStandardTypes.h` — `stdReturnType` (left to the simulator), `STD_ON`/`STD_OFF`
+    and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `MatrixBuffer` lie on a module in each module orientation (`Wiring_*.svg`). None is
@@ -155,14 +158,24 @@ SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
 
 ### Return values
 
-A function that can fail returns `stdReturnType` (`E_OK` / `E_NOT_OK`) and passes results
-through a pointer parameter. Coordinates and indices are range checked before the buffer is
-touched. A function that draws leaves out what lies off the panel rather than failing, because
-drawing partly off the panel is what a moving sprite or text does all the time (see
-`MaxMatrixPanel::setDot()`); `setDot`, `setColumn` and `setRow` cannot fail at all and return
-`void`, while `setChar` and `setText` still fail on a char the font lacks. A getter or a
-setting out of range returns `E_NOT_OK` and changes nothing. `MaxMatrixCommand`
-checks the coordinates it is sent itself, so that a typed line that would do nothing says so.
+A function of the library that can fail says why, in `MaxMatrixErrorType`
+(`src/MaxMatrixError.h`): it returns a `MaxMatrixStatus`, or a getter of a single value a
+`MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
+`E_OK` was 0 and `if(Matrix.setText(…))` was true on an error; code asks `isOk()` or compares
+with an error. Only an array still goes through a parameter (`getRow()` of the whole panel by
+reference, `getSprite()`). A new reason gets its own value in the enum and a row in the test
+`EveryErrorSaysWhy`, which checks every way a call can fail and that it changes nothing.
+
+Coordinates and indices are range checked before the buffer is touched. A function that draws
+leaves out what lies off the panel rather than failing, because drawing partly off the panel is
+what a moving sprite or text does all the time (see `MaxMatrixPanel::setDot()`); `setDot`,
+`setColumn` and `setRow` cannot fail at all and return `void`, while `setChar` and `setText`
+still fail on a char the font lacks. A getter or a setting out of range returns
+`MAXMATRIX_E_OUT_OF_RANGE` and changes nothing. `MaxMatrixCommand` checks the coordinates it is
+sent itself, so that a typed line that would do nothing says so.
+
+`stdReturnType` (`E_OK` / `E_NOT_OK`) is left to the simulator and `DocuPictures`, host code
+whose failures no sketch sees.
 
 ### Layout of a source file
 

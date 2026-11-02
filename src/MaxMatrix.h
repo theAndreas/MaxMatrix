@@ -28,6 +28,7 @@
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixStandardTypes.h"
+#include "MaxMatrixError.h"
 #include "MaxMatrixConfig.h"
 #include "Max7219/MaxMatrixChain.h"
 #include "Matrix/MaxMatrixPanel.h"
@@ -71,7 +72,7 @@ class MaxMatrix
 
     // functions
     void updateIfAuto() { if(AutoUpdate) update(); }
-    stdReturnType updateIfAuto(stdReturnType Result) { updateIfAuto(); return Result; }
+    MaxMatrixStatus updateIfAuto(MaxMatrixStatus Status) { updateIfAuto(); return Status; }
     void startShift(MaxMatrixStateType);
 
   public:
@@ -90,12 +91,12 @@ class MaxMatrix
     MaxMatrixMatrixOrientationType getMatrixOrientation() { return Panel.getMatrixOrientation(); }
     byte getSpaceBetweenChars() { return Text.getSpaceBetweenChars(); }
 
-    stdReturnType getColumn(byte Column, byte* Value) { return Panel.getColumn(Column, Value); }
-    stdReturnType getColumn(byte Module, byte Column, byte* Value) { return Panel.getColumn(Module, Column, Value); }
-    stdReturnType getRow(byte Row, rowType Value) { return Panel.getRow(Row, Value); }
-    stdReturnType getRow(byte Module, byte Row, byte* Value) { return Panel.getRow(Module, Row, Value); }
-    stdReturnType getDot(byte Column, byte Row, bool* Value) { return Panel.getDot(Column, Row, Value); }
-    stdReturnType getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MaxMatrixFont::getSprite(SpriteIndex, Sprite); }
+    MaxMatrixResult<byte> getColumn(int16_t Column) { return Panel.getColumn(Column); }
+    MaxMatrixResult<byte> getColumn(byte Module, byte Column) { return Panel.getColumn(Module, Column); }
+    MaxMatrixStatus getRow(int16_t Row, rowType& Value) { return Panel.getRow(Row, Value); }
+    MaxMatrixResult<byte> getRow(byte Module, byte Row) { return Panel.getRow(Module, Row); }
+    MaxMatrixResult<bool> getDot(int16_t Column, int16_t Row) { return Panel.getDot(Column, Row); }
+    MaxMatrixStatus getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MaxMatrixFont::getSprite(SpriteIndex, Sprite); }
 
 
     // set methods
@@ -104,17 +105,17 @@ class MaxMatrix
     void setClockPin(byte sClockPin) { Panel.getWired().getChain().setClockPin(sClockPin); }
     void setAutoUpdate(bool);
     void setShiftInterval(uint16_t sShiftInterval) { ShiftInterval = sShiftInterval; }
-    stdReturnType setIntensity(byte);
+    MaxMatrixStatus setIntensity(byte);
     void setColumn(int16_t Column, byte Value) { Panel.setColumn(Column, Value); updateIfAuto(); }
     void setColumn(byte Module, byte Column, byte Value) { Panel.setColumn(Module, Column, Value); updateIfAuto(); }
     void setRow(int16_t Row, const rowType Value) { Panel.setRow(Row, Value); updateIfAuto(); }
     void setRow(byte Module, byte Row, byte Value) { Panel.setRow(Module, Row, Value); updateIfAuto(); }
     void setDot(int16_t Column, int16_t Row, bool Value) { Panel.setDot(Column, Row, Value); updateIfAuto(); }
-    stdReturnType setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
-    stdReturnType setCharWithShift(char);
-    stdReturnType setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
-    stdReturnType setTextWithShift(char*);
-    stdReturnType setSpaceBetweenChars(byte sSpaceBetweenChars) { return Text.setSpaceBetweenChars(sSpaceBetweenChars); }
+    MaxMatrixStatus setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
+    MaxMatrixStatus setCharWithShift(char);
+    MaxMatrixStatus setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
+    MaxMatrixStatus setTextWithShift(char*);
+    void setSpaceBetweenChars(byte sSpaceBetweenChars) { Text.setSpaceBetweenChars(sSpaceBetweenChars); }
     void setSprite(int16_t X, int16_t Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
     void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); updateIfAuto(); }
     void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); updateIfAuto(); }

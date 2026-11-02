@@ -23,6 +23,7 @@
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixStandardTypes.h"
+#include "MaxMatrixError.h"
 #include "MaxMatrixConfig.h"
 
 
@@ -62,7 +63,7 @@ class MaxMatrixCommand
     static MaxMatrixCommandResultType executeText(MaxMatrix&, const char*);
     static MaxMatrixCommandResultType executeDot(MaxMatrix&, char*);
     static MaxMatrixCommandResultType executeSetting(MaxMatrix&, const char*, const char*);
-    static stdReturnType convertToNumber(const char*, uint16_t, uint16_t*);
+    static MaxMatrixResult<uint16_t> convertToNumber(const char*, uint16_t);
 
   public:
     MaxMatrixCommand();

@@ -101,7 +101,7 @@ The two functions that set eight LEDs at once read their byte in different direc
 |----------|--------------|
 | `init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
 | `clear()` | turns every LED off |
-| `setDot(X, Y, Value)`, `getDot(X, Y, &Value)` | one LED |
+| `setDot(X, Y, Value)`, `getDot(X, Y)` | one LED |
 | `setColumn(X, Value)`, `setColumn(Module, Column, Value)`, `getColumn(…)` | a column, bit 0 at the top |
 | `setRow(Row, Values)`, `setRow(Module, Row, Value)`, `getRow(…)` | a row, bit 7 on the left |
 | `setChar(X, Y, Char)`, `setText(Text)` | a char at X, Y, or a text from the left edge |
@@ -117,7 +117,19 @@ The two functions that set eight LEDs at once read their byte in different direc
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
 in or out: `setDot(-1, 0, true)` does nothing, and a char at X = -2 shows its right part. X and Y may be negative.
-A getter or a setting that can fail returns `E_OK` or `E_NOT_OK`; out of range, it changes nothing.
+A function that can fail says why, and changes nothing when it does. A getter returns the value together with the
+error, so ask `isOk()` before you use `getValue()`:
+
+```cpp
+MaxMatrixResult<bool> Lit = Matrix.getDot(X, Y);
+if(Lit.isOk() && Lit.getValue()) { /* the LED at X, Y is on */ }
+
+MaxMatrixStatus Status = Matrix.setText(Text);
+if(Status == MAXMATRIX_E_UNKNOWN_CHAR) { /* the font lacks a char of Text */ }
+```
+
+The errors are `MAXMATRIX_E_OUT_OF_RANGE`, `MAXMATRIX_E_UNKNOWN_CHAR` and `MAXMATRIX_E_NO_TEXT`;
+`MAXMATRIX_E_OK` means none. A status is not a `bool`: write `Status.isOk()`, not `if(Status)`.
 
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
