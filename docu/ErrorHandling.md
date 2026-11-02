@@ -194,9 +194,10 @@ references, or pointers that have to pass through C, atomics or intrusive struct
 - **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where a check
   fails, the library reports the function and the error to a `weak` `maxMatrixReportError()`, so that a
   sketch which checks nothing still learns where it went wrong.
-  - The default prints on `Serial`. `SerialControl` brings its own, as its `Serial` carries the
-    protocol of the control page.
-  - Off, the preprocessor removes every call; on, each costs roughly 6 to 10 bytes of flash.
+  - The default prints on `Serial`; a sketch may define its own. `SerialControl` keeps the default:
+    the control page shows any line and reads only `ready`, and a sketch that switches the reports on
+    wants to see them.
+  - Off, the preprocessor removes every call. What it costs on is under "Decided, and open".
 - **Arduino has no debug build**, and the IDE does not pass a sketch's defines to a library. The switch
   goes into `MaxMatrixConfig.h`, or `arduino-cli` gets
   `--build-property "compiler.cpp.extra_flags=-D…"`. Not `build.extra_flags`, which some boards use for
@@ -208,11 +209,12 @@ references, or pointers that have to pass through C, atomics or intrusive struct
   `EXPECT_EQ(Matrix.setDot(100, 3, true).getError(), MAXMATRIX_E_OUT_OF_RANGE)`. Today a test stays
   green when the wrong check fires.
 - A `PrintTo()` for the enum in `test/`, not in the library, makes a failure print the name.
-- **Reporting:** the test build defines `maxMatrixReportError()` in the mock, which records into
-  `Mock::ReportedErrors`. The printing on `Serial` is a function of its own, tested through
+- **Reporting:** the test file defines `maxMatrixReportError()` itself, which records into a list of
+  its own; the mock stays free of the library's types. The printing on `Serial` is a function of its own, tested through
   `Mock::SerialOutput`, as the `weak` default cannot run in the same binary.
-- **One table of every error path** as a `TEST_P`: the call, the error and the function expected. With
-  the switch on it also checks the report, in a small binary of its own under a `det/` prefix.
+- **One table of every error path**: the call, the error and the function expected. With the switch on
+  it also checks the report: the whole suite runs a third time under a `det/` prefix, which also shows
+  that a report changes nothing else.
 
 ## ErrorKit, a draft looked at
 
@@ -276,6 +278,20 @@ does not belong in a display library.
   - Measured on the Uno: `Basics` and `ScrollText` the same, as the linker drops the texts.
     `SerialControl` needs 184 bytes of flash more: 94 for the texts, 14 for their table, the rest for
     code. The change to the command alone saves 6. RAM is the same.
+- **The report**, the fourth step: `MAXMATRIX_DEV_ERROR_DETECT`. Each of the eleven functions of the
+  facade that can fail wraps the call below in `MAXMATRIX_REPORT_ERROR("name", …)`, which reports to
+  the weak `maxMatrixReportError()` and is the bare call when the switch is off. The name is an `F()`
+  string at the call site rather than an id as in the DET: a report of a sketch's own prints it with
+  `Serial.print()` and needs no table. `F()` in inline functions and templates can end in a "section
+  type conflict" with avr-gcc; 7.3 took it in a test sketch beside `F()` in ordinary functions.
+  - The default lies in a file of its own, and the library is linked as an archive
+    (`dot_a_linkage=true`). Linked as loose objects, a sketch that defined its own report still got
+    `Serial`, 175 bytes of RAM: the reference to `Serial` in the default, left out as it was, pulled
+    `HardwareSerial0.o` out of the core, and `serialEventRun()` in `main()` kept it alive.
+  - Measured on the Uno: off, every example as before, to the byte. On, `Basics` 1158 bytes of flash
+    and 179 of RAM more, `ScrollText` 840 and 175, both for `Serial` they did not use before;
+    `SerialControl`, which has it, 126 bytes of flash and no RAM. A sketch with a report of its own
+    that blinks paid 10 bytes of flash and no RAM.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
   `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the

@@ -66,7 +66,8 @@ else()
     message(STATUS "node not found: the test simulator/page is left out")
 endif()
 
-# One library and one test binary per variant, because the two transfer paths are separate code.
+# One library and one test binary per variant: the two transfer paths are separate code, and the reports of
+# MAXMATRIX_DEV_ERROR_DETECT are compiled in only where it is on.
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
     target_include_directories(MaxMatrix-${Variant} PUBLIC ${PROJECT_SOURCE_DIR}/src)
@@ -78,7 +79,10 @@ function(add_maxmatrix_variant Variant)
     target_link_libraries(MaxMatrixTest-${Variant} PRIVATE MaxMatrix-${Variant} GTest::gtest_main)
     # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
     gtest_discover_tests(MaxMatrixTest-${Variant} TEST_PREFIX "${Variant}/" NO_PRETTY_VALUES)
+endfunction()
 
+# The examples and the simulator for a variant of the library.
+function(add_simulator_variant Variant)
     # One simulator per example, the sketch compiled unchanged: as the Arduino IDE does, as C++ with Arduino.h
     # included first. gnu++11 like the library, so a sketch that would not build for the Uno fails here as well.
     foreach(Sketch ${Examples})
@@ -110,6 +114,11 @@ set_source_files_properties(${Examples} PROPERTIES LANGUAGE CXX COMPILE_OPTIONS 
 
 add_maxmatrix_variant(bitbang)
 add_maxmatrix_variant(spi MAXMATRIX_USE_SPI=STD_ON)
+add_simulator_variant(bitbang)
+add_simulator_variant(spi)
+# With the reports on, once and without the simulators: the tests check every report, and the transfer path makes no
+# difference to them.
+add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.

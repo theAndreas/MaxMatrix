@@ -91,12 +91,12 @@ class MaxMatrix
     MaxMatrixMatrixOrientationType getMatrixOrientation() { return Panel.getMatrixOrientation(); }
     byte getSpaceBetweenChars() { return Text.getSpaceBetweenChars(); }
 
-    MaxMatrixResult<byte> getColumn(int16_t Column) { return Panel.getColumn(Column); }
-    MaxMatrixResult<byte> getColumn(byte Module, byte Column) { return Panel.getColumn(Module, Column); }
-    MaxMatrixStatus getRow(int16_t Row, rowType& Value) { return Panel.getRow(Row, Value); }
-    MaxMatrixResult<byte> getRow(byte Module, byte Row) { return Panel.getRow(Module, Row); }
-    MaxMatrixResult<bool> getDot(int16_t Column, int16_t Row) { return Panel.getDot(Column, Row); }
-    MaxMatrixStatus getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MaxMatrixFont::getSprite(SpriteIndex, Sprite); }
+    MaxMatrixResult<byte> getColumn(int16_t Column) { return MAXMATRIX_REPORT_ERROR("getColumn", Panel.getColumn(Column)); }
+    MaxMatrixResult<byte> getColumn(byte Module, byte Column) { return MAXMATRIX_REPORT_ERROR("getColumn", Panel.getColumn(Module, Column)); }
+    MaxMatrixStatus getRow(int16_t Row, rowType& Value) { return MAXMATRIX_REPORT_ERROR("getRow", Panel.getRow(Row, Value)); }
+    MaxMatrixResult<byte> getRow(byte Module, byte Row) { return MAXMATRIX_REPORT_ERROR("getRow", Panel.getRow(Module, Row)); }
+    MaxMatrixResult<bool> getDot(int16_t Column, int16_t Row) { return MAXMATRIX_REPORT_ERROR("getDot", Panel.getDot(Column, Row)); }
+    MaxMatrixStatus getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MAXMATRIX_REPORT_ERROR("getSprite", MaxMatrixFont::getSprite(SpriteIndex, Sprite)); }
 
 
     // set methods
@@ -111,9 +111,9 @@ class MaxMatrix
     void setRow(int16_t Row, const rowType Value) { Panel.setRow(Row, Value); updateIfAuto(); }
     void setRow(byte Module, byte Row, byte Value) { Panel.setRow(Module, Row, Value); updateIfAuto(); }
     void setDot(int16_t Column, int16_t Row, bool Value) { Panel.setDot(Column, Row, Value); updateIfAuto(); }
-    MaxMatrixStatus setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(Text.setChar(Panel, X, Y, Char)); }
+    MaxMatrixStatus setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(MAXMATRIX_REPORT_ERROR("setChar", Text.setChar(Panel, X, Y, Char))); }
     MaxMatrixStatus setCharWithShift(char);
-    MaxMatrixStatus setText(const char* String) { return updateIfAuto(Text.setText(Panel, String)); }
+    MaxMatrixStatus setText(const char* String) { return updateIfAuto(MAXMATRIX_REPORT_ERROR("setText", Text.setText(Panel, String))); }
     MaxMatrixStatus setTextWithShift(char*);
     void setSpaceBetweenChars(byte sSpaceBetweenChars) { Text.setSpaceBetweenChars(sSpaceBetweenChars); }
     void setSprite(int16_t X, int16_t Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }

@@ -63,6 +63,19 @@ static MaxMatrixErrorType feedText(MaxMatrix& Matrix, const std::string& Text)
     return Result.getError();
 }
 
+/* What the library reported, with MAXMATRIX_DEV_ERROR_DETECT on: the definition here wins over the weak one of the
+ * library, which prints. With it off the list stays empty, so that a test can expect a report in every variant. */
+typedef std::pair<std::string, MaxMatrixErrorType> ReportType;
+static const bool DevErrorDetect = (MAXMATRIX_DEV_ERROR_DETECT == STD_ON);
+static std::vector<ReportType> Reports;
+
+#if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
+void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+{
+    Reports.push_back(ReportType(text(Api), Error));
+}
+#endif
+
 /* GoogleTest prints a vector element by element, where a failed memcmp only says that something differs */
 static std::vector<byte> bytes(const byte* Data, size_t Size)
 {
@@ -94,6 +107,7 @@ class MaxMatrixTest : public ::testing::Test {
     void SetUp() override
     {
         Mock::reset(ChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
+        Reports.clear();
         Matrix.init();
         /* the tests step a shifting text with every call; the timing of the steps has tests of its own */
         Matrix.setShiftInterval(0);
@@ -409,50 +423,58 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
 
 /* every way a call can fail, with the reason it gives: with stdReturnType a test stayed green when another check
  * than the one meant failed. A failing call changes nothing, draws nothing and starts no shift. "999x" is no number
- * rather than too large, although the digits run past the maximum before the letter comes. */
+ * rather than too large, although the digits run past the maximum before the letter comes. With
+ * MAXMATRIX_DEV_ERROR_DETECT, the function of MaxMatrix that failed reports it once, under its own name. The command
+ * reports nothing of its own, as a wrong line is no mistake of the sketch and its answer says what was wrong; only a
+ * line that fails in a function of MaxMatrix, text= with a char the font lacks, is reported by that function. */
 TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
 {
     const struct {
         const char* Name;
         MaxMatrixErrorType (*Call)(MaxMatrix&);
         MaxMatrixErrorType Expected;
+        const char* Api;
     } Cases[] = {
-        { "getColumn left", [](MaxMatrix& M) { return M.getColumn(-1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getColumn right", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_COLUMNS).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getColumn no module", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getColumn off its module", [](MaxMatrix& M) { return M.getColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getRow above", [](MaxMatrix& M) { rowType Row; return M.getRow(-1, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getRow below", [](MaxMatrix& M) { rowType Row; return M.getRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getRow no module", [](MaxMatrix& M) { return M.getRow(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getRow off its module", [](MaxMatrix& M) { return M.getRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getDot left", [](MaxMatrix& M) { return M.getDot(-1, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getDot right", [](MaxMatrix& M) { return M.getDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getDot above", [](MaxMatrix& M) { return M.getDot(0, -1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getDot below", [](MaxMatrix& M) { return M.getDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "getSprite", [](MaxMatrix& M) { spriteType Sprite; return M.getSprite(255, &Sprite).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "setIntensity", [](MaxMatrix& M) { return M.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "setChar", [](MaxMatrix& M) { return M.setChar(0, 0, '\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
-        { "setText unknown char", [](MaxMatrix& M) { return M.setText("\x01").getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
-        { "setText NULL", [](MaxMatrix& M) { return M.setText(NULL).getError(); }, MAXMATRIX_E_NO_TEXT },
-        { "setCharWithShift", [](MaxMatrix& M) { return M.setCharWithShift('\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR },
-        { "setTextWithShift NULL", [](MaxMatrix& M) { return M.setTextWithShift(NULL).getError(); }, MAXMATRIX_E_NO_TEXT },
-        { "number empty", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
-        { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("12a", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
-        { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("256", 255).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
-        { "number too large, then a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("999x", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
-        { "unknown command", [](MaxMatrix& M) { return feedText(M, "blink\n"); }, MAXMATRIX_E_UNKNOWN_COMMAND },
-        { "line too long", [](MaxMatrix& M) { return feedText(M, "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n"); }, MAXMATRIX_E_LINE_TOO_LONG },
+        { "getColumn left", [](MaxMatrix& M) { return M.getColumn(-1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
+        { "getColumn right", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_COLUMNS).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
+        { "getColumn no module", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
+        { "getColumn off its module", [](MaxMatrix& M) { return M.getColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
+        { "getRow above", [](MaxMatrix& M) { rowType Row; return M.getRow(-1, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getRow" },
+        { "getRow below", [](MaxMatrix& M) { rowType Row; return M.getRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, Row).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getRow" },
+        { "getRow no module", [](MaxMatrix& M) { return M.getRow(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getRow" },
+        { "getRow off its module", [](MaxMatrix& M) { return M.getRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getRow" },
+        { "getDot left", [](MaxMatrix& M) { return M.getDot(-1, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getDot" },
+        { "getDot right", [](MaxMatrix& M) { return M.getDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getDot" },
+        { "getDot above", [](MaxMatrix& M) { return M.getDot(0, -1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getDot" },
+        { "getDot below", [](MaxMatrix& M) { return M.getDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getDot" },
+        { "getSprite", [](MaxMatrix& M) { spriteType Sprite; return M.getSprite(255, &Sprite).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getSprite" },
+        { "setIntensity", [](MaxMatrix& M) { return M.setIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "setIntensity" },
+        { "setChar", [](MaxMatrix& M) { return M.setChar(0, 0, '\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR, "setChar" },
+        { "setText unknown char", [](MaxMatrix& M) { return M.setText("\x01").getError(); }, MAXMATRIX_E_UNKNOWN_CHAR, "setText" },
+        { "setText NULL", [](MaxMatrix& M) { return M.setText(NULL).getError(); }, MAXMATRIX_E_NO_TEXT, "setText" },
+        { "setCharWithShift", [](MaxMatrix& M) { return M.setCharWithShift('\x01').getError(); }, MAXMATRIX_E_UNKNOWN_CHAR, "setCharWithShift" },
+        { "setTextWithShift NULL", [](MaxMatrix& M) { return M.setTextWithShift(NULL).getError(); }, MAXMATRIX_E_NO_TEXT, "setTextWithShift" },
+        { "number empty", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER, NULL },
+        { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("12a", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER, NULL },
+        { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("256", 255).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, NULL },
+        { "number too large, then a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("999x", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER, NULL },
+        { "unknown command", [](MaxMatrix& M) { return feedText(M, "blink\n"); }, MAXMATRIX_E_UNKNOWN_COMMAND, NULL },
+        { "line too long", [](MaxMatrix& M) { return feedText(M, "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n"); }, MAXMATRIX_E_LINE_TOO_LONG, NULL },
     };
 
     for(const auto& Case : Cases) {
         Matrix.clear();
         int32_t FramesBefore = Mock::Frames;
         byte IntensityBefore = chipOfModule(0).Intensity;
+        Reports.clear();
         EXPECT_EQ(Case.Call(Matrix), Case.Expected) << Case.Name;
         EXPECT_EQ(shownPicture(Matrix), picture([](int16_t, int16_t) { return false; })) << Case.Name;
         EXPECT_EQ(Mock::Frames, FramesBefore) << Case.Name;
         EXPECT_EQ(chipOfModule(0).Intensity, IntensityBefore) << Case.Name;
         EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY) << Case.Name;
+        std::vector<ReportType> Expected;
+        if(DevErrorDetect && Case.Api != NULL) Expected.push_back(ReportType(Case.Api, Case.Expected));
+        EXPECT_EQ(Reports, Expected) << Case.Name;
     }
 }
 
@@ -472,6 +494,16 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
     /* a new error that ErrorNames lacks has a text of its own here, and fails */
     EXPECT_EQ(text(MaxMatrixStatus(static_cast<MaxMatrixErrorType>(NumberOfErrors)).getErrorText()), "unknown error");
 }
+
+#if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
+/* the default report prints what the tests record instead, so the printing is a function of its own and tested here */
+TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError)
+{
+    Mock::SerialOutput.clear();
+    maxMatrixPrintError(F("setText"), MAXMATRIX_E_UNKNOWN_CHAR);
+    EXPECT_EQ(Mock::SerialOutput, "MaxMatrix setText: unknown char\r\n");
+}
+#endif
 
 /* drawing off the panel leaves the panel as it was and sends nothing; column 8 of module 0 used to be checked
  * against the panel alone, which would have drawn it on module 1 */
@@ -502,6 +534,7 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
         Case.Draw(Matrix, Row);
         EXPECT_EQ(shownPicture(Matrix), picture([](int16_t, int16_t) { return false; })) << Case.Name;
         EXPECT_EQ(Mock::Frames, FramesBefore) << Case.Name;
+        EXPECT_TRUE(Reports.empty()) << Case.Name << " reported an error";
     }
 }
 

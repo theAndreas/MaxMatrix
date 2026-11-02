@@ -36,7 +36,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
-| 27 | Errors that say what went wrong | 13 | in progress | #29, #30, #31 |
+| 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32 |
 
 ### 1 Build with CMake
 
@@ -425,12 +425,12 @@ empty, no number or too large. The command answers all of them with
 - **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where
   a check fails, the library reports the function and the error to a `weak`
   `maxMatrixReportError()`, so that a sketch which checks nothing still learns where it went
-  wrong. The default prints on `Serial`; `SerialControl` brings its own, as its `Serial` carries
-  the protocol of the page. Switched off, the preprocessor removes every call. The Arduino IDE
+  wrong. The default prints on `Serial`, a sketch may define its own. `SerialControl` keeps the
+  default, as the page shows any line and reads only `ready`. Switched off, the preprocessor removes every call. The Arduino IDE
   has no debug build and does not pass a sketch's defines to the library, so it is switched in
   `MaxMatrixConfig.h` or with `--build-property "compiler.cpp.extra_flags=-D…"`
   (`build.extra_flags` carries the USB flags of some boards). The tests build a third variant
-  with it on and check that every `E_NOT_OK` is reported.
+  with it on and check that every error is reported, once, under the name of its function.
 
 Drawing clips, decided first because it decides how many errors there are: `setDot()`,
 `setColumn()` and `setRow()` take `int16_t` as `setChar()` does, leave out what lies off the

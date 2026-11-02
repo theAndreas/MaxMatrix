@@ -22,6 +22,19 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
+#include "MaxMatrixConfig.h"
+
+
+/******************************************************************************************************************************************************
+ *  GLOBAL FUNCTION MACROS
+ *****************************************************************************************************************************************************/
+/* passes on what Call returns, after reporting its error, if it has one, under Api: the name of the facade function, as
+ * a string literal. See maxMatrixReportError() below. */
+#if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
+#define MAXMATRIX_REPORT_ERROR(Api, Call)                           maxMatrixReportIfError(F(Api), Call)
+#else
+#define MAXMATRIX_REPORT_ERROR(Api, Call)                           (Call)
+#endif
 
 
 /******************************************************************************************************************************************************
@@ -93,6 +106,27 @@ class MaxMatrixResult
     bool operator==(MaxMatrixErrorType Other) const { return Error == Other; }
     bool operator!=(MaxMatrixErrorType Other) const { return Error != Other; }
 };
+
+
+/******************************************************************************************************************************************************
+ *  GLOBAL FUNCTION PROTOTYPES
+ *****************************************************************************************************************************************************/
+/* With MAXMATRIX_DEV_ERROR_DETECT, as the DET of AUTOSAR Classic, every function of MaxMatrix that fails reports its name
+ * and the error to maxMatrixReportError(), so that a sketch which checks no return value still learns where it went
+ * wrong. The default is weak and prints with maxMatrixPrintError(); a sketch replaces it by defining its own. Switched
+ * off, MAXMATRIX_REPORT_ERROR() is the bare call: no report, no name in flash, no Serial. */
+#if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
+void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error);
+void maxMatrixPrintError(const __FlashStringHelper* Api, MaxMatrixErrorType Error);
+
+/* passes a MaxMatrixStatus or MaxMatrixResult<T> on, after reporting its error, if it has one */
+template<typename ResultType>
+ResultType maxMatrixReportIfError(const __FlashStringHelper* Api, ResultType Result)
+{
+    if(!Result.isOk()) maxMatrixReportError(Api, Result.getError());
+    return Result;
+}
+#endif
 
 #endif
 
