@@ -18,8 +18,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `MaxMatrixError.h` / `.cpp` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
     what a function that can fail returns, with `getErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
-  - `MaxMatrixStandardTypes.h` — `stdReturnType` (left to the simulator), `STD_ON`/`STD_OFF`
-    and bit macros.
+  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `MatrixBuffer` lie on a module in each module orientation (`Wiring_*.svg`). None is
@@ -193,8 +192,10 @@ and `library.properties` links the library as an archive (`dot_a_linkage`): link
 objects, the default pulled `Serial` into a sketch that defines its own report, 175 bytes of RAM
 on the Uno.
 
-`stdReturnType` (`E_OK` / `E_NOT_OK`) is left to the simulator and `DocuPictures`, host code
-whose failures no sketch sees.
+Host code whose failures no sketch sees, the simulator and `DocuPictures`, returns `bool`, `true`
+for success: each of its functions fails for one reason, which its `\return` names beside `false`.
+`MaxMatrixErrorType` has no words for a port that is taken, and `std::optional` is C++17, while the
+simulator is built as `gnu++11` with the library.
 
 ### Layout of a source file
 

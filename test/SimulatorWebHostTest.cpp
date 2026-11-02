@@ -27,7 +27,7 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
     std::vector<std::string> Messages;
     sockaddr_in Address = sockaddr_in();
 
-    ASSERT_EQ(Host.begin(Port, "/dev/null"), E_OK);
+    ASSERT_TRUE(Host.begin(Port, "/dev/null"));
     const int Idle = socket(AF_INET, SOCK_STREAM, 0);
     ASSERT_GE(Idle, 0);
     Address.sin_family = AF_INET;

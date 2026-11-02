@@ -21,7 +21,6 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include <string>
-#include "MaxMatrixStandardTypes.h"
 #include "SimulatorPanel.h"
 
 
@@ -47,8 +46,8 @@ class SimulatorOptions
     uint32_t RunFor;
     const char* ExpectFile;
 
-    stdReturnType parseOption(int, char**, int*);
-    static stdReturnType convertToPort(const char*, uint16_t*);
+    bool parseOption(int, char**, int*);
+    static bool convertToPort(const char*, uint16_t*);
 
   public:
     SimulatorOptions();
@@ -62,7 +61,7 @@ class SimulatorOptions
     const char* getExpectFile() const { return ExpectFile; }
 
     // methods
-    stdReturnType parse(int, char**);
+    bool parse(int, char**);
     static void printUsage(const char*);
 };
 

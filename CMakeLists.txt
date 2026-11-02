@@ -36,7 +36,7 @@ gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 # The simulator's web host once as well: it knows neither the library nor the sketch, and its WebSocket half is tested
 # on its own, without a network.
 add_library(SimulatorWebHost STATIC simulator/SimulatorWebHost.cpp simulator/SimulatorWebSocket.cpp)
-target_include_directories(SimulatorWebHost PUBLIC simulator src)
+target_include_directories(SimulatorWebHost PUBLIC simulator)
 add_executable(SimulatorWebSocketTest test/SimulatorWebSocketTest.cpp)
 set_target_properties(SimulatorWebSocketTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorWebSocketTest PRIVATE SimulatorWebHost GTest::gtest_main)
@@ -50,6 +50,7 @@ gtest_discover_tests(SimulatorWebHostTest TEST_PREFIX "simulator/")
 # difference to it, and its tests need no sketch.
 add_library(Simulator STATIC simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp simulator/SimulatorTerminal.cpp
                              simulator/SimulatorWeb.cpp)
+target_include_directories(Simulator PUBLIC src)
 target_link_libraries(Simulator PUBLIC SimulatorWebHost ArduinoMock)
 add_executable(SimulatorTest test/SimulatorTest.cpp)
 set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)

@@ -77,7 +77,7 @@ TEST(SimulatorWebSocketTest, HandshakeFindsTheKeyInAnyCase)
 {
     std::string Answer;
 
-    ASSERT_EQ(SimulatorWebSocket::getHandshakeAnswer("GET /ws HTTP/1.1\r\nSEC-WEBSOCKET-KEY:   dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n", &Answer), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::getHandshakeAnswer("GET /ws HTTP/1.1\r\nSEC-WEBSOCKET-KEY:   dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n", &Answer));
     EXPECT_EQ(Answer.compare(0, 13, "HTTP/1.1 101 "), 0);
     EXPECT_NE(Answer.find("Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n"), std::string::npos);
     EXPECT_EQ(Answer.substr(Answer.size() - 4), "\r\n\r\n");
@@ -87,7 +87,7 @@ TEST(SimulatorWebSocketTest, HandshakeWithoutKeyFails)
 {
     std::string Answer;
 
-    EXPECT_EQ(SimulatorWebSocket::getHandshakeAnswer("GET /ws HTTP/1.1\r\nHost: localhost\r\n\r\n", &Answer), E_NOT_OK);
+    EXPECT_FALSE(SimulatorWebSocket::getHandshakeAnswer("GET /ws HTTP/1.1\r\nHost: localhost\r\n\r\n", &Answer));
 }
 
 /* 125 bytes is the longest payload whose length fits in the second byte; a panel update is about 400 */
@@ -117,7 +117,7 @@ TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends)
     std::string Payload;
     uint8_t Opcode = 0;
 
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Opcode, SIMULATOR_WEB_SOCKET_OPCODE_TEXT);
     EXPECT_EQ(Payload, "wiring GENERIC");
     EXPECT_TRUE(Buffer.empty());
@@ -130,7 +130,7 @@ TEST(SimulatorWebSocketTest, DecodeReadsThe16BitLength)
     std::string Payload;
     uint8_t Opcode = 0;
 
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Payload, Long);
 }
 
@@ -144,11 +144,11 @@ TEST(SimulatorWebSocketTest, DecodeWaitsForTheWholeFrame)
 
     for(size_t i = 0; i + 1 < Frame.size(); i++) {
         Buffer += Frame[i];
-        ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_NOT_OK) << "after " << i + 1 << " bytes";
+        ASSERT_FALSE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload)) << "after " << i + 1 << " bytes";
         ASSERT_EQ(Buffer.size(), i + 1);
     }
     Buffer += Frame.back();
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Payload, "hello");
 }
 
@@ -159,11 +159,11 @@ TEST(SimulatorWebSocketTest, DecodeTakesOneFrameAtATime)
     std::string Payload;
     uint8_t Opcode = 0;
 
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Payload, "hello");
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Payload, "upside-down 1");
-    EXPECT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_NOT_OK);
+    EXPECT_FALSE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
 }
 
 TEST(SimulatorWebSocketTest, DecodeDropsA64BitLength)
@@ -172,7 +172,7 @@ TEST(SimulatorWebSocketTest, DecodeDropsA64BitLength)
     std::string Payload;
     uint8_t Opcode = 0;
 
-    EXPECT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_NOT_OK);
+    EXPECT_FALSE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_TRUE(Buffer.empty());
 }
 
@@ -182,7 +182,7 @@ TEST(SimulatorWebSocketTest, DecodeReadsWhatEncodeWrites)
     std::string Payload;
     uint8_t Opcode = 0;
 
-    ASSERT_EQ(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload), E_OK);
+    ASSERT_TRUE(SimulatorWebSocket::decodeFrame(&Buffer, &Opcode, &Payload));
     EXPECT_EQ(Opcode, SIMULATOR_WEB_SOCKET_OPCODE_TEXT);
     EXPECT_EQ(Payload, std::string(300, 'y'));
 }

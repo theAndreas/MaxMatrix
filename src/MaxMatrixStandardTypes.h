@@ -47,16 +47,6 @@
 #define writeBitGroup(Var, BitGroupMask, BitGroupPosition, Value) \
 (Var = ((Var & ~static_cast<uint8_t>(BitGroupMask)) | ((Value << BitGroupPosition) & static_cast<uint8_t>(BitGroupMask))))
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL DATA TYPES AND STRUCTURES
- *****************************************************************************************************************************************************/
-  /* standard return type for functions of the simulator and DocuPictures; the library says why in MaxMatrixError.h */
-typedef enum {
-    E_OK = 0,
-    E_NOT_OK = 1
-} stdReturnType;
-
 #endif
 
 /******************************************************************************************************************************************************

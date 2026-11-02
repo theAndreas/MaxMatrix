@@ -24,7 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
-#include "MaxMatrixStandardTypes.h"
 
 
 /******************************************************************************************************************************************************
@@ -45,7 +44,7 @@
 class SimulatorWebSocket
 {
   private:
-    static stdReturnType getKey(const std::string&, std::string*);
+    static bool getKey(const std::string&, std::string*);
     static std::string padSha1Message(const std::string&);
     static void processSha1Block(const uint8_t*, uint32_t*);
     static uint32_t mixSha1(uint8_t, uint32_t, uint32_t, uint32_t);
@@ -53,11 +52,11 @@ class SimulatorWebSocket
 
   public:
     // get methods
-    static stdReturnType getHandshakeAnswer(const std::string&, std::string*);
+    static bool getHandshakeAnswer(const std::string&, std::string*);
 
     // methods
     static std::string encodeFrame(const std::string&);
-    static stdReturnType decodeFrame(std::string*, uint8_t*, std::string*);
+    static bool decodeFrame(std::string*, uint8_t*, std::string*);
     static std::string convertKeyToAcceptKey(const std::string&);
     static void calculateSha1(const std::string&, uint8_t*);
     static std::string convertToBase64(const uint8_t*, size_t);

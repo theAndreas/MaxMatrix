@@ -85,7 +85,7 @@ static SimulatorWeb Web;
  *****************************************************************************************************************************************************/
 static void finish()
 {
-    const bool Passed = E_OK == SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
+    const bool Passed = SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
 
     exit(Passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
 } /* finish */
@@ -121,22 +121,22 @@ static void tick()
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
  *
- *  \return         E_OK
- *                  E_NOT_OK        the port is taken
+ *  \return         true
+ *                  false           the port is taken
  *****************************************************************************************************************************************************/
-static stdReturnType begin()
+static bool begin()
 {
     if(Options.isWeb()) {
-        if(E_OK != Web.begin(Options.getPort(), SIMULATOR_PAGE)) {
+        if(!Web.begin(Options.getPort(), SIMULATOR_PAGE)) {
             fprintf(stderr, "port %u is taken, maybe by another simulator\n", Options.getPort());
-            return E_NOT_OK;
+            return false;
         }
         printf("http://localhost:%u/\n", Options.getPort());
         fflush(stdout);
     } else if(Options.getRunFor() == 0) {
         SimulatorTerminal::clear();
     }
-    return E_OK;
+    return true;
 } /* begin */
 
 
@@ -157,14 +157,14 @@ static stdReturnType begin()
  *****************************************************************************************************************************************************/
 int main(int argc, char** argv)
 {
-    if(E_OK != Options.parse(argc, argv) || E_OK != Panel.setWiring(Options.getWiringName())) {
+    if(!Options.parse(argc, argv) || !Panel.setWiring(Options.getWiringName())) {
         SimulatorOptions::printUsage(argv[0]);
         return SIMULATOR_EXIT_USAGE;
     }
     Panel.setUpsideDown(Options.isUpsideDown());
     Mock::reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
     Mock::Tick = tick;
-    if(E_OK != begin()) return SIMULATOR_EXIT_FAILED;
+    if(!begin()) return SIMULATOR_EXIT_FAILED;
 
     setup();
     for(;;) {

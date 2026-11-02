@@ -10,7 +10,7 @@
 #include "SimulatorTerminal.h"
 #include "SimulatorWeb.h"
 
-static stdReturnType parse(SimulatorOptions& Options, std::vector<std::string> Arguments)
+static bool parse(SimulatorOptions& Options, std::vector<std::string> Arguments)
 {
     std::vector<char*> Argv;
 
@@ -30,7 +30,7 @@ TEST(SimulatorTest, PortInRangeIsTaken)
 {
     SimulatorOptions Options;
 
-    ASSERT_EQ(parse(Options, { "--port", "65535" }), E_OK);
+    ASSERT_TRUE(parse(Options, { "--port", "65535" }));
     EXPECT_EQ(Options.getPort(), 65535);
 }
 
@@ -40,17 +40,17 @@ TEST(SimulatorTest, PortOutOfRangeIsRefused)
 {
     SimulatorOptions Options;
 
-    EXPECT_EQ(parse(Options, { "--port", "70000" }), E_NOT_OK);
-    EXPECT_EQ(parse(Options, { "--port", "-1" }), E_NOT_OK);
-    EXPECT_EQ(parse(Options, { "--port", "0" }), E_NOT_OK);
+    EXPECT_FALSE(parse(Options, { "--port", "70000" }));
+    EXPECT_FALSE(parse(Options, { "--port", "-1" }));
+    EXPECT_FALSE(parse(Options, { "--port", "0" }));
 }
 
 TEST(SimulatorTest, PortThatIsNoNumberIsRefused)
 {
     SimulatorOptions Options;
 
-    EXPECT_EQ(parse(Options, { "--port", "web" }), E_NOT_OK);
-    EXPECT_EQ(parse(Options, { "--port", "80x" }), E_NOT_OK);
+    EXPECT_FALSE(parse(Options, { "--port", "web" }));
+    EXPECT_FALSE(parse(Options, { "--port", "80x" }));
 }
 
 /* chipAt() places the chips as the viewer sees them: upright the leftmost module is the chip at the far end */

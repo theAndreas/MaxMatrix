@@ -24,7 +24,6 @@
  *****************************************************************************************************************************************************/
 #include <string>
 #include <vector>
-#include "MaxMatrixStandardTypes.h"
 
 
 /******************************************************************************************************************************************************
@@ -55,7 +54,7 @@ class SimulatorWebHost
     void dropClient(uint8_t);
     static int openListener(uint16_t);
     static std::string readRequest(int);
-    static stdReturnType getPath(const std::string&, std::string*);
+    static bool getPath(const std::string&, std::string*);
     static void setNonBlocking(int);
     static void setReceiveTimeout(int, uint32_t);
     static bool sendAll(int, const std::string&);
@@ -65,7 +64,7 @@ class SimulatorWebHost
     SimulatorWebHost();
 
     // methods
-    stdReturnType begin(uint16_t, const char*);
+    bool begin(uint16_t, const char*);
     void task(std::vector<std::string>*);
     void broadcast(const std::string&);
 };

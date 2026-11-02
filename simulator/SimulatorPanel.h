@@ -62,7 +62,7 @@ class SimulatorPanel
     uint8_t getIntensity(uint8_t) const;
 
     // set methods
-    stdReturnType setWiring(const std::string&);
+    bool setWiring(const std::string&);
     void setUpsideDown(bool);
 
     // methods

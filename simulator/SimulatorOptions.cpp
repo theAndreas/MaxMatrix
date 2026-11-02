@@ -57,15 +57,15 @@ SimulatorOptions::SimulatorOptions()
  *
  *  \param[in]      argc            the number of arguments, the program's name included
  *  \param[in]      argv            the arguments
- *  \return         E_OK
- *                  E_NOT_OK        the command line is wrong; printUsage() says how it should be
+ *  \return         true
+ *                  false           the command line is wrong; printUsage() says how it should be
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorOptions::parse(int argc, char** argv)
+bool SimulatorOptions::parse(int argc, char** argv)
 {
     for(int i = 1; i < argc; i++) {
-        if(E_OK != parseOption(argc, argv, &i)) return E_NOT_OK;
+        if(!parseOption(argc, argv, &i)) return false;
     }
-    return (ExpectFile != nullptr && RunFor == 0) ? E_NOT_OK : E_OK;
+    return ExpectFile == nullptr || RunFor != 0;
 } /* parse */
 
 
@@ -98,10 +98,10 @@ void SimulatorOptions::printUsage(const char* Program)
  *  \param[in]      argc            the number of arguments
  *  \param[in]      argv            the arguments
  *  \param[in,out]  Index           the option's index; on return the index of its value, if it has one
- *  \return         E_OK
- *                  E_NOT_OK        the option is unknown, lacks its value or has a value it cannot take
+ *  \return         true
+ *                  false           the option is unknown, lacks its value or has a value it cannot take
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
+bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
 {
     const std::string Option = argv[*Index];
     const bool HasValue = *Index + 1 < argc;
@@ -113,14 +113,14 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
     } else if(Option == "--wiring" && HasValue) {
         WiringName = argv[++*Index];
     } else if(Option == "--port" && HasValue) {
-        if(E_OK != convertToPort(argv[++*Index], &Port)) return E_NOT_OK;
+        if(!convertToPort(argv[++*Index], &Port)) return false;
     } else if(Option == "--for" && HasValue) {
         RunFor = static_cast<uint32_t>(atof(argv[++*Index]) * 1000);
-        if(RunFor == 0) return E_NOT_OK;
+        if(RunFor == 0) return false;
     } else if(Option == "--expect" && HasValue) {
         ExpectFile = argv[++*Index];
-    } else return E_NOT_OK;
-    return E_OK;
+    } else return false;
+    return true;
 } /* parseOption */
 
 
@@ -134,18 +134,18 @@ stdReturnType SimulatorOptions::parseOption(int argc, char** argv, int* Index)
  *
  *  \param[in]      Text            the value as given on the command line
  *  \param[out]     Port            the port
- *  \return         E_OK
- *                  E_NOT_OK        the value is no number, or out of range; the port is left as it was
+ *  \return         true
+ *                  false           the value is no number, or out of range; the port is left as it was
  *****************************************************************************************************************************************************/
-stdReturnType SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
+bool SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
 {
     char* End;
     const unsigned long Value = strtoul(Text, &End, 10);
 
     /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range check then refuses */
-    if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return E_NOT_OK;
+    if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return false;
     *Port = static_cast<uint16_t>(Value);
-    return E_OK;
+    return true;
 } /* convertToPort */
 
 
