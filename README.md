@@ -134,6 +134,24 @@ The errors are `MAXMATRIX_E_OUT_OF_RANGE`, `MAXMATRIX_E_UNKNOWN_CHAR` and `MAXMA
 `Serial.println(Status.getErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
 and a sketch that never asks for one does not carry them.
 
+To find a call that fails where the sketch checks nothing, switch `MAXMATRIX_DEV_ERROR_DETECT` to `STD_ON`: in
+`MaxMatrixConfig.h`, as the Arduino IDE passes no define of a sketch to a library, or with arduino-cli as
+`--build-property "compiler.cpp.extra_flags=-DMAXMATRIX_DEV_ERROR_DETECT=STD_ON"`. Every function that fails then
+prints a line on `Serial`, such as `MaxMatrix setText: unknown char`, so call `Serial.begin()` in `setup()`. A sketch
+whose `Serial` carries something else, or which would rather blink or halt, defines the report itself, and the one
+that prints is left out:
+
+```cpp
+void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+{
+    digitalWrite(LED_BUILTIN, HIGH);
+}
+```
+
+Switched off, as it is by default, the reports cost nothing. Switched on, `Basics` grows by 1158 bytes of flash and
+179 of RAM, most of it `Serial`; with a report of its own, by little more than the names of the functions it calls.
+In SerialControl a `text=` with a char the font lacks is then reported as well, in a line before its answer.
+
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
 the chain, however much it drew. A picture made of many calls would still be shown half drawn in between. For that,

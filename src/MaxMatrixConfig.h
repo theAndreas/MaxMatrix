@@ -53,6 +53,10 @@
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
 #define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE                         50         /* ms per column, 0 for a step on every call */
 #endif
+/* STD_ON reports every error to maxMatrixReportError(), see MaxMatrixError.h */
+#ifndef MAXMATRIX_DEV_ERROR_DETECT
+#define MAXMATRIX_DEV_ERROR_DETECT                                  STD_OFF
+#endif
 
 /* MaxMatrix Parameter */
 #define MAXMATRIX_COLUMN_NUMBER_OF_MODULE                           8

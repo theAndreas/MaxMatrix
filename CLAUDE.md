@@ -16,7 +16,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
   - `MaxMatrixError.h` / `.cpp` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
-    what a function that can fail returns, with `getErrorText()`.
+    what a function that can fail returns, with `getErrorText()`; `MaxMatrixErrorReport.cpp`, the
+    report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
   - `MaxMatrixStandardTypes.h` — `stdReturnType` (left to the simulator), `STD_ON`/`STD_OFF`
     and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
@@ -183,6 +184,15 @@ still fail on a char the font lacks. A getter or a setting out of range returns
 `MAXMATRIX_E_OUT_OF_RANGE` and changes nothing. `MaxMatrixCommand` checks the coordinates it is
 sent itself, so that a typed line that would do nothing says so.
 
+With `MAXMATRIX_DEV_ERROR_DETECT`, every function of the facade that fails reports its name and
+the error to `maxMatrixReportError()`, as the DET of AUTOSAR Classic does. A new function of the
+facade that can fail wraps the call of the part below in `MAXMATRIX_REPORT_ERROR("name", …)`,
+which is the bare call when the switch is off; the parts below the facade and `MaxMatrixCommand`
+report nothing. The weak default, which prints on `Serial`, lies in `MaxMatrixErrorReport.cpp`,
+and `library.properties` links the library as an archive (`dot_a_linkage`): linked as loose
+objects, the default pulled `Serial` into a sketch that defines its own report, 175 bytes of RAM
+on the Uno.
+
 `stdReturnType` (`E_OK` / `E_NOT_OK`) is left to the simulator and `DocuPictures`, host code
 whose failures no sketch sees.
 
@@ -233,9 +243,11 @@ fails on any warning in this repository, from `g++` in the tests (`-Werror`) and
 
 ### Tests
 
-The workflow preset configures into `build/`, builds the library twice, with bit banging and
-with SPI, and runs the same tests on both through `ctest`, each test under a `bitbang/` or
-`spi/` prefix. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
+The workflow preset configures into `build/`, builds the library three times, with bit banging,
+with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on each through
+`ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
+first two only. In `det/`, the test file defines `maxMatrixReportError()` itself and records into
+`Reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
 only the tests are C++17, which GoogleTest needs. A test that loops over the four orientations
 is a `TEST_P` instead. The mock records every frame between a falling and a rising chip select in
 `Mock::LastFrame` and counts a transfer outside a frame or outside an SPI transaction in

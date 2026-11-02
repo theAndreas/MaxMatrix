@@ -140,7 +140,7 @@ void MaxMatrix::setAutoUpdate(bool sAutoUpdate)
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::setIntensity(byte Intensity)
 {
-    if(Intensity > MAX7219_REG_INTENSITY_MAX_VALUE) return MAXMATRIX_E_OUT_OF_RANGE;
+    if(Intensity > MAX7219_REG_INTENSITY_MAX_VALUE) return MAXMATRIX_REPORT_ERROR("setIntensity", MaxMatrixStatus(MAXMATRIX_E_OUT_OF_RANGE));
     RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, Intensity);
     return MAXMATRIX_E_OK;
 } /* setIntensity */
@@ -159,7 +159,7 @@ MaxMatrixStatus MaxMatrix::setIntensity(byte Intensity)
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::setCharWithShift(char Char)
 {
-    MaxMatrixStatus Status = Text.setCharWithShift(Char);
+    MaxMatrixStatus Status = MAXMATRIX_REPORT_ERROR("setCharWithShift", Text.setCharWithShift(Char));
 
     if(Status.isOk()) startShift(MAXMATRIX_STATE_CHAR_SHIFT);
     return Status;
@@ -179,7 +179,7 @@ MaxMatrixStatus MaxMatrix::setCharWithShift(char Char)
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::setTextWithShift(char* sString)
 {
-    MaxMatrixStatus Status = Text.setTextWithShift(sString);
+    MaxMatrixStatus Status = MAXMATRIX_REPORT_ERROR("setTextWithShift", Text.setTextWithShift(sString));
 
     if(Status.isOk()) startShift(MAXMATRIX_STATE_STRING_SHIFT);
     return Status;

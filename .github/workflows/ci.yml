@@ -63,26 +63,31 @@ jobs:
       # arduino-cli has no -Werror, and passing it through a build property would apply it to the
       # core as well, whose new.cpp warns on every build. So the warnings are filtered to the ones
       # in this repository, and any of those fails the job. Sizes go into the job summary, which
-      # is where a pull request body can take its flash and RAM figures from.
+      # is where a pull request body can take its flash and RAM figures from. Each example is
+      # built a second time with MAXMATRIX_DEV_ERROR_DETECT on: the weak report, F() in the
+      # facade and its Serial only meet avr-gcc here.
       - name: Compile
         run: |
           status=0
-          echo '| Example | Flash | RAM |' >> "$GITHUB_STEP_SUMMARY"
-          echo '|---|---|---|' >> "$GITHUB_STEP_SUMMARY"
-          for example in examples/*/; do
-            name=$(basename "$example")
-            echo "::group::$name"
-            if ! arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all "$example" 2>&1 | tee build.log; then
-              status=1
-            fi
-            echo "::endgroup::"
-            if grep -E 'warning:' build.log | grep -F "$GITHUB_WORKSPACE/"; then
-              echo "::error::$name: warnings in this repository"
-              status=1
-            fi
-            flash=$(grep -oE 'Sketch uses [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
-            ram=$(grep -oE 'Global variables use [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
-            echo "| $name | $flash | $ram |" >> "$GITHUB_STEP_SUMMARY"
+          echo '| Example | Dev error detect | Flash | RAM |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          for det in STD_OFF STD_ON; do
+            for example in examples/*/; do
+              name=$(basename "$example")
+              echo "::group::$name, MAXMATRIX_DEV_ERROR_DETECT=$det"
+              if ! arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all \
+                   --build-property "compiler.cpp.extra_flags=-DMAXMATRIX_DEV_ERROR_DETECT=$det" "$example" 2>&1 | tee build.log; then
+                status=1
+              fi
+              echo "::endgroup::"
+              if grep -E 'warning:' build.log | grep -F "$GITHUB_WORKSPACE/"; then
+                echo "::error::$name, $det: warnings in this repository"
+                status=1
+              fi
+              flash=$(grep -oE 'Sketch uses [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
+              ram=$(grep -oE 'Global variables use [0-9]+ bytes \([0-9]+%\)' build.log | grep -oE '[0-9]+ bytes \([0-9]+%\)')
+              echo "| $name | $det | $flash | $ram |" >> "$GITHUB_STEP_SUMMARY"
+            done
           done
           exit $status
 
