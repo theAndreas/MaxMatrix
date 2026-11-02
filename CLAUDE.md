@@ -15,8 +15,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
   - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
-  - `MaxMatrixError.h` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
-    what a function that can fail returns.
+  - `MaxMatrixError.h` / `.cpp` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
+    what a function that can fail returns, with `getErrorText()`.
   - `MaxMatrixStandardTypes.h` — `stdReturnType` (left to the simulator), `STD_ON`/`STD_OFF`
     and bit macros.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
@@ -166,8 +166,14 @@ A function of the library that can fail says why, in `MaxMatrixErrorType`
 `MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
 `E_OK` was 0 and `if(Matrix.setText(…))` was true on an error; code asks `isOk()` or compares
 with an error. Only an array still goes through a parameter (`getRow()` of the whole panel by
-reference, `getSprite()`). A new reason gets its own value in the enum and a row in the test
-`EveryErrorSaysWhy`, which checks every way a call can fail and that it changes nothing.
+reference, `getSprite()`). A new reason gets its own value in the enum, a text in `ErrorTexts`
+(`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
+call can fail and that it changes nothing. `MaxMatrixCommand::feed()` passes the reason of a failed
+line on, so that `SerialControl` answers with `getErrorText()`.
+
+The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
+returns a constant per case into a table in `.rodata`, which the Uno copies into RAM, as it does
+with every constant not marked `PROGMEM`.
 
 Coordinates and indices are range checked before the buffer is touched. A function that draws
 leaves out what lies off the panel rather than failing, because drawing partly off the panel is
@@ -248,8 +254,9 @@ and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which o
 fit which module; the README's table says the same and changes with it.
 
 The mock has a `Serial` that reads `Mock::SerialInput` and appends what the sketch prints to
-`Mock::SerialOutput`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()` and
-`strcmp_P()` take strings in RAM there, as the host has no separate flash.
+`Mock::SerialOutput`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()`,
+`strcmp_P()` and `pgm_read_ptr()` take strings in RAM there, as the host has no separate flash, but
+`F()` keeps the type `const __FlashStringHelper*` of the core.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `Mock::setMillis()`
 instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library

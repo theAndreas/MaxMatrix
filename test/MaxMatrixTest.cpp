@@ -21,14 +21,46 @@ static const byte DataInPin = 11;
 static const byte ChipSelectPin = 10;
 static const byte ClockPin = 13;
 
+/* every error by name, in the order of the enum */
+static const char* const ErrorNames[] = {
+    "MAXMATRIX_E_OK", "MAXMATRIX_E_OUT_OF_RANGE", "MAXMATRIX_E_UNKNOWN_CHAR", "MAXMATRIX_E_NO_TEXT", "MAXMATRIX_E_NOT_A_NUMBER",
+    "MAXMATRIX_E_UNKNOWN_COMMAND", "MAXMATRIX_E_LINE_TOO_LONG"
+};
+static const uint8_t NumberOfErrors = sizeof(ErrorNames) / sizeof(ErrorNames[0]);
+
 /* GoogleTest would print an error as its number */
 static void PrintTo(MaxMatrixErrorType Error, std::ostream* Out)
 {
-    static const char* const Names[] = {
-        "MAXMATRIX_E_OK", "MAXMATRIX_E_OUT_OF_RANGE", "MAXMATRIX_E_UNKNOWN_CHAR", "MAXMATRIX_E_NO_TEXT", "MAXMATRIX_E_NOT_A_NUMBER"
-    };
-    if(Error < sizeof(Names) / sizeof(Names[0])) *Out << Names[Error];
+    if(Error < NumberOfErrors) *Out << ErrorNames[Error];
     else *Out << "error " << static_cast<uint16_t>(Error);
+}
+
+/* what feed() returns, compared with a state as with an error: a line is done only if it did not fail as well */
+static bool operator==(const MaxMatrixResult<MaxMatrixCommandStateType>& Result, MaxMatrixCommandStateType State)
+{
+    return Result.isOk() && Result.getValue() == State;
+}
+
+static void PrintTo(const MaxMatrixResult<MaxMatrixCommandStateType>& Result, std::ostream* Out)
+{
+    if(!Result.isOk()) PrintTo(Result.getError(), Out);
+    else *Out << (Result.getValue() == MAXMATRIX_COMMAND_DONE ? "MAXMATRIX_COMMAND_DONE" : "MAXMATRIX_COMMAND_PENDING");
+}
+
+/* the text of F() and getErrorText(), which lies in RAM on the host */
+static std::string text(const __FlashStringHelper* Text)
+{
+    return reinterpret_cast<const char*>(Text);
+}
+
+/* a whole line to a command of its own, and why it failed */
+static MaxMatrixErrorType feedText(MaxMatrix& Matrix, const std::string& Text)
+{
+    MaxMatrixCommand Command;
+    MaxMatrixResult<MaxMatrixCommandStateType> Result = MAXMATRIX_COMMAND_PENDING;
+
+    for(char Char : Text) Result = Command.feed(Matrix, Char);
+    return Result.getError();
 }
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only says that something differs */
@@ -408,6 +440,8 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("12a", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
         { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("256", 255).getError(); }, MAXMATRIX_E_OUT_OF_RANGE },
         { "number too large, then a letter", [](MaxMatrix&) { return MaxMatrixCommand::convertToNumber("999x", 255).getError(); }, MAXMATRIX_E_NOT_A_NUMBER },
+        { "unknown command", [](MaxMatrix& M) { return feedText(M, "blink\n"); }, MAXMATRIX_E_UNKNOWN_COMMAND },
+        { "line too long", [](MaxMatrix& M) { return feedText(M, "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n"); }, MAXMATRIX_E_LINE_TOO_LONG },
     };
 
     for(const auto& Case : Cases) {
@@ -420,6 +454,23 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         EXPECT_EQ(chipOfModule(0).Intensity, IntensityBefore) << Case.Name;
         EXPECT_EQ(Matrix.getState(), MAXMATRIX_STATE_READY) << Case.Name;
     }
+}
+
+/* every error has its text, as SerialControl answers with it, and a byte off the enum gets one as well; the texts
+ * lie in a table of their own, so one moved by a place would give every error after it the text of the next */
+TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
+{
+    const char* const Texts[] = {
+        "ok", "out of range", "unknown char", "no text", "not a number", "unknown command", "line too long"
+    };
+    ASSERT_EQ(sizeof(Texts) / sizeof(Texts[0]), NumberOfErrors);
+
+    for(uint8_t Error = 0; Error < NumberOfErrors; Error++) {
+        EXPECT_EQ(text(MaxMatrixStatus(static_cast<MaxMatrixErrorType>(Error)).getErrorText()), Texts[Error]) << ErrorNames[Error];
+    }
+    EXPECT_EQ(text(MaxMatrixResult<byte>(MAXMATRIX_E_UNKNOWN_CHAR).getErrorText()), "unknown char");
+    /* a new error that ErrorNames lacks has a text of its own here, and fails */
+    EXPECT_EQ(text(MaxMatrixStatus(static_cast<MaxMatrixErrorType>(NumberOfErrors)).getErrorText()), "unknown error");
 }
 
 /* drawing off the panel leaves the panel as it was and sends nothing; column 8 of module 0 used to be checked
@@ -779,7 +830,7 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
     MaxMatrixCommand Command;
 
     /* feeds a line char by char, as Serial would; every char but the last has to leave the line pending */
-    MaxMatrixCommandResultType feedLine(const std::string& Text)
+    MaxMatrixResult<MaxMatrixCommandStateType> feedLine(const std::string& Text)
     {
         for(size_t i = 0; i + 1 < Text.size(); i++) {
             EXPECT_EQ(Command.feed(Matrix, Text[i]), MAXMATRIX_COMMAND_PENDING) << "char " << i << " of " << Text;
@@ -850,27 +901,27 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused)
 {
     const struct {
         const char* Line;
-        MaxMatrixCommandResultType Result;
+        MaxMatrixErrorType Error;
     } Cases[] = {
-        { "blink\n", MAXMATRIX_COMMAND_UNKNOWN },
-        { "clear=1\n", MAXMATRIX_COMMAND_UNKNOWN },
-        { "intensity=16\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "intensity=\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "intensity=x\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "speed=65536\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "speed=99999999999999999999\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "blink\n", MAXMATRIX_E_UNKNOWN_COMMAND },
+        { "clear=1\n", MAXMATRIX_E_UNKNOWN_COMMAND },
+        { "intensity=16\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "intensity=\n", MAXMATRIX_E_NOT_A_NUMBER },
+        { "intensity=x\n", MAXMATRIX_E_NOT_A_NUMBER },
+        { "speed=65536\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "speed=99999999999999999999\n", MAXMATRIX_E_OUT_OF_RANGE },
         /* 2^32, which a count in 32 bits wraps round to 0, a speed it would take */
-        { "speed=4294967296\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "space=-1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "setDot=1,2\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "setDot=32,0,1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "setDot=1,8,1\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "setDot=1,2,2\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "textShift=\n", MAXMATRIX_COMMAND_INVALID_VALUE },
-        { "text=a\x01\n", MAXMATRIX_COMMAND_INVALID_VALUE },
+        { "speed=4294967296\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "space=-1\n", MAXMATRIX_E_NOT_A_NUMBER },
+        { "setDot=1,2\n", MAXMATRIX_E_NOT_A_NUMBER },
+        { "setDot=32,0,1\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "setDot=1,8,1\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "setDot=1,2,2\n", MAXMATRIX_E_OUT_OF_RANGE },
+        { "textShift=\n", MAXMATRIX_E_NO_TEXT },
+        { "text=a\x01\n", MAXMATRIX_E_UNKNOWN_CHAR },
     };
 
-    for(const auto& Case : Cases) EXPECT_EQ(feedLine(Case.Line), Case.Result) << Case.Line;
+    for(const auto& Case : Cases) EXPECT_EQ(feedLine(Case.Line), Case.Error) << Case.Line;
     EXPECT_EQ(Matrix.getShiftInterval(), 0) << "changed by a refused speed=";
 }
 
@@ -887,7 +938,7 @@ TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
 {
     const std::string Long = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
 
-    EXPECT_EQ(feedLine(Long), MAXMATRIX_COMMAND_TOO_LONG);
+    EXPECT_EQ(feedLine(Long), MAXMATRIX_E_LINE_TOO_LONG);
     EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
     EXPECT_EQ(feedLine("intensity=2\n"), MAXMATRIX_COMMAND_DONE);
     EXPECT_EQ(chipOfModule(0).Intensity, 2);

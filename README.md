@@ -128,8 +128,11 @@ MaxMatrixStatus Status = Matrix.setText(Text);
 if(Status == MAXMATRIX_E_UNKNOWN_CHAR) { /* the font lacks a char of Text */ }
 ```
 
-The errors are `MAXMATRIX_E_OUT_OF_RANGE`, `MAXMATRIX_E_UNKNOWN_CHAR` and `MAXMATRIX_E_NO_TEXT`;
+The errors are `MAXMATRIX_E_OUT_OF_RANGE`, `MAXMATRIX_E_UNKNOWN_CHAR` and `MAXMATRIX_E_NO_TEXT`, and from
+`MaxMatrixCommand` also `MAXMATRIX_E_NOT_A_NUMBER`, `MAXMATRIX_E_UNKNOWN_COMMAND` and `MAXMATRIX_E_LINE_TOO_LONG`;
 `MAXMATRIX_E_OK` means none. A status is not a `bool`: write `Status.isOk()`, not `if(Status)`.
+`Serial.println(Status.getErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
+and a sketch that never asks for one does not carry them.
 
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
@@ -166,8 +169,8 @@ off with `setAutoUpdate(false)` and send with `update()` whenever the picture is
 | `clear` | turns every LED off |
 
 A line ends in `\n` or `\r\n`. The [SerialControl](examples/SerialControl/SerialControl.ino) example reads them from
-`Serial` at 115200 baud and answers each with `ok` or `error`; the serial monitor of the Arduino IDE sends them with
-"Newline" as line ending:
+`Serial` at 115200 baud and answers each with `ok`, or with `error: ` and the reason; the serial monitor of the
+Arduino IDE sends them with "Newline" as line ending:
 
 ```cpp
 MaxMatrixCommand Command;
@@ -175,18 +178,22 @@ MaxMatrixCommand Command;
 void loop()
 {
     while(Serial.available() > 0) {
-        MaxMatrixCommandResultType Result = Command.feed(Matrix, Serial.read());
-        if(Result == MAXMATRIX_COMMAND_DONE) Serial.println(F("ok"));
-        else if(Result != MAXMATRIX_COMMAND_PENDING) Serial.println(F("error"));
+        MaxMatrixResult<MaxMatrixCommandStateType> Line = Command.feed(Matrix, Serial.read());
+        if(!Line.isOk()) {
+            Serial.print(F("error: "));
+            Serial.println(Line.getErrorText());
+        } else if(Line.getValue() == MAXMATRIX_COMMAND_DONE) {
+            Serial.println(F("ok"));
+        }
     }
     Matrix.shiftTask();
 }
 ```
 
-`feed()` tells an unknown command, a wrong value and a line too long apart, for a sketch that wants to say more than
-`error`. A line longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The
-class keeps the line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it
-pays nothing.
+`feed()` returns `MAXMATRIX_COMMAND_PENDING` while a line goes on, `MAXMATRIX_COMMAND_DONE` when it is carried out, and
+why it failed otherwise: `intensity=16` is `MAXMATRIX_E_OUT_OF_RANGE`, `intensity=x` `MAXMATRIX_E_NOT_A_NUMBER`. A line
+longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The class keeps the
+line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it pays nothing.
 
 The simulator's page has buttons for the commands, and a click on an LED switches it. They drive the simulator when it
 runs SerialControl, and a board running SerialControl as well, connected with *Connect board* over the browser's Web

@@ -32,8 +32,10 @@ typedef enum : uint8_t {
     MAXMATRIX_E_OK = 0,
     MAXMATRIX_E_OUT_OF_RANGE,               /* a coordinate, module, sprite index, intensity or number beyond its range */
     MAXMATRIX_E_UNKNOWN_CHAR,               /* the font has no sprite for the char */
-    MAXMATRIX_E_NO_TEXT,                    /* the text is NULL */
-    MAXMATRIX_E_NOT_A_NUMBER                /* the value of a command is empty or holds anything but digits */
+    MAXMATRIX_E_NO_TEXT,                    /* the text is NULL, or the text of a command empty */
+    MAXMATRIX_E_NOT_A_NUMBER,               /* the value of a command is empty or holds anything but digits */
+    MAXMATRIX_E_UNKNOWN_COMMAND,            /* no command has this name */
+    MAXMATRIX_E_LINE_TOO_LONG               /* a command line did not fit into MAXMATRIX_COMMAND_LINE_LENGTH */
 } MaxMatrixErrorType;
 
 
@@ -54,6 +56,7 @@ class MaxMatrixStatus
 
     // get methods
     MaxMatrixErrorType getError() const { return Error; }
+    const __FlashStringHelper* getErrorText() const;
 
     // methods
     bool isOk() const { return Error == MAXMATRIX_E_OK; }
@@ -83,6 +86,7 @@ class MaxMatrixResult
     // get methods
     ValueType getValue() const { return Value; }
     MaxMatrixErrorType getError() const { return Error; }
+    const __FlashStringHelper* getErrorText() const { return MaxMatrixStatus(Error).getErrorText(); }
 
     // methods
     bool isOk() const { return Error == MAXMATRIX_E_OK; }

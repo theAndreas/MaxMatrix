@@ -30,14 +30,11 @@
 /******************************************************************************************************************************************************
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
-/* what feed() says about the char it was given */
-typedef enum {
+/* what feed() says about the char it was given, when the line did not fail; why it failed is the error beside it */
+typedef enum : uint8_t {
     MAXMATRIX_COMMAND_PENDING,              /* the line goes on, or was empty */
-    MAXMATRIX_COMMAND_DONE,                 /* the line was a command, and it is carried out */
-    MAXMATRIX_COMMAND_UNKNOWN,              /* no command has this name */
-    MAXMATRIX_COMMAND_INVALID_VALUE,        /* the value is missing, no number, out of range, or a char the font lacks */
-    MAXMATRIX_COMMAND_TOO_LONG              /* the line did not fit into MAXMATRIX_COMMAND_LINE_LENGTH and is dropped */
-} MaxMatrixCommandResultType;
+    MAXMATRIX_COMMAND_DONE                  /* the line was a command, and it is carried out */
+} MaxMatrixCommandStateType;
 
 class MaxMatrix;
 
@@ -58,18 +55,18 @@ class MaxMatrixCommand
     bool LineTooLong;
 
     // functions
-    MaxMatrixCommandResultType execute(MaxMatrix&, char*);
-    MaxMatrixCommandResultType executeTextShift(MaxMatrix&, const char*);
-    static MaxMatrixCommandResultType executeText(MaxMatrix&, const char*);
-    static MaxMatrixCommandResultType executeDot(MaxMatrix&, char*);
-    static MaxMatrixCommandResultType executeSetting(MaxMatrix&, const char*, const char*);
+    MaxMatrixStatus execute(MaxMatrix&, char*);
+    MaxMatrixStatus executeTextShift(MaxMatrix&, const char*);
+    static MaxMatrixStatus executeText(MaxMatrix&, const char*);
+    static MaxMatrixStatus executeDot(MaxMatrix&, char*);
+    static MaxMatrixStatus executeSetting(MaxMatrix&, const char*, const char*);
     static MaxMatrixResult<uint16_t> convertToNumber(const char*, uint16_t);
 
   public:
     MaxMatrixCommand();
 
     // methods
-    MaxMatrixCommandResultType feed(MaxMatrix&, char);
+    MaxMatrixResult<MaxMatrixCommandStateType> feed(MaxMatrix&, char);
 };
 
 #endif

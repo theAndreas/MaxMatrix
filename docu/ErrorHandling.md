@@ -266,6 +266,16 @@ does not belong in a display library.
   less, RAM the same. A getter returning its value in registers costs less than one writing it through
   a pointer, and `MaxMatrixFont::getCharSprite()` replaced four copies of the lookup in
   `MaxMatrixText`.
+- **The text of an error**, the third step: `getErrorText()` on `MaxMatrixStatus` and
+  `MaxMatrixResult<T>`. `MaxMatrixCommand::feed()` passes the reason of a failed line on beside
+  `PENDING` and `DONE`, with `MAXMATRIX_E_UNKNOWN_COMMAND` and `MAXMATRIX_E_LINE_TOO_LONG` new, and
+  `SerialControl` answers `error: out of range`.
+  - A `switch` that returned `F("…")` for each error cost 14 bytes of RAM. avr-gcc turned it into a
+    table of the seven pointers in `.rodata` (`CSWTCH.1` in the map), which the Uno copies into RAM
+    like the vtables above. The texts and their table now lie in `PROGMEM`, read with `pgm_read_ptr()`.
+  - Measured on the Uno: `Basics` and `ScrollText` the same, as the linker drops the texts.
+    `SerialControl` needs 184 bytes of flash more: 94 for the texts, 14 for their table, the rest for
+    code. The change to the command alone saves 6. RAM is the same.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
   `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the
