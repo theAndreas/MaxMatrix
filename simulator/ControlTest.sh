@@ -23,7 +23,11 @@ grep -q '"dots":"[01]*1' <<< "$Panel" || fail "text=Hi lit nothing"
 
 send "serial blink"
 Panel=$(receive)
-grep -q '"serial":"error\\u000D\\u000A"' <<< "$Panel" || fail "an unknown command got no error"
+grep -q '"serial":"error: unknown command\\u000D\\u000A"' <<< "$Panel" || fail "an unknown command got no error with its reason"
+
+send "serial intensity=16"
+Panel=$(receive)
+grep -q '"serial":"error: out of range\\u000D\\u000A"' <<< "$Panel" || fail "intensity=16 got no error with its reason"
 
 send "serial clear"
 Panel=$(receive)

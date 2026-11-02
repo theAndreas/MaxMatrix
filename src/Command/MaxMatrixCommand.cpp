@@ -69,9 +69,12 @@ MaxMatrixCommand::MaxMatrixCommand()
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in]      Char        the next char, as Serial.read() returns it
- *  \return         MAXMATRIX_COMMAND_PENDING while the line goes on, else what came of the line
+ *  \return         MAXMATRIX_COMMAND_PENDING while the line goes on or after an empty line
+ *                  MAXMATRIX_COMMAND_DONE      the line was carried out
+ *                  MAXMATRIX_E_LINE_TOO_LONG   the line did not fit and is dropped
+ *                  or why the command failed, as execute() returns it
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::feed(MaxMatrix& Matrix, char Char)
+MaxMatrixResult<MaxMatrixCommandStateType> MaxMatrixCommand::feed(MaxMatrix& Matrix, char Char)
 {
     if(Char == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return MAXMATRIX_COMMAND_PENDING;
     if(Char != MAXMATRIX_COMMAND_LINE_END) {
@@ -86,9 +89,11 @@ MaxMatrixCommandResultType MaxMatrixCommand::feed(MaxMatrix& Matrix, char Char)
     Line[LineLength] = STD_NULL_CHARACTER;
     LineLength = 0;
     LineTooLong = false;
-    if(TooLong) return MAXMATRIX_COMMAND_TOO_LONG;
+    if(TooLong) return MAXMATRIX_E_LINE_TOO_LONG;
     if(Empty) return MAXMATRIX_COMMAND_PENDING;
-    return execute(Matrix, Line);
+    MaxMatrixStatus Status = execute(Matrix, Line);
+    if(!Status.isOk()) return Status.getError();
+    return MAXMATRIX_COMMAND_DONE;
 } /* feed */
 
 
@@ -104,16 +109,18 @@ MaxMatrixCommandResultType MaxMatrixCommand::feed(MaxMatrix& Matrix, char Char)
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in,out]  Text        the line, without its line end; the '=' is overwritten with the end of the name
- *  \return         what came of the line
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_COMMAND     no command has this name
+ *                  or why the command failed
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::execute(MaxMatrix& Matrix, char* Text)
+MaxMatrixStatus MaxMatrixCommand::execute(MaxMatrix& Matrix, char* Text)
 {
     char* Value = strchr(Text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
 
     if(Value == NULL) {
-        if(0 != strcmp_P(Text, PSTR("clear"))) return MAXMATRIX_COMMAND_UNKNOWN;
+        if(0 != strcmp_P(Text, PSTR("clear"))) return MAXMATRIX_E_UNKNOWN_COMMAND;
         Matrix.clear();
-        return MAXMATRIX_COMMAND_DONE;
+        return MAXMATRIX_E_OK;
     }
     *Value++ = STD_NULL_CHARACTER;
     if(0 == strcmp_P(Text, PSTR("text"))) return executeText(Matrix, Value);
@@ -132,14 +139,14 @@ MaxMatrixCommandResultType MaxMatrixCommand::execute(MaxMatrix& Matrix, char* Te
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in]      Value       the text, UTF-8 or latin-1
- *  \return         MAXMATRIX_COMMAND_DONE
- *                  MAXMATRIX_COMMAND_INVALID_VALUE     the text is empty
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_NO_TEXT     the text is empty
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, const char* Value)
 {
-    if(*Value == STD_NULL_CHARACTER) return MAXMATRIX_COMMAND_INVALID_VALUE;
+    if(*Value == STD_NULL_CHARACTER) return MAXMATRIX_E_NO_TEXT;
     strcpy(ShiftText, Value);
-    return Matrix.setTextWithShift(ShiftText).isOk() ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
+    return Matrix.setTextWithShift(ShiftText);
 } /* executeTextShift */
 
 
@@ -152,15 +159,15 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix,
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in]      Value       the text, UTF-8 or latin-1
- *  \return         MAXMATRIX_COMMAND_DONE
- *                  MAXMATRIX_COMMAND_INVALID_VALUE     a char of the text is not in the font; the chars before it are shown
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_CHAR    a char of the text is not in the font; the chars before it are shown
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::executeText(MaxMatrix& Matrix, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeText(MaxMatrix& Matrix, const char* Value)
 {
     MaxMatrixBatch Batch(Matrix);
 
     Matrix.clear();
-    return Matrix.setText(Value).isOk() ? MAXMATRIX_COMMAND_DONE : MAXMATRIX_COMMAND_INVALID_VALUE;
+    return Matrix.setText(Value);
 } /* executeText */
 
 
@@ -174,23 +181,26 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeText(MaxMatrix& Matrix, cons
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in,out]  Value       the three numbers; the commas are overwritten with ends of text
- *  \return         MAXMATRIX_COMMAND_DONE
- *                  MAXMATRIX_COMMAND_INVALID_VALUE     a number is missing or the dot is not on the matrix
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_NOT_A_NUMBER    a number is missing, empty or holds anything but digits
+ *                  MAXMATRIX_E_OUT_OF_RANGE    the dot is not on the matrix, or the value is neither 0 nor 1
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char* Value)
 {
     char* RowText = strchr(Value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
     char* LitText = RowText == NULL ? NULL : strchr(RowText + 1, MAXMATRIX_COMMAND_LIST_SEPARATOR);
 
-    if(LitText == NULL) return MAXMATRIX_COMMAND_INVALID_VALUE;
+    if(LitText == NULL) return MAXMATRIX_E_NOT_A_NUMBER;
     *RowText++ = STD_NULL_CHARACTER;
     *LitText++ = STD_NULL_CHARACTER;
     MaxMatrixResult<uint16_t> Column = convertToNumber(Value, MAXMATRIX_NUMBER_OF_COLUMNS - 1);
     MaxMatrixResult<uint16_t> Row = convertToNumber(RowText, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
     MaxMatrixResult<uint16_t> Lit = convertToNumber(LitText, 1);
-    if(!Column.isOk() || !Row.isOk() || !Lit.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+    if(!Column.isOk()) return Column.getError();
+    if(!Row.isOk()) return Row.getError();
+    if(!Lit.isOk()) return Lit.getError();
     Matrix.setDot(Column.getValue(), Row.getValue(), Lit.getValue() == 1);
-    return MAXMATRIX_COMMAND_DONE;
+    return MAXMATRIX_E_OK;
 } /* executeDot */
 
 
@@ -204,26 +214,27 @@ MaxMatrixCommandResultType MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char*
  *  \param[in,out]  Matrix      the matrix the command acts on
  *  \param[in]      Name        the name of the command
  *  \param[in]      Value       the number
- *  \return         MAXMATRIX_COMMAND_DONE
- *                  MAXMATRIX_COMMAND_UNKNOWN           no command has this name
- *                  MAXMATRIX_COMMAND_INVALID_VALUE     the value is no number or out of range
+ *  \return         MAXMATRIX_E_OK
+ *                  MAXMATRIX_E_UNKNOWN_COMMAND     no command has this name
+ *                  MAXMATRIX_E_NOT_A_NUMBER        the value is empty or holds anything but digits
+ *                  MAXMATRIX_E_OUT_OF_RANGE        the number is too large for the setting
  *****************************************************************************************************************************************************/
-MaxMatrixCommandResultType MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, const char* Name, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, const char* Name, const char* Value)
 {
     if(0 == strcmp_P(Name, PSTR("intensity"))) {
         MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAX7219_REG_INTENSITY_MAX_VALUE);
-        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        if(!Number.isOk()) return Number.getError();
         Matrix.setIntensity(Number.getValue());
     } else if(0 == strcmp_P(Name, PSTR("speed"))) {
         MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAXMATRIX_COMMAND_MAX_INTERVAL);
-        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        if(!Number.isOk()) return Number.getError();
         Matrix.setShiftInterval(Number.getValue());
     } else if(0 == strcmp_P(Name, PSTR("space"))) {
         MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAXMATRIX_COMMAND_MAX_BYTE);
-        if(!Number.isOk()) return MAXMATRIX_COMMAND_INVALID_VALUE;
+        if(!Number.isOk()) return Number.getError();
         Matrix.setSpaceBetweenChars(Number.getValue());
-    } else return MAXMATRIX_COMMAND_UNKNOWN;
-    return MAXMATRIX_COMMAND_DONE;
+    } else return MAXMATRIX_E_UNKNOWN_COMMAND;
+    return MAXMATRIX_E_OK;
 } /* executeSetting */
 
 

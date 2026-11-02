@@ -1,7 +1,8 @@
 /*
  * SerialControl
  *
- * Takes commands over Serial, one per line, and answers each with "ok" or "error":
+ * Takes commands over Serial, one per line, and answers each with "ok", or with "error: " and the reason, such as
+ * "error: out of range" for intensity=16:
  *
  *   text=Hello            shows a text from the left edge
  *   textShift=Hello       shifts a text in from the right
@@ -39,9 +40,13 @@ void setup()
 void loop()
 {
     while(Serial.available() > 0) {
-        MaxMatrixCommandResultType Result = Command.feed(Matrix, Serial.read());
-        if(Result == MAXMATRIX_COMMAND_DONE) Serial.println(F("ok"));
-        else if(Result != MAXMATRIX_COMMAND_PENDING) Serial.println(F("error"));
+        MaxMatrixResult<MaxMatrixCommandStateType> Line = Command.feed(Matrix, Serial.read());
+        if(!Line.isOk()) {
+            Serial.print(F("error: "));
+            Serial.println(Line.getErrorText());
+        } else if(Line.getValue() == MAXMATRIX_COMMAND_DONE) {
+            Serial.println(F("ok"));
+        }
     }
     Matrix.shiftTask();
 }

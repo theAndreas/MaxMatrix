@@ -107,6 +107,16 @@ size_t HardwareSerial::println(const char* Text)
     return print(Text) + print("\r\n");
 }
 
+size_t HardwareSerial::print(const __FlashStringHelper* Text)
+{
+    return print(reinterpret_cast<const char*>(Text));
+}
+
+size_t HardwareSerial::println(const __FlashStringHelper* Text)
+{
+    return println(reinterpret_cast<const char*>(Text));
+}
+
 SPIClass SPI;
 
 void SPIClass::beginTransaction(SPISettings)

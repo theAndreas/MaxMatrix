@@ -19,9 +19,12 @@ typedef uint8_t byte;
 
 #define PROGMEM
 #define memcpy_P memcpy
+#define pgm_read_ptr(Address) (static_cast<const void*>(*(Address)))
 #define PSTR(Text) (Text)
 #define strcmp_P strcmp
-#define F(Text) (Text)
+/* F() has the type it has in the Arduino core, so that a function returning a text in flash builds as on the board */
+class __FlashStringHelper;
+#define F(Text) (reinterpret_cast<const __FlashStringHelper*>(PSTR(Text)))
 
 #define HIGH 1
 #define LOW 0
@@ -51,6 +54,8 @@ class HardwareSerial {
     int read();
     size_t print(const char* Text);
     size_t println(const char* Text);
+    size_t print(const __FlashStringHelper* Text);
+    size_t println(const __FlashStringHelper* Text);
 };
 
 extern HardwareSerial Serial;
