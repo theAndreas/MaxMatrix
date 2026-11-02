@@ -8,12 +8,13 @@
 ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/cpp:ubuntu26.04
 FROM ${BASE_IMAGE}
 
-# CMake, Ninja and GoogleTest build and run the host-side tests. From apt rather than pinned
-# like the tools below: the distribution's versions are what CI installs as well, and none of
-# them has a bug that forces a newer release.
+# CMake, Ninja and GoogleTest build and run the host-side tests; clangd gives the editor its
+# IntelliSense, from the compilation database CMake writes into build/. From apt rather than
+# pinned like the tools below: the distribution's versions are what CI installs as well, and
+# none of them has a bug that forces a newer release.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        cmake ninja-build libgtest-dev && \
+        cmake ninja-build libgtest-dev clangd && \
     rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which
