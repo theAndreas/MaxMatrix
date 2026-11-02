@@ -33,11 +33,14 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `SimulatorOptions` — the command line.
   - `SimulatorPanel` — the model's LEDs for a wiring and mounting, and whether to draw again.
   - `SimulatorTerminal` — the panel redrawn in place, or printed once at the end of `--for`.
-  - `SimulatorWeb` — the JSON for `index.html` (read at run time) and its commands.
+  - `SimulatorWeb` — the JSON for `index.html` (read at run time) and its commands; `serial LINE`
+    from the page reaches the sketch's `Serial`, and what the sketch prints goes back in the JSON.
   - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
     ported from Wordclock; the protocol works on strings only, so it is tested without a network.
   `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board;
-  `WebTest.sh` checks what a browser would get from `--web`.
+  `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the commands of
+  the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`), and `PageTest.js`
+  the page's own script, against stand-ins for the DOM, the WebSocket and a board on Web Serial.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
@@ -258,7 +261,11 @@ the timing on its own. `Mock::Tick`, called after every frame and every millisec
 `simulator/web` runs it with `--web` on port 18080 and stands in for the browser with `curl` and
 a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `hello`, and a
 change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
-to the page can bring a panel; a new example in its place needs such a pause as well.
+to the page can bring a panel; a new example in its place needs such a pause as well. The test
+`simulator/control` runs `SerialControl` on port 18082 and sends it `serial` lines as the page
+does, expecting `ok` and `error` back in the JSON. `simulator/page` runs `PageTest.js` under
+Node, once; CMake leaves it out where there is no `node`, as the dev container's `Dockerfile`
+installs none. A fake port there refuses to close while a stream is locked, as Chrome does.
 `SimulatorWebSocketTest` checks the rest of the protocol a browser may use, against the examples
 of the RFCs, `SimulatorWebHostTest` that a client which connects and says nothing cannot stop
 the host (on port 18081, so it needs no lock with `simulator/web`), and `SimulatorTest` the

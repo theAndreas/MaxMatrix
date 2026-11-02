@@ -13,6 +13,7 @@
     --led: 255, 48, 40;
     --led-off: #2c1416;
     --border: #2f333c;
+    --accent: #3b82f6;
   }
   * { box-sizing: border-box; }
   body {
@@ -31,7 +32,7 @@
     border-radius: 8px;
     padding: 16px;
   }
-  canvas { display: block; width: 100%; height: auto; }
+  canvas { display: block; width: 100%; height: auto; cursor: pointer; }
   .controls {
     display: flex;
     flex-wrap: wrap;
@@ -40,7 +41,7 @@
     margin: 16px 0;
   }
   label { display: inline-flex; gap: 8px; align-items: center; }
-  select {
+  select, input, button {
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
@@ -48,6 +49,12 @@
     padding: 6px 8px;
     font: inherit;
   }
+  input[type="number"] { width: 6em; }
+  input[type="text"] { flex: 1 1 16em; min-width: 0; }
+  input[type="range"] { padding: 0; accent-color: var(--accent); }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { color: var(--muted); cursor: not-allowed; }
   .status { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
   .status .error { color: rgb(var(--led)); }
   h2 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; }
@@ -62,6 +69,7 @@
     font: 13px/1.5 ui-monospace, "Cascadia Code", Menlo, monospace;
     color: var(--muted);
   }
+  #answers { height: 160px; }
 </style>
 </head>
 <body>
@@ -92,8 +100,28 @@
     <span class="status" id="status">connecting...</span>
   </div>
 
+  <h2>Control</h2>
+  <p class="lead">For a simulator running SerialControl, and a board running it on a serial port: every command goes to
+    both. Click an LED to switch it.</p>
+  <div class="controls">
+    <input type="text" id="text" placeholder="Text" value="Hello">
+    <button id="showText">Show</button>
+    <button id="shiftText">Shift in</button>
+    <button id="clear">Clear</button>
+  </div>
+  <div class="controls">
+    <label>Intensity <input type="range" id="intensity" min="0" max="15" value="5"></label>
+    <label>Speed <input type="number" id="speed" min="0" max="65535" value="50"> ms per column</label>
+    <label>Space <input type="number" id="space" min="0" max="255" value="1"> columns</label>
+  </div>
+  <div class="controls">
+    <button id="board">Connect board</button>
+    <span class="status" id="boardStatus">no board</span>
+  </div>
+  <pre id="answers"></pre>
+
   <h2>Frames on the wire</h2>
-  <p class="lead">One address and value per module, module 0 first; address 00 is the no-op.</p>
+  <p class="lead">One address and value per module, module 0 first.</p>
   <pre id="log"></pre>
 </main>
 <script>
@@ -103,11 +131,31 @@
   const UpsideDown = document.getElementById("upsideDown");
   const Status = document.getElementById("status");
   const Log = document.getElementById("log");
+  const Answers = document.getElementById("answers");
+  const TextInput = document.getElementById("text");
+  const Intensity = document.getElementById("intensity");
+  const Speed = document.getElementById("speed");
+  const Space = document.getElementById("space");
+  const BoardButton = document.getElementById("board");
+  const BoardStatus = document.getElementById("boardStatus");
   const LogLines = 200;
+  const Cell = 24;
+  const ModuleGap = 8;
+  const BaudRate = 115200;
   const Style = getComputedStyle(document.body);
   const LedColor = Style.getPropertyValue("--led").trim();
   const LedOffColor = Style.getPropertyValue("--led-off").trim();
+  const Encoder = new TextEncoder();
   let Socket = null;
+  let LastPanel = null;
+  /* what arrived after the last line end, per source: a line may come in pieces */
+  const PartialLines = { simulator: "", board: "" };
+  /* the board, while one is connected */
+  let Port = null;
+  let BoardReader = null;
+  let BoardPipe = null;
+  let BoardWriter = null;
+  let BoardReady = false;
 
   /* the MAX7219 drives a module with a duty cycle of (2 * intensity + 1) / 32; a lit LED never looks dark */
   function brightness(Intensity) {
@@ -115,8 +163,6 @@
   }
 
   function draw(Panel) {
-    const Cell = 24;
-    const ModuleGap = 8;
     const Modules = Panel.columns / 8;
     const Width = Panel.columns * Cell + (Modules - 1) * ModuleGap;
     const Height = Panel.rows * Cell;
@@ -138,19 +184,45 @@
     }
   }
 
+  /* keeps the last lines of a pre, and its scroll position unless it was at the bottom */
+  function append(Pre, Lines) {
+    const AtBottom = Pre.scrollTop + Pre.clientHeight >= Pre.scrollHeight - 4;
+    const All = (Pre.textContent + Lines.join("\n") + "\n").split("\n");
+    Pre.textContent = All.slice(-LogLines - 1).join("\n");
+    if (AtBottom) Pre.scrollTop = Pre.scrollHeight;
+  }
+
+  /* text from the sketch's Serial, cut into lines; the sketch ends them with \r\n */
+  function receive(Source, Received) {
+    const Lines = (PartialLines[Source] + Received).split("\n");
+    PartialLines[Source] = Lines.pop();
+    for (const Line of Lines.map(Each => Each.replace(/\r$/, ""))) {
+      append(Answers, [`${Source}: ${Line}`]);
+      /* opening the port resets an Uno, and what is sent before SerialControl has started is lost */
+      if (Source === "board" && Line === "ready") {
+        BoardReady = true;
+        BoardStatus.textContent = "board connected";
+      }
+    }
+  }
+
   function show(Panel) {
+    LastPanel = Panel;
     draw(Panel);
     Wiring.value = Panel.wiring;
     UpsideDown.checked = Panel.upsideDown;
     Status.innerHTML = `${Panel.frames} frames` +
       (Panel.errors ? `, <span class="error">${Panel.errors} transfer errors</span>` : "") +
       `, intensity ${Panel.intensity.join(" ")}`;
-    if (Panel.log.length) {
-      const AtBottom = Log.scrollTop + Log.clientHeight >= Log.scrollHeight - 4;
-      const Lines = (Log.textContent + Panel.log.join("\n") + "\n").split("\n");
-      Log.textContent = Lines.slice(-LogLines - 1).join("\n");
-      if (AtBottom) Log.scrollTop = Log.scrollHeight;
-    }
+    if (Panel.log.length) append(Log, Panel.log);
+    if (Panel.serial) receive("simulator", Panel.serial);
+  }
+
+  /* a command of SerialControl, to the simulator and to the board, whichever is there */
+  function command(Line) {
+    append(Answers, [`> ${Line}`]);
+    if (Socket && Socket.readyState === WebSocket.OPEN) Socket.send(`serial ${Line}`);
+    if (BoardWriter && BoardReady) BoardWriter.write(Encoder.encode(`${Line}\n`));
   }
 
   function connect() {
@@ -164,8 +236,85 @@
     };
   }
 
+  /* the LED under a click, as the panel shows it, or null for the gap between two modules */
+  function ledAt(Event) {
+    const Bounds = Canvas.getBoundingClientRect();
+    const X = (Event.clientX - Bounds.left) * Canvas.width / Bounds.width;
+    const Y = (Event.clientY - Bounds.top) * Canvas.height / Bounds.height;
+    const ModuleWidth = 8 * Cell + ModuleGap;
+    const InModule = X % ModuleWidth;
+
+    if (InModule >= 8 * Cell) return null;
+    return { column: Math.floor(X / ModuleWidth) * 8 + Math.floor(InModule / Cell), row: Math.floor(Y / Cell) };
+  }
+
+  async function readBoard() {
+    try {
+      for (;;) {
+        const { value, done } = await BoardReader.read();
+        if (done) break;
+        receive("board", value);
+      }
+    } catch (Failure) {
+      append(Answers, [`board: ${Failure.message}`]);
+    } finally {
+      /* the port closes only once nothing holds its streams: the pipe into the decoder lets go when it has ended */
+      BoardReader.releaseLock();
+      await BoardPipe;
+      BoardWriter.releaseLock();
+      try {
+        await Port.close();
+      } catch (Failure) {
+        append(Answers, [`board: ${Failure.message}`]);
+      }
+      Port = BoardReader = BoardPipe = BoardWriter = null;
+      BoardReady = false;
+      PartialLines.board = "";
+      BoardButton.textContent = "Connect board";
+      BoardStatus.textContent = "no board";
+    }
+  }
+
+  async function connectBoard() {
+    try {
+      Port = await navigator.serial.requestPort();
+      await Port.open({ baudRate: BaudRate });
+    } catch (Failure) {
+      Port = null;
+      BoardStatus.textContent = `no board: ${Failure.message}`;
+      return;
+    }
+    const Decoder = new TextDecoderStream();
+    BoardPipe = Port.readable.pipeTo(Decoder.writable).catch(() => {});
+    BoardReader = Decoder.readable.getReader();
+    BoardWriter = Port.writable.getWriter();
+    BoardButton.textContent = "Disconnect board";
+    BoardStatus.textContent = "waiting for SerialControl to say ready...";
+    readBoard();
+  }
+
   Wiring.addEventListener("change", () => Socket.send(`wiring ${Wiring.value}`));
   UpsideDown.addEventListener("change", () => Socket.send(`upside-down ${UpsideDown.checked ? 1 : 0}`));
+  document.getElementById("showText").addEventListener("click", () => command(`text=${TextInput.value}`));
+  document.getElementById("shiftText").addEventListener("click", () => command(`textShift=${TextInput.value}`));
+  document.getElementById("clear").addEventListener("click", () => command("clear"));
+  Intensity.addEventListener("change", () => command(`intensity=${Intensity.value}`));
+  Speed.addEventListener("change", () => command(`speed=${Speed.value}`));
+  Space.addEventListener("change", () => command(`space=${Space.value}`));
+  Canvas.addEventListener("click", Event => {
+    const Led = LastPanel && ledAt(Event);
+    if (!Led || Led.column >= LastPanel.columns || Led.row >= LastPanel.rows) return;
+    const Lit = LastPanel.dots[Led.row * LastPanel.columns + Led.column] === "1";
+    command(`setDot=${Led.column},${Led.row},${Lit ? 0 : 1}`);
+  });
+
+  /* Web Serial is in Chrome and Edge only, and only on https or localhost */
+  if ("serial" in navigator) {
+    BoardButton.addEventListener("click", () => (Port ? BoardReader.cancel() : connectBoard()));
+  } else {
+    BoardButton.disabled = true;
+    BoardStatus.textContent = "a board needs Web Serial: Chrome or Edge";
+  }
   connect();
 </script>
 </body>

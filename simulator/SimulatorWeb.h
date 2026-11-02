@@ -62,6 +62,7 @@ class SimulatorWeb
     stdReturnType begin(uint16_t, const char*);
     void task(SimulatorPanel&);
     void send(const SimulatorPanel&);
+    static std::string convertToJsonString(const std::string&);
 };
 
 #endif

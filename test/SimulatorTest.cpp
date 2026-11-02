@@ -8,6 +8,7 @@
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
+#include "SimulatorWeb.h"
 
 static stdReturnType parse(SimulatorOptions& Options, std::vector<std::string> Arguments)
 {
@@ -80,4 +81,15 @@ TEST(SimulatorTest, StatusLineFollowsTheMounting)
     resetChainWithDistinctIntensities();
     Panel.setUpsideDown(true);
     EXPECT_EQ(SimulatorTerminal::getStatusLine(Panel), "FC16, 4 modules, upside down, intensity 0 1 2 3, 0 frames");
+}
+
+/* What a sketch prints goes to the page inside a JSON string, in a WebSocket text frame. A quote or backslash would end
+ * or break the string, and a byte that is not valid UTF-8, such as a latin-1 umlaut, makes the browser close the
+ * connection; so everything outside printable ASCII is written as \u00XX. */
+TEST(SimulatorTest, SerialOutputIsEscapedForJson)
+{
+    EXPECT_EQ(SimulatorWeb::convertToJsonString("ok\r\n"), "ok\\u000D\\u000A");
+    EXPECT_EQ(SimulatorWeb::convertToJsonString("say \"hi\" \\ bye"), "say \\\"hi\\\" \\\\ bye");
+    EXPECT_EQ(SimulatorWeb::convertToJsonString("\xE4"), "\\u00E4");
+    EXPECT_EQ(SimulatorWeb::convertToJsonString(std::string("\x00\x1F\x7F", 3)), "\\u0000\\u001F\\u007F");
 }

@@ -30,7 +30,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
 | 20 | More examples | 5 | in progress | |
-| 21 | Control page for simulator and board | 6 | open | |
+| 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
@@ -298,6 +298,16 @@ WebSocket, and against a real board over the browser's Web Serial API (Chromium-
 browsers), with the `SerialControl` example from 20 on the board. One page, no installer,
 no Windows. Inside the simulator, the commands reach the sketch through a simulated `Serial`.
 A program of its own beside the page, for Firefox users and without a browser, is 26.
+
+As built, every command goes to the simulator and to the board at once, whichever is
+connected, so with `SerialControl` in both the panel shows what the board should. The page
+sends `serial LINE` over the WebSocket, the simulator appends the line to the sketch's `Serial`,
+and what the sketch prints returns with the next panel; an answer that lights nothing asks for
+a panel of its own rather than waiting for the next frame. A click on an LED sends `setDot=`.
+The page is served by the simulator on `localhost`, which Web Serial takes as secure, so it
+drives a board alone as well; a page on GitHub Pages would be 17. Opening the port resets an
+Uno, so nothing goes to the board until `SerialControl` has said `ready`. The Web Serial side is
+tested against a fake port under Node, not yet with a board.
 
 ### 22 Fast pin access for bit banging
 

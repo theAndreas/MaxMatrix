@@ -56,6 +56,16 @@ set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
 gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
 
+# The script of the simulator's page, against stand-ins for the DOM, the WebSocket and a board on Web Serial. Node is no
+# part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
+find_program(NodeExecutable node)
+if(NodeExecutable)
+    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/PageTest.js
+                                         ${PROJECT_SOURCE_DIR}/simulator/index.html)
+else()
+    message(STATUS "node not found: the test simulator/page is left out")
+endif()
+
 # One library and one test binary per variant, because the two transfer paths are separate code.
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
@@ -87,6 +97,10 @@ function(add_maxmatrix_variant Variant)
     add_test(NAME ${Variant}/simulator/web
              COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
     set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
+    # SerialControl controlled the way the control page does it, on a port of its own.
+    add_test(NAME ${Variant}/simulator/control
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
+    set_tests_properties(${Variant}/simulator/control PROPERTIES RESOURCE_LOCK SimulatorControlPort)
 endfunction()
 
 # The library as the Arduino IDE builds it: everything under src/, each part in a folder of its own.
