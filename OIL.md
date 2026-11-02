@@ -36,7 +36,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
-| 27 | Errors that say what went wrong | 13 | in progress | #29, #30 |
+| 27 | Errors that say what went wrong | 13 | in progress | #29, #30, #31 |
 
 ### 1 Build with CMake
 
