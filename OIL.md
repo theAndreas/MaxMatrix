@@ -37,6 +37,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
+| 28 | Errors and containers from Utl | 27 | open | |
 
 ### 1 Build with CMake
 
@@ -448,6 +449,30 @@ costs on the Uno are in `docu/ErrorHandling.md`.
 *Done when* every function that can fail says why, the tests check each reason in both
 variants and with the switch on, and the PR gives flash and RAM of every example against
 today.
+
+### 28 Errors and containers from Utl
+
+27 set error domains aside, as their vtables cost RAM and keep their texts linked. The library
+[Utl](https://github.com/theAndreas/Utl) has since built the domain by its address out on its
+own, and found a way around both: a GCC plugin that moves the vtables into flash, leaving 2 bytes
+of RAM a group, and a switch that leaves the texts out. It also brings what avr-gcc lacks of the
+standard library: `array`, `span`, `optional`, `string_view`, and a `flash_string_view` that
+compares a line in RAM with a keyword in flash. What it showed is in `docu/ErrorHandling.md`,
+"Tried out: the domain by its address, in Utl".
+
+To decide is whether MaxMatrix takes it over:
+
+- `MaxMatrixStatus` and `MaxMatrixResult<T>` would become `utl::Status` and `utl::Result<T>`, with
+  a group `MaxMatrixError` of its own. Errors from outside the library, a sketch's own commands or
+  a transfer that can fail, would then pass through the same type.
+- `MaxMatrixCommand` compares the lines it is sent with `strcmp_P()` by hand; `string_view` and
+  `flash_string_view` would do that, and `span` could carry the picture buffers.
+- Against it: a dependency (`depends=Utl`) for every user, a style apart from the conventions
+  here, as Utl follows Google's, and the RAM of a vtable per group for a sketch built without the
+  plugin.
+
+After Utl is released, as a dependency has to come from the Library Manager. *Done when* it is
+decided, and if taken, the examples' flash and RAM against today are in the PR.
 
 ## Decisions
 
