@@ -48,8 +48,6 @@
 ******************************************************************************************************************************************************/
 /*! \brief          SimulatorWeb constructor
  *  \details        Instantiation of a web view that has logged no frame yet
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 SimulatorWeb::SimulatorWeb()
 {
@@ -83,7 +81,6 @@ bool SimulatorWeb::begin(uint16_t Port, char const* PagePath)
  *                  for the panel too: an answer such as "ok" changes no LED, and would otherwise wait for the next frame.
  *
  *  \param[in,out]  Panel           the panel the page's commands change
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWeb::task(SimulatorPanel& Panel)
 {
@@ -104,7 +101,6 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
  *                  and starts over with both
  *
  *  \param[in]      Panel           the panel to send
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWeb::send(SimulatorPanel const& Panel)
 {
@@ -156,8 +152,6 @@ std::string SimulatorWeb::convertToJsonString(std::string const& Text)
 /*! \brief          logs the last frame
  *  \details        this function writes the frame as address/value pairs, one pair per module, and keeps no more than
  *                  SIMULATOR_WEB_FRAME_LOG_LENGTH frames
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWeb::logFrame()
 {
@@ -185,7 +179,6 @@ void SimulatorWeb::logFrame()
  *
  *  \param[in,out]  Panel           the panel to change
  *  \param[in]      Message         the command
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWeb::command(SimulatorPanel& Panel, std::string const& Message)
 {

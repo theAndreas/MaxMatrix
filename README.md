@@ -8,6 +8,7 @@
 [![release](https://img.shields.io/github/v/release/theAndreas/MaxMatrix)](https://github.com/theAndreas/MaxMatrix/releases)
 
 This is an Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
+The reference of every class and function is on [GitHub Pages](https://theandreas.github.io/MaxMatrix/).
 
 Features:
 
@@ -44,11 +45,12 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_NUMBER_OF_MODULES`              | `4`       | number of chained 8x8 modules                         |
 | `MAXMATRIX_USE_SPI`                        | `STD_OFF` | use hardware SPI instead of `shiftOut()`              |
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
-| `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | meant for the digitalWriteFast library; has no effect yet, see [OIL.md](OIL.md) item 22 |
+| `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | meant for the digitalWriteFast library; has no effect yet, see [OIL.md](https://github.com/theAndreas/MaxMatrix/blob/main/OIL.md) item 22 |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `init()` (0 to 15)                |
 | `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
 | `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `MaxMatrixCommand`, in chars   |
+| `MAXMATRIX_DEV_ERROR_DETECT`               | `STD_OFF` | report every failed call, see [Functions](#functions)  |
 
 ## Usage
 
@@ -79,16 +81,16 @@ does not catch up.
 
 `setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MAXMATRIX_STATE_READY`.
 
-More examples can be found in [examples/](examples/):
+More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
 | Example | Shows |
 |---|---|
-| [Basics](examples/Basics/Basics.ino) | text, dots, rows, a picture drawn in one go, the intensity |
-| [ScrollText](examples/ScrollText/ScrollText.ino) | one text scrolling endlessly, without blocking `loop()` |
-| [Messages](examples/Messages/Messages.ino) | several texts in turn, each at its own speed, with umlauts |
-| [Animation](examples/Animation/Animation.ino) | a ball bouncing off the edges, one picture per step |
-| [Sprites](examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
-| [SerialControl](examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
+| [Basics](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Basics/Basics.ino) | text, dots, rows, a picture drawn in one go, the intensity |
+| [ScrollText](https://github.com/theAndreas/MaxMatrix/blob/main/examples/ScrollText/ScrollText.ino) | one text scrolling endlessly, without blocking `loop()` |
+| [Messages](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Messages/Messages.ino) | several texts in turn, each at its own speed, with umlauts |
+| [Animation](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Animation/Animation.ino) | a ball bouncing off the edges, one picture per step |
+| [Sprites](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
+| [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
 
 ## Coordinates
 
@@ -196,7 +198,7 @@ off with `setAutoUpdate(false)` and send with `update()` whenever the picture is
 | `setDot=5,3,1` | column, row, `1` for on and `0` for off |
 | `clear` | turns every LED off |
 
-A line ends in `\n` or `\r\n`. The [SerialControl](examples/SerialControl/SerialControl.ino) example reads them from
+A line ends in `\n` or `\r\n`. The [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) example reads them from
 `Serial` at 115200 baud and answers each with `ok`, or with `error: ` and the reason; the serial monitor of the
 Arduino IDE sends them with "Newline" as line ending:
 

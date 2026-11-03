@@ -27,10 +27,10 @@
  *  GLOBAL CONSTANT MACROS
  *****************************************************************************************************************************************************/
  /* standard type for configuration */
-#define STD_ON					1u
-#define STD_OFF					0u
+#define STD_ON					1u      /*!< a switch of the configuration turned on */
+#define STD_OFF					0u      /*!< a switch of the configuration turned off */
 
-#define STD_NULL_CHARACTER		'\0'
+#define STD_NULL_CHARACTER		'\0'    /*!< the end of a text */
 
 
 #endif

@@ -14,7 +14,7 @@
  *      \details    Every module in the chain gets one address/value pair per frame, module 0 first; a module that is not
  *                  addressed gets the no-op. The bytes go out through transfer(), the only place that knows whether
  *                  they are bit banged or sent by hardware SPI - before, every function that sent a frame had its own
- *                  loop with its own #if.
+ *                  loop with its own \#if.
  *
  *****************************************************************************************************************************************************/
 #define _MAXMATRIX_CHAIN_SOURCE_
@@ -44,7 +44,6 @@
  *  \param[in]      sDataInPin         number of the Data Input Pin
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrixChain::MaxMatrixChain(byte sDataInPin, byte sChipSelectPin, byte sClockPin)
 {
@@ -60,7 +59,6 @@ MaxMatrixChain::MaxMatrixChain(byte sDataInPin, byte sChipSelectPin, byte sClock
 /*! \brief          initialization of the pins and the MAX7219
  *  \details        this function initializes the IO hardware and sets every MAX7219 up to drive an 8x8 matrix:
  *                  all eight digits, no decoding, normal operation
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::init()
 {
@@ -98,7 +96,6 @@ void MaxMatrixChain::init()
  *
  *  \param[in]      RegisterAddress     address of the MAX7219 register
  *  \param[in]      RegisterValue       register value
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::writeRegisterAll(byte RegisterAddress, byte RegisterValue)
 {
@@ -116,7 +113,6 @@ void MaxMatrixChain::writeRegisterAll(byte RegisterAddress, byte RegisterValue)
  *
  *  \param[in]      RegisterAddress     address of the MAX7219 register
  *  \param[in]      RegisterValues      one value per module, module 0 first
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, byte const* RegisterValues)
 {
@@ -136,7 +132,6 @@ void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, byte const* Registe
 /*! \brief          start transmission to MAX7219
  *  \details        this function pulls chip select low, in SPI mode the SPI bus will be reserved too
  *
- *  \return         -
  *  \post           stopTransmission() has to be called after data was transferred
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::startTransmission() /* NOLINT(readability-make-member-function-const) */
@@ -159,7 +154,6 @@ void MaxMatrixChain::startTransmission() /* NOLINT(readability-make-member-funct
  *  \details        this function pulls chip select high, so the MAX7219 latches the transferred data.
  *                  In SPI mode the SPI bus will be released for other devices.
  *
- *  \return         -
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::stopTransmission() /* NOLINT(readability-make-member-function-const) */
@@ -183,7 +177,6 @@ void MaxMatrixChain::stopTransmission() /* NOLINT(readability-make-member-functi
  *
  *  \param[in]      RegisterAddress     address of the MAX7219 register
  *  \param[in]      RegisterValue       register value
- *  \return         -
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
 /* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */

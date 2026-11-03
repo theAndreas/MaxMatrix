@@ -41,7 +41,6 @@
  *
  *  \param[in]      Api         the name of the function of MaxMatrix that failed, in flash
  *  \param[in]      Error       why it failed
- *  \return         -
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
 __attribute__((weak)) void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
@@ -60,7 +59,6 @@ __attribute__((weak)) void maxMatrixReportError(__FlashStringHelper const* Api, 
  *
  *  \param[in]      Api         the name of the function of MaxMatrix that failed, in flash
  *  \param[in]      Error       why it failed
- *  \return         -
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
 void maxMatrixPrintError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)

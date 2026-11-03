@@ -174,7 +174,6 @@ std::string SimulatorWebSocket::convertKeyToAcceptKey(std::string const& Key)
  *
  *  \param[in]      Message         the bytes to hash
  *  \param[out]     Digest          the hash, SIMULATOR_WEB_SOCKET_SHA1_LENGTH bytes
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebSocket::calculateSha1(std::string const& Message, uint8_t* Digest)
 {
@@ -284,7 +283,6 @@ std::string SimulatorWebSocket::padSha1Message(std::string const& Message)
  *
  *  \param[in]      Block           SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH bytes of the padded message
  *  \param[in,out]  State           the five words of the hash so far
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebSocket::processSha1Block(uint8_t const* Block, uint32_t* State)
 {

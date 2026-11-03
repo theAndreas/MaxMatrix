@@ -38,7 +38,6 @@
  *  \param[in]      sDataInPin         number of the Data Input Pin
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrix::MaxMatrix(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Panel(sDataInPin, sChipSelectPin, sClockPin)
 {
@@ -65,7 +64,6 @@ MaxMatrix::~MaxMatrix()
  *  \details        this function initializes the IO hardware and the MAX7219 controller
  *                  all LEDs of the matrix will be cleared and intensity will be set to init value.
  *                  The cleared matrix is sent even with AutoUpdate off: after power-up the LEDs show anything.
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrix::init()
 {
@@ -91,7 +89,6 @@ void MaxMatrix::init()
  *                  only when ShiftInterval has passed since the last one, and with an interval of 0 on every call.
  *                  A call that comes late takes one step, not the ones it missed: catching up would make the text
  *                  jump after loop() was held up, and the interval counts from this step on.
- *  \return         -
  *  \pre            setCharWithShift or setTextWithShift must be called first
  *****************************************************************************************************************************************************/
 void MaxMatrix::shiftTask()
@@ -119,7 +116,6 @@ void MaxMatrix::shiftTask()
  *                  when update() is called. Switching it on sends what was drawn while it was off.
  *
  *  \param[in]      sAutoUpdate     true to send after every call that draws
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrix::setAutoUpdate(bool sAutoUpdate)
 {
@@ -198,7 +194,6 @@ MaxMatrixStatus MaxMatrix::setTextWithShift(char* sString)
  *                  comes on the next call of shiftTask() rather than an interval later
  *
  *  \param[in]      ShiftState      MAXMATRIX_STATE_CHAR_SHIFT or MAXMATRIX_STATE_STRING_SHIFT
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrix::startShift(MaxMatrixStateType ShiftState)
 {

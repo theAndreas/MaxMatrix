@@ -47,8 +47,6 @@
 ******************************************************************************************************************************************************/
 /*! \brief          MaxMatrixCommand constructor
  *  \details        Instantiation of a reader at the start of an empty line
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrixCommand::MaxMatrixCommand()
 {
@@ -64,7 +62,7 @@ MaxMatrixCommand::MaxMatrixCommand()
 ******************************************************************************************************************************************************/
 /*! \brief          takes the next char of a command line
  *  \details        this function collects the chars up to a line feed and then carries the line out. A carriage return
- *                  is skipped, so that lines may end in \r\n as well; an empty line is no command. A line too long for
+ *                  is skipped, so that lines may end in \\r\\n as well; an empty line is no command. A line too long for
  *                  the buffer is dropped whole, rather than carried out cut short.
  *
  *  \param[in,out]  Matrix      the matrix the command acts on
