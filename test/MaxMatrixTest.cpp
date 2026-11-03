@@ -4,6 +4,7 @@
  * two transfer paths are separate code. What this cannot show is anything about timing or the electrical
  * side - whether a real MAX7219 accepts the frames is only known on hardware. */
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -802,14 +803,14 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match)
     EXPECT_EQ(Utf8, Latin1);
 }
 
-TEST_F(MaxMatrixTest, EveryUmlautHasItsOwnSprite)
+TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnSprite)
 {
-    char const* Umlauts[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü" };
+    char const* Chars[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü", "ß", "°" };
     char Char;
 
-    for(byte i = 0; i < 6; i++) {
-        SCOPED_TRACE(Umlauts[i]);
-        EXPECT_EQ(MaxMatrixFont::decodeChar(Umlauts[i], &Char), 2);
+    for(byte i = 0; i < 8; i++) {
+        SCOPED_TRACE(Chars[i]);
+        EXPECT_EQ(MaxMatrixFont::decodeChar(Chars[i], &Char), 2);
         MaxMatrixResult<spriteIndexType> SpriteIndex = MaxMatrixFont::convertCharToSprite(Char);
         EXPECT_EQ(SpriteIndex.getError(), MAXMATRIX_E_OK);
         EXPECT_EQ(SpriteIndex.getValue(), 95 + i);
@@ -820,6 +821,21 @@ TEST_F(MaxMatrixTest, EveryUmlautHasItsOwnSprite)
     EXPECT_EQ(Matrix.getSprite(97, &Ue).getError(), MAXMATRIX_E_OK);
     EXPECT_EQ(Matrix.getSprite('O' + MAXMATRIX_ASCII_TABLE_OFFSET, &O).getError(), MAXMATRIX_E_OK);
     EXPECT_NE(bytes(Ue, sizeof(Ue)), bytes(O, sizeof(O)));
+}
+
+/* Bug: the font had no ß and no °, so setText() failed on them and a shifting text, "Grüße" or "21 °C", lost them
+ * without a word */
+TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn)
+{
+    char const* Texts[] = { "ß", "°", "\xDF", "\xB0" };
+
+    for(char const* Text : Texts) {
+        SCOPED_TRACE(Text);
+        Matrix.clear();
+        EXPECT_EQ(Matrix.setText(Text).getError(), MAXMATRIX_E_OK);
+        std::vector<byte> const Shown = display();
+        EXPECT_TRUE(std::any_of(Shown.begin(), Shown.end(), [](byte Column) { return Column != 0; }));
+    }
 }
 
 TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)

@@ -135,6 +135,8 @@ spriteType const SpriteTable[] PROGMEM = {
     {4,      8,      B00100000,  B01010110,  B01010110,  B01111000,  B00000000}, // ä
     {4,      8,      B00111000,  B01000110,  B01000110,  B00111000,  B00000000}, // ö
     {4,      8,      B00111100,  B01000010,  B01000010,  B01111100,  B00000000}, // ü
+    {4,      8,      B11111110,  B00000001,  B01001001,  B00110110,  B00000000}, // ß
+    {3,      8,      B00000010,  B00000101,  B00000010,  B00000000,  B00000000}, // °
 };
 
 
@@ -197,13 +199,15 @@ MaxMatrixResult<spriteIndexType> MaxMatrixFont::convertCharToSprite(char Char)
 {
     byte const Latin1 = static_cast<byte>(Char);
 
-    /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
+    /* the chars beyond ASCII by their latin-1 codes, which are independent of the source file's encoding */
     if(0xC4 == Latin1) return static_cast<spriteIndexType>(95);             // Ä
     else if(0xD6 == Latin1) return static_cast<spriteIndexType>(96);        // Ö
     else if(0xDC == Latin1) return static_cast<spriteIndexType>(97);        // Ü
     else if(0xE4 == Latin1) return static_cast<spriteIndexType>(98);        // ä
     else if(0xF6 == Latin1) return static_cast<spriteIndexType>(99);        // ö
     else if(0xFC == Latin1) return static_cast<spriteIndexType>(100);       // ü
+    else if(0xDF == Latin1) return static_cast<spriteIndexType>(101);       // ß
+    else if(0xB0 == Latin1) return static_cast<spriteIndexType>(102);       // °
     /* for all others only add offset */
     else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
         return static_cast<spriteIndexType>(Char + MAXMATRIX_ASCII_TABLE_OFFSET);

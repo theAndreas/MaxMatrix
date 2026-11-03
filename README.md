@@ -13,7 +13,7 @@ The reference of every class and function is on [GitHub Pages](https://theandrea
 Features:
 
 - set and get single dots, rows and columns, in the same coordinates on every type of module
-- print chars and text (ASCII 32 to 126 and German umlauts, variable char width)
+- print chars and text (ASCII 32 to 126, the German umlauts, ß and °, variable char width)
 - shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps
 - shift the matrix content left, right, up and down, with or without rotation
 - send a picture drawn with many calls at once, in at most eight frames
@@ -257,8 +257,9 @@ How the bytes of the MAX7219 lie on the LEDs in each module orientation is drawn
 does not need it, only work on the library does.
 
 ## Umlauts
-The German umlauts Ä, Ö, Ü, ä, ö and ü are supported in texts. `setText()` and `setTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
-`setChar()` and `setCharWithShift()` take a single `char`, so umlauts have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä.
+The German umlauts Ä, Ö, Ü, ä, ö and ü, the ß and the degree sign ° are supported in texts. `setText()` and `setTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
+`setChar()` and `setCharWithShift()` take a single `char`, so these have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä, `'\xDF'` for ß or `'\xB0'` for °.
+The € is not in ISO 8859-1, and its three bytes of UTF-8 are not read.
 While shifting a text, chars which are not part of the font are skipped.
 
 ## Development
