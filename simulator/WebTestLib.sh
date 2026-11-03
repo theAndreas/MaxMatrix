@@ -10,10 +10,10 @@ fail() {
     Failed=1
 }
 
-# startSimulator SIMULATOR PORT SECONDS - runs it with --for, so it stops on its own even when a test does not get as
+# startSimulator SIMULATOR PORT SECONDS [ARGUMENT...] - runs it with the arguments and --for, so it stops on its own even when a test does not get as
 # far as waiting for it; returns once the port answers, which it does before setup() runs
 startSimulator() {
-    "$1" --web --port "$2" --for "$3" > /dev/null &
+    "$1" "${@:4}" --web --port "$2" --for "$3" > /dev/null &
     SimulatorProcess=$!
     for Try in $(seq 50); do
         curl -s -o /dev/null "http://localhost:$2/" && return 0

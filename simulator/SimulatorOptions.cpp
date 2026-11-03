@@ -43,6 +43,7 @@ SimulatorOptions::SimulatorOptions()
     Port = SIMULATOR_OPTIONS_DEFAULT_PORT;
     RunFor = 0;
     ExpectFile = nullptr;
+    ElfFile = nullptr;
 } /* SimulatorOptions */
 
 
@@ -77,7 +78,9 @@ bool SimulatorOptions::parse(int argc, char** argv)
  *****************************************************************************************************************************************************/
 void SimulatorOptions::printUsage(char const* Program)
 {
-    fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]\n", Program);
+    fprintf(stderr, "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]\n", Program);
+    fprintf(stderr, "         [--for SECONDS [--expect FILE]]\n");
+    fprintf(stderr, "  FILE of --elf: the example built for the Uno; SimulatorAvr only, which needs it\n");
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
 } /* printUsage */
 
@@ -115,6 +118,10 @@ bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
         if(!convertToRunFor(argv[++*Index], &RunFor)) return false;
     } else if(Option == "--expect" && HasValue) {
         ExpectFile = argv[++*Index];
+    } else if(Option == "--elf" && HasValue) {
+        ElfFile = argv[++*Index];
+    } else if(Option == "--serial" && HasValue) {
+        SerialInput += std::string(argv[++*Index]) + "\n";
     } else return false;
     return true;
 } /* parseOption */

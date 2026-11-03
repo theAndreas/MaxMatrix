@@ -11,13 +11,14 @@ FROM ${BASE_IMAGE}
 # CMake, Ninja and GoogleTest build and run the host-side tests; clangd gives the editor its
 # IntelliSense, from the compilation database CMake writes into build/. clang-tidy, cppcheck and
 # python3 (for tools/cross-clang-tidy.py) run what .github/workflows/static-analysis.yml runs,
-# Doxygen what docs.yml runs.
+# Doxygen what docs.yml runs. simavr, as a library, runs the examples' .elf for the tests avr/.
 # From apt rather than
 # pinned like the tools below: the distribution's versions are what CI installs as well, and
 # none of them has a bug that forces a newer release.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        cmake ninja-build libgtest-dev clangd clang-tidy cppcheck python3 doxygen && \
+        cmake ninja-build libgtest-dev clangd clang-tidy cppcheck python3 doxygen \
+        libsimavr-dev libelf-dev pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which

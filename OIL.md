@@ -38,7 +38,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 26 | Control program for Linux and Windows | 20 | open | |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
-| 29 | The real binary against the model, in simavr | 3 | open | |
+| 29 | The real binary against the model, in simavr | 3 | done | #41 |
 
 ### 1 Build with CMake
 
@@ -552,6 +552,15 @@ eight wirings and both transfer paths.
 Simulated time is exact, so a moving example can be checked at a fixed time as well, which the
 simulator on the host clock cannot. It needs no account, unlike Wokwi in CI (11). It does not
 replace a run on a board: the timing of a real MAX7219 and its wiring are not simulated.
+
+As built, `build/SimulatorAvr --elf FILE` is the simulator of 5 for the `.elf`: simavr runs it, and
+its pins, its SPI output and its UART drive the `Mock::` variables the Arduino stand-in drives, so
+that the panel, the terminal and the page work unchanged, `SerialControl` included. The model now
+shifts bit by bit, as the MAX7219 does, since bit banging clocks single bits; a byte is eight of
+them. CMake builds every example with `arduino-cli`, with bit banging and with SPI, and the tests
+`avr/` compare each panel at a simulated time with `simulator/EXAMPLE.txt`: both transfer paths
+light the same, and the panels are the ones the examples are meant to show. Bit banging with the
+low bit first fails all six of its tests. The CI job "Examples in simavr" runs them.
 
 
 Why it is planned this way rather than the obvious alternative.

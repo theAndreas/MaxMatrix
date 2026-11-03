@@ -11,8 +11,8 @@
 /**     \file       main.cpp
  *      \brief      Runs an example sketch from examples/ on the host and draws the LED panel
  *
- *      \details    build/Simulator-ScrollText-bitbang [--wiring FC16] [--upside-down] [--web [--port PORT]]
- *                                                     [--for SECONDS [--expect FILE]]
+ *      \details    build/Simulator-ScrollText-bitbang [--wiring FC16] [--upside-down] [--serial LINE]...
+ *                                                     [--web [--port PORT]] [--for SECONDS [--expect FILE]]
  *
  *                  The sketch is compiled unchanged against the Arduino stand-in and the MAX7219 model in test/mock/:
  *                  setup() runs once, loop() over and over, millis() and delay() on the host clock.
@@ -20,6 +20,8 @@
  *                  Without --for it runs until Ctrl+C and redraws the panel in the terminal. With --for it runs that
  *                  long, prints the panel once and exits; --expect then compares the printout with a file and fails on
  *                  a difference.
+ *
+ *                  --serial hands the sketch's Serial a line to read, as if it was typed; each one given is read in turn.
  *
  *                  --web draws in a browser instead, on http://localhost:8080/ (simulator/index.html). --port picks
  *                  another port, so that two simulators, or a simulator and the tests, can run side by side.
@@ -153,12 +155,14 @@ static bool begin()
  *****************************************************************************************************************************************************/
 int main(int argc, char** argv)
 {
-    if(!Options.parse(argc, argv) || !Panel.setWiring(Options.getWiringName())) {
+    /* the sketch is built in; an .elf is for SimulatorAvr */
+    if(!Options.parse(argc, argv) || Options.getElfFile() != nullptr || !Panel.setWiring(Options.getWiringName())) {
         SimulatorOptions::printUsage(argv[0]);
         return SIMULATOR_EXIT_USAGE;
     }
     Panel.setUpsideDown(Options.isUpsideDown());
     Mock::reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    Mock::SerialInput = Options.getSerialInput();
     Mock::Tick = tick;
     if(!begin()) return SIMULATOR_EXIT_FAILED;
 

@@ -64,14 +64,23 @@ void Max7219Chain::reset(uint8_t NumberOfChips)
     ShiftRegister.assign(2 * NumberOfChips, 0);
 }
 
-/* The MAX7219 shifts on every rising clock edge, whatever chip select does - unlike the MAX7221, which needs it low.
- * The byte that falls out of one chip's register goes into the next, so a frame of one pair per chip leaves the
- * first pair sent in the chip at the far end. */
+/* a byte as the wire carries it, most significant bit first */
 void Max7219Chain::shift(uint8_t Value)
 {
+    for(int8_t Bit = 7; Bit >= 0; Bit--) shiftBit((Value >> Bit) & 0x01);
+}
+
+/* The MAX7219 shifts one bit on every rising clock edge, whatever chip select does - unlike the MAX7221, which needs
+ * it low. The bit that falls out of one chip's register goes into the next, so a frame of one pair per chip leaves
+ * the first pair sent in the chip at the far end. Bit by bit rather than byte by byte, so that a frame that is not a
+ * whole number of bytes, which bit banging can send, latches what the hardware would. */
+void Max7219Chain::shiftBit(bool Value)
+{
     if(ShiftRegister.empty()) return;
-    for(size_t i = ShiftRegister.size() - 1; i > 0; i--) ShiftRegister[i] = ShiftRegister[i - 1];
-    ShiftRegister[0] = Value;
+    for(size_t i = ShiftRegister.size() - 1; i > 0; i--) {
+        ShiftRegister[i] = static_cast<uint8_t>((ShiftRegister[i] << 1) | (ShiftRegister[i - 1] >> 7));
+    }
+    ShiftRegister[0] = static_cast<uint8_t>((ShiftRegister[0] << 1) | (Value ? 1 : 0));
 }
 
 /* every chip latches whatever its register holds on the rising edge of chip select - after a frame that was too

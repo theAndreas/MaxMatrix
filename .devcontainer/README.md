@@ -19,6 +19,7 @@ Container**:
 | `clangd` (apt) | IntelliSense, see below |
 | `clang-tidy`, `cppcheck`, `python3` (apt) | the static analysis of `.github/workflows/static-analysis.yml`, see `.clang-tidy` |
 | `doxygen` (apt) | the reference of `.github/workflows/docs.yml`: `tools/docs.py` |
+| `libsimavr-dev` (apt) | `build/SimulatorAvr`, the examples' `.elf` on a simulated Uno, and the tests `avr/` |
 | `gh` | branches and pull requests from the container |
 
 Compile an example for an Arduino Uno:

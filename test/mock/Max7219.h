@@ -57,6 +57,7 @@ class Max7219Chain {
 
     void reset(uint8_t NumberOfChips);
     void shift(uint8_t Value);
+    void shiftBit(bool Value);
     void latch();
     bool isLit(Max7219WiringType const& Wiring, uint16_t X, uint8_t Y, bool UpsideDown = false) const;
     Max7219 const& chipAt(uint16_t X, bool UpsideDown = false) const;

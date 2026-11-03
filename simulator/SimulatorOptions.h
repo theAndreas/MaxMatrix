@@ -11,7 +11,8 @@
 /**     \file       SimulatorOptions.h
  *      \brief      The command line of the simulator
  *
- *      \details    [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]
+ *      \details    [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]
+ *                  [--for SECONDS [--expect FILE]]
  *
  *****************************************************************************************************************************************************/
 #ifndef _SIMULATOR_OPTIONS_H_
@@ -36,7 +37,8 @@
 /******************************************************************************************************************************************************
  *  CLASS  SimulatorOptions
  *****************************************************************************************************************************************************/
-/* Only reads the command line; whether the wiring exists is the panel's to say, which knows the names. */
+/* Only reads the command line; whether the wiring exists is the panel's to say, which knows the names, and whether a
+ * simulator takes an .elf is its own: SimulatorAvr needs one, the simulator a sketch is built into refuses it. */
 class SimulatorOptions
 {
   private:
@@ -46,6 +48,8 @@ class SimulatorOptions
     uint16_t Port;
     uint32_t RunFor;
     char const* ExpectFile;
+    char const* ElfFile;
+    std::string SerialInput;
 
     bool parseOption(int, char**, int*);
     static bool convertToPort(char const*, uint16_t*);
@@ -61,6 +65,9 @@ class SimulatorOptions
     uint16_t getPort() const { return Port; }
     uint32_t getRunFor() const { return RunFor; }
     char const* getExpectFile() const { return ExpectFile; }
+    char const* getElfFile() const { return ElfFile; }
+    /* the lines of every --serial, each ended with a line feed, for the sketch's Serial to read */
+    std::string const& getSerialInput() const { return SerialInput; }
 
     // methods
     bool parse(int, char**);

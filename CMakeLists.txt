@@ -129,3 +129,61 @@ add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
 add_executable(DocuPictures docu/DocuPictures.cpp docu/DocuSvg.cpp)
 target_link_libraries(DocuPictures PRIVATE MaxMatrix-bitbang)
 add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/docu)
+
+# The examples as the Uno runs them: the .elf avr-gcc makes of each, with bit banging and with SPI, in simavr against the
+# MAX7219 model. Both transfer paths have to light what the one expectation of an example says, at a simulated time,
+# which ends the same every run, so that a moving example is checked as well. Needs arduino-cli with the AVR core and
+# simavr; left out where either is missing, as in the host-tests job of CI.
+find_program(ArduinoCli arduino-cli)
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+    pkg_check_modules(Simavr IMPORTED_TARGET simavr)
+endif()
+if(ArduinoCli AND Simavr_FOUND)
+    add_executable(SimulatorAvr simulator/mainAvr.cpp simulator/SimulatorAvr.cpp)
+    target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
+    target_compile_definitions(SimulatorAvr PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
+
+    # an example, the simulated seconds it runs for, and the --serial lines it is sent; its expectation is
+    # simulator/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one
+    set(AvrRuns "Basics|1|" "ScrollText|2|" "Messages|3|" "Animation|1|" "Sprites|1.5|" "SerialControl|1|text=AVR")
+    file(GLOB_RECURSE LibraryHeaders CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.h)
+    set(AvrElfs)
+    foreach(Transfer bitbang spi)
+        set(TransferFlags)
+        if(Transfer STREQUAL "spi")
+            set(TransferFlags --build-property "compiler.cpp.extra_flags=-DMAXMATRIX_USE_SPI=STD_ON")
+        endif()
+        foreach(Run ${AvrRuns})
+            string(REPLACE "|" ";" Run "${Run}")
+            list(GET Run 0 Example)
+            list(GET Run 1 Seconds)
+            list(GET Run 2 Serial)
+            set(Directory ${CMAKE_BINARY_DIR}/avr/${Transfer}/${Example})
+            add_custom_command(OUTPUT ${Directory}/${Example}.ino.elf
+                               COMMAND ${ArduinoCli} compile --fqbn arduino:avr:uno --library ${PROJECT_SOURCE_DIR}
+                                       ${TransferFlags} --build-path ${Directory}/build --output-dir ${Directory}
+                                       ${PROJECT_SOURCE_DIR}/examples/${Example}
+                               DEPENDS ${PROJECT_SOURCE_DIR}/examples/${Example}/${Example}.ino ${LibrarySources}
+                                       ${LibraryHeaders}
+                               COMMENT "arduino-cli: ${Example} for the Uno, ${Transfer}")
+            list(APPEND AvrElfs ${Directory}/${Example}.ino.elf)
+            set(SerialArguments)
+            if(Serial)
+                set(SerialArguments --serial ${Serial})
+            endif()
+            add_test(NAME avr/${Transfer}/${Example}
+                     COMMAND SimulatorAvr --elf ${Directory}/${Example}.ino.elf ${SerialArguments} --for ${Seconds}
+                             --expect ${PROJECT_SOURCE_DIR}/simulator/${Example}.txt)
+        endforeach()
+        # SerialControl controlled as the page does, through the UART of the AVR; on a port of its own, one transfer
+        # path at a time.
+        add_test(NAME avr/${Transfer}/control
+                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:SimulatorAvr> 18083
+                         --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
+        set_tests_properties(avr/${Transfer}/control PROPERTIES RESOURCE_LOCK SimulatorAvrControlPort)
+    endforeach()
+    add_custom_target(AvrExamples ALL DEPENDS ${AvrElfs})
+else()
+    message(STATUS "arduino-cli or simavr not found: the tests avr/ are left out")
+endif()

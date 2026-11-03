@@ -37,7 +37,12 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
     from the page reaches the sketch's `Serial`, and what the sketch prints goes back in the JSON.
   - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
     ported from Wordclock; the protocol works on strings only, so it is tested without a network.
-  `Basics.txt` is the panel a test expects one second into `Basics` on an FC-16 board;
+  - `mainAvr.cpp` / `SimulatorAvr` — the same simulator for the `.elf` `avr-gcc` makes of an
+    example (`--elf`): simavr runs it on an ATmega328P, its pins 10, 11 and 13 and its SPI output
+    drive the model, its UART is `Serial`. It writes the `Mock::` variables the Arduino stand-in
+    writes, so panel, terminal and page work unchanged.
+  `EXAMPLE.txt` is the panel a test expects of an example at a time CMake names, `Basics.txt`
+  one second into `Basics` on an FC-16 board;
   `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the commands of
   the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`), and `PageTest.js`
   the page's own script, against stand-ins for the DOM, the WebSocket and a board on Web Serial.
@@ -349,6 +354,17 @@ command line and the status line against the model, all once under the `simulato
 all of the simulator but `main.cpp` is one library, built once, because it reads the model and 
 never the library.
 
+The tests under `avr/` run what the Uno runs: CMake builds every example with `arduino-cli`, with
+bit banging and with SPI, into `build/avr/`, and `SimulatorAvr` runs each `.elf` for a simulated
+time and compares the panel with `simulator/EXAMPLE.txt`, the same file for both transfer paths.
+The time is simulated, so a moving example ends with the same panel every run, which the
+simulator on the host clock cannot promise. `avr/*/control` is `simulator/control` against the
+`.elf` of `SerialControl`, on port 18083; with `--web`, `SimulatorAvr` keeps to the host's clock,
+as the page does. CMake leaves the tests out where `arduino-cli` or simavr is missing, as in the
+host-tests job of CI; the job "Examples in simavr" runs them. A new example gets a line in
+`AvrRuns` in `CMakeLists.txt` and its `.txt`, written from a run of `SimulatorAvr` whose panel
+has been looked at.
+
 **A bug fix comes with a test that fails without the fix.** Put the bug back and run the
 tests before committing; a test that stays green then does not test the bug. The comment above
 the test names the bug it guards against.
@@ -362,8 +378,10 @@ The define comes after the GoogleTest and standard headers, which it would rewri
 
 ### Hardware
 
-Nothing here reaches real hardware. A change to the transfer code (chip select, SPI, bit
-banging) is untested until it has run on a matrix, and the pull request says so.
+Nothing here reaches real hardware. The tests under `avr/` run the transfer code as the Uno
+runs it, but against the model, not against a MAX7219 and its timing on a real wire. A change
+to the transfer code (chip select, SPI, bit banging) is untested until it has run on a matrix,
+and the pull request says so.
 
 ## Delivering a change
 
