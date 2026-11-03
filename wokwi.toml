@@ -1,0 +1,7 @@
+# Wokwi runs the real AVR binary of an example on a Uno with four FC-16 modules, diagram.json.
+# tools/wokwi.py EXAMPLE builds the example into the two files below; then "Wokwi: Start
+# Simulator" in VS Code runs it. A complement to simulator/, see the README.
+[wokwi]
+version = 1
+firmware = 'build/wokwi/sketch.hex'
+elf = 'build/wokwi/sketch.elf'

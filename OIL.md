@@ -20,7 +20,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 8  | Batched updates in the library | 13 | done | #20 |
 | 9  | Mirrored modules in the library | 25 | open | |
 | 10 | Adafruit GFX as an option | 8 | open | |
-| 11 | Wokwi as a complement | – | open | |
+| 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
@@ -38,6 +38,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 26 | Control program for Linux and Windows | 20 | open | |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | open | |
+| 29 | The real binary against the model, in simavr | 3 | open | |
 
 ### 1 Build with CMake
 
@@ -157,6 +158,15 @@ whose pricing page is the only one listing CI minutes.
 
 A complement to the simulator, not a replacement: it has two of the eight wirings, no view of
 the frames and no test framework.
+
+As built, `diagram.json` and `wokwi.toml` in the root put a Uno and four FC-16 modules on pins 11,
+10 and 13, as the examples use them, and `tools/wokwi.py EXAMPLE [--spi]` builds an example into
+the one file `wokwi.toml` names. It is there to look at, in the VS Code extension, not in CI.
+
+`wokwi-cli` does run in CI on the free plan, with a token of a Wokwi account as a secret: 50
+minutes of simulated time in 30 days, five per run. It could even compare a screenshot of the
+matrix with a picture at a fixed simulated time. But a check that needs an account and a budget,
+and fails when Wokwi draws its LEDs differently, is worse than the one in 29, which needs neither.
 
 ### 12 Later ideas
 
@@ -515,7 +525,20 @@ To decide is whether MaxMatrix takes it over:
 After Utl is released, as a dependency has to come from the Library Manager. *Done when* it is
 decided, and if taken, the examples' flash and RAM against today are in the PR.
 
-## Decisions
+### 29 The real binary against the model, in simavr
+
+The tests and the simulator build the library with the host's `g++`, against the mock; what the
+Uno runs - `avr-gcc`'s code, the bit banging with `shiftOut()` and the SPI peripheral - is only
+compiled, never run. simavr runs it: the `.elf` of an example, on a simulated ATmega328P, as Utl
+runs its `SelfCheck`. A program on the host would load it with simavr as a library, hang the
+MAX7219 model of `test/mock/Max7219.h` on the pins (DIN, CS and CLK, or the SPI output), and
+compare what lights up with an expectation in the format of `simulator/Basics.txt`, for any of the
+eight wirings and both transfer paths.
+
+Simulated time is exact, so a moving example can be checked at a fixed time as well, which the
+simulator on the host clock cannot. It needs no account, unlike Wokwi in CI (11). It does not
+replace a run on a board: the timing of a real MAX7219 and its wiring are not simulated.
+
 
 Why it is planned this way rather than the obvious alternative.
 
