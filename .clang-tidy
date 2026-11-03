@@ -16,12 +16,12 @@
 #   cmake --preset default
 #   run-clang-tidy -p build -quiet "$PWD/(src|simulator)/"
 #
-# and over the Uno's, through tools/cross-clang-tidy.py: the same checks, with the database
+# and over the Uno's, through tools/cross_clang_tidy.py: the same checks, with the database
 # rewritten so that clang can read what avr-gcc was told, where an int has 16 bits:
 #
 #   arduino-cli compile --fqbn arduino:avr:uno --library . --only-compilation-database \
 #                       --build-path build/avr examples/SerialControl
-#   python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+#   python3 tools/cross_clang_tidy.py build/avr "$PWD/src/"
 #
 Checks: >
   -*,
@@ -46,7 +46,7 @@ Checks: >
 #
 # bugprone-too-small-loop-variable
 #   A byte counting the columns, while MAXMATRIX_NUMBER_OF_COLUMNS is an int. The check
-#   reads the types, not the values: MaxMatrixConfig.h asserts that the columns fit into a
+#   reads the types, not the values: max_matrix_config.h asserts that the columns fit into a
 #   byte, which every index into matrix_buffer_ relies on, not only the loops.
 #
 # cert-err33-c

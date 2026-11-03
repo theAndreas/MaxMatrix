@@ -11,7 +11,7 @@
 # clang-tidy reads the library twice, because an int is 32 bit on the host and 16 on the Uno,
 # and a check that only ever saw the host would never meet the code the way the board does:
 # once through the host build's database, which also covers the simulator, and once through
-# the one arduino-cli writes for the Uno, rewritten by tools/cross-clang-tidy.py so that clang
+# the one arduino-cli writes for the Uno, rewritten by tools/cross_clang_tidy.py so that clang
 # can follow what avr-gcc was told.
 #
 # Which checks are on, and why the rest are off, is in .clang-tidy, not here.
@@ -96,7 +96,7 @@ jobs:
             --build-path build/avr examples/SerialControl
 
       - name: Analyse
-        run: python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+        run: python3 tools/cross_clang_tidy.py build/avr "$PWD/src/"
 
   cppcheck:
     name: cppcheck

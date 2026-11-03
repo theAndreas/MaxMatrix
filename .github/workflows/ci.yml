@@ -150,4 +150,4 @@ jobs:
 
       # The runner's python3; the tool needs nothing else.
       - name: Check
-        run: python3 tools/east-const.py
+        run: python3 tools/east_const.py

@@ -1,7 +1,7 @@
 # How the modules are wired
 
-A sketch never sees this: it works in the coordinates of [Coordinates.svg](Coordinates.svg), which are the same
-in every module orientation once it fits the module. The pictures below are for working on `src/Matrix/`, where
+A sketch never sees this: it works in the coordinates of [coordinates.svg](coordinates.svg), which are the same
+in every module orientation once it fits the module. The pictures below are for working on `src/matrix/`, where
 `MaxMatrixPanel::ConvertDotToBuffer()` maps a dot as the viewer sees it to a byte and a bit of `matrix_buffer_`.
 
 Each LED is labelled `byte.bit`. Byte *n* of a module is digit register *n* of its MAX7219 and
@@ -11,23 +11,23 @@ orientation 180 turns the whole panel on top of them.
 
 ## Module orientation 0
 
-![Module orientation 0](Wiring_0.svg)
+![Module orientation 0](wiring_0.svg)
 
 ## Module orientation 90
 
-![Module orientation 90](Wiring_90.svg)
+![Module orientation 90](wiring_90.svg)
 
 ## Module orientation 180
 
-![Module orientation 180](Wiring_180.svg)
+![Module orientation 180](wiring_180.svg)
 
 ## Module orientation 270
 
-![Module orientation 270](Wiring_270.svg)
+![Module orientation 270](wiring_270.svg)
 
 ## Where the pictures come from
 
-`DocuPictures.cpp` draws them, with `DocuSvg` for the SVG. It places every LED by calling the library and asking the
+`docu_pictures.cpp` draws them, with `DocuSvg` for the SVG. It places every LED by calling the library and asking the
 MAX7219 model in `test/mock/` which register bit of which chip it latched; the module types in the titles are the
 wirings of the model on which a pattern drawn in that orientation appears upright. So no picture is drawn by hand,
 and none can say what the library does not do.

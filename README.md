@@ -38,7 +38,7 @@ or clone it into your `Arduino/libraries` folder.
 In bit banging mode any digital pins can be used. With hardware SPI, DIN and CLK must be connected to the SPI pins of the board (MOSI and SCK).
 
 ## Configuration
-The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
+The configuration is done in [src/max_matrix_config.h](src/max_matrix_config.h):
 
 | Parameter                                  | Default   | Description                                           |
 |--------------------------------------------|-----------|-------------------------------------------------------|
@@ -94,7 +94,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 
 ## Coordinates
 
-![Coordinates as a sketch uses them](docu/Coordinates.svg)
+![Coordinates as a sketch uses them](docu/coordinates.svg)
 
 `SetDot(x, y)` counts x from the left and y from the top, across all modules: x from 0 to
 `MAXMATRIX_NUMBER_OF_COLUMNS - 1`, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
@@ -147,7 +147,7 @@ The errors are `MaxMatrixError::kOutOfRange`, `MaxMatrixError::kUnknownChar` and
 and a sketch that never asks for one does not carry them.
 
 To find a call that fails where the sketch checks nothing, switch `MAXMATRIX_DEV_ERROR_DETECT` to `STD_ON`: in
-`MaxMatrixConfig.h`, as the Arduino IDE passes no define of a sketch to a library, or with arduino-cli as
+`max_matrix_config.h`, as the Arduino IDE passes no define of a sketch to a library, or with arduino-cli as
 `--build-property "compiler.cpp.extra_flags=-DMAXMATRIX_DEV_ERROR_DETECT=STD_ON"`. Every function that fails then
 prints a line on `Serial`, such as `MaxMatrix SetText: unknown char`, so call `Serial.begin()` in `setup()`. A sketch
 whose `Serial` carries something else, or which would rather blink or halt, defines the report itself, and the one

@@ -35,10 +35,10 @@
 #include <chrono>
 #include <thread>
 #include "Arduino.h"
-#include "SimulatorOptions.h"
-#include "SimulatorPanel.h"
-#include "SimulatorTerminal.h"
-#include "SimulatorWeb.h"
+#include "simulator_options.h"
+#include "simulator_panel.h"
+#include "simulator_terminal.h"
+#include "simulator_web.h"
 
 
 /******************************************************************************************************************************************************

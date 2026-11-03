@@ -3,7 +3,7 @@
  * Only what MaxMatrix uses is here. The pins are not simulated as hardware: the mock records what the
  * library sends between a falling and a rising chip select, which is the frame the MAX7219 chain latches,
  * and counts every transfer that happens outside such a frame or outside an SPI transaction as an error.
- * Every byte and every rising chip select also go to the MAX7219 model in Max7219.h, mock::chain. */
+ * Every byte and every rising chip select also go to the MAX7219 model in max7219.h, mock::chain. */
 #ifndef MAXMATRIX_TEST_MOCK_ARDUINO_H_
 #define MAXMATRIX_TEST_MOCK_ARDUINO_H_
 
@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include "binary.h"
-#include "Max7219.h"
+#include "max7219.h"
 
 /* The names of the Arduino core and avr-libc, which the library calls by them. */
 // NOLINTBEGIN(readability-identifier-naming)

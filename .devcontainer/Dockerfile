@@ -10,7 +10,7 @@ FROM ${BASE_IMAGE}
 
 # CMake, Ninja and GoogleTest build and run the host-side tests; clangd gives the editor its
 # IntelliSense, from the compilation database CMake writes into build/. clang-tidy, cppcheck and
-# python3 (for tools/cross-clang-tidy.py) run what .github/workflows/static-analysis.yml runs,
+# python3 (for tools/cross_clang_tidy.py) run what .github/workflows/static-analysis.yml runs,
 # Doxygen what docs.yml runs. simavr, as a library, runs the examples' .elf for the tests avr/.
 # From apt rather than
 # pinned like the tools below: the distribution's versions are what CI installs as well, and

@@ -14,8 +14,8 @@
  *      \details    Arduino library to drive 8x8 LED display Matrix modules with MAX7219
  *
  *                  The class MaxMatrix is the facade over the parts in the folders beside this file, one per subject:
- *                  Max7219/ the transfer to the chain, Matrix/ the buffer as wired and the coordinates as the viewer
- *                  sees them, Font/ the sprites of the chars, Text/ the text that stands or shifts, Command/ the lines a
+ *                  max7219/ the transfer to the chain, matrix/ the buffer as wired and the coordinates as the viewer
+ *                  sees them, font/ the sprites of the chars, text/ the text that stands or shifts, command/ the lines a
  *                  control page sends over Serial, built on this class. A function here that only passes a call on is
  *                  documented where the call goes.
  *
@@ -27,14 +27,14 @@
  * INCLUDES
  *****************************************************************************************************************************************************/
 #include "Arduino.h"
-#include "MaxMatrixStandardTypes.h"
-#include "MaxMatrixError.h"
-#include "MaxMatrixConfig.h"
-#include "Max7219/MaxMatrixChain.h"
-#include "Matrix/MaxMatrixPanel.h"
-#include "Font/MaxMatrixFont.h"
-#include "Text/MaxMatrixText.h"
-#include "Command/MaxMatrixCommand.h"
+#include "max_matrix_standard_types.h"
+#include "max_matrix_error.h"
+#include "max_matrix_config.h"
+#include "max7219/max_matrix_chain.h"
+#include "matrix/max_matrix_panel.h"
+#include "font/max_matrix_font.h"
+#include "text/max_matrix_text.h"
+#include "command/max_matrix_command.h"
 
 
 /******************************************************************************************************************************************************

@@ -24,35 +24,35 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 enable_testing()
 
-add_library(ArduinoMock STATIC test/mock/Arduino.cpp test/mock/Max7219.cpp)
+add_library(ArduinoMock STATIC test/mock/Arduino.cpp test/mock/max7219.cpp)
 target_include_directories(ArduinoMock PUBLIC test/mock)
 
 # The MAX7219 model on its own, once: it does not depend on the transfer path.
-add_executable(Max7219Test test/Max7219Test.cpp)
+add_executable(Max7219Test test/max7219_test.cpp)
 set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
 target_link_libraries(Max7219Test PRIVATE ArduinoMock GTest::gtest_main)
 gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
 # The simulator's web host once as well: it knows neither the library nor the sketch, and its WebSocket half is tested
 # on its own, without a network.
-add_library(SimulatorWebHost STATIC simulator/SimulatorWebHost.cpp simulator/SimulatorWebSocket.cpp)
+add_library(SimulatorWebHost STATIC simulator/simulator_web_host.cpp simulator/simulator_web_socket.cpp)
 target_include_directories(SimulatorWebHost PUBLIC simulator)
-add_executable(SimulatorWebSocketTest test/SimulatorWebSocketTest.cpp)
+add_executable(SimulatorWebSocketTest test/simulator_web_socket_test.cpp)
 set_target_properties(SimulatorWebSocketTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorWebSocketTest PRIVATE SimulatorWebHost GTest::gtest_main)
 gtest_discover_tests(SimulatorWebSocketTest TEST_PREFIX "simulator/")
-add_executable(SimulatorWebHostTest test/SimulatorWebHostTest.cpp)
+add_executable(SimulatorWebHostTest test/simulator_web_host_test.cpp)
 set_target_properties(SimulatorWebHostTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorWebHostTest PRIVATE SimulatorWebHost GTest::gtest_main)
 gtest_discover_tests(SimulatorWebHostTest TEST_PREFIX "simulator/")
 
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
 # difference to it, and its tests need no sketch.
-add_library(Simulator STATIC simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp simulator/SimulatorTerminal.cpp
-                             simulator/SimulatorWeb.cpp)
+add_library(Simulator STATIC simulator/simulator_options.cpp simulator/simulator_panel.cpp simulator/simulator_terminal.cpp
+                             simulator/simulator_web.cpp)
 target_include_directories(Simulator PUBLIC src)
 target_link_libraries(Simulator PUBLIC SimulatorWebHost ArduinoMock)
-add_executable(SimulatorTest test/SimulatorTest.cpp)
+add_executable(SimulatorTest test/simulator_test.cpp)
 set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
 gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
@@ -61,7 +61,7 @@ gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
 # part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
 find_program(NodeExecutable node)
 if(NodeExecutable)
-    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/PageTest.js
+    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/page_test.js
                                          ${PROJECT_SOURCE_DIR}/simulator/index.html)
 else()
     message(STATUS "node not found: the test simulator/page is left out")
@@ -75,7 +75,7 @@ function(add_maxmatrix_variant Variant)
     target_compile_definitions(MaxMatrix-${Variant} PUBLIC ${ARGN})
     target_link_libraries(MaxMatrix-${Variant} PUBLIC ArduinoMock)
 
-    add_executable(MaxMatrixTest-${Variant} test/MaxMatrixTest.cpp)
+    add_executable(MaxMatrixTest-${Variant} test/max_matrix_test.cpp)
     set_target_properties(MaxMatrixTest-${Variant} PROPERTIES CXX_STANDARD 17)
     target_link_libraries(MaxMatrixTest-${Variant} PRIVATE MaxMatrix-${Variant} GTest::gtest_main)
     # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
@@ -103,11 +103,11 @@ function(add_simulator_variant Variant)
              COMMAND Simulator-Basics-${Variant} --for 1 --expect ${PROJECT_SOURCE_DIR}/simulator/Basics.txt)
     # Off 8080, where a developer's own simulator runs, and one variant at a time, since both need the port.
     add_test(NAME ${Variant}/simulator/web
-             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/web_test.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
     set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
     # SerialControl controlled the way the control page does it, on a port of its own.
     add_test(NAME ${Variant}/simulator/control
-             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/control_test.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
     set_tests_properties(${Variant}/simulator/control PROPERTIES RESOURCE_LOCK SimulatorControlPort)
 endfunction()
 
@@ -126,7 +126,7 @@ add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.
-add_executable(DocuPictures docu/DocuPictures.cpp docu/DocuSvg.cpp)
+add_executable(DocuPictures docu/docu_pictures.cpp docu/docu_svg.cpp)
 target_link_libraries(DocuPictures PRIVATE MaxMatrix-bitbang)
 add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/docu)
 
@@ -140,7 +140,7 @@ if(PkgConfig_FOUND)
     pkg_check_modules(Simavr IMPORTED_TARGET simavr)
 endif()
 if(ArduinoCli AND Simavr_FOUND)
-    add_executable(SimulatorAvr simulator/mainAvr.cpp simulator/SimulatorAvr.cpp)
+    add_executable(SimulatorAvr simulator/main_avr.cpp simulator/simulator_avr.cpp)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
     target_compile_definitions(SimulatorAvr PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
 
@@ -179,7 +179,7 @@ if(ArduinoCli AND Simavr_FOUND)
         # SerialControl controlled as the page does, through the UART of the AVR; on a port of its own, one transfer
         # path at a time.
         add_test(NAME avr/${Transfer}/control
-                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:SimulatorAvr> 18083
+                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/control_test.sh $<TARGET_FILE:SimulatorAvr> 18083
                          --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
         set_tests_properties(avr/${Transfer}/control PROPERTIES RESOURCE_LOCK SimulatorAvrControlPort)
     endforeach()

@@ -49,7 +49,7 @@ answer twice. clangd inserts no includes: an include in `src/` names its header 
 `src/`, which the editor would not know. After adding a file, run `cmake --preset default` again.
 
 clang warns about some things GCC does not, and the tests are built with `-Werror`, so clangd shows
-them as errors: a lambda that captured constants it could use without, in `MaxMatrixTest.cpp`, was
+them as errors: a lambda that captured constants it could use without, in `max_matrix_test.cpp`, was
 the one such place.
 
 One warning clangd alone gives: it parses headers such as GoogleTest's without their function

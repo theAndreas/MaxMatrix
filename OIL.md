@@ -52,7 +52,7 @@ switch to `cmake` / `ctest`. Check whether `arduino-lint --library-manager submi
 
 ### 2 Tests on GoogleTest
 
-Port `test/MaxMatrixTest.cpp` to GoogleTest from `libgtest-dev`, found with
+Port `test/max_matrix_test.cpp` to GoogleTest from `libgtest-dev`, found with
 `find_package(GTest)` and registered with `gtest_discover_tests`. The loops over
 `Orientations[]` become `TEST_P`, the repeated `mock::Reset` / `initMatrix` a fixture.
 
@@ -194,10 +194,10 @@ One module per subject under `src/`, in the Arduino library format 1.5, as Wordc
 ```
 src/
 ├── MaxMatrix.h   the facade: today's public API, unchanged
-├── Max7219/      the transfer: frame, no-op, SPI or bit banging, written once
-├── Matrix/       the buffer and the orientation: today's LL and public layer
-├── Font/         SpriteTable, the latin-1 lookup, decodeChar
-└── Text/         the shifting text as a state machine, using Font and Matrix
+├── max7219/      the transfer: frame, no-op, SPI or bit banging, written once
+├── matrix/       the buffer and the orientation: today's LL and public layer
+├── font/         SpriteTable, the latin-1 lookup, decodeChar
+└── text/         the shifting text as a state machine, using Font and Matrix
 ```
 
 Dependencies point one way: `Text` → `Font` and `Matrix`, `Matrix` → `Max7219` →
@@ -272,7 +272,7 @@ Needs the `compile_commands.json` from 1.
 As built, `.github/workflows/static-analysis.yml` has Wordclock's checks and its jobs:
 clang-tidy over the host build's database, which holds the library in all three variants and
 the simulator; clang-tidy over the database arduino-cli writes for the Uno, once with
-`MAXMATRIX_DEV_ERROR_DETECT` off and once on, read through `tools/cross-clang-tidy.py` so that
+`MAXMATRIX_DEV_ERROR_DETECT` off and once on, read through `tools/cross_clang_tidy.py` so that
 clang sees avr-libc and a 16-bit int; and cppcheck over `src/` and `simulator/` against the
 mock. `.clang-tidy` says why each check that is off is off: the include guards, the
 coordinates side by side, a byte counting the columns, and the simulator's prints and statics.
@@ -283,11 +283,11 @@ What the checks found was fixed rather than switched off where a fix was cheap:
   negative number to a cast to `uint32_t` that is undefined for it; it is checked now, as
   `--port` is, with a test.
 - Nothing kept the chain under 32 modules, past which a byte no longer counts the columns;
-  `MaxMatrixConfig.h` asserts it now.
+  `max_matrix_config.h` asserts it now.
 - Five enums got `uint8_t` as their base, as `MaxMatrixError` has: 44 to 80 bytes of flash
   and 3 of RAM in every example.
 - `SpriteTable` is an array of sprites rather than of bytes, the getters are `const`, functions
-  without state `static`, and the unused bit macros of `MaxMatrixStandardTypes.h` are gone.
+  without state `static`, and the unused bit macros of `max_matrix_standard_types.h` are gone.
 
 cppcheck found nothing; that it reads the tree was checked with a write past `matrix_buffer_`.
 
@@ -376,7 +376,7 @@ with `digitalWriteFast` 1.3.1 from the Library Manager (ArminJo's, which is what
 - `digitalWriteFast` is only fast when the pin is a compile-time constant
   (`__builtin_constant_p`). The pins here are members set at run time, so every call falls
   back to `digitalWrite`: `Basics` is 4316 bytes with the switch on against 4318 off, and
-  with `-DTHROW_ERROR_IF_NOT_FAST` the build fails on all four calls (now in `MaxMatrixChain.cpp`)
+  with `-DTHROW_ERROR_IF_NOT_FAST` the build fails on all four calls (now in `max_matrix_chain.cpp`)
   ("Parameter for digitalWriteFast() function is not constant"). NicksonYap's variant of the
   header fails that way without being asked to.
 - The dependency is not declared: `library.properties` has no `depends=digitalWriteFast`,
@@ -486,7 +486,7 @@ empty, no number or too large. The command answers all of them with
   wrong. The default prints on `Serial`, a sketch may define its own. `SerialControl` keeps the
   default, as the page shows any line and reads only `ready`. Switched off, the preprocessor removes every call. The Arduino IDE
   has no debug build and does not pass a sketch's defines to the library, so it is switched in
-  `MaxMatrixConfig.h` or with `--build-property "compiler.cpp.extra_flags=-D…"`
+  `max_matrix_config.h` or with `--build-property "compiler.cpp.extra_flags=-D…"`
   (`build.extra_flags` carries the USB flags of some boards). The tests build a third variant
   with it on and check that every error is reported, once, under the name of its function.
 
@@ -501,7 +501,7 @@ In four steps, a PR each: drawing clips; the enum, the wrapper and `MaxMatrixRes
 page of 21 reads those answers; `MAXMATRIX_DEV_ERROR_DETECT`.
 
 The alternatives weighed, AUTOSAR's error domains and Rust's enums among them, and what each
-costs on the Uno are in `docu/ErrorHandling.md`.
+costs on the Uno are in `docu/error_handling.md`.
 
 *Done when* every function that can fail says why, the tests check each reason in both
 variants and with the switch on, and the PR gives flash and RAM of every example against
@@ -514,7 +514,7 @@ today.
 own, and found a way around both: a GCC plugin that moves the vtables into flash, leaving 2 bytes
 of RAM a group, and a switch that leaves the texts out. It also brings what avr-gcc lacks of the
 standard library: `array`, `span`, `optional`, `string_view`, and a `flash_string_view` that
-compares a line in RAM with a keyword in flash. What it showed is in `docu/ErrorHandling.md`,
+compares a line in RAM with a keyword in flash. What it showed is in `docu/error_handling.md`,
 "Tried out: the domain by its address, in Utl".
 
 To decide is whether MaxMatrix takes it over:
@@ -531,7 +531,7 @@ To decide is whether MaxMatrix takes it over:
 After Utl is released, as a dependency has to come from the Library Manager. *Done when* it is
 decided, and if taken, the examples' flash and RAM against today are in the PR.
 
-Dropped, after a prototype that was not merged; its numbers are in `docu/ErrorHandling.md`, "Tried
+Dropped, after a prototype that was not merged; its numbers are in `docu/error_handling.md`, "Tried
 out: MaxMatrix on Utl". The vtable and the texts linked into every sketch that draws text, 144 to
 166 bytes of flash, are gone with Utl's groups without `virtual` (Utl #24): a sketch that prints no
 error is where it is today. What stays: a sketch that prints errors pays more, `SerialControl` 402
@@ -551,7 +551,7 @@ The tests and the simulator build the library with the host's `g++`, against the
 Uno runs - `avr-gcc`'s code, the bit banging with `shiftOut()` and the SPI peripheral - is only
 compiled, never run. simavr runs it: the `.elf` of an example, on a simulated ATmega328P, as Utl
 runs its `SelfCheck`. A program on the host would load it with simavr as a library, hang the
-MAX7219 model of `test/mock/Max7219.h` on the pins (DIN, CS and CLK, or the SPI output), and
+MAX7219 model of `test/mock/max7219.h` on the pins (DIN, CS and CLK, or the SPI output), and
 compare what lights up with an expectation in the format of `simulator/Basics.txt`, for any of the
 eight wirings and both transfer paths.
 

@@ -2,9 +2,9 @@
 """Writes the reference from the Doxygen blocks into build/docu/html and fails on a warning.
 
 Every warning fails but one kind: a member left undocumented below the facade - in the parts
-under src/Max7219, src/Matrix, src/Font and src/Text - or in a .cpp, where only the library
-reads it. What a sketch reads, the headers in src/ and src/Command, has to be documented
-whole; so are the types the facade takes from the parts, such as spriteType and the
+under src/max7219, src/matrix, src/font and src/text - or in a .cpp, where only the library
+reads it. What a sketch reads, the headers in src/ and src/command, has to be documented
+whole; so are the types the facade takes from the parts, such as MaxMatrixSprite and the
 orientations, though this rule cannot tell them from the parts' own members.
 
 Doxygen cannot be told to fail on some warnings and not others, so they go into a log and
@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LOG = ROOT / 'build' / 'docu' / 'warnings.log'
-INTERNAL = re.compile(r'^(src/(Max7219|Matrix|Font|Text)/[^:]+|[^:]+\.cpp):\d+: warning: .* is not documented\.$')
+INTERNAL = re.compile(r'^(src/(max7219|matrix|font|text)/[^:]+|[^:]+\.cpp):\d+: warning: .* is not documented\.$')
 
 
 def main():

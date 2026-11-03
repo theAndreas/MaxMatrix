@@ -7,24 +7,24 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `src/` — the library, in the Arduino library format 1.5, one part per folder:
   - `MaxMatrix.h` / `MaxMatrix.cpp` — the `MaxMatrix` class, the facade a sketch includes:
     the public API, the state of the library and `Init()`; the rest it passes on.
-  - `MaxMatrixConfig.h` — the configuration macros and the size of the chain.
-  - `Max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
-  - `Matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
+  - `max_matrix_config.h` — the configuration macros and the size of the chain.
+  - `max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
+  - `matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
     coordinates as the viewer sees them.
-  - `Font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `DecodeChar()`.
-  - `Text/` — `MaxMatrixText`, text that stands or shifts in.
-  - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
+  - `font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `DecodeChar()`.
+  - `text/` — `MaxMatrixText`, text that stands or shifts in.
+  - `command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
-  - `MaxMatrixError.h` / `.cpp` — `MaxMatrixError`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
-    what a function that can fail returns, with `GetErrorText()`; `MaxMatrixErrorReport.cpp`, the
+  - `max_matrix_error.h` / `.cpp` — `MaxMatrixError`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
+    what a function that can fail returns, with `GetErrorText()`; `max_matrix_error_report.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
-  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
+  - `max_matrix_standard_types.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
-- `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
-  bytes of `matrix_buffer_` lie on a module in each module orientation (`Wiring_*.svg`). None is
-  drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
+- `docu/` — the coordinates a sketch uses (`coordinates.svg`, shown in the README) and how the
+  bytes of `matrix_buffer_` lie on a module in each module orientation (`wiring_*.svg`). None is
+  drawn by hand: `docu_pictures.cpp` draws them from the library and the model, and the test
   `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
-  change that moves a dot. `ErrorHandling.md` records what was weighed, and measured, for the
+  change that moves a dot. `error_handling.md` records what was weighed, and measured, for the
   errors of OIL item 27.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
@@ -37,14 +37,14 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
     from the page reaches the sketch's `Serial`, and what the sketch prints goes back in the JSON.
   - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
     ported from Wordclock; the protocol works on strings only, so it is tested without a network.
-  - `mainAvr.cpp` / `SimulatorAvr` — the same simulator for the `.elf` `avr-gcc` makes of an
+  - `main_avr.cpp` / `SimulatorAvr` — the same simulator for the `.elf` `avr-gcc` makes of an
     example (`--elf`): simavr runs it on an ATmega328P, its pins 10, 11 and 13 and its SPI output
     drive the model, its UART is `Serial`. It writes the `mock::` variables the Arduino stand-in
     writes, so panel, terminal and page work unchanged.
   `EXAMPLE.txt` is the panel a test expects of an example at a time CMake names, `Basics.txt`
   one second into `Basics` on an FC-16 board;
-  `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the commands of
-  the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`), and `PageTest.js`
+  `web_test.sh` checks what a browser would get from `--web`, `control_test.sh` the commands of
+  the page with `SerialControl` (both with the WebSocket of `web_test_lib.sh`), and `page_test.js`
   the page's own script, against stand-ins for the DOM, the WebSocket and a board on Web Serial.
 - `diagram.json`, `wokwi.toml` — a Uno with four FC-16 modules for Wokwi, which runs the real
   AVR binary that `tools/wokwi.py EXAMPLE` builds; to look at, not tested in CI.
@@ -53,13 +53,13 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
   the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`,
-  and `tools/east-const.py`, which finds a `const` left of what it qualifies.
+  and `tools/east_const.py`, which finds a `const` left of what it qualifies.
 - `.github/workflows/docs.yml` — the reference from the Doxygen blocks, checked on every pull
   request by `tools/docs.py` and published on GitHub Pages from `main`; `Doxyfile` says what
   Doxygen reads.
 - `.github/workflows/static-analysis.yml` — clang-tidy over the host build and the Uno's, and
   cppcheck; `.clang-tidy` says which checks and why the rest are off, and
-  `tools/cross-clang-tidy.py` lets clang read what `avr-gcc` was told.
+  `tools/cross_clang_tidy.py` lets clang read what `avr-gcc` was told.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
   shared editor settings and volumes live in the local `shared/` feature.
 
@@ -69,7 +69,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 
 `matrix_buffer_` mirrors what is on the LEDs: **one byte per column, one bit per row**
 (bit 0 is row 0), columns of all modules in a row, module 0 first — as wired, which in
-module orientation 0 is also how the viewer sees it; `docu/Wiring_*.svg` show the other three.
+module orientation 0 is also how the viewer sees it; `docu/wiring_*.svg` show the other three.
 The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
 Drawing only changes the buffer. `MaxMatrixWired` keeps which columns of a module changed, one
@@ -151,7 +151,7 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   enum, as they index an array.
 - Macros upper case and prefixed with the module: `MAXMATRIX_NUMBER_OF_MODULES`,
   `MAX7219_REG_INTENSITY_ADDRESS`. An include guard names the path:
-  `MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_`.
+  `MAXMATRIX_SRC_MATRIX_MAX_MATRIX_PANEL_H_`.
 - Classes start with `MaxMatrix`. A sketch links every library it includes into one namespace,
   and a class called `Font` or `Text` would collide with the next library that has one; the
   mock in `test/mock/` already has a `Max7219Chain`. The simulator is linked with the sketch
@@ -159,6 +159,15 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   `MaxMatrixSprite`, `MaxMatrixRow`.
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
+- Files and folders `snake_case`, as in Utl: a file is named after its class
+  (`src/matrix/max_matrix_panel.h`), a test after what it tests with `_test`
+  (`test/simulator_web_host_test.cpp`), a script with `_` (`tools/east_const.py`). The name keeps
+  the `max_matrix_` of the class, as every library's `src/` lies on one include path and a
+  `font/font.h` would be found in whichever library comes first. What something outside
+  fixes keeps its name: `src/MaxMatrix.h`, which a sketch includes, and `MaxMatrix.cpp` beside
+  it; an example's folder, which has to match its `.ino`; the stand-ins `Arduino.h`, `SPI.h` and
+  `binary.h`, which the core names; `README.md`, `CLAUDE.md`, `OIL.md`, `LICENSE`. No check
+  enforces this.
 
 ### Integer types
 
@@ -185,7 +194,7 @@ and `char const* const` needs no second rule. The Arduino core writes `const` on
 mock, which stands in for it, and the examples follow this repository all the same.
 
 No compiler and no check of `.clang-tidy` notices a `const` on the left, so
-`tools/east-const.py` does, as a job of `ci.yml`. clang-format could move it with
+`tools/east_const.py` does, as a job of `ci.yml`. clang-format could move it with
 `QualifierAlignment: Right`, but only while formatting the whole file.
 
 ### Constants and configuration
@@ -200,12 +209,12 @@ SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
 ### Return values
 
 A function of the library that can fail says why, in `MaxMatrixError`
-(`src/MaxMatrixError.h`): it returns a `MaxMatrixStatus`, or a getter of a single value a
+(`src/max_matrix_error.h`): it returns a `MaxMatrixStatus`, or a getter of a single value a
 `MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
 `E_OK` was 0 and `if(matrix.SetText(…))` was true on an error; code asks `IsOk()` or compares
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
 reference, `GetSprite()`). A new reason gets its own value in the enum, a text in `kErrorTexts`
-(`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
+(`src/max_matrix_error.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
 call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` passes the reason of a failed
 line on, so that `SerialControl` answers with `GetErrorText()`.
 
@@ -225,7 +234,7 @@ With `MAXMATRIX_DEV_ERROR_DETECT`, every function of the facade that fails repor
 the error to `MaxMatrixReportError()`, as the DET of AUTOSAR Classic does. A new function of the
 facade that can fail wraps the call of the part below in `MAXMATRIX_REPORT_ERROR("name", …)`,
 which is the bare call when the switch is off; the parts below the facade and `MaxMatrixCommand`
-report nothing. The weak default, which prints on `Serial`, lies in `MaxMatrixErrorReport.cpp`,
+report nothing. The weak default, which prints on `Serial`, lies in `max_matrix_error_report.cpp`,
 and `library.properties` links the library as an archive (`dot_a_linkage`): linked as loose
 objects, the default pulled `Serial` into a sketch that defines its own report, 175 bytes of RAM
 on the Uno.
@@ -245,14 +254,14 @@ Every function has a banner with its name, a Doxygen block (`\brief`, `\details`
 Indentation is four spaces.
 
 What a sketch reads is in the reference, so it is documented whole: in `src/MaxMatrix.h`,
-`MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixStandardTypes.h` and `Command/`, every class,
+`max_matrix_config.h`, `max_matrix_error.h`, `max_matrix_standard_types.h` and `command/`, every class,
 member, type, enum value and macro has a `/*! */` block or a `/*!< */` beside it, and the types
 the facade takes from the parts, such as `MaxMatrixSprite` and the orientations, as well. A one-line
 function in a header gets a one-line `\brief`; one that only passes a call on takes the block of
 the function it calls with `\copydoc`, rather than a second text that would drift from it.
 `tools/docs.py` fails on a gap there; below the facade a member may go without.
 
-An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
+An include in `src/` names a header by its path from `src/` (`"font/max_matrix_font.h"`), or a
 header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
 include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`.
 
@@ -282,7 +291,7 @@ In the dev container, the same four things CI runs:
 cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
-tools/east-const.py
+tools/east_const.py
 ```
 
 the reference that `docs.yml` builds, into `build/docu/html`, failing on any warning that counts:
@@ -299,7 +308,7 @@ run-clang-tidy -p build -quiet -checks='-*,readability-identifier-naming' \
                -header-filter="$PWD/(test|docu|examples)/" "$PWD/(test|docu|examples)/"
 arduino-cli compile --fqbn arduino:avr:uno --library . --only-compilation-database \
                     --build-path build/avr examples/SerialControl
-python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+python3 tools/cross_clang_tidy.py build/avr "$PWD/src/"
 cppcheck --enable=warning,portability --check-level=exhaustive --std=c++17 --inline-suppr \
          --error-exitcode=1 --quiet $(find src -type d | sed 's/^/-I/') -Itest/mock -Isimulator \
          src simulator
@@ -328,7 +337,7 @@ is a `TEST_P` instead. The mock records every frame between a falling and a risi
 `mock::errors`, so a test can check what went to the chain, not just the buffer.
 
 Every byte and every rising chip select also drive `mock::chain`, a model of the MAX7219 chain
-(`test/mock/Max7219.h`): it shifts like the hardware and each chip latches its register on the
+(`test/mock/max7219.h`): it shifts like the hardware and each chip latches its register on the
 rising edge, so a frame that is too short or a wrong address shows on the model's LEDs.
 `Display()` in the tests reads them back laid out like `matrix_buffer_`, and every library test
 ends by checking that the two agree. A test of what is lit asks the model, not the buffer. The
@@ -358,7 +367,7 @@ a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `he
 change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
 to the page can bring a panel; a new example in its place needs such a pause as well. The test
 `simulator/control` runs `SerialControl` on port 18082 and sends it `serial` lines as the page
-does, expecting `ok` and `error` back in the JSON. `simulator/page` runs `PageTest.js` under
+does, expecting `ok` and `error` back in the JSON. `simulator/page` runs `page_test.js` under
 Node, once; CMake leaves it out where there is no `node`, as the dev container's `Dockerfile`
 installs none. A fake port there refuses to close while a stream is locked, as Chrome does.
 `SimulatorWebSocketTest` checks the rest of the protocol a browser may use, against the examples
@@ -387,7 +396,7 @@ The tests reach private members through `#define private public`, because some o
 check has no public path — which frame a change to one buffer column turns into, for instance,
 is checked by storing the bit with `MaxMatrixWired::StoreBit()`, so that the test names the
 buffer column itself rather than reaching it through an orientation. The parts are private
-members of `MaxMatrix`, so a test reaches the buffer as `matrix.Panel.Wired.matrix_buffer_`. 
+members of `MaxMatrix`, so a test reaches the buffer as `matrix_.panel_.wired_.matrix_buffer_`. 
 The define comes after the GoogleTest and standard headers, which it would rewrite as well.
 
 ### Hardware
