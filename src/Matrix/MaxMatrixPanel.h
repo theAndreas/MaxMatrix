@@ -15,8 +15,8 @@
  *                  changes the buffer; MaxMatrix decides when it is sent.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_PANEL_H_
-#define _MAXMATRIX_PANEL_H_
+#ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
+#define MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -31,21 +31,21 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /*! how the whole matrix is turned, 180 for a board mounted upside down */
-typedef enum : uint8_t {
-    MAXMATRIX_MATRIX_ORIENTATION_0,         /*!< the board as it is meant to be mounted */
-    MAXMATRIX_MATRIX_ORIENTATION_180        /*!< the board upside down: the module at the input on the left */
-} MaxMatrixMatrixOrientationType;
+enum class MaxMatrixMatrixOrientation : uint8_t {
+    k0,         /*!< the board as it is meant to be mounted */
+    k180        /*!< the board upside down: the module at the input on the left */
+};
 
 /*! how every module is turned in its place, by how its LEDs are wired; the README says which fits which module */
-typedef enum : uint8_t {
-    MAXMATRIX_MODULE_ORIENTATION_0,         /*!< as wired */
-    MAXMATRIX_MODULE_ORIENTATION_90,        /*!< turned by 90 degrees */
-    MAXMATRIX_MODULE_ORIENTATION_180,       /*!< turned by 180 degrees */
-    MAXMATRIX_MODULE_ORIENTATION_270        /*!< turned by 270 degrees, as on an FC-16 board */
-} MaxMatrixModuleOrientationType;
+enum class MaxMatrixModuleOrientation : uint8_t {
+    k0,         /*!< as wired */
+    k90,        /*!< turned by 90 degrees */
+    k180,       /*!< turned by 180 degrees */
+    k270        /*!< turned by 270 degrees, as on an FC-16 board */
+};
 
 /*! a row of the whole matrix, one byte per module from the left, bit 7 of each the leftmost column of its module */
-typedef byte rowType[MAXMATRIX_NUMBER_OF_MODULES];
+typedef byte MaxMatrixRow[MAXMATRIX_NUMBER_OF_MODULES];
 
 
 /******************************************************************************************************************************************************
@@ -54,47 +54,47 @@ typedef byte rowType[MAXMATRIX_NUMBER_OF_MODULES];
 class MaxMatrixPanel
 {
   private:
-    MaxMatrixWired Wired;
-    MaxMatrixModuleOrientationType ModuleOrientation;
-    MaxMatrixMatrixOrientationType MatrixOrientation;
+    MaxMatrixWired wired_;
+    MaxMatrixModuleOrientation module_orientation_;
+    MaxMatrixMatrixOrientation matrix_orientation_;
 
     // functions
-    static byte reverseByte(byte);
-    void convertDotToBuffer(byte, byte, byte*, byte*);
-    byte getLine(byte, byte, bool);
-    void setLine(byte, byte, bool, byte);
-    void getPicture(byte*);
-    void setPicture(byte const*);
+    static byte ReverseByte(byte);
+    void ConvertDotToBuffer(byte, byte, byte*, byte*);
+    byte GetLine(byte, byte, bool);
+    void SetLine(byte, byte, bool, byte);
+    void GetPicture(byte*);
+    void SetPicture(byte const*);
 
   public:
     MaxMatrixPanel(byte, byte, byte);
 
     // get methods
-    MaxMatrixWired& getWired() { return Wired; }
-    MaxMatrixWired const& getWired() const { return Wired; }
-    MaxMatrixModuleOrientationType getModuleOrientation() const { return ModuleOrientation; }
-    MaxMatrixMatrixOrientationType getMatrixOrientation() const { return MatrixOrientation; }
+    MaxMatrixWired& GetWired() { return wired_; }
+    MaxMatrixWired const& GetWired() const { return wired_; }
+    MaxMatrixModuleOrientation GetModuleOrientation() const { return module_orientation_; }
+    MaxMatrixMatrixOrientation GetMatrixOrientation() const { return matrix_orientation_; }
 
-    MaxMatrixResult<byte> getColumn(int16_t);
-    MaxMatrixResult<byte> getColumn(byte, byte);
-    MaxMatrixStatus getRow(int16_t, rowType&);
-    MaxMatrixResult<byte> getRow(byte, byte);
-    MaxMatrixResult<bool> getDot(int16_t, int16_t);
+    MaxMatrixResult<byte> GetColumn(int16_t);
+    MaxMatrixResult<byte> GetColumn(byte, byte);
+    MaxMatrixStatus GetRow(int16_t, MaxMatrixRow&);
+    MaxMatrixResult<byte> GetRow(byte, byte);
+    MaxMatrixResult<bool> GetDot(int16_t, int16_t);
 
     // set methods
-    void setColumn(int16_t, byte);
-    void setColumn(byte, byte, byte);
-    void setRow(int16_t, rowType const);
-    void setRow(byte, byte, byte);
-    void setDot(int16_t, int16_t, bool);
-    void setModuleOrientation(MaxMatrixModuleOrientationType);
-    void setMatrixOrientation(MaxMatrixMatrixOrientationType);
+    void SetColumn(int16_t, byte);
+    void SetColumn(byte, byte, byte);
+    void SetRow(int16_t, MaxMatrixRow const);
+    void SetRow(byte, byte, byte);
+    void SetDot(int16_t, int16_t, bool);
+    void SetModuleOrientation(MaxMatrixModuleOrientation);
+    void SetMatrixOrientation(MaxMatrixMatrixOrientation);
 
     // methods
-    void shiftLeft(bool = false, bool = true);
-    void shiftRight(bool = false, bool = true);
-    void shiftUp(bool = false);
-    void shiftDown(bool = false);
+    void ShiftLeft(bool = false, bool = true);
+    void ShiftRight(bool = false, bool = true);
+    void ShiftUp(bool = false);
+    void ShiftDown(bool = false);
 };
 
 #endif

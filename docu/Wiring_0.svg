@@ -791,5 +791,5 @@
   <rect x="1015" y="285" width="22" height="22" rx="3" fill="#e53935" stroke="none" stroke-width="2"/>
   <text x="1026" y="300" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">7.7</text>
   <text x="60" y="366" font-size="15" fill="#222222" text-anchor="start">Each LED is labelled byte.bit: byte n is digit register n of the module's MAX7219 and MatrixBuffer[8 * module + n], bit b is bit b of it.</text>
-  <text x="60" y="388" font-size="15" fill="#222222" text-anchor="start">A blue band joins the LEDs of one byte, the darker one is its bit 0. Matrix orientation 0. Drawn by docu/DocuPictures.cpp from setDot() and the MAX7219 model.</text>
+  <text x="60" y="388" font-size="15" fill="#222222" text-anchor="start">A blue band joins the LEDs of one byte, the darker one is its bit 0. Matrix orientation 0. Drawn by docu/DocuPictures.cpp from SetDot() and the MAX7219 model.</text>
 </svg>

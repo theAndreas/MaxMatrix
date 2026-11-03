@@ -54,7 +54,7 @@ switch to `cmake` / `ctest`. Check whether `arduino-lint --library-manager submi
 
 Port `test/MaxMatrixTest.cpp` to GoogleTest from `libgtest-dev`, found with
 `find_package(GTest)` and registered with `gtest_discover_tests`. The loops over
-`Orientations[]` become `TEST_P`, the repeated `Mock::reset` / `initMatrix` a fixture.
+`Orientations[]` become `TEST_P`, the repeated `mock::Reset` / `initMatrix` a fixture.
 
 - The library stays a target of its own built as `gnu++11`, because that is what `avr-gcc`
   compiles; only the tests are C++17 (GoogleTest 1.17 needs it).
@@ -73,7 +73,7 @@ chain shifts each frame through, every chip latches its own address/value pair o
 chip select. Registers: no-op, digit 0–7, decode mode, intensity, scan limit, shutdown,
 display test. Tests then check what is lit rather than which bytes went out.
 
-Driven from the wire and not from `MatrixBuffer`, because the buffer only says what the
+Driven from the wire and not from `matrix_buffer_`, because the buffer only says what the
 library believes is on the LEDs; a wrong module address, register index or frame boundary
 leaves the buffer right and the display wrong.
 
@@ -111,9 +111,9 @@ screenshot may follow later.
 
 ### 8 Batched updates in the library
 
-Separate drawing from sending: today every `setDot` / `setColumn` sends a frame to the whole
-chain at once (see `MaxMatrixWired::setColumn`). A mode that only updates the buffer and a call that
-flushes it, as `control(UPDATE, OFF)` / `update()` in MD_MAX72XX, `display()` in
+Separate drawing from sending: today every `SetDot` / `SetColumn` sends a frame to the whole
+chain at once (see `MaxMatrixWired::SetColumn`). A mode that only updates the buffer and a call that
+flushes it, as `control(UPDATE, OFF)` / `Update()` in MD_MAX72XX, `Display()` in
 LEDMatrixDriver and `write()` in Max72xxPanel do. A full refresh is eight frames however much
 was drawn, and animations stop flickering.
 
@@ -121,21 +121,21 @@ was drawn, and animations stop flickering.
 example on the Uno are in the PR.
 
 As built, sending immediately stays the default, as in MD_MAX72XX: a sketch that never heard of
-`update()` keeps working. What changed underneath is that no call sends a frame per dot or
+`Update()` keeps working. What changed underneath is that no call sends a frame per dot or
 column any more. Drawing only changes the buffer, which keeps which columns of a module changed;
 every public function that draws sends those before it returns, one frame per changed column
 for all modules. So a call sends eight frames at most, and nothing when it changed nothing.
-`setAutoUpdate(false)` stops the sending until `update()`, for a picture made of many calls.
+`SetAutoUpdate(false)` stops the sending until `Update()`, for a picture made of many calls.
 `MaxMatrixBatch` does the same for one block, as `std::lock_guard` holds a mutex: it puts back
 what it found when the block ends, so nothing has to be turned on again. A default parameter
 `Update = true` on every function that draws was weighed and dropped: with it,
-`setColumn(Module, Column, Value)` became ambiguous with `setColumn(Column, Value, Update)` and
+`SetColumn(module, column, value)` became ambiguous with `SetColumn(column, value, update)` and
 no longer compiled.
 `writeRegister()` and its no-op frames are gone: nothing sends to a single module any more.
 
 ### 9 Mirrored modules in the library
 
-`MaxMatrixModuleOrientationType` covers rotations only. The model in 4 shows four wirings
+`MaxMatrixModuleOrientation` covers rotations only. The model in 4 shows four wirings
 that are mirror images of the rotations and that no orientation reaches: `PAROLA` and the
 unnamed `DR0CR0RR0`, `DR0CR1RR1`, `DR1CR0RR1`. Decide between a mirror setting next to the
 orientation and the three-bit wiring description from 4 in place of it.
@@ -178,7 +178,7 @@ Not planned yet, collected so they are not lost:
 - Other architectures: an `SPIClass&` instead of the global `SPI`, and more than `avr` in
   `library.properties`.
 - Text effects and zones, as in MD_Parola, and a shifting text that starts over by itself
-  (`ScrollText` restarts it when the state is `MAXMATRIX_STATE_READY`).
+  (`ScrollText` restarts it when the state is `MaxMatrixState::kReady`).
 
 ### 13 Split the library into modules
 
@@ -206,7 +206,7 @@ of a discipline.
 
 Not taken from Wordclock: swapping the hardware by header name (there is one hardware here,
 and the mock already stands in at the level of `Arduino.h` and `SPI.h`), singletons and a
-scheduler (every instance stays on its own, the sketch keeps calling `shiftTask()`), and
+scheduler (every instance stays on its own, the sketch keeps calling `ShiftTask()`), and
 virtual functions (a vtable costs RAM on the Uno; the parts are composed at compile time).
 
 *Done when* the public API is unchanged - `#include <MaxMatrix.h>` and every example compile
@@ -217,10 +217,10 @@ a 2.0 and a decision of its own.
 After 3, because only the model's tests check what reaches the wire and so tell whether the
 split changed anything; before 8, which is simpler once the buffer is a class of its own.
 
-The `…LL` suffix goes with it. "Low level" names a height, not what differs: `setColumn` and
+The `…LL` suffix goes with it. "Low level" names a height, not what differs: `SetColumn` and
 `setColumnLL` work in two coordinate systems, the viewer's and the modules' as wired, and
 only `CLAUDE.md` tells a reader so. Once each layer is a class, both may be called
-`setColumn` and the object says which is meant - as Adafruit GFX's `drawPixel` applies the
+`SetColumn` and the object says which is meant - as Adafruit GFX's `drawPixel` applies the
 rotation and then writes the buffer. Where a name still has to tell them apart, it names the
 frame of reference ("wired", as graphics says "device space" against "user space"), and the
 translation becomes one function in the facade instead of a part of every public one:
@@ -256,12 +256,12 @@ both), and what that costs on the Uno against today's fixed array.
 
 `SpriteTable` is one built-in font. Open: variable-width characters, a font the sketch
 supplies, a second smaller one - and whether to adopt MD_MAX72XX's font format and its
-tooling rather than invent one. Whatever comes keeps the latin-1 lookup behind `decodeChar`.
+tooling rather than invent one. Whatever comes keeps the latin-1 lookup behind `DecodeChar`.
 
 The font now has the ß and the degree sign as well, `0xDF` and `0xB0` in latin-1. Without them
-`setText("Grüße")` failed and a shifting "Grüße" or "21 °C" lost the char without a word, as
+`SetText("Grüße")` failed and a shifting "Grüße" or "21 °C" lost the char without a word, as
 `Messages` showed when it was written. They cost 30 to 38 bytes of flash in the examples that
-draw text, none of RAM. The € was left out: it is not in latin-1, and `decodeChar()` reads two
+draw text, none of RAM. The € was left out: it is not in latin-1, and `DecodeChar()` reads two
 bytes of UTF-8, not the three it takes. The rest of the item is open.
 
 ### 16 Static analysis in CI
@@ -284,12 +284,12 @@ What the checks found was fixed rather than switched off where a fix was cheap:
   `--port` is, with a test.
 - Nothing kept the chain under 32 modules, past which a byte no longer counts the columns;
   `MaxMatrixConfig.h` asserts it now.
-- Five enums got `uint8_t` as their base, as `MaxMatrixErrorType` has: 44 to 80 bytes of flash
+- Five enums got `uint8_t` as their base, as `MaxMatrixError` has: 44 to 80 bytes of flash
   and 3 of RAM in every example.
 - `SpriteTable` is an array of sprites rather than of bytes, the getters are `const`, functions
   without state `static`, and the unused bit macros of `MaxMatrixStandardTypes.h` are gone.
 
-cppcheck found nothing; that it reads the tree was checked with a write past `MatrixBuffer`.
+cppcheck found nothing; that it reads the tree was checked with a write past `matrix_buffer_`.
 
 ### 17 Documentation from the Doxygen blocks
 
@@ -383,42 +383,42 @@ with `digitalWriteFast` 1.3.1 from the Library Manager (ArminJo's, which is what
   and no test or CI job builds with the switch on.
 
 The old TODO in `AndreasBur/MaxMatrix` already says "SPI und digitalwritefast testen".
-Options: drop the switch; or look up port register and bit mask once in `init()`
+Options: drop the switch; or look up port register and bit mask once in `Init()`
 (`portOutputRegister(digitalPinToPort(Pin))`, `digitalPinToBitMask(Pin)`) and write them
 directly, which is fast with pins chosen at run time. Measure the frame time either way; the
 mock from 3 checks that the bits stay the same.
 
 ### 23 The library keeps the shift timing
 
-Every sketch times `shiftTask()` itself: `ScrollText` with `millis()`, the old sketches with
-a TimerOne interrupt that set a flag. A speed setting in the library and a `shiftTask()` that
+Every sketch times `ShiftTask()` itself: `ScrollText` with `millis()`, the old sketches with
+a TimerOne interrupt that set a flag. A speed setting in the library and a `ShiftTask()` that
 is called on every `loop()` and decides itself whether a step is due - as `setSpeed` and
 `displayAnimate()` in MD_Parola - takes that out of every sketch. The interrupt must still
 only set a flag: a transfer from inside an ISR would cut into an SPI transaction of the
 sketch.
 
-As built, `setShiftInterval()` takes milliseconds per column, as `setSpeed` in MD_Parola does,
+As built, `SetShiftInterval()` takes milliseconds per column, as `setSpeed` in MD_Parola does,
 and starts at `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`, 50. So the library keeps the pace out of
 the box; a sketch that timed itself at 50 ms or slower, as `ScrollText` and the README did,
 behaves as before, and one that wants a step on every call sets 0. The first step comes on the
-first call after `setTextWithShift()`; a late call takes one step and does not catch up, so
+first call after `SetTextWithShift()`; a late call takes one step and does not catch up, so
 that the text never jumps after `loop()` was held up. Starting a text over by itself was left
 for 12, beside the text effects.
 
 ### 24 No pause for a skipped char
 
-A char that is not in the font is skipped while shifting, but `stringShiftTask()` spends a
-whole `shiftTask()` call on it and sends nothing, so the text stands still for one step per
+A char that is not in the font is skipped while shifting, but `StringShiftTask()` spends a
+whole `ShiftTask()` call on it and sends nothing, so the text stands still for one step per
 unknown char. Found while porting the tests (#5): `"a\x01b"` takes one call more than `"ab"`
 for the same frames. The fix is to read on to the next known char or the end of the string
 within the same call.
 
-*Done when* `UnknownChars` also compares the number of `shiftTask()` calls, and that check is
+*Done when* `UnknownChars` also compares the number of `ShiftTask()` calls, and that check is
 red without the fix. If 23 lands first, check whether its timing still shows the pause.
 
 ### 25 Matrix orientation apart from module orientation
 
-Two settings, as first planned (the commented-out `MaxMatrixMatrixOrientationType` in
+Two settings, as first planned (the commented-out `MaxMatrixMatrixOrientation` in
 `MaxMatrix.h`):
 
 - the module orientation 0, 90, 180, 270 turns every module in its place;
@@ -466,23 +466,23 @@ After 20, which defines the lines and `SerialControl`; beside 21, which uses the
 
 ### 27 Errors that say what went wrong
 
-`stdReturnType` says only that a call failed, and as `E_OK` is 0, `if(Matrix.setDot(…))` is
+`stdReturnType` says only that a call failed, and as `E_OK` is 0, `if(matrix.SetDot(…))` is
 true on an error. Five reasons lie behind `E_NOT_OK` today: a coordinate, module or intensity
 out of range, a char the font lacks, a `NULL` text, and in `MaxMatrixCommand` a value that is
 empty, no number or too large. The command answers all of them with
 `MAXMATRIX_COMMAND_INVALID_VALUE`, and no example checks a return value at all.
 
-- **One flat enum of one byte**, `MaxMatrixErrorType`, in a wrapper with `isOk()` and no
+- **One flat enum of one byte**, `MaxMatrixError`, in a wrapper with `IsOk()` and no
   conversion to `bool`. A getter of a single value returns the value and the error together
   (`MaxMatrixResult<T>`) rather than through a pointer; both fit into registers on the AVR.
-  `getRow()` and `getSprite()` keep their pointer, as C++ cannot return an array.
-- **`getErrorText()`** returns the text from `PROGMEM` as a `__FlashStringHelper const*`, which
+  `GetRow()` and `GetSprite()` keep their pointer, as C++ cannot return an array.
+- **`GetErrorText()`** returns the text from `PROGMEM` as a `__FlashStringHelper const*`, which
   `Serial.print` reads from flash. A sketch that does not call it pays nothing; the linker
   drops it. `MaxMatrixCommand` passes the error on, so that `SerialControl` and the page of 21
   can say what was wrong.
 - **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where
   a check fails, the library reports the function and the error to a `weak`
-  `maxMatrixReportError()`, so that a sketch which checks nothing still learns where it went
+  `MaxMatrixReportError()`, so that a sketch which checks nothing still learns where it went
   wrong. The default prints on `Serial`, a sketch may define its own. `SerialControl` keeps the
   default, as the page shows any line and reads only `ready`. Switched off, the preprocessor removes every call. The Arduino IDE
   has no debug build and does not pass a sketch's defines to the library, so it is switched in
@@ -490,14 +490,14 @@ empty, no number or too large. The command answers all of them with
   (`build.extra_flags` carries the USB flags of some boards). The tests build a third variant
   with it on and check that every error is reported, once, under the name of its function.
 
-Drawing clips, decided first because it decides how many errors there are: `setDot()`,
-`setColumn()` and `setRow()` take `int16_t` as `setChar()` does, leave out what lies off the
+Drawing clips, decided first because it decides how many errors there are: `SetDot()`,
+`SetColumn()` and `SetRow()` take `int16_t` as `SetChar()` does, leave out what lies off the
 panel and return nothing, as `embedded-graphics` in Rust and Adafruit GFX's `drawPixel()` do.
 Out of range is left for the getters, the intensity and the commands; `MaxMatrixCommand` checks
 the coordinates it is sent itself, so that a typed line that would do nothing says so.
 
 In four steps, a PR each: drawing clips; the enum, the wrapper and `MaxMatrixResult<T>`;
-`getErrorText()` with the reason in the answer of `SerialControl`, after 21 is merged, as the
+`GetErrorText()` with the reason in the answer of `SerialControl`, after 21 is merged, as the
 page of 21 reads those answers; `MAXMATRIX_DEV_ERROR_DETECT`.
 
 The alternatives weighed, AUTOSAR's error domains and Rust's enums among them, and what each
@@ -560,7 +560,7 @@ simulator on the host clock cannot. It needs no account, unlike Wokwi in CI (11)
 replace a run on a board: the timing of a real MAX7219 and its wiring are not simulated.
 
 As built, `build/SimulatorAvr --elf FILE` is the simulator of 5 for the `.elf`: simavr runs it, and
-its pins, its SPI output and its UART drive the `Mock::` variables the Arduino stand-in drives, so
+its pins, its SPI output and its UART drive the `mock::` variables the Arduino stand-in drives, so
 that the panel, the terminal and the page work unchanged, `SerialControl` included. The model now
 shifts bit by bit, as the MAX7219 does, since bit banging clocks single bits; a byte is eight of
 them. CMake builds every example with `arduino-cli`, with bit banging and with SPI, and the tests

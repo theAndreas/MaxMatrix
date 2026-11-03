@@ -14,8 +14,8 @@
  *      \details    Chars and strings in the font, drawn on the matrix as the viewer sees it, standing or shifting in.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_TEXT_H_
-#define _MAXMATRIX_TEXT_H_
+#ifndef MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
+#define MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -27,16 +27,6 @@
 
 
 /******************************************************************************************************************************************************
- *  GLOBAL DATA TYPES AND STRUCTURES
- *****************************************************************************************************************************************************/
-/* Type which describes the internal state of the MaxMatrix shift task */
-typedef enum : uint8_t {
-    MAXMATRIX_SPRITE_SHIFT_STATE_READY,
-    MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING
-} MaxMatrixShiftStateType;
-
-
-/******************************************************************************************************************************************************
  *  CLASS  MaxMatrixText
  *****************************************************************************************************************************************************/
 /* Every function that draws is given the panel rather than the class keeping a reference to it. A reference costs two
@@ -45,28 +35,33 @@ typedef enum : uint8_t {
 class MaxMatrixText
 {
   private:
-    spriteType SpriteBuffer;
-    byte SpriteShiftCounter;
-    byte SpaceBetweenChars;
-    char* String;
+    /* the columns of a char shifted in so far, its space included: kShiftIdle while no char is shifting, and
+     * kShiftStart when one begins. A count rather than a state, so the two values are constants, not an enum. */
+    static constexpr byte kShiftIdle = 0;
+    static constexpr byte kShiftStart = 1;
+
+    MaxMatrixSprite sprite_buffer_;
+    byte sprite_shift_counter_;
+    byte space_between_chars_;
+    char* string_;
 
   public:
     MaxMatrixText();
 
     // get methods
-    byte getSpaceBetweenChars() const { return SpaceBetweenChars; }
+    byte GetSpaceBetweenChars() const { return space_between_chars_; }
 
     // set methods
-    static MaxMatrixStatus setChar(MaxMatrixPanel&, int16_t, int16_t, char);
-    MaxMatrixStatus setCharWithShift(char);
-    MaxMatrixStatus setText(MaxMatrixPanel&, char const*) const;
-    MaxMatrixStatus setTextWithShift(char*);
-    void setSpaceBetweenChars(byte);
-    static void setSprite(MaxMatrixPanel&, int16_t, int16_t, spriteType const);
+    static MaxMatrixStatus SetChar(MaxMatrixPanel&, int16_t, int16_t, char);
+    MaxMatrixStatus SetCharWithShift(char);
+    MaxMatrixStatus SetText(MaxMatrixPanel&, char const*) const;
+    MaxMatrixStatus SetTextWithShift(char*);
+    void SetSpaceBetweenChars(byte);
+    static void SetSprite(MaxMatrixPanel&, int16_t, int16_t, MaxMatrixSprite const);
 
     // methods
-    bool charShiftTask(MaxMatrixPanel&);
-    bool stringShiftTask(MaxMatrixPanel&);
+    bool CharShiftTask(MaxMatrixPanel&);
+    bool StringShiftTask(MaxMatrixPanel&);
 };
 
 #endif

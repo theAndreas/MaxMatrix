@@ -13,11 +13,9 @@
  *
  *      \details    A frame is counted as the Arduino stand-in counts it: from the falling to the rising edge of chip
  *                  select. A clock edge or an SPI byte outside a frame, and a frame that is not a whole number of
- *                  bytes, are errors in Mock::Errors, as a transfer outside a frame is there.
+ *                  bytes, are errors in mock::errors, as a transfer outside a frame is there.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_AVR_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -50,22 +48,22 @@
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  logSimavr()
+  LogSimavr()
 ******************************************************************************************************************************************************/
 /*! \brief          simavr's log, errors only
  *  \details        this function passes on what is an error; simavr also reports every section of the .elf it loads,
  *                  which would stand between the panel and the command line
  *
- *  \param[in]      Avr             the AVR, or NULL while the .elf is read
- *  \param[in]      Level           LOG_ERROR or less is passed on
- *  \param[in]      Format          as printf()
- *  \param[in]      Arguments       as vprintf()
+ *  \param[in]      avr             the AVR, or NULL while the .elf is read
+ *  \param[in]      level           LOG_ERROR or less is passed on
+ *  \param[in]      format          as printf()
+ *  \param[in]      arguments       as vprintf()
  *****************************************************************************************************************************************************/
-static void logSimavr(avr_t* Avr, int const Level, char const* Format, va_list Arguments)
+static void LogSimavr(avr_t* avr, int const level, char const* format, va_list arguments)
 {
-    (void)Avr;
-    if(Level <= LOG_ERROR) vfprintf(stderr, Format, Arguments);
-} /* logSimavr */
+    (void)avr;
+    if(level <= LOG_ERROR) vfprintf(stderr, format, arguments);
+} /* LogSimavr */
 
 
 /******************************************************************************************************************************************************
@@ -76,19 +74,19 @@ static void logSimavr(avr_t* Avr, int const Level, char const* Format, va_list A
   CONSTRUCTOR OF SimulatorAvr
 ******************************************************************************************************************************************************/
 /*! \brief          SimulatorAvr constructor
- *  \details        Instantiation without an AVR; load() makes one. Chip select is high, as the pull-up of a real
- *                  module keeps it until init() drives the pin.
+ *  \details        Instantiation without an AVR; Load() makes one. Chip select is high, as the pull-up of a real
+ *                  module keeps it until Init() drives the pin.
  *****************************************************************************************************************************************************/
 SimulatorAvr::SimulatorAvr()
 {
-    Avr = nullptr;
-    memset(&Firmware, 0, sizeof(Firmware));
-    DataIn = false;
-    Clock = false;
-    ChipSelect = true;
-    Bits = 0;
-    BitCount = 0;
-    ReceiveReady = false;
+    avr_ = nullptr;
+    memset(&firmware_, 0, sizeof(firmware_));
+    data_in_ = false;
+    clock_ = false;
+    chip_select_ = true;
+    bits_ = 0;
+    bit_count_ = 0;
+    receive_ready_ = false;
 } /* SimulatorAvr */
 
 
@@ -100,90 +98,90 @@ SimulatorAvr::SimulatorAvr()
  *****************************************************************************************************************************************************/
 SimulatorAvr::~SimulatorAvr()
 {
-    if(Avr != nullptr) avr_terminate(Avr);
+    if(avr_ != nullptr) avr_terminate(avr_);
 } /* ~SimulatorAvr */
 
 
 /******************************************************************************************************************************************************
-  getMillis()
+  GetMillis()
 ******************************************************************************************************************************************************/
 /*! \brief          the simulated time
  *  \details        this function counts the cycles the AVR has run, at its 16 MHz, not the host's clock
  *
- *  \return         the milliseconds since the AVR started, 0 before load()
+ *  \return         the milliseconds since the AVR started, 0 before Load()
  *****************************************************************************************************************************************************/
-uint32_t SimulatorAvr::getMillis() const
+uint32_t SimulatorAvr::GetMillis() const
 {
-    if(Avr == nullptr) return 0;
-    return static_cast<uint32_t>(avr_cycles_to_usec(Avr, Avr->cycle) / 1000);
-} /* getMillis */
+    if(avr_ == nullptr) return 0;
+    return static_cast<uint32_t>(avr_cycles_to_usec(avr_, avr_->cycle) / 1000);
+} /* GetMillis */
 
 
 /******************************************************************************************************************************************************
-  load()
+  Load()
 ******************************************************************************************************************************************************/
 /*! \brief          makes the AVR and loads an example into it
- *  \details        this function wires the pins, the SPI output and the UART to the model and Serial; Mock::reset() has
+ *  \details        this function wires the pins, the SPI output and the UART to the model and Serial; mock::Reset() has
  *                  to have made the chain first. Called once.
  *
- *  \param[in]      ElfFile         the .elf arduino-cli made of the example
+ *  \param[in]      elf_file        the .elf arduino-cli made of the example
  *  \return         true
  *                  false           the file is no .elf simavr can read
  *****************************************************************************************************************************************************/
-bool SimulatorAvr::load(char const* ElfFile)
+bool SimulatorAvr::Load(char const* elf_file)
 {
-    avr_global_logger_set(logSimavr);
-    if(elf_read_firmware(ElfFile, &Firmware) != 0) return false;
-    Avr = avr_make_mcu_by_name(SIMULATOR_AVR_MCU);
-    if(Avr == nullptr) return false;
-    avr_init(Avr);
-    Avr->frequency = SIMULATOR_AVR_FREQUENCY;
-    avr_load_firmware(Avr, &Firmware);
+    avr_global_logger_set(LogSimavr);
+    if(elf_read_firmware(elf_file, &firmware_) != 0) return false;
+    avr_ = avr_make_mcu_by_name(SIMULATOR_AVR_MCU);
+    if(avr_ == nullptr) return false;
+    avr_init(avr_);
+    avr_->frequency = SIMULATOR_AVR_FREQUENCY;
+    avr_load_firmware(avr_, &firmware_);
 
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_DATA_IN_BIT),
-                            onDataIn, this);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_CLOCK_BIT),
-                            onClock, this);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_CHIP_SELECT_BIT),
-                            onChipSelect, this);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), onSpiByte, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_DATA_IN_BIT),
+                            OnDataIn, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_CLOCK_BIT),
+                            OnClock, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT), SIMULATOR_AVR_CHIP_SELECT_BIT),
+                            OnChipSelect, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), OnSpiByte, this);
 
     /* the UART would print every line on the console itself, between the panel and the command line */
-    uint32_t Flags = 0;
-    avr_ioctl(Avr, AVR_IOCTL_UART_GET_FLAGS(SIMULATOR_AVR_UART), &Flags);
-    Flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
-    avr_ioctl(Avr, AVR_IOCTL_UART_SET_FLAGS(SIMULATOR_AVR_UART), &Flags);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUTPUT), onSerialByte, this);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUT_XON), onReceiveReady, this);
-    avr_irq_register_notify(avr_io_getirq(Avr, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUT_XOFF), onReceiveFull, this);
+    uint32_t flags = 0;
+    avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(SIMULATOR_AVR_UART), &flags);
+    flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
+    avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(SIMULATOR_AVR_UART), &flags);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUTPUT), OnSerialByte, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUT_XON), OnReceiveReady, this);
+    avr_irq_register_notify(avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_OUT_XOFF), OnReceiveFull, this);
     return true;
-} /* load */
+} /* Load */
 
 
 /******************************************************************************************************************************************************
-  run()
+  Run()
 ******************************************************************************************************************************************************/
 /*! \brief          runs the AVR on
  *  \details        this function runs until the simulated time has reached Milliseconds, and passes on what Serial has
  *                  to read on the way, when the UART has room for it
  *
- *  \param[in]      Milliseconds    the simulated time to stop at
- *  \pre            load() has succeeded
+ *  \param[in]      milliseconds    the simulated time to stop at
+ *  \pre            Load() has succeeded
  *  \return         true
  *                  false           the AVR stopped or crashed: the example ran into a sleep with every interrupt off,
  *                                  or the watchdog fired
  *****************************************************************************************************************************************************/
-bool SimulatorAvr::run(uint32_t Milliseconds)
+bool SimulatorAvr::Run(uint32_t milliseconds)
 {
-    avr_cycle_count_t const End = avr_usec_to_cycles(Avr, Milliseconds * 1000u);
+    avr_cycle_count_t const end = avr_usec_to_cycles(avr_, milliseconds * 1000u);
 
-    receiveSerial();
-    while(Avr->cycle < End) {
-        int const State = avr_run(Avr);
-        if(State == cpu_Done || State == cpu_Crashed) return false;
+    ReceiveSerial();
+    while(avr_->cycle < end) {
+        int const state = avr_run(avr_);
+        if(state == cpu_Done || state == cpu_Crashed) return false;
     }
     return true;
-} /* run */
+} /* Run */
 
 
 /******************************************************************************************************************************************************
@@ -191,187 +189,187 @@ bool SimulatorAvr::run(uint32_t Milliseconds)
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  receiveSerial()
+  ReceiveSerial()
 ******************************************************************************************************************************************************/
 /*! \brief          hands the UART what Serial has to read
  *  \details        this function sends one byte after the other until the UART says its buffer is full; the rest waits
  *                  for the next time it has room
  *****************************************************************************************************************************************************/
-void SimulatorAvr::receiveSerial()
+void SimulatorAvr::ReceiveSerial()
 {
-    avr_irq_t* const Input = avr_io_getirq(Avr, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_INPUT);
+    avr_irq_t* const input = avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_INPUT);
 
-    while(ReceiveReady && !Mock::SerialInput.empty()) {
-        uint8_t const Byte = static_cast<uint8_t>(Mock::SerialInput[0]);
-        Mock::SerialInput.erase(0, 1);
-        avr_raise_irq(Input, Byte);
+    while(receive_ready_ && !mock::serial_input.empty()) {
+        uint8_t const received = static_cast<uint8_t>(mock::serial_input[0]);
+        mock::serial_input.erase(0, 1);
+        avr_raise_irq(input, received);
     }
-} /* receiveSerial */
+} /* ReceiveSerial */
 
 
 /******************************************************************************************************************************************************
-  takeByte()
+  TakeByte()
 ******************************************************************************************************************************************************/
 /*! \brief          a byte of a frame, as the page shows it
  *  \details        this function adds it to the frame; one outside a frame is an error, as in the Arduino stand-in
  *
  *  \param[in]      Byte            the byte on the wire
  *****************************************************************************************************************************************************/
-void SimulatorAvr::takeByte(uint8_t Byte) const
+void SimulatorAvr::TakeByte(uint8_t value) const
 {
-    if(ChipSelect) Mock::Errors++;
-    else Mock::Frame.push_back(Byte);
-} /* takeByte */
+    if(chip_select_) mock::errors++;
+    else mock::frame.push_back(value);
+} /* TakeByte */
 
 
 /******************************************************************************************************************************************************
-  onDataIn()
+  OnDataIn()
 ******************************************************************************************************************************************************/
 /*! \brief          DIN changed
  *
- *  \param[in]      Irq             the pin
- *  \param[in]      Value           its level
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             the pin
+ *  \param[in]      value           its level
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onDataIn(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnDataIn(avr_irq_t* irq, uint32_t value, void* object)
 {
-    (void)Irq;
-    static_cast<SimulatorAvr*>(Object)->DataIn = Value != 0;
-} /* onDataIn */
+    (void)irq;
+    static_cast<SimulatorAvr*>(object)->data_in_ = value != 0;
+} /* OnDataIn */
 
 
 /******************************************************************************************************************************************************
-  onClock()
+  OnClock()
 ******************************************************************************************************************************************************/
 /*! \brief          CLK changed
  *  \details        this function shifts DIN into the chain on a rising edge, as the MAX7219 does, and collects the bits
  *                  into the byte the page shows. Only bit banging moves the pin; the SPI peripheral of simavr reports
  *                  its byte without it.
  *
- *  \param[in]      Irq             the pin
- *  \param[in]      Value           its level
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             the pin
+ *  \param[in]      value           its level
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onClock(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object)
 {
-    SimulatorAvr* const Simulator = static_cast<SimulatorAvr*>(Object);
-    bool const Rising = Value != 0 && !Simulator->Clock;
+    SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
+    bool const rising = value != 0 && !simulator->clock_;
 
-    (void)Irq;
-    Simulator->Clock = Value != 0;
-    if(!Rising) return;
-    Mock::Chain.shiftBit(Simulator->DataIn);
-    Simulator->Bits = static_cast<uint8_t>((Simulator->Bits << 1) | (Simulator->DataIn ? 1 : 0));
-    if(++Simulator->BitCount == 8) {
-        Simulator->takeByte(Simulator->Bits);
-        Simulator->BitCount = 0;
+    (void)irq;
+    simulator->clock_ = value != 0;
+    if(!rising) return;
+    mock::chain.ShiftBit(simulator->data_in_);
+    simulator->bits_ = static_cast<uint8_t>((simulator->bits_ << 1) | (simulator->data_in_ ? 1 : 0));
+    if(++simulator->bit_count_ == 8) {
+        simulator->TakeByte(simulator->bits_);
+        simulator->bit_count_ = 0;
     }
-} /* onClock */
+} /* OnClock */
 
 
 /******************************************************************************************************************************************************
-  onChipSelect()
+  OnChipSelect()
 ******************************************************************************************************************************************************/
 /*! \brief          CS changed
  *  \details        this function starts a frame on a falling edge and latches it on a rising one, as every MAX7219 of
  *                  the chain does; a frame that ends within a byte is an error
  *
- *  \param[in]      Irq             the pin
- *  \param[in]      Value           its level
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             the pin
+ *  \param[in]      value           its level
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onChipSelect(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object)
 {
-    SimulatorAvr* const Simulator = static_cast<SimulatorAvr*>(Object);
-    bool const High = Value != 0;
+    SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
+    bool const high = value != 0;
 
-    (void)Irq;
-    if(Simulator->ChipSelect && !High) {
-        Mock::Frame.clear();
-    } else if(!Simulator->ChipSelect && High) {
-        if(Simulator->BitCount != 0) Mock::Errors++;
-        Simulator->BitCount = 0;
-        Mock::Chain.latch();
-        Mock::LastFrame = Mock::Frame;
-        Mock::Frames++;
+    (void)irq;
+    if(simulator->chip_select_ && !high) {
+        mock::frame.clear();
+    } else if(!simulator->chip_select_ && high) {
+        if(simulator->bit_count_ != 0) mock::errors++;
+        simulator->bit_count_ = 0;
+        mock::chain.Latch();
+        mock::last_frame = mock::frame;
+        mock::frames++;
     }
-    Simulator->ChipSelect = High;
-} /* onChipSelect */
+    simulator->chip_select_ = high;
+} /* OnChipSelect */
 
 
 /******************************************************************************************************************************************************
-  onSpiByte()
+  OnSpiByte()
 ******************************************************************************************************************************************************/
 /*! \brief          the SPI peripheral sent a byte
  *
- *  \param[in]      Irq             the SPI output
- *  \param[in]      Value           the byte
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             the SPI output
+ *  \param[in]      value           the byte
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onSpiByte(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnSpiByte(avr_irq_t* irq, uint32_t value, void* object)
 {
-    uint8_t const Byte = static_cast<uint8_t>(Value);
+    uint8_t const data = static_cast<uint8_t>(value);
 
-    (void)Irq;
-    Mock::Chain.shift(Byte);
-    static_cast<SimulatorAvr*>(Object)->takeByte(Byte);
-} /* onSpiByte */
+    (void)irq;
+    mock::chain.Shift(data);
+    static_cast<SimulatorAvr*>(object)->TakeByte(data);
+} /* OnSpiByte */
 
 
 /******************************************************************************************************************************************************
-  onSerialByte()
+  OnSerialByte()
 ******************************************************************************************************************************************************/
 /*! \brief          the sketch printed a byte on Serial
  *
- *  \param[in]      Irq             the UART output
- *  \param[in]      Value           the byte
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             the UART output
+ *  \param[in]      value           the byte
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onSerialByte(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnSerialByte(avr_irq_t* irq, uint32_t value, void* object)
 {
-    (void)Irq;
-    (void)Object;
-    Mock::SerialOutput += static_cast<char>(Value);
-} /* onSerialByte */
+    (void)irq;
+    (void)object;
+    mock::serial_output += static_cast<char>(value);
+} /* OnSerialByte */
 
 
 /******************************************************************************************************************************************************
-  onReceiveReady()
+  OnReceiveReady()
 ******************************************************************************************************************************************************/
 /*! \brief          the UART has room for a byte
  *  \details        this function sends what Serial has to read at once, as simavr asks: it says so again and again
  *                  while there is room, and XOFF, from within the sending, when there is none
  *
- *  \param[in]      Irq             XON of the UART
- *  \param[in]      Value           -
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             XON of the UART
+ *  \param[in]      value           -
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onReceiveReady(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnReceiveReady(avr_irq_t* irq, uint32_t value, void* object)
 {
-    SimulatorAvr* const Simulator = static_cast<SimulatorAvr*>(Object);
+    SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
 
-    (void)Irq;
-    (void)Value;
-    Simulator->ReceiveReady = true;
-    Simulator->receiveSerial();
-} /* onReceiveReady */
+    (void)irq;
+    (void)value;
+    simulator->receive_ready_ = true;
+    simulator->ReceiveSerial();
+} /* OnReceiveReady */
 
 
 /******************************************************************************************************************************************************
-  onReceiveFull()
+  OnReceiveFull()
 ******************************************************************************************************************************************************/
 /*! \brief          the UART's buffer is full
  *
- *  \param[in]      Irq             XOFF of the UART
- *  \param[in]      Value           -
- *  \param[in]      Object          the SimulatorAvr
+ *  \param[in]      irq             XOFF of the UART
+ *  \param[in]      value           -
+ *  \param[in]      object          the SimulatorAvr
  *****************************************************************************************************************************************************/
-void SimulatorAvr::onReceiveFull(avr_irq_t* Irq, uint32_t Value, void* Object)
+void SimulatorAvr::OnReceiveFull(avr_irq_t* irq, uint32_t value, void* object)
 {
-    (void)Irq;
-    (void)Value;
-    static_cast<SimulatorAvr*>(Object)->ReceiveReady = false;
-} /* onReceiveFull */
+    (void)irq;
+    (void)value;
+    static_cast<SimulatorAvr*>(object)->receive_ready_ = false;
+} /* OnReceiveFull */
 
 
 /******************************************************************************************************************************************************

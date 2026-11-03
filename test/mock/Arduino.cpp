@@ -3,79 +3,79 @@
 #include <chrono>
 #include <thread>
 
-namespace Mock {
-    uint8_t PinMode[NumberOfPins];
-    uint8_t PinLevel[NumberOfPins];
-    uint8_t ChipSelectPin;
-    bool TransactionOpen;
-    int32_t Errors;
-    int32_t Frames;
-    std::vector<byte> Frame;
-    std::vector<byte> LastFrame;
-    Max7219Chain Chain;
-    std::string SerialInput;
-    std::string SerialOutput;
-    void (*Tick)() = NULL;
-    bool SpiUsed;
+namespace mock {
+    uint8_t pin_mode[kNumberOfPins];
+    uint8_t pin_level[kNumberOfPins];
+    uint8_t chip_select_pin;
+    bool transaction_open;
+    int32_t errors;
+    int32_t frames;
+    std::vector<byte> frame;
+    std::vector<byte> last_frame;
+    Max7219Chain chain;
+    std::string serial_input;
+    std::string serial_output;
+    void (*tick)() = NULL;
+    bool spi_used;
 
     /* the host clock from the first call on, as an Arduino counts from reset */
-    static std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+    static std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     /* or a clock that a test holds and sets, so that a step 50 ms on does not depend on how fast the host is */
-    static bool ClockHeld = false;
-    static uint32_t HeldMillis = 0;
+    static bool clock_held = false;
+    static uint32_t held_millis = 0;
 
-    void setMillis(uint32_t Milliseconds)
+    void SetMillis(uint32_t milliseconds)
     {
-        ClockHeld = true;
-        HeldMillis = Milliseconds;
+        clock_held = true;
+        held_millis = milliseconds;
     }
 
-    void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips)
+    void Reset(uint8_t chip_select_pin, uint8_t number_of_chips)
     {
-        ClockHeld = false;
-        memset(PinMode, INPUT, sizeof(PinMode));
-        memset(PinLevel, LOW, sizeof(PinLevel));
-        ChipSelectPin = sChipSelectPin;
-        TransactionOpen = false;
-        Errors = 0;
-        Frames = 0;
-        Frame.clear();
-        LastFrame.clear();
-        SpiUsed = false;
-        SerialInput.clear();
-        SerialOutput.clear();
-        Chain.reset(NumberOfChips);
+        clock_held = false;
+        memset(pin_mode, INPUT, sizeof(pin_mode));
+        memset(pin_level, LOW, sizeof(pin_level));
+        mock::chip_select_pin = chip_select_pin;
+        transaction_open = false;
+        errors = 0;
+        frames = 0;
+        frame.clear();
+        last_frame.clear();
+        spi_used = false;
+        serial_input.clear();
+        serial_output.clear();
+        chain.Reset(number_of_chips);
     }
 
     /* a byte only reaches the chain while chip select is low, and over SPI only inside a transaction */
-    void transfer(uint8_t Value)
+    void Transfer(uint8_t value)
     {
-        if(PinMode[ChipSelectPin] != OUTPUT || PinLevel[ChipSelectPin] != LOW) Errors++;
-        Frame.push_back(Value);
-        Chain.shift(Value);
+        if(pin_mode[chip_select_pin] != OUTPUT || pin_level[chip_select_pin] != LOW) errors++;
+        frame.push_back(value);
+        chain.Shift(value);
     }
 
-    bool usesSpi() { return SpiUsed; }
+    bool UsesSpi() { return spi_used; }
 }
 
-void pinMode(uint8_t Pin, uint8_t Mode) { Mock::PinMode[Pin] = Mode; }
+void pinMode(uint8_t pin, uint8_t mode) { mock::pin_mode[pin] = mode; }
 
-void digitalWrite(uint8_t Pin, uint8_t Value)
+void digitalWrite(uint8_t pin, uint8_t value)
 {
     /* the rising edge of chip select is where the MAX7219 latches the frame */
-    if(Pin == Mock::ChipSelectPin) {
-        if(Mock::PinLevel[Pin] == HIGH && Value == LOW) Mock::Frame.clear();
-        if(Mock::PinLevel[Pin] == LOW && Value == HIGH) {
-            Mock::LastFrame = Mock::Frame;
-            Mock::Frames++;
-            Mock::Chain.latch();
-            if(Mock::Tick) Mock::Tick();
+    if(pin == mock::chip_select_pin) {
+        if(mock::pin_level[pin] == HIGH && value == LOW) mock::frame.clear();
+        if(mock::pin_level[pin] == LOW && value == HIGH) {
+            mock::last_frame = mock::frame;
+            mock::frames++;
+            mock::chain.Latch();
+            if(mock::tick) mock::tick();
         }
     }
-    Mock::PinLevel[Pin] = Value;
+    mock::pin_level[pin] = value;
 }
 
-void shiftOut(uint8_t, uint8_t, uint8_t, uint8_t Value) { Mock::transfer(Value); }
+void shiftOut(uint8_t, uint8_t, uint8_t, uint8_t value) { mock::Transfer(value); }
 
 HardwareSerial Serial;
 
@@ -83,66 +83,66 @@ void HardwareSerial::begin(unsigned long) {}
 
 int HardwareSerial::available()
 {
-    return static_cast<int>(Mock::SerialInput.size());
+    return static_cast<int>(mock::serial_input.size());
 }
 
 /* -1 when nothing is waiting, as on the board */
 int HardwareSerial::read()
 {
-    if(Mock::SerialInput.empty()) return -1;
-    uint8_t const Byte = static_cast<uint8_t>(Mock::SerialInput[0]);
-    Mock::SerialInput.erase(0, 1);
-    return Byte;
+    if(mock::serial_input.empty()) return -1;
+    uint8_t const received = static_cast<uint8_t>(mock::serial_input[0]);
+    mock::serial_input.erase(0, 1);
+    return received;
 }
 
-size_t HardwareSerial::print(char const* Text)
+size_t HardwareSerial::print(char const* text)
 {
-    Mock::SerialOutput += Text;
-    return strlen(Text);
+    mock::serial_output += text;
+    return strlen(text);
 }
 
 /* a line ends in \r\n, as the Arduino core prints it */
-size_t HardwareSerial::println(char const* Text)
+size_t HardwareSerial::println(char const* text)
 {
-    return print(Text) + print("\r\n");
+    return print(text) + print("\r\n");
 }
 
-size_t HardwareSerial::print(__FlashStringHelper const* Text)
+size_t HardwareSerial::print(__FlashStringHelper const* text)
 {
-    return print(reinterpret_cast<char const*>(Text));
+    return print(reinterpret_cast<char const*>(text));
 }
 
-size_t HardwareSerial::println(__FlashStringHelper const* Text)
+size_t HardwareSerial::println(__FlashStringHelper const* text)
 {
-    return println(reinterpret_cast<char const*>(Text));
+    return println(reinterpret_cast<char const*>(text));
 }
 
 SPIClass SPI;
 
 void SPIClass::beginTransaction(SPISettings)
 {
-    if(Mock::TransactionOpen) Mock::Errors++;
-    Mock::TransactionOpen = true;
-    Mock::SpiUsed = true;
+    if(mock::transaction_open) mock::errors++;
+    mock::transaction_open = true;
+    mock::spi_used = true;
 }
 
 void SPIClass::endTransaction()
 {
-    if(!Mock::TransactionOpen) Mock::Errors++;
-    Mock::TransactionOpen = false;
+    if(!mock::transaction_open) mock::errors++;
+    mock::transaction_open = false;
 }
 
-uint8_t SPIClass::transfer(uint8_t Value)
+uint8_t SPIClass::transfer(uint8_t value)
 {
-    if(!Mock::TransactionOpen) Mock::Errors++;
-    Mock::transfer(Value);
+    if(!mock::transaction_open) mock::errors++;
+    mock::Transfer(value);
     return 0;
 }
 
 unsigned long micros()
 {
-    if(Mock::ClockHeld) return static_cast<unsigned long>(Mock::HeldMillis) * 1000;
-    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Mock::Start).count();
+    if(mock::clock_held) return static_cast<unsigned long>(mock::held_millis) * 1000;
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - mock::start).count();
 }
 
 unsigned long millis()
@@ -152,18 +152,18 @@ unsigned long millis()
 
 /* waits for real, a millisecond at a time, so that a sketch runs at its own pace in the simulator; a held clock is
  * moved on instead, which no waiting would */
-void delay(unsigned long Milliseconds)
+void delay(unsigned long milliseconds)
 {
-    if(Mock::ClockHeld) {
-        for(uint32_t i = 0; i < Milliseconds; i++) {
-            Mock::HeldMillis++;
-            if(Mock::Tick) Mock::Tick();
+    if(mock::clock_held) {
+        for(uint32_t i = 0; i < milliseconds; i++) {
+            mock::held_millis++;
+            if(mock::tick) mock::tick();
         }
         return;
     }
-    uint32_t const Begin = millis();
-    while(static_cast<uint32_t>(millis()) - Begin < Milliseconds) {
-        if(Mock::Tick) Mock::Tick();
+    uint32_t const begin = millis();
+    while(static_cast<uint32_t>(millis()) - begin < milliseconds) {
+        if(mock::tick) mock::tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }

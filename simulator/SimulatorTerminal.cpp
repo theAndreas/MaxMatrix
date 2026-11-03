@@ -14,8 +14,6 @@
  *      \details    With ANSI escape sequences, which every terminal VS Code offers understands.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_TERMINAL_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -47,81 +45,81 @@
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  clear()
+  Clear()
 ******************************************************************************************************************************************************/
 /*! \brief          clears the terminal
  *  \details        this function is called once before the first draw; every draw after it only moves the cursor home
  *****************************************************************************************************************************************************/
-void SimulatorTerminal::clear()
+void SimulatorTerminal::Clear()
 {
     fputs(SIMULATOR_TERMINAL_CLEAR_SCREEN, stdout);
-} /* clear */
+} /* Clear */
 
 
 /******************************************************************************************************************************************************
-  getStatusLine()
+  GetStatusLine()
 ******************************************************************************************************************************************************/
 /*! \brief          the line above the panel
  *  \details        this function says which wiring and mounting the panel is drawn for, the intensity of every module
  *                  and how many frames the sketch has sent. The modules are counted from the left as on the page;
  *                  counting the chips along the chain, as before, had them backwards on a board upside down.
  *
- *  \param[in]      Panel           the panel to describe
+ *  \param[in]      panel           the panel to describe
  *  \return         the line, without a line break
  *****************************************************************************************************************************************************/
-std::string SimulatorTerminal::getStatusLine(SimulatorPanel const& Panel)
+std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel)
 {
-    std::ostringstream Line;
+    std::ostringstream line;
 
-    Line << Panel.getWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (Panel.isUpsideDown() ? ", upside down" : "")
+    line << panel.GetWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (panel.IsUpsideDown() ? ", upside down" : "")
          << ", intensity";
-    for(uint8_t Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Line << ' ' << static_cast<uint16_t>(Panel.getIntensity(Module));
-    Line << ", " << Mock::Frames << " frames" << (Mock::Errors ? ", TRANSFER ERRORS" : "");
-    return Line.str();
-} /* getStatusLine */
+    for(uint8_t module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) line << ' ' << static_cast<uint16_t>(panel.GetIntensity(module));
+    line << ", " << mock::frames << " frames" << (mock::errors ? ", TRANSFER ERRORS" : "");
+    return line.str();
+} /* GetStatusLine */
 
 
 /******************************************************************************************************************************************************
-  draw()
+  Draw()
 ******************************************************************************************************************************************************/
 /*! \brief          draws the panel in place
  *  \details        this function moves the cursor home rather than clearing the terminal, which would flicker, and
  *                  writes the status line above the panel
  *
- *  \param[in]      Panel           the panel to draw
+ *  \param[in]      panel           the panel to draw
  *****************************************************************************************************************************************************/
-void SimulatorTerminal::draw(SimulatorPanel const& Panel)
+void SimulatorTerminal::Draw(SimulatorPanel const& panel)
 {
-    printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s" SIMULATOR_TERMINAL_CLEAR_LINE_END "\n\n", getStatusLine(Panel).c_str());
-    fputs(Panel.getText(SIMULATOR_TERMINAL_LIT, SIMULATOR_TERMINAL_DARK, "\n").c_str(), stdout);
+    printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s" SIMULATOR_TERMINAL_CLEAR_LINE_END "\n\n", GetStatusLine(panel).c_str());
+    fputs(panel.GetText(SIMULATOR_TERMINAL_LIT, SIMULATOR_TERMINAL_DARK, "\n").c_str(), stdout);
     fflush(stdout);
-} /* draw */
+} /* Draw */
 
 
 /******************************************************************************************************************************************************
-  printResult()
+  PrintResult()
 ******************************************************************************************************************************************************/
 /*! \brief          prints the panel at the end of a run
  *  \details        this function prints the panel once, in ASCII, and compares it with the expected panel if there is one
  *
- *  \param[in]      Panel           the panel to print
- *  \param[in]      ExpectFile      the file with the expected panel, or nullptr
+ *  \param[in]      panel           the panel to print
+ *  \param[in]      expect_file     the file with the expected panel, or nullptr
  *  \return         true
  *                  false           the panel differs from the file, or the file cannot be read
  *****************************************************************************************************************************************************/
-bool SimulatorTerminal::printResult(SimulatorPanel const& Panel, char const* ExpectFile)
+bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel, char const* expect_file)
 {
-    std::string const Result = Panel.getText(SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
-    std::string Expected;
+    std::string const result = panel.GetText(SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
+    std::string expected;
 
-    fputs(Result.c_str(), stdout);
-    if(ExpectFile == nullptr) return true;
+    fputs(result.c_str(), stdout);
+    if(expect_file == nullptr) return true;
 
-    if(!readFile(ExpectFile, &Expected) || Expected != Result) {
-        fprintf(stderr, "differs from %s:\n%s", ExpectFile, Expected.c_str());
+    if(!ReadFile(expect_file, &expected) || expected != result) {
+        fprintf(stderr, "differs from %s:\n%s", expect_file, expected.c_str());
         return false;
     } else return true;
-} /* printResult */
+} /* PrintResult */
 
 
 /******************************************************************************************************************************************************
@@ -129,25 +127,25 @@ bool SimulatorTerminal::printResult(SimulatorPanel const& Panel, char const* Exp
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  readFile()
+  ReadFile()
 ******************************************************************************************************************************************************/
 /*! \brief          reads a whole file
  *  \details        this function returns what was read even when it fails, so that the caller can show it
  *
- *  \param[in]      Path            the file
- *  \param[out]     Text            what it holds
+ *  \param[in]      path            the file
+ *  \param[out]     text            what it holds
  *  \return         true
  *                  false           the file cannot be read
  *****************************************************************************************************************************************************/
-bool SimulatorTerminal::readFile(char const* Path, std::string* Text)
+bool SimulatorTerminal::ReadFile(char const* path, std::string* text)
 {
-    std::ifstream File(Path);
-    std::stringstream Content;
+    std::ifstream file(path);
+    std::stringstream content;
 
-    Content << File.rdbuf();
-    *Text = Content.str();
-    return static_cast<bool>(File);
-} /* readFile */
+    content << file.rdbuf();
+    *text = content.str();
+    return static_cast<bool>(file);
+} /* ReadFile */
 
 
 /******************************************************************************************************************************************************

@@ -14,8 +14,8 @@
  *      \details    The parameters every part of the library builds on: the size of the chain and how it is driven.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_CONFIG_H_
-#define _MAXMATRIX_CONFIG_H_
+#ifndef MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
+#define MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -45,11 +45,11 @@
 #ifndef MAXMATRIX_SPI_CLOCK_SPEED
 #define MAXMATRIX_SPI_CLOCK_SPEED                                   10000000
 #endif
-/*! the empty columns between two chars of a text, until setSpaceBetweenChars() */
+/*! the empty columns between two chars of a text, until SetSpaceBetweenChars() */
 #ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE                    1
 #endif
-/*! the intensity init() sets, 0 to 15 */
+/*! the intensity Init() sets, 0 to 15 */
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 #define MAXMATRIX_INTENSITY_INIT_VALUE                              5
 #endif
@@ -57,11 +57,11 @@
 #ifndef MAXMATRIX_COMMAND_LINE_LENGTH
 #define MAXMATRIX_COMMAND_LINE_LENGTH                               64
 #endif
-/*! the milliseconds per column of a shifting text, until setShiftInterval(); 0 for a step on every call */
+/*! the milliseconds per column of a shifting text, until SetShiftInterval(); 0 for a step on every call */
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
 #define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE                         50
 #endif
-/* STD_ON reports every error to maxMatrixReportError(), see MaxMatrixError.h */
+/* STD_ON reports every error to MaxMatrixReportError(), see MaxMatrixError.h */
 #ifndef MAXMATRIX_DEV_ERROR_DETECT
 #define MAXMATRIX_DEV_ERROR_DETECT                                  STD_OFF
 #endif
@@ -72,7 +72,7 @@
 #define MAXMATRIX_NUMBER_OF_COLUMNS                                 (MAXMATRIX_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)   /*!< the columns of the matrix */
 #define MAXMATRIX_BUFFER_SIZE                                       MAXMATRIX_NUMBER_OF_COLUMNS   /*!< the bytes of the picture, one per column */
 
-/* a column is counted in a byte throughout, as an index into MatrixBuffer and in every loop over the columns */
+/* a column is counted in a byte throughout, as an index into matrix_buffer_ and in every loop over the columns */
 static_assert(MAXMATRIX_NUMBER_OF_COLUMNS <= 255, "at most 31 modules: their columns have to be counted in a byte");
 
 #endif

@@ -24,8 +24,6 @@
  *                  of an example that moves.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_MAIN_AVR_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -55,10 +53,10 @@
 /******************************************************************************************************************************************************
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
-static SimulatorOptions Options;
-static SimulatorPanel Panel;
-static SimulatorWeb Web;
-static SimulatorAvr Avr;
+static SimulatorOptions options;
+static SimulatorPanel panel;
+static SimulatorWeb web;
+static SimulatorAvr avr;
 
 
 /******************************************************************************************************************************************************
@@ -66,7 +64,7 @@ static SimulatorAvr Avr;
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  begin()
+  Begin()
 ******************************************************************************************************************************************************/
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
@@ -74,39 +72,39 @@ static SimulatorAvr Avr;
  *  \return         true
  *                  false           the port is taken
  *****************************************************************************************************************************************************/
-static bool begin()
+static bool Begin()
 {
-    if(Options.isWeb()) {
-        if(!Web.begin(Options.getPort(), SIMULATOR_PAGE)) {
-            fprintf(stderr, "port %u is taken, maybe by another simulator\n", Options.getPort());
+    if(options.IsWeb()) {
+        if(!web.Begin(options.GetPort(), SIMULATOR_PAGE)) {
+            fprintf(stderr, "port %u is taken, maybe by another simulator\n", options.GetPort());
             return false;
         }
-        printf("http://localhost:%u/\n", Options.getPort());
+        printf("http://localhost:%u/\n", options.GetPort());
         fflush(stdout);
-    } else if(Options.getRunFor() == 0) {
-        SimulatorTerminal::clear();
+    } else if(options.GetRunFor() == 0) {
+        SimulatorTerminal::Clear();
     }
     return true;
-} /* begin */
+} /* Begin */
 
 
 /******************************************************************************************************************************************************
-  follow()
+  Follow()
 ******************************************************************************************************************************************************/
 /*! \brief          follows the AVR, once per simulated millisecond
- *  \details        this function serves the page and draws the panel when it is due, as tick() of main.cpp does
+ *  \details        this function serves the page and draws the panel when it is due, as Tick() of main.cpp does
  *
- *  \param[in]      Now             the simulated time
+ *  \param[in]      now             the simulated time
  *****************************************************************************************************************************************************/
-static void follow(uint32_t Now)
+static void Follow(uint32_t now)
 {
-    if(Options.isWeb()) Web.task(Panel);
-    if(Panel.isDrawDue(Now)) {
-        if(Options.isWeb()) Web.send(Panel);
-        else if(Options.getRunFor() == 0) SimulatorTerminal::draw(Panel);
-        Panel.setDrawn(Now);
+    if(options.IsWeb()) web.Task(panel);
+    if(panel.IsDrawDue(now)) {
+        if(options.IsWeb()) web.Send(panel);
+        else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
+        panel.SetDrawn(now);
     }
-} /* follow */
+} /* Follow */
 
 
 /******************************************************************************************************************************************************
@@ -128,33 +126,33 @@ static void follow(uint32_t Now)
  *****************************************************************************************************************************************************/
 int main(int argc, char** argv)
 {
-    if(!Options.parse(argc, argv) || Options.getElfFile() == nullptr || !Panel.setWiring(Options.getWiringName())) {
-        SimulatorOptions::printUsage(argv[0]);
+    if(!options.Parse(argc, argv) || options.GetElfFile() == nullptr || !panel.SetWiring(options.GetWiringName())) {
+        SimulatorOptions::PrintUsage(argv[0]);
         return SIMULATOR_EXIT_USAGE;
     }
-    Panel.setUpsideDown(Options.isUpsideDown());
-    Mock::reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
-    Mock::SerialInput = Options.getSerialInput();
-    if(!Avr.load(Options.getElfFile())) {
-        fprintf(stderr, "%s is no .elf for the %s\n", Options.getElfFile(), SIMULATOR_AVR_MCU);
+    panel.SetUpsideDown(options.IsUpsideDown());
+    mock::Reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::serial_input = options.GetSerialInput();
+    if(!avr.Load(options.GetElfFile())) {
+        fprintf(stderr, "%s is no .elf for the %s\n", options.GetElfFile(), SIMULATOR_AVR_MCU);
         return SIMULATOR_EXIT_FAILED;
     }
-    if(!begin()) return SIMULATOR_EXIT_FAILED;
+    if(!Begin()) return SIMULATOR_EXIT_FAILED;
 
     /* a page, and whoever is in front of it, speaks in real time */
-    bool const RealTime = Options.isWeb() || Options.getRunFor() == 0;
-    std::chrono::steady_clock::time_point const Start = std::chrono::steady_clock::now();
-    for(uint32_t Now = 1; Options.getRunFor() == 0 || Now <= Options.getRunFor(); Now++) {
-        if(!Avr.run(Now)) {
-            fprintf(stderr, "the AVR stopped after %u ms\n", Now);
+    bool const real_time = options.IsWeb() || options.GetRunFor() == 0;
+    std::chrono::steady_clock::time_point const start = std::chrono::steady_clock::now();
+    for(uint32_t now = 1; options.GetRunFor() == 0 || now <= options.GetRunFor(); now++) {
+        if(!avr.Run(now)) {
+            fprintf(stderr, "the AVR stopped after %u ms\n", now);
             return SIMULATOR_EXIT_FAILED;
         }
-        follow(Now);
+        Follow(now);
         /* simavr runs faster than the Uno, so in real time it waits for the host's clock to catch up */
-        if(RealTime) std::this_thread::sleep_until(Start + std::chrono::milliseconds(Now));
+        if(real_time) std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
     }
-    bool const Passed = SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
-    return Passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED;
+    bool const passed = SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) && mock::errors == 0;
+    return passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED;
 } /* main */
 
 

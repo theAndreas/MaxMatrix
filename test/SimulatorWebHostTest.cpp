@@ -15,38 +15,38 @@
 #include <vector>
 #include "SimulatorWebHost.h"
 
-static uint16_t const Port = 18081;
+static uint16_t const kPort = 18081;
 
 /* a connection that is opened and sends nothing is what a browser does when it opens a socket ahead of a request it
- * may never make; task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
+ * may never make; Task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
  * The socket is shut down from a second thread after three seconds, so that a host that waits ends the test late and
  * failed rather than never. */
 TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
 {
-    SimulatorWebHost Host;
-    std::vector<std::string> Messages;
-    sockaddr_in Address = sockaddr_in();
+    SimulatorWebHost host;
+    std::vector<std::string> messages;
+    sockaddr_in address = sockaddr_in();
 
-    ASSERT_TRUE(Host.begin(Port, "/dev/null"));
-    int const Idle = socket(AF_INET, SOCK_STREAM, 0);
-    ASSERT_GE(Idle, 0);
-    Address.sin_family = AF_INET;
-    Address.sin_port = htons(Port);
-    Address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    ASSERT_EQ(connect(Idle, reinterpret_cast<sockaddr*>(&Address), sizeof(Address)), 0);
+    ASSERT_TRUE(host.Begin(kPort, "/dev/null"));
+    int const idle = socket(AF_INET, SOCK_STREAM, 0);
+    ASSERT_GE(idle, 0);
+    address.sin_family = AF_INET;
+    address.sin_port = htons(kPort);
+    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    ASSERT_EQ(connect(idle, reinterpret_cast<sockaddr*>(&address), sizeof(address)), 0);
 
-    std::promise<void> TaskDone;
-    std::future<void> Done = TaskDone.get_future();
-    std::thread Closer([Idle, &Done]() {
-        if(Done.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) shutdown(Idle, SHUT_RDWR);
+    std::promise<void> task_done;
+    std::future<void> done = task_done.get_future();
+    std::thread closer([idle, &done]() {
+        if(done.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) shutdown(idle, SHUT_RDWR);
     });
 
-    auto const Start = std::chrono::steady_clock::now();
-    Host.task(&Messages);
-    auto const Elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - Start);
+    auto const start = std::chrono::steady_clock::now();
+    host.Task(&messages);
+    auto const elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
 
-    TaskDone.set_value();
-    Closer.join();
-    close(Idle);
-    EXPECT_LT(Elapsed.count(), 1000) << "milliseconds in task()";
+    task_done.set_value();
+    closer.join();
+    close(idle);
+    EXPECT_LT(elapsed.count(), 1000) << "milliseconds in Task()";
 }

@@ -2,10 +2,10 @@
 
 A sketch never sees this: it works in the coordinates of [Coordinates.svg](Coordinates.svg), which are the same
 in every module orientation once it fits the module. The pictures below are for working on `src/Matrix/`, where
-`MaxMatrixPanel::convertDotToBuffer()` maps a dot as the viewer sees it to a byte and a bit of `MatrixBuffer`.
+`MaxMatrixPanel::ConvertDotToBuffer()` maps a dot as the viewer sees it to a byte and a bit of `matrix_buffer_`.
 
 Each LED is labelled `byte.bit`. Byte *n* of a module is digit register *n* of its MAX7219 and
-`MatrixBuffer[8 * module + n]`; the library sends the same byte of every module in one frame. A blue band joins
+`matrix_buffer_[8 * module + n]`; the library sends the same byte of every module in one frame. A blue band joins
 the LEDs of one byte, and the darker LED is its bit 0. All pictures are in matrix orientation 0; matrix
 orientation 180 turns the whole panel on top of them.
 

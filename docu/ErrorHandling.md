@@ -9,12 +9,12 @@ obvious ones from AUTOSAR and Rust do not carry over as they are. Measured on 20
 ## Where it starts
 
 - `stdReturnType` has `E_OK` (0) and `E_NOT_OK` (1); a result goes through a pointer parameter.
-- As `E_OK` is 0, `if(Matrix.setDot(…))` is true *on an error*.
+- As `E_OK` is 0, `if(matrix.SetDot(…))` is true *on an error*.
 - Five reasons lie behind `E_NOT_OK`: a coordinate, module or intensity out of range; a char the font
   lacks; a `NULL` text; and in `MaxMatrixCommand` a value that is empty, no number or too large.
   The command answers all of them with `MAXMATRIX_COMMAND_INVALID_VALUE`.
 - No example checks a return value.
-- `setChar()` already clips a char that lies partly off the panel instead of failing.
+- `SetChar()` already clips a char that lies partly off the panel instead of failing.
 
 ## The alternatives
 
@@ -29,7 +29,7 @@ obvious ones from AUTOSAR and Rust do not carry over as they are. Measured on 20
 | Rust: an enum per part under one enum | 1–2 B | 0 | yes, `Display` | no | the model for the flat enum |
 
 A getter of a single value returns value and error together (`MaxMatrixResult<T>`, 2 to 3 bytes, in
-registers). `getRow()` and `getSprite()` keep their pointer, as C++ cannot return an array.
+registers). `GetRow()` and `GetSprite()` keep their pointer, as C++ cannot return an array.
 
 ## Measured
 
@@ -40,8 +40,8 @@ RAM in bytes:
 | Sketch | with LTO (the default) | without LTO |
 |---|---|---|
 | Flat enum | 486 / 9 | 492 / 9 |
-| Domain with a vtable, `getMessage()` never called | 684 / **69** | 690 / 69 |
-| Domain with a vtable, `getMessage()` called once | 718 / 69 | – |
+| Domain with a vtable, `GetMessage()` never called | 684 / **69** | 690 / 69 |
+| Domain with a vtable, `GetMessage()` called once | 718 / 69 | – |
 | Domain in `PROGMEM`, texts linked, never read | 628 / 9 | 634 / 9 |
 | Domain in `PROGMEM`, a text read | 674 / 9 | – |
 | Domain in `PROGMEM`, texts switched off | 580 / 9 | 586 / 9 |
@@ -81,9 +81,9 @@ it is made in. C++17 `inline` variables would solve that; the library is gnu++11
 An `operator==` per domain enum compares domain *and* code, so codes of different domains may overlap:
 
 ```cpp
-inline bool operator==(MaxMatrixError const& Error, MaxMatrixFontErrorType Code)
+inline bool operator==(MaxMatrixError const& error, MaxMatrixFontErrorType code)
 {
-    return Error.getDomain() == &MaxMatrixFontErrors && Error.getCode() == Code;
+    return error.getDomain() == &MaxMatrixFontErrors && error.getCode() == code;
 }
 ```
 
@@ -189,10 +189,10 @@ references, or pointers that have to pass through C, atomics or intrusive struct
 
 ## Readable errors
 
-- **`getErrorText()`** returns a `__FlashStringHelper const*` from `PROGMEM`, which `Serial.print`
+- **`GetErrorText()`** returns a `__FlashStringHelper const*` from `PROGMEM`, which `Serial.print`
   reads from flash. A sketch that does not call it pays nothing, without any switch.
 - **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where a check
-  fails, the library reports the function and the error to a `weak` `maxMatrixReportError()`, so that a
+  fails, the library reports the function and the error to a `weak` `MaxMatrixReportError()`, so that a
   sketch which checks nothing still learns where it went wrong.
   - The default prints on `Serial`; a sketch may define its own. `SerialControl` keeps the default:
     the control page shows any line and reads only `ready`, and a sketch that switches the reports on
@@ -206,12 +206,12 @@ references, or pointers that have to pass through C, atomics or intrusive struct
 ## Testing
 
 - The return value becomes easier to check, not harder:
-  `EXPECT_EQ(Matrix.setDot(100, 3, true).getError(), MAXMATRIX_E_OUT_OF_RANGE)`. Today a test stays
+  `EXPECT_EQ(matrix.SetDot(100, 3, true).GetError(), MaxMatrixError::kOutOfRange)`. Today a test stays
   green when the wrong check fires.
 - A `PrintTo()` for the enum in `test/`, not in the library, makes a failure print the name.
-- **Reporting:** the test file defines `maxMatrixReportError()` itself, which records into a list of
+- **Reporting:** the test file defines `MaxMatrixReportError()` itself, which records into a list of
   its own; the mock stays free of the library's types. The printing on `Serial` is a function of its own, tested through
-  `Mock::SerialOutput`, as the `weak` default cannot run in the same binary.
+  `mock::serial_output`, as the `weak` default cannot run in the same binary.
 - **One table of every error path**: the call, the error and the function expected. With the switch on
   it also checks the report: the whole suite runs a third time under a `det/` prefix, which also shows
   that a report changes nothing else.
@@ -299,7 +299,7 @@ section is what a prototype of it showed.
 
 A prototype on a branch that was not merged put MaxMatrix's errors onto Utl:
 `MaxMatrixStatus` and `MaxMatrixResult<T>` became `utl::Status` and `utl::Result<T>`, the codes
-kept their names in a group of their own, and `MAXMATRIX_E_OK` went, as "ok" is no code there. It
+kept their names in a group of their own, and `MaxMatrixError::kOk` went, as "ok" is no code there. It
 was built for the Uno and run in simavr, where `SerialControl` answered as before; the host tests
 were not moved over. Flash and RAM of the examples on the Uno, Arduino AVR Boards 1.8.8:
 
@@ -316,7 +316,7 @@ is no gain of Utl's.
 
 - **With virtual groups, every sketch that draws text paid for texts it never printed**, 144 to
   166 bytes in the three examples that do not print an error, as `Message()` was virtual. Today
-  they pay nothing: `getErrorText()` is no virtual function, and the linker drops it with its
+  they pay nothing: `GetErrorText()` is no virtual function, and the linker drops it with its
   texts where no one calls it. The switch `UTL_ERROR_TEXTS` takes the texts out, but for the whole
   build, and the Arduino IDE sets it only in `platform.local.txt`; `SerialControl` then answers
   `error: ` without a reason.
@@ -330,14 +330,14 @@ is no gain of Utl's.
   `.bss`, and the sections it places in flash have no `__start_` symbol and no `KEEP`.
 - **A sketch that prints errors pays more than today**: `SerialControl` 402 bytes of flash and 10 of
   RAM. About 130 are the wider error, a group pointer and a code in 3 bytes where an enum takes one:
-  each function that passes a `Result` on, `getCharSprite()` and `convertToNumber()` among them,
+  each function that passes a `Result` on, `GetCharSprite()` and `ConvertToNumber()` among them,
   grows by 64. About 120 are the list of the groups whose texts are on, which LTO puts into
   `main()`.
 - **`[[nodiscard]]` warns in sketches**: eight calls in the examples and two in the library that
-  drop a status on purpose, `Matrix.setIntensity(2)` and `Matrix.setText("Hi!")` among them. A
+  drop a status on purpose, `matrix.SetIntensity(2)` and `matrix.SetText("Hi!")` among them. A
   sketch would need `static_cast<void>()` before each.
-- **The names change** to Google's, `IsOk()`, `error()->Message()`, beside `getState()` and
-  `setText()`; `Status == MAXMATRIX_E_OUT_OF_RANGE` still compiles.
+- **The names change** to Google's, `IsOk()`, `error()->Message()`, beside `GetState()` and
+  `SetText()`; `Status == MaxMatrixError::kOutOfRange` still compiles.
 
 ## Why the virtual group was questioned late
 
@@ -347,7 +347,7 @@ its costs come from `virtual`, the vtable in RAM and the texts that stay linked,
 answered with a workaround, the plugin and the switch, each measured against itself rather than
 against a group without `virtual`. That GCC cannot drop an unused virtual function was written
 down in Utl and above as the reason for the switch, not as a question to the design. And the
-counterexample was at hand all along: `getErrorText()` here, which is not virtual and costs nothing
+counterexample was at hand all along: `GetErrorText()` here, which is not virtual and costs nothing
 where it is not called. It showed only when both were measured side by side in a real user of the
 library, MaxMatrix, rather than in Utl's own examples, which have nothing to compare with.
 
@@ -356,8 +356,8 @@ without the cause first, and in a library that uses it.
 
 ## Decided, and open
 
-- **Chosen:** a flat enum of one byte, `MaxMatrixErrorType`, in a wrapper with `isOk()` and no
-  conversion to `bool`; `MaxMatrixResult<T>` for a getter of a single value; `getErrorText()` in
+- **Chosen:** a flat enum of one byte, `MaxMatrixError`, in a wrapper with `IsOk()` and no
+  conversion to `bool`; `MaxMatrixResult<T>` for a getter of a single value; `GetErrorText()` in
   flash; `MAXMATRIX_DEV_ERROR_DETECT` with a `weak` report function.
 - **Not domains**, because no one needs the open set they buy: every error comes from the library
   itself. A domain costs RAM with a vtable, or keeps its texts linked in `PROGMEM`; either breaks "the
@@ -366,21 +366,21 @@ without the cause first, and in a library that uses it.
   that does pays 402 bytes of flash more in `SerialControl`, and every sketch gets warnings for the
   statuses it drops; see "Tried out: MaxMatrix on Utl" above. OIL item 28 is dropped until errors
   come from outside the library.
-- **Drawing clips**, decided first: `setDot()`, `setColumn()` and `setRow()` take `int16_t`, leave out
-  what lies off the panel as `setChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
+- **Drawing clips**, decided first: `SetDot()`, `SetColumn()` and `SetRow()` take `int16_t`, leave out
+  what lies off the panel as `SetChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
   Out of range is left for the getters, the intensity and the commands, and `MaxMatrixCommand` checks
   the coordinates it is sent itself. Measured on the Uno: `Basics` 28 bytes of flash more for the
-  checks against negative coordinates, `ScrollText` 4 and `SerialControl` 34 less, as `setSprite()`
+  checks against negative coordinates, `ScrollText` 4 and `SerialControl` 34 less, as `SetSprite()`
   no longer checks on its own; RAM the same.
-- **The enum and its wrappers**, the second step: `MaxMatrixErrorType`, `MaxMatrixStatus` and
+- **The enum and its wrappers**, the second step: `MaxMatrixError`, `MaxMatrixStatus` and
   `MaxMatrixResult<T>` in `src/MaxMatrixError.h`, in place of `stdReturnType` throughout the library.
   Measured on the Uno: `Basics` 18 bytes of flash less, `ScrollText` the same, `SerialControl` 80
   less, RAM the same. A getter returning its value in registers costs less than one writing it through
-  a pointer, and `MaxMatrixFont::getCharSprite()` replaced four copies of the lookup in
+  a pointer, and `MaxMatrixFont::GetCharSprite()` replaced four copies of the lookup in
   `MaxMatrixText`.
-- **The text of an error**, the third step: `getErrorText()` on `MaxMatrixStatus` and
-  `MaxMatrixResult<T>`. `MaxMatrixCommand::feed()` passes the reason of a failed line on beside
-  `PENDING` and `DONE`, with `MAXMATRIX_E_UNKNOWN_COMMAND` and `MAXMATRIX_E_LINE_TOO_LONG` new, and
+- **The text of an error**, the third step: `GetErrorText()` on `MaxMatrixStatus` and
+  `MaxMatrixResult<T>`. `MaxMatrixCommand::Feed()` passes the reason of a failed line on beside
+  `PENDING` and `DONE`, with `MaxMatrixError::kUnknownCommand` and `MaxMatrixError::kLineTooLong` new, and
   `SerialControl` answers `error: out of range`.
   - A `switch` that returned `F("…")` for each error cost 14 bytes of RAM. avr-gcc turned it into a
     table of the seven pointers in `.rodata` (`CSWTCH.1` in the map), which the Uno copies into RAM
@@ -390,7 +390,7 @@ without the cause first, and in a library that uses it.
     code. The change to the command alone saves 6. RAM is the same.
 - **The report**, the fourth step: `MAXMATRIX_DEV_ERROR_DETECT`. Each of the eleven functions of the
   facade that can fail wraps the call below in `MAXMATRIX_REPORT_ERROR("name", …)`, which reports to
-  the weak `maxMatrixReportError()` and is the bare call when the switch is off. The name is an `F()`
+  the weak `MaxMatrixReportError()` and is the bare call when the switch is off. The name is an `F()`
   string at the call site rather than an id as in the DET: a report of a sketch's own prints it with
   `Serial.print()` and needs no table. `F()` in inline functions and templates can end in a "section
   type conflict" with avr-gcc; 7.3 took it in a test sketch beside `F()` in ordinary functions.
@@ -403,11 +403,11 @@ without the cause first, and in a library that uses it.
     `SerialControl`, which has it, 126 bytes of flash and no RAM. A sketch with a report of its own
     that blinks paid 10 bytes of flash and no RAM.
 - **`stdReturnType` gone**, a fifth step: the simulator and `DocuPictures` return `bool`, as each of
-  their functions fails for one reason only, which its documentation names. `MaxMatrixErrorType` has no
+  their functions fails for one reason only, which its documentation names. `MaxMatrixError` has no
   word for a port that is taken, and `std::optional` would need C++17. The examples are the same to the
   byte.
 - **To keep a later change cheap:** a sketch reaches the error only through the wrapper,
-  `Status.isOk()` and `Status == MAXMATRIX_E_OUT_OF_RANGE`, never through the raw byte. Then the
+  `Status.IsOk()` and `Status == MaxMatrixError::kOutOfRange`, never through the raw byte. Then the
   wrapper can become `{Domain, Code}` inside without a sketch changing, should errors from outside the
   library ever pass through it: commands a sketch registers with errors of its own, or a transfer that
   can fail, such as I²C with a NACK. A domain in `PROGMEM` with an id byte in its contents would be the

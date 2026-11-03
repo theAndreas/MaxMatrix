@@ -15,8 +15,8 @@
  *                  in here, so that the tests can check every byte without a network.
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_WEB_SOCKET_H_
-#define _SIMULATOR_WEB_SOCKET_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -44,22 +44,22 @@
 class SimulatorWebSocket
 {
   private:
-    static bool getKey(std::string const&, std::string*);
-    static std::string padSha1Message(std::string const&);
-    static void processSha1Block(uint8_t const*, uint32_t*);
-    static uint32_t mixSha1(uint8_t, uint32_t, uint32_t, uint32_t);
-    static uint32_t rotateLeft(uint32_t, uint8_t);
+    static bool GetKey(std::string const&, std::string*);
+    static std::string PadSha1Message(std::string const&);
+    static void ProcessSha1Block(uint8_t const*, uint32_t*);
+    static uint32_t MixSha1(uint8_t, uint32_t, uint32_t, uint32_t);
+    static uint32_t RotateLeft(uint32_t, uint8_t);
 
   public:
     // get methods
-    static bool getHandshakeAnswer(std::string const&, std::string*);
+    static bool GetHandshakeAnswer(std::string const&, std::string*);
 
     // methods
-    static std::string encodeFrame(std::string const&);
-    static bool decodeFrame(std::string*, uint8_t*, std::string*);
-    static std::string convertKeyToAcceptKey(std::string const&);
-    static void calculateSha1(std::string const&, uint8_t*);
-    static std::string convertToBase64(uint8_t const*, size_t);
+    static std::string EncodeFrame(std::string const&);
+    static bool DecodeFrame(std::string*, uint8_t*, std::string*);
+    static std::string ConvertKeyToAcceptKey(std::string const&);
+    static void CalculateSha1(std::string const&, uint8_t*);
+    static std::string ConvertToBase64(uint8_t const*, size_t);
 };
 
 #endif

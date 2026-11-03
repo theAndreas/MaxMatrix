@@ -14,8 +14,8 @@
  *      \details    A sprite per char, and the way from a char of a string to its sprite. Knows nothing of the matrix.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_FONT_H_
-#define _MAXMATRIX_FONT_H_
+#ifndef MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_
+#define MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -40,20 +40,20 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /*! the index of a sprite in the font, the char's code minus 32 for ASCII */
-typedef byte spriteIndexType;
+typedef byte MaxMatrixSpriteIndex;
 
 /*! a sprite: its width, its height and up to five columns, bit 0 the top row, as the bytes are named below */
-typedef byte spriteType[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
+typedef byte MaxMatrixSprite[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
 
-/*! the bytes of a spriteType */
-enum : uint8_t {
-    ASCII_TABLE_SPRITE_WIDTH,               /*!< the columns it takes, 1 to 5 */
-    ASCII_TABLE_SPRITE_HEIGHT,              /*!< the rows it takes, 1 to 8 */
-    ASCII_TABLE_SPRITE_COLUMN1,             /*!< its leftmost column */
-    ASCII_TABLE_SPRITE_COLUMN2,             /*!< its second column */
-    ASCII_TABLE_SPRITE_COLUMN3,             /*!< its third column */
-    ASCII_TABLE_SPRITE_COLUMN4,             /*!< its fourth column */
-    ASCII_TABLE_SPRITE_COLUMN5              /*!< its fifth column */
+/*! the bytes of a MaxMatrixSprite */
+enum MaxMatrixSpriteByte : uint8_t {
+    kSpriteWidth,               /*!< the columns it takes, 1 to 5 */
+    kSpriteHeight,              /*!< the rows it takes, 1 to 8 */
+    kSpriteColumn1,             /*!< its leftmost column */
+    kSpriteColumn2,             /*!< its second column */
+    kSpriteColumn3,             /*!< its third column */
+    kSpriteColumn4,             /*!< its fourth column */
+    kSpriteColumn5              /*!< its fifth column */
 };
 
 
@@ -64,10 +64,10 @@ enum : uint8_t {
 class MaxMatrixFont
 {
   public:
-    static MaxMatrixStatus getSprite(spriteIndexType, spriteType*);
-    static MaxMatrixStatus getCharSprite(char, spriteType*);
-    static MaxMatrixResult<spriteIndexType> convertCharToSprite(char);
-    static byte decodeChar(char const*, char*);
+    static MaxMatrixStatus GetSprite(MaxMatrixSpriteIndex, MaxMatrixSprite*);
+    static MaxMatrixStatus GetCharSprite(char, MaxMatrixSprite*);
+    static MaxMatrixResult<MaxMatrixSpriteIndex> ConvertCharToSprite(char);
+    static byte DecodeChar(char const*, char*);
 };
 
 #endif

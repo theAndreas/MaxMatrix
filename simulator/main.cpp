@@ -27,8 +27,6 @@
  *                  another port, so that two simulators, or a simulator and the tests, can run side by side.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_MAIN_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -66,10 +64,10 @@ void loop();
 /******************************************************************************************************************************************************
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
-/* Mock::Tick is a plain function pointer, so what tick() works on has to be reachable without an object. */
-static SimulatorOptions Options;
-static SimulatorPanel Panel;
-static SimulatorWeb Web;
+/* mock::tick is a plain function pointer, so what Tick() works on has to be reachable without an object. */
+static SimulatorOptions options;
+static SimulatorPanel panel;
+static SimulatorWeb web;
 
 
 /******************************************************************************************************************************************************
@@ -77,44 +75,44 @@ static SimulatorWeb Web;
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  finish()
+  Finish()
 ******************************************************************************************************************************************************/
 /*! \brief          ends a run with --for
  *  \details        this function prints the panel and exits, from within the sketch's loop() or delay(), which never
  *                  return on their own
  *****************************************************************************************************************************************************/
-static void finish()
+static void Finish()
 {
-    bool const Passed = SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
+    bool const passed = SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) && mock::errors == 0;
 
-    exit(Passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
-} /* finish */
+    exit(passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
+} /* Finish */
 
 
 /******************************************************************************************************************************************************
-  tick()
+  Tick()
 ******************************************************************************************************************************************************/
 /*! \brief          follows the sketch
  *  \details        this function is called after every frame and every millisecond of delay(), so that the panel is
  *                  drawn while a sketch blocks. In a run with --for the terminal draws only at the end.
  *****************************************************************************************************************************************************/
-static void tick()
+static void Tick()
 {
-    uint32_t const Now = millis();
+    uint32_t const now = millis();
 
-    if(Options.isWeb()) Web.task(Panel);
-    if(Options.getRunFor() != 0 && Now >= Options.getRunFor()) finish();
+    if(options.IsWeb()) web.Task(panel);
+    if(options.GetRunFor() != 0 && now >= options.GetRunFor()) Finish();
 
-    if(Panel.isDrawDue(Now)) {
-        if(Options.isWeb()) Web.send(Panel);
-        else if(Options.getRunFor() == 0) SimulatorTerminal::draw(Panel);
-        Panel.setDrawn(Now);
+    if(panel.IsDrawDue(now)) {
+        if(options.IsWeb()) web.Send(panel);
+        else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
+        panel.SetDrawn(now);
     }
-} /* tick */
+} /* Tick */
 
 
 /******************************************************************************************************************************************************
-  begin()
+  Begin()
 ******************************************************************************************************************************************************/
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
@@ -122,20 +120,20 @@ static void tick()
  *  \return         true
  *                  false           the port is taken
  *****************************************************************************************************************************************************/
-static bool begin()
+static bool Begin()
 {
-    if(Options.isWeb()) {
-        if(!Web.begin(Options.getPort(), SIMULATOR_PAGE)) {
-            fprintf(stderr, "port %u is taken, maybe by another simulator\n", Options.getPort());
+    if(options.IsWeb()) {
+        if(!web.Begin(options.GetPort(), SIMULATOR_PAGE)) {
+            fprintf(stderr, "port %u is taken, maybe by another simulator\n", options.GetPort());
             return false;
         }
-        printf("http://localhost:%u/\n", Options.getPort());
+        printf("http://localhost:%u/\n", options.GetPort());
         fflush(stdout);
-    } else if(Options.getRunFor() == 0) {
-        SimulatorTerminal::clear();
+    } else if(options.GetRunFor() == 0) {
+        SimulatorTerminal::Clear();
     }
     return true;
-} /* begin */
+} /* Begin */
 
 
 /******************************************************************************************************************************************************
@@ -156,20 +154,20 @@ static bool begin()
 int main(int argc, char** argv)
 {
     /* the sketch is built in; an .elf is for SimulatorAvr */
-    if(!Options.parse(argc, argv) || Options.getElfFile() != nullptr || !Panel.setWiring(Options.getWiringName())) {
-        SimulatorOptions::printUsage(argv[0]);
+    if(!options.Parse(argc, argv) || options.GetElfFile() != nullptr || !panel.SetWiring(options.GetWiringName())) {
+        SimulatorOptions::PrintUsage(argv[0]);
         return SIMULATOR_EXIT_USAGE;
     }
-    Panel.setUpsideDown(Options.isUpsideDown());
-    Mock::reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
-    Mock::SerialInput = Options.getSerialInput();
-    Mock::Tick = tick;
-    if(!begin()) return SIMULATOR_EXIT_FAILED;
+    panel.SetUpsideDown(options.IsUpsideDown());
+    mock::Reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::serial_input = options.GetSerialInput();
+    mock::tick = Tick;
+    if(!Begin()) return SIMULATOR_EXIT_FAILED;
 
     setup();
     for(;;) {
         loop();
-        tick();
+        Tick();
         /* a sketch polling millis() would otherwise keep a core busy */
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

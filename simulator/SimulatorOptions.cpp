@@ -14,8 +14,6 @@
  *      \details    Parsed once at the start; an option that is unknown, lacks its value or has a value of zero fails it.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_OPTIONS_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -37,18 +35,18 @@
  *****************************************************************************************************************************************************/
 SimulatorOptions::SimulatorOptions()
 {
-    WiringName = SIMULATOR_PANEL_DEFAULT_WIRING;
-    UpsideDown = false;
-    Web = false;
-    Port = SIMULATOR_OPTIONS_DEFAULT_PORT;
-    RunFor = 0;
-    ExpectFile = nullptr;
-    ElfFile = nullptr;
+    wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
+    upside_down_ = false;
+    web_ = false;
+    port_ = SIMULATOR_OPTIONS_DEFAULT_PORT;
+    run_for_ = 0;
+    expect_file_ = nullptr;
+    elf_file_ = nullptr;
 } /* SimulatorOptions */
 
 
 /******************************************************************************************************************************************************
-  parse()
+  Parse()
 ******************************************************************************************************************************************************/
 /*! \brief          reads the command line
  *  \details        this function reads one option after the other; --expect only makes sense with --for, which ends the
@@ -57,32 +55,32 @@ SimulatorOptions::SimulatorOptions()
  *  \param[in]      argc            the number of arguments, the program's name included
  *  \param[in]      argv            the arguments
  *  \return         true
- *                  false           the command line is wrong; printUsage() says how it should be
+ *                  false           the command line is wrong; PrintUsage() says how it should be
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::parse(int argc, char** argv)
+bool SimulatorOptions::Parse(int argc, char** argv)
 {
     for(int i = 1; i < argc; i++) {
-        if(!parseOption(argc, argv, &i)) return false;
+        if(!ParseOption(argc, argv, &i)) return false;
     }
-    return ExpectFile == nullptr || RunFor != 0;
-} /* parse */
+    return expect_file_ == nullptr || run_for_ != 0;
+} /* Parse */
 
 
 /******************************************************************************************************************************************************
-  printUsage()
+  PrintUsage()
 ******************************************************************************************************************************************************/
 /*! \brief          says how the command line should be
  *  \details        this function writes to stderr, beside whatever went wrong
  *
- *  \param[in]      Program         the program's name, argv[0]
+ *  \param[in]      program         the program's name, argv[0]
  *****************************************************************************************************************************************************/
-void SimulatorOptions::printUsage(char const* Program)
+void SimulatorOptions::PrintUsage(char const* program)
 {
-    fprintf(stderr, "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]\n", Program);
+    fprintf(stderr, "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]\n", program);
     fprintf(stderr, "         [--for SECONDS [--expect FILE]]\n");
     fprintf(stderr, "  FILE of --elf: the example built for the Uno; SimulatorAvr only, which needs it\n");
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
-} /* printUsage */
+} /* PrintUsage */
 
 
 /******************************************************************************************************************************************************
@@ -90,92 +88,92 @@ void SimulatorOptions::printUsage(char const* Program)
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  parseOption()
+  ParseOption()
 ******************************************************************************************************************************************************/
 /*! \brief          reads one option
  *  \details        this function also reads the option's value, if it has one, and moves the index past it
  *
  *  \param[in]      argc            the number of arguments
  *  \param[in]      argv            the arguments
- *  \param[in,out]  Index           the option's index; on return the index of its value, if it has one
+ *  \param[in,out]  index           the option's index; on return the index of its value, if it has one
  *  \return         true
  *                  false           the option is unknown, lacks its value or has a value it cannot take
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
+bool SimulatorOptions::ParseOption(int argc, char** argv, int* index)
 {
-    std::string const Option = argv[*Index];
-    bool const HasValue = *Index + 1 < argc;
+    std::string const option = argv[*index];
+    bool const has_value = *index + 1 < argc;
 
-    if(Option == "--upside-down") {
-        UpsideDown = true;
-    } else if(Option == "--web") {
-        Web = true;
-    } else if(Option == "--wiring" && HasValue) {
-        WiringName = argv[++*Index];
-    } else if(Option == "--port" && HasValue) {
-        if(!convertToPort(argv[++*Index], &Port)) return false;
-    } else if(Option == "--for" && HasValue) {
-        if(!convertToRunFor(argv[++*Index], &RunFor)) return false;
-    } else if(Option == "--expect" && HasValue) {
-        ExpectFile = argv[++*Index];
-    } else if(Option == "--elf" && HasValue) {
-        ElfFile = argv[++*Index];
-    } else if(Option == "--serial" && HasValue) {
-        SerialInput += std::string(argv[++*Index]) + "\n";
+    if(option == "--upside-down") {
+        upside_down_ = true;
+    } else if(option == "--web") {
+        web_ = true;
+    } else if(option == "--wiring" && has_value) {
+        wiring_name_ = argv[++*index];
+    } else if(option == "--port" && has_value) {
+        if(!ConvertToPort(argv[++*index], &port_)) return false;
+    } else if(option == "--for" && has_value) {
+        if(!ConvertToRunFor(argv[++*index], &run_for_)) return false;
+    } else if(option == "--expect" && has_value) {
+        expect_file_ = argv[++*index];
+    } else if(option == "--elf" && has_value) {
+        elf_file_ = argv[++*index];
+    } else if(option == "--serial" && has_value) {
+        serial_input_ += std::string(argv[++*index]) + "\n";
     } else return false;
     return true;
-} /* parseOption */
+} /* ParseOption */
 
 
 /******************************************************************************************************************************************************
-  convertToPort()
+  ConvertToPort()
 ******************************************************************************************************************************************************/
 /*! \brief          converts the value of --port
  *  \details        this function takes a decimal number from 1 to 65535 and nothing else. atoi() and a cast, as before,
  *                  turned 70000 into port 4464 and "80x" into port 80, so the simulator listened somewhere else than
  *                  asked without a word.
  *
- *  \param[in]      Text            the value as given on the command line
- *  \param[out]     Port            the port
+ *  \param[in]      text            the value as given on the command line
+ *  \param[out]     port            the port
  *  \return         true
  *                  false           the value is no number, or out of range; the port is left as it was
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::convertToPort(char const* Text, uint16_t* Port)
+bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port)
 {
-    char* End;
-    unsigned long const Value = strtoul(Text, &End, 10);
+    char* end;
+    unsigned long const value = strtoul(text, &end, 10);
 
     /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range check then refuses */
-    if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return false;
-    *Port = static_cast<uint16_t>(Value);
+    if(end == text || *end != '\0' || value == 0 || value > SIMULATOR_OPTIONS_MAX_PORT) return false;
+    *port = static_cast<uint16_t>(value);
     return true;
-} /* convertToPort */
+} /* ConvertToPort */
 
 
 /******************************************************************************************************************************************************
-  convertToRunFor()
+  ConvertToRunFor()
 ******************************************************************************************************************************************************/
 /*! \brief          converts the value of --for
  *  \details        this function takes the seconds as a decimal number, fractions included, and nothing else. atof(), as
  *                  before, took "2x" as two seconds, and a negative or a huge number reached a cast to uint32_t that is
  *                  undefined for it.
  *
- *  \param[in]      Text            the value as given on the command line
- *  \param[out]     RunFor          the milliseconds
+ *  \param[in]      text            the value as given on the command line
+ *  \param[out]     run_for         the milliseconds
  *  \return         true
  *                  false           the value is no number, or not a single millisecond, or more than the milliseconds fit;
  *                                  the time is left as it was
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::convertToRunFor(char const* Text, uint32_t* RunFor)
+bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for)
 {
-    char* End;
-    double const Milliseconds = strtod(Text, &End) * 1000;
+    char* end;
+    double const milliseconds = strtod(text, &end) * 1000;
 
     /* written so that NaN, which compares false with everything, is refused as well */
-    if(End == Text || *End != '\0' || !(Milliseconds >= 1 && Milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) return false;
-    *RunFor = static_cast<uint32_t>(Milliseconds);
+    if(end == text || *end != '\0' || !(milliseconds >= 1 && milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) return false;
+    *run_for = static_cast<uint32_t>(milliseconds);
     return true;
-} /* convertToRunFor */
+} /* ConvertToRunFor */
 
 
 /******************************************************************************************************************************************************

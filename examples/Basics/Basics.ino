@@ -8,54 +8,54 @@
  */
 #include <MaxMatrix.h>
 
-MaxMatrix Matrix(11, 10, 13);
+MaxMatrix matrix(11, 10, 13);
 
 void setup()
 {
-    Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see the README
+    matrix.Init();
+    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
 }
 
 void loop()
 {
     /* static text */
-    Matrix.clear();
-    Matrix.setText("Hi!");
+    matrix.Clear();
+    matrix.SetText("Hi!");
     delay(2000);
 
-    /* draw a diagonal line dot by dot */
-    Matrix.clear();
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-        Matrix.setDot(Column, Column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    /* Draw a diagonal line dot by dot */
+    matrix.Clear();
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        matrix.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
         delay(30);
     }
     delay(1000);
 
     /* fill row 3 on every module */
-    for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        Matrix.setRow(Module, 3, 0xFF);
+    for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
+        matrix.SetRow(module, 3, 0xFF);
     }
     delay(1000);
 
-    /* draw a frame from many dots and show it at once, rather than dot by dot */
+    /* Draw a frame from many dots and show it at once, rather than dot by dot */
     {
-        MaxMatrixBatch Batch(Matrix);   // nothing is sent until the end of this block
-        Matrix.clear();
-        for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-            Matrix.setDot(Column, 0, true);
-            Matrix.setDot(Column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
+        MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
+        matrix.Clear();
+        for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+            matrix.SetDot(column, 0, true);
+            matrix.SetDot(column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
         }
-        for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
-            Matrix.setDot(0, Row, true);
-            Matrix.setDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, Row, true);
+        for(byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+            matrix.SetDot(0, row, true);
+            matrix.SetDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, row, true);
         }
     }
     delay(1000);
 
     /* fade the intensity */
-    for(byte Intensity = 0; Intensity <= 15; Intensity++) {
-        Matrix.setIntensity(Intensity);
+    for(byte intensity = 0; intensity <= 15; intensity++) {
+        matrix.SetIntensity(intensity);
         delay(100);
     }
-    Matrix.setIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
+    matrix.SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
 }

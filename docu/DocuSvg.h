@@ -15,8 +15,8 @@
  *                  dark text stays readable where GitHub shows the page dark.
  *
  *****************************************************************************************************************************************************/
-#ifndef _DOCU_SVG_H_
-#define _DOCU_SVG_H_
+#ifndef MAXMATRIX_DOCU_DOCUSVG_H_
+#define MAXMATRIX_DOCU_DOCUSVG_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -32,21 +32,21 @@
 class DocuSvg
 {
   private:
-    uint16_t Width;
-    uint16_t Height;
-    int16_t Top;
-    std::ostringstream Body;
+    uint16_t width_;
+    uint16_t height_;
+    int16_t top_;
+    std::ostringstream body_;
 
   public:
     DocuSvg(uint16_t, uint16_t, int16_t = 0);
 
     // get methods
-    std::string getDocument() const;
+    std::string GetDocument() const;
 
     // methods
-    void addRect(int16_t, int16_t, uint16_t, uint16_t, char const*, char const* = "none", uint8_t = 0);
-    void addText(int16_t, int16_t, std::string const&, uint8_t, char const* = "#222222", char const* = "middle", bool = false);
-    void addArrow(int16_t, int16_t, int16_t, int16_t, char const*);
+    void AddRect(int16_t, int16_t, uint16_t, uint16_t, char const*, char const* = "none", uint8_t = 0);
+    void AddText(int16_t, int16_t, std::string const&, uint8_t, char const* = "#222222", char const* = "middle", bool = false);
+    void AddArrow(int16_t, int16_t, int16_t, int16_t, char const*);
 };
 
 #endif

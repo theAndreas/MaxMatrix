@@ -11,48 +11,48 @@
 
 /* a text must stay valid while it is shifted, so none of them is a local variable; the blanks at
  * the end let it leave the matrix before the next one comes in */
-char Hello[] = "Hello!    ";
-char Umlauts[] = "Grüne Äpfel, schöne Öfen    ";
-char Fast[] = "fast...    ";
-char Slow[] = "and slow    ";
+char hello[] = "Hello!    ";
+char umlauts[] = "Grüne Äpfel, schöne Öfen    ";
+char fast[] = "fast...    ";
+char slow[] = "and slow    ";
 
-struct MessageType {
-    char* Text;
-    uint16_t ShiftIntervalMs;
+struct Message {
+    char* text;
+    uint16_t shift_interval_ms;
 };
 
-MessageType const Messages[] = {
-    { Hello, 50 },
-    { Umlauts, 50 },
-    { Fast, 15 },
-    { Slow, 120 },
+Message const kMessages[] = {
+    { hello, 50 },
+    { umlauts, 50 },
+    { fast, 15 },
+    { slow, 120 },
 };
-byte const NUMBER_OF_MESSAGES = sizeof(Messages) / sizeof(Messages[0]);
+byte const kNumberOfMessages = sizeof(kMessages) / sizeof(kMessages[0]);
 
-MaxMatrix Matrix(11, 10, 13);
-byte Current = 0;
+MaxMatrix matrix(11, 10, 13);
+byte current = 0;
 
-void show(MessageType const& Message)
+void Show(Message const& message)
 {
-    Matrix.setShiftInterval(Message.ShiftIntervalMs);
-    Matrix.setTextWithShift(Message.Text);
+    matrix.SetShiftInterval(message.shift_interval_ms);
+    matrix.SetTextWithShift(message.text);
 }
 
 void setup()
 {
-    Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see the README
-    Matrix.setIntensity(2);
-    show(Messages[Current]);
+    matrix.Init();
+    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
+    matrix.SetIntensity(2);
+    Show(kMessages[current]);
 }
 
 void loop()
 {
     /* takes a step only when the interval of the current text has passed */
-    Matrix.shiftTask();
+    matrix.ShiftTask();
     /* the text has been shifted in completely: on to the next one */
-    if(Matrix.getState() == MAXMATRIX_STATE_READY) {
-        Current = (Current + 1) % NUMBER_OF_MESSAGES;
-        show(Messages[Current]);
+    if(matrix.GetState() == MaxMatrixState::kReady) {
+        current = (current + 1) % kNumberOfMessages;
+        Show(kMessages[current]);
     }
 }

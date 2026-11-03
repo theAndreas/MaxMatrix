@@ -20,33 +20,33 @@
  */
 #include <MaxMatrix.h>
 
-byte const DATA_IN_PIN = 11;
-byte const CHIP_SELECT_PIN = 10;
-byte const CLOCK_PIN = 13;
-uint32_t const BAUD_RATE = 115200;
+byte const kDataInPin = 11;
+byte const kChipSelectPin = 10;
+byte const kClockPin = 13;
+uint32_t const kBaudRate = 115200;
 
-MaxMatrix Matrix(DATA_IN_PIN, CHIP_SELECT_PIN, CLOCK_PIN);
-MaxMatrixCommand Command;
+MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin);
+MaxMatrixCommand command;
 
 void setup()
 {
-    Serial.begin(BAUD_RATE);
-    Matrix.init();
+    Serial.begin(kBaudRate);
+    matrix.Init();
     /* 270 for the common 4-in-1 FC-16 boards; the README lists the other modules */
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);
+    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);
     Serial.println(F("ready"));
 }
 
 void loop()
 {
     while(Serial.available() > 0) {
-        MaxMatrixResult<MaxMatrixCommandStateType> Line = Command.feed(Matrix, Serial.read());
-        if(!Line.isOk()) {
+        MaxMatrixResult<MaxMatrixCommandState> line = command.Feed(matrix, Serial.read());
+        if(!line.IsOk()) {
             Serial.print(F("error: "));
-            Serial.println(Line.getErrorText());
-        } else if(Line.getValue() == MAXMATRIX_COMMAND_DONE) {
+            Serial.println(line.GetErrorText());
+        } else if(line.GetValue() == MaxMatrixCommandState::kDone) {
             Serial.println(F("ok"));
         }
     }
-    Matrix.shiftTask();
+    matrix.ShiftTask();
 }

@@ -14,8 +14,8 @@
  *      \details    Writes registers of the chained MAX7219, by bit banging or by hardware SPI. Knows nothing of LEDs.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_CHAIN_H_
-#define _MAXMATRIX_CHAIN_H_
+#ifndef MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_
+#define MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -78,35 +78,35 @@
 class MaxMatrixChain
 {
   private:
-    byte DataInPin;
-    byte ChipSelectPin;
-    byte ClockPin;
+    byte data_in_pin_;
+    byte chip_select_pin_;
+    byte clock_pin_;
 
     // functions
     /* not const, though they change no member: they change the chain this object stands for, and a const MaxMatrixChain
      * that still sends would be a lie. transfer() is not static either, though with SPI it uses no member: bit banging
      * needs the pins. clang-tidy reports all three, and each definition answers it with a NOLINT. */
-    void startTransmission();
-    void stopTransmission();
-    void transfer(byte, byte);
+    void StartTransmission();
+    void StopTransmission();
+    void Transfer(byte, byte);
 
   public:
     MaxMatrixChain(byte, byte, byte);
 
     // get methods
-    byte getDataInPin() const { return DataInPin; }
-    byte getChipSelectPin() const { return ChipSelectPin; }
-    byte getClockPin() const { return ClockPin; }
+    byte GetDataInPin() const { return data_in_pin_; }
+    byte GetChipSelectPin() const { return chip_select_pin_; }
+    byte GetClockPin() const { return clock_pin_; }
 
     // set methods
-    void setDataInPin(byte sDataInPin) { DataInPin = sDataInPin; }
-    void setChipSelectPin(byte sChipSelectPin) { ChipSelectPin = sChipSelectPin; }
-    void setClockPin(byte sClockPin) { ClockPin = sClockPin; }
+    void SetDataInPin(byte data_in_pin) { data_in_pin_ = data_in_pin; }
+    void SetChipSelectPin(byte chip_select_pin) { chip_select_pin_ = chip_select_pin; }
+    void SetClockPin(byte clock_pin) { clock_pin_ = clock_pin; }
 
     // methods
-    void init();
-    void writeRegisterAll(byte, byte);
-    void writeRegisterEach(byte, byte const*);
+    void Init();
+    void WriteRegisterAll(byte, byte);
+    void WriteRegisterEach(byte, byte const*);
 };
 
 #endif

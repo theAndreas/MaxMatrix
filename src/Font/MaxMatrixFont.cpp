@@ -14,8 +14,6 @@
  *      \details    The sprite table, which char has which sprite, and the decoding of UTF-8 into latin-1 chars.
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_FONT_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -32,7 +30,7 @@
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
 /* sprite table */
-spriteType const SpriteTable[] PROGMEM = {
+MaxMatrixSprite const SpriteTable[] PROGMEM = {
    //width,  height, Column1,    Column2,    Column 3,   Column 4,   Column 5,
     {3,      8,      B00000000,  B00000000,  B00000000,  B00000000,  B00000000}, // space
     {1,      8,      B01011111,  B00000000,  B00000000,  B00000000,  B00000000}, // !
@@ -145,101 +143,101 @@ spriteType const SpriteTable[] PROGMEM = {
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  getSprite()
+  GetSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          get an sprite from the sprite table
  *  \details        this function returns an sprite by an given sprite index
  *                  
- *  \param[in]      SpriteIndex     index of sprite from sprite table
- *  \param[out]     Sprite          sprite from sprite table (width, height, value column 1 ... 5)
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_OUT_OF_RANGE    the table has no sprite with this index; Sprite is left as it was
+ *  \param[in]      sprite_index    index of sprite from sprite table
+ *  \param[out]     sprite          sprite from sprite table (width, height, value column 1 ... 5)
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kOutOfRange    the table has no sprite with this index; Sprite is left as it was
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixFont::getSprite(spriteIndexType SpriteIndex, spriteType* Sprite)
+MaxMatrixStatus MaxMatrixFont::GetSprite(MaxMatrixSpriteIndex sprite_index, MaxMatrixSprite* sprite)
 {
-    if(SpriteIndex < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
-        memcpy_P(*Sprite, SpriteTable[SpriteIndex], sizeof(spriteType));
-        return MAXMATRIX_E_OK;
-    } else return MAXMATRIX_E_OUT_OF_RANGE;
-} /* getSprite */
+    if(sprite_index < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_ROWS) {
+        memcpy_P(*sprite, SpriteTable[sprite_index], sizeof(MaxMatrixSprite));
+        return MaxMatrixError::kOk;
+    } else return MaxMatrixError::kOutOfRange;
+} /* GetSprite */
 
 
 /******************************************************************************************************************************************************
-  getCharSprite()
+  GetCharSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          get the sprite of a char
  *  \details        this function looks the char up and copies its sprite, what every function of MaxMatrixText that
  *                  draws a char needs
  *
- *  \param[in]      Char            latin-1 char, as decodeChar() returns it
- *  \param[out]     Sprite          sprite of the char (width, height, value column 1 ... 5)
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; Sprite is left as it was
+ *  \param[in]      c            latin-1 char, as DecodeChar() returns it
+ *  \param[out]     sprite          sprite of the char (width, height, value column 1 ... 5)
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char; Sprite is left as it was
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixFont::getCharSprite(char Char, spriteType* Sprite)
+MaxMatrixStatus MaxMatrixFont::GetCharSprite(char c, MaxMatrixSprite* sprite)
 {
-    MaxMatrixResult<spriteIndexType> SpriteIndex = convertCharToSprite(Char);
+    MaxMatrixResult<MaxMatrixSpriteIndex> sprite_index = ConvertCharToSprite(c);
 
-    if(SpriteIndex.isOk()) return getSprite(SpriteIndex.getValue(), Sprite);
-    else return SpriteIndex.getError();
-} /* getCharSprite */
+    if(sprite_index.IsOk()) return GetSprite(sprite_index.GetValue(), sprite);
+    else return sprite_index.GetError();
+} /* GetCharSprite */
 
 
 /******************************************************************************************************************************************************
-  convertCharToSprite()
+  ConvertCharToSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          converts char to sprite
  *  \details        this function converts the ASCII char to sprite index
  *
- *  \param[in]      Char            char to convert to sprite
+ *  \param[in]      c            char to convert to sprite
  *  \return         index of the sprite in the sprite table
- *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char
+ *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char
  *****************************************************************************************************************************************************/
-MaxMatrixResult<spriteIndexType> MaxMatrixFont::convertCharToSprite(char Char)
+MaxMatrixResult<MaxMatrixSpriteIndex> MaxMatrixFont::ConvertCharToSprite(char c)
 {
-    byte const Latin1 = static_cast<byte>(Char);
+    byte const latin1 = static_cast<byte>(c);
 
     /* the chars beyond ASCII by their latin-1 codes, which are independent of the source file's encoding */
-    if(0xC4 == Latin1) return static_cast<spriteIndexType>(95);             // Ä
-    else if(0xD6 == Latin1) return static_cast<spriteIndexType>(96);        // Ö
-    else if(0xDC == Latin1) return static_cast<spriteIndexType>(97);        // Ü
-    else if(0xE4 == Latin1) return static_cast<spriteIndexType>(98);        // ä
-    else if(0xF6 == Latin1) return static_cast<spriteIndexType>(99);        // ö
-    else if(0xFC == Latin1) return static_cast<spriteIndexType>(100);       // ü
-    else if(0xDF == Latin1) return static_cast<spriteIndexType>(101);       // ß
-    else if(0xB0 == Latin1) return static_cast<spriteIndexType>(102);       // °
+    if(0xC4 == latin1) return static_cast<MaxMatrixSpriteIndex>(95);             // Ä
+    else if(0xD6 == latin1) return static_cast<MaxMatrixSpriteIndex>(96);        // Ö
+    else if(0xDC == latin1) return static_cast<MaxMatrixSpriteIndex>(97);        // Ü
+    else if(0xE4 == latin1) return static_cast<MaxMatrixSpriteIndex>(98);        // ä
+    else if(0xF6 == latin1) return static_cast<MaxMatrixSpriteIndex>(99);        // ö
+    else if(0xFC == latin1) return static_cast<MaxMatrixSpriteIndex>(100);       // ü
+    else if(0xDF == latin1) return static_cast<MaxMatrixSpriteIndex>(101);       // ß
+    else if(0xB0 == latin1) return static_cast<MaxMatrixSpriteIndex>(102);       // °
     /* for all others only add offset */
-    else if(Char >= MAXMATRIX_ASCII_CHAR_MIN && Char <= MAXMATRIX_ASCII_CHAR_MAX)
-        return static_cast<spriteIndexType>(Char + MAXMATRIX_ASCII_TABLE_OFFSET);
-    else return MAXMATRIX_E_UNKNOWN_CHAR;
-} /* convertCharToSprite */
+    else if(c >= MAXMATRIX_ASCII_CHAR_MIN && c <= MAXMATRIX_ASCII_CHAR_MAX)
+        return static_cast<MaxMatrixSpriteIndex>(c + MAXMATRIX_ASCII_TABLE_OFFSET);
+    else return MaxMatrixError::kUnknownChar;
+} /* ConvertCharToSprite */
 
 
 /******************************************************************************************************************************************************
-  decodeChar()
+  DecodeChar()
 ******************************************************************************************************************************************************/
 /*! \brief          decodes the next char of a string
  *  \details        this function decodes UTF-8 sequences of latin-1 chars (e.g. umlauts) to a single latin-1 char,
  *                  all other bytes are returned unchanged
  *
- *  \param[in]      String          string where the next char should be decoded, must not point to the null character
- *  \param[out]     Char            decoded char
+ *  \param[in]      string          string where the next char should be decoded, must not point to the null character
+ *  \param[out]     c            decoded char
  *  \return         number of bytes of the decoded char
  *****************************************************************************************************************************************************/
-byte MaxMatrixFont::decodeChar(char const* String, char* Char)
+byte MaxMatrixFont::DecodeChar(char const* string, char* c)
 {
-    byte LeadByte = String[0];
-    byte NextByte = String[1];
+    byte lead_byte = string[0];
+    byte next_byte = string[1];
 
     /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
-    if((0xC2 == LeadByte || 0xC3 == LeadByte) && 0x80 == (NextByte & 0xC0)) {
-        *Char = static_cast<char>(((LeadByte & 0x03) << 6) | (NextByte & 0x3F));
+    if((0xC2 == lead_byte || 0xC3 == lead_byte) && 0x80 == (next_byte & 0xC0)) {
+        *c = static_cast<char>(((lead_byte & 0x03) << 6) | (next_byte & 0x3F));
         return 2;
     } else {
-        *Char = static_cast<char>(LeadByte);
+        *c = static_cast<char>(lead_byte);
         return 1;
     }
-} /* decodeChar */
+} /* DecodeChar */
 
 /******************************************************************************************************************************************************
  *  E N D   O F   F I L E

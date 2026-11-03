@@ -12,13 +12,13 @@
  *      \brief      An example as the Uno runs it, in simavr, wired to the MAX7219 model
  *
  *      \details    The .elf avr-gcc made runs on a simulated ATmega328P at 16 MHz. Pins 10, 11 and 13 - CS, DIN and CLK,
- *                  which are SS, MOSI and SCK as well - and the SPI output drive Mock::Chain, and the UART reads
- *                  Mock::SerialInput and writes Mock::SerialOutput: the variables the Arduino stand-in drives for the
+ *                  which are SS, MOSI and SCK as well - and the SPI output drive mock::chain, and the UART reads
+ *                  mock::serial_input and writes mock::serial_output: the variables the Arduino stand-in drives for the
  *                  simulator a sketch is built into, so that the panel, the terminal and the page work on either.
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_AVR_H_
-#define _SIMULATOR_AVR_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -45,26 +45,26 @@
 class SimulatorAvr
 {
   private:
-    avr_t* Avr;
-    elf_firmware_t Firmware;
-    bool DataIn;
-    bool Clock;
-    bool ChipSelect;
+    avr_t* avr_;
+    elf_firmware_t firmware_;
+    bool data_in_;
+    bool clock_;
+    bool chip_select_;
     /* the bits of the byte on the wire so far, for the frame the page shows; the model has them one by one already */
-    uint8_t Bits;
-    uint8_t BitCount;
+    uint8_t bits_;
+    uint8_t bit_count_;
     /* simavr's receive buffer has room */
-    bool ReceiveReady;
+    bool receive_ready_;
 
-    void receiveSerial();
-    void takeByte(uint8_t) const;
-    static void onDataIn(avr_irq_t*, uint32_t, void*);
-    static void onClock(avr_irq_t*, uint32_t, void*);
-    static void onChipSelect(avr_irq_t*, uint32_t, void*);
-    static void onSpiByte(avr_irq_t*, uint32_t, void*);
-    static void onSerialByte(avr_irq_t*, uint32_t, void*);
-    static void onReceiveReady(avr_irq_t*, uint32_t, void*);
-    static void onReceiveFull(avr_irq_t*, uint32_t, void*);
+    void ReceiveSerial();
+    void TakeByte(uint8_t) const;
+    static void OnDataIn(avr_irq_t*, uint32_t, void*);
+    static void OnClock(avr_irq_t*, uint32_t, void*);
+    static void OnChipSelect(avr_irq_t*, uint32_t, void*);
+    static void OnSpiByte(avr_irq_t*, uint32_t, void*);
+    static void OnSerialByte(avr_irq_t*, uint32_t, void*);
+    static void OnReceiveReady(avr_irq_t*, uint32_t, void*);
+    static void OnReceiveFull(avr_irq_t*, uint32_t, void*);
 
   public:
     SimulatorAvr();
@@ -75,11 +75,11 @@ class SimulatorAvr
     SimulatorAvr& operator=(SimulatorAvr const&) = delete;
 
     // get methods
-    uint32_t getMillis() const;
+    uint32_t GetMillis() const;
 
     // methods
-    bool load(char const*);
-    bool run(uint32_t);
+    bool Load(char const*);
+    bool Run(uint32_t);
 };
 
 #endif
