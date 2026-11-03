@@ -55,6 +55,19 @@ TEST(Max7219Test, ShortFrameLatchesWhatIsLeftInTheChain)
     EXPECT_EQ(Chain.Chips[1].Digit[1], 0xBB);
 }
 
+/* the register shifts bit by bit: a frame one bit short, as bit banging could send it, latches every pair one bit to
+ * the right - 0x02 0x22 as digit 0 with 0x11 */
+TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff)
+{
+    Max7219Chain Chain = chainInNormalOperation(1);
+    uint16_t const Pair = 0x0222;
+
+    for(int8_t Bit = 15; Bit >= 1; Bit--) Chain.shiftBit((Pair >> Bit) & 0x01);
+    Chain.latch();
+    EXPECT_EQ(Chain.Chips[0].Digit[0], 0x11);
+    EXPECT_EQ(Chain.Chips[0].Digit[1], 0x00);
+}
+
 TEST(Max7219Test, NoOpChangesNothing)
 {
     Max7219Chain Chain = chainInNormalOperation(2);
