@@ -29,7 +29,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 17 | Documentation from the Doxygen blocks | – | open | |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
-| 20 | More examples | 5 | in progress | |
+| 20 | More examples | 5 | done | #38 |
 | 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | open | |
 | 23 | The library keeps the shift timing | 13 | done | #22 |
@@ -306,7 +306,15 @@ example that takes the commands from 21 over `Serial`.
 than code in the example: so they are tested with GoogleTest, and 21, 26 and the simulator rely
 on one implementation of the lines. The sketch feeds it the chars from `Serial` and answers each
 line with `ok` or `error`, at 115200 baud. Of the old tool's names, `spaceBetweenChars=` is left
-out beside `space=`; `clear` is new. The animation, the sprites and more than one text are open.
+out beside `space=`; `clear` is new.
+
+`Animation`, `Sprites` and `Messages` are built as well. `Animation` bounces a ball off the edges
+without blocking `loop()`, each step one picture through `MaxMatrixBatch`; `Sprites` walks a sprite
+of its own with two frames across the panel, from beyond one edge to beyond the other; `Messages`
+scrolls several texts in turn, each at its own speed, one of them with umlauts. Each runs for two
+seconds in the simulator in CI, `simulator/run/<example>`, which fails on a frame the chain cannot
+take; what they draw is not compared, as it depends on the host's clock. The clock, the numbers and
+the mask of `MAX7219_8x8_matrix` were left out: they show nothing of the library the six do not.
 
 ### 21 Control page for simulator and board
 

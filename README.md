@@ -79,7 +79,16 @@ does not catch up.
 
 `setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MAXMATRIX_STATE_READY`.
 
-More examples can be found in [examples/](examples/).
+More examples can be found in [examples/](examples/):
+
+| Example | Shows |
+|---|---|
+| [Basics](examples/Basics/Basics.ino) | text, dots, rows, a picture drawn in one go, the intensity |
+| [ScrollText](examples/ScrollText/ScrollText.ino) | one text scrolling endlessly, without blocking `loop()` |
+| [Messages](examples/Messages/Messages.ino) | several texts in turn, each at its own speed, with umlauts |
+| [Animation](examples/Animation/Animation.ino) | a ball bouncing off the edges, one picture per step |
+| [Sprites](examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
+| [SerialControl](examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
 
 ## Coordinates
 

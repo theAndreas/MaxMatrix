@@ -309,7 +309,9 @@ The mock also has `millis()`, `micros()` and `delay()` on the host clock, for th
 instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library
 tests set the shift interval to 0 in `SetUp()`, so that every `shiftTask()` is a step, and test
 the timing on its own. `Mock::Tick`, called after every frame and every millisecond of
-`delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The test
+`delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The tests
+`simulator/run/<example>` run every example for two seconds, which fails if a frame reaches the
+chain broken; what they draw depends on the host's clock, so it is not compared. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with
 `simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test
 `simulator/web` runs it with `--web` on port 18080 and stands in for the browser with `curl` and
