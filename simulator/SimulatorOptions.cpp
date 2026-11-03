@@ -115,8 +115,7 @@ bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
     } else if(Option == "--port" && HasValue) {
         if(!convertToPort(argv[++*Index], &Port)) return false;
     } else if(Option == "--for" && HasValue) {
-        RunFor = static_cast<uint32_t>(atof(argv[++*Index]) * 1000);
-        if(RunFor == 0) return false;
+        if(!convertToRunFor(argv[++*Index], &RunFor)) return false;
     } else if(Option == "--expect" && HasValue) {
         ExpectFile = argv[++*Index];
     } else return false;
@@ -147,6 +146,32 @@ bool SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
     *Port = static_cast<uint16_t>(Value);
     return true;
 } /* convertToPort */
+
+
+/******************************************************************************************************************************************************
+  convertToRunFor()
+******************************************************************************************************************************************************/
+/*! \brief          converts the value of --for
+ *  \details        this function takes the seconds as a decimal number, fractions included, and nothing else. atof(), as
+ *                  before, took "2x" as two seconds, and a negative or a huge number reached a cast to uint32_t that is
+ *                  undefined for it.
+ *
+ *  \param[in]      Text            the value as given on the command line
+ *  \param[out]     RunFor          the milliseconds
+ *  \return         true
+ *                  false           the value is no number, or not a single millisecond, or more than the milliseconds fit;
+ *                                  the time is left as it was
+ *****************************************************************************************************************************************************/
+bool SimulatorOptions::convertToRunFor(const char* Text, uint32_t* RunFor)
+{
+    char* End;
+    const double Milliseconds = strtod(Text, &End) * 1000;
+
+    /* written so that NaN, which compares false with everything, is refused as well */
+    if(End == Text || *End != '\0' || !(Milliseconds >= 1 && Milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) return false;
+    *RunFor = static_cast<uint32_t>(Milliseconds);
+    return true;
+} /* convertToRunFor */
 
 
 /******************************************************************************************************************************************************

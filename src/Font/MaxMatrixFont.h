@@ -30,7 +30,7 @@
  *****************************************************************************************************************************************************/
 /* MaxMatrixFont Parameter */
 #define MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS                    7
-#define MAXMATRIX_ASCII_TABLE_OFFSET                                -32
+#define MAXMATRIX_ASCII_TABLE_OFFSET                                (-32)
 #define MAXMATRIX_ASCII_CHAR_MIN                                    32
 #define MAXMATRIX_ASCII_CHAR_MAX                                    126
 #define MAXMATRIX_ASCII_CHAR_MAX_WIDTH                              5
@@ -46,7 +46,7 @@ typedef byte spriteIndexType;
 typedef byte spriteType[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
 
 /* types for sprite table columns */
-enum {
+enum : uint8_t {
     ASCII_TABLE_SPRITE_WIDTH,
     ASCII_TABLE_SPRITE_HEIGHT,
     ASCII_TABLE_SPRITE_COLUMN1,

@@ -49,7 +49,7 @@ class SimulatorWeb
     int32_t LoggedFrames;
 
     void logFrame();
-    void command(SimulatorPanel&, const std::string&);
+    static void command(SimulatorPanel&, const std::string&);
     std::string getMessage(const SimulatorPanel&) const;
     std::string getLog() const;
     static std::string getIntensities(const SimulatorPanel&);

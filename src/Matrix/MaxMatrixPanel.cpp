@@ -76,7 +76,7 @@ MaxMatrixResult<byte> MaxMatrixPanel::getColumn(int16_t Column)
 MaxMatrixResult<byte> MaxMatrixPanel::getColumn(byte Module, byte Column)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        return getColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column);
+        return getColumn(static_cast<int16_t>((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column));
     } else return MAXMATRIX_E_OUT_OF_RANGE;
 } /* getColumn */
 
@@ -115,7 +115,7 @@ void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
 void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
 {
     if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        setColumn((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column, Value);
+        setColumn(static_cast<int16_t>((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column), Value);
     }
 } /* setColumn */
 

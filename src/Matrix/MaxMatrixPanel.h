@@ -31,13 +31,13 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /* Type which describes the orientation of the whole Matrix, 180 for a board mounted upside down */
-typedef enum {
+typedef enum : uint8_t {
     MAXMATRIX_MATRIX_ORIENTATION_0,
     MAXMATRIX_MATRIX_ORIENTATION_180
 } MaxMatrixMatrixOrientationType;
 
 /* Type which describes the orientation of every Module in its place */
-typedef enum {
+typedef enum : uint8_t {
     MAXMATRIX_MODULE_ORIENTATION_0,
     MAXMATRIX_MODULE_ORIENTATION_90,
     MAXMATRIX_MODULE_ORIENTATION_180,
@@ -59,7 +59,7 @@ class MaxMatrixPanel
     MaxMatrixMatrixOrientationType MatrixOrientation;
 
     // functions
-    byte reverseByte(byte);
+    static byte reverseByte(byte);
     void convertDotToBuffer(byte, byte, byte*, byte*);
     byte getLine(byte, byte, bool);
     void setLine(byte, byte, bool, byte);
@@ -71,8 +71,9 @@ class MaxMatrixPanel
 
     // get methods
     MaxMatrixWired& getWired() { return Wired; }
-    MaxMatrixModuleOrientationType getModuleOrientation() { return ModuleOrientation; }
-    MaxMatrixMatrixOrientationType getMatrixOrientation() { return MatrixOrientation; }
+    const MaxMatrixWired& getWired() const { return Wired; }
+    MaxMatrixModuleOrientationType getModuleOrientation() const { return ModuleOrientation; }
+    MaxMatrixMatrixOrientationType getMatrixOrientation() const { return MatrixOrientation; }
 
     MaxMatrixResult<byte> getColumn(int16_t);
     MaxMatrixResult<byte> getColumn(byte, byte);

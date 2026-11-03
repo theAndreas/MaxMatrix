@@ -98,7 +98,7 @@ MaxMatrixStatus MaxMatrixText::setCharWithShift(char Char)
  *                  MAXMATRIX_E_NO_TEXT         the string is NULL
  *                  MAXMATRIX_E_UNKNOWN_CHAR    the font lacks a char; the chars before it are drawn
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String)
+MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String) const
 {
     spriteType Sprite;
     int16_t CharColumn = 0;
@@ -111,7 +111,7 @@ MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String
         MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &Sprite);
         if(!Status.isOk()) return Status;
         setSprite(Panel, CharColumn, 0, Sprite);
-        CharColumn += Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars;
+        CharColumn = static_cast<int16_t>(CharColumn + Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars);
         if(CharColumn > MAXMATRIX_NUMBER_OF_COLUMNS) break;
     }
     return MAXMATRIX_E_OK;
@@ -159,14 +159,14 @@ void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, const
     if(SpriteHeight == MAXMATRIX_ROW_NUMBER_OF_MODULE && Y == 0) {
         for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
         {
-            Panel.setColumn(X + SpriteColumn, Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1]);
+            Panel.setColumn(static_cast<int16_t>(X + SpriteColumn), Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1]);
         }
     } else { /* otherwise we have to set every single dot */
         for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
         {
             for(byte SpriteRow = 0; SpriteRow < SpriteHeight; SpriteRow++)
             {
-                Panel.setDot(X + SpriteColumn, Y + SpriteRow, bitRead(Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1], SpriteRow));
+                Panel.setDot(static_cast<int16_t>(X + SpriteColumn), static_cast<int16_t>(Y + SpriteRow), bitRead(Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1], SpriteRow));
             }
         }
     }

@@ -1,0 +1,125 @@
+# What a pull request is read with, next to what it is built and tested with in ci.yml, as in
+# Wordclock. A workflow of its own rather than more jobs in ci.yml: a badge reports a workflow,
+# not a job, and this way the README can show whether the code is read clean beside whether it
+# builds.
+#
+# Two analysers, because they are good at different things. clang-tidy sees exactly what the
+# compiler sees - the include paths and defines out of a compile database - and brings the
+# path-sensitive clang-analyzer checks with it. cppcheck parses the tree by itself, which is how
+# it reaches bounds and template instantiations the clang checks do not follow.
+#
+# clang-tidy reads the library twice, because an int is 32 bit on the host and 16 on the Uno,
+# and a check that only ever saw the host would never meet the code the way the board does:
+# once through the host build's database, which also covers the simulator, and once through
+# the one arduino-cli writes for the Uno, rewritten by tools/cross-clang-tidy.py so that clang
+# can follow what avr-gcc was told.
+#
+# Which checks are on, and why the rest are off, is in .clang-tidy, not here.
+name: static-analysis
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the first answer worthless, so it is cancelled rather
+# than left to occupy a runner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # GoogleTest because CMake does not configure without it, though nothing is built.
+      - name: Install the tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev clang-tidy
+
+      # Configured, not built: clang-tidy compiles each translation unit itself and needs
+      # nothing from the build but compile_commands.json, which holds the library three times
+      # over, with bit banging, with SPI and with MAXMATRIX_DEV_ERROR_DETECT.
+      - name: Configure
+        run: cmake --preset default
+
+      # WarningsAsErrors is set in .clang-tidy, so a finding fails this job.
+      - name: Analyse
+        run: run-clang-tidy -p build -quiet -j "$(nproc)" "$PWD/(src|simulator)/"
+
+  clang-tidy-avr:
+    name: clang-tidy (arduino:avr:uno, dev error detect ${{ matrix.det }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    strategy:
+      # One variant's findings say nothing about the other's, so both are reported.
+      fail-fast: false
+      matrix:
+        # The report of MAXMATRIX_DEV_ERROR_DETECT, F() in the facade and its Serial only meet
+        # the AVR headers with the switch on, as in the examples job of ci.yml.
+        det: [STD_OFF, STD_ON]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.5.1
+
+      # The core is installed although nothing is compiled with it: its avr-g++ is asked where
+      # avr-libc's headers are, and clang reads those instead of the host's.
+      - name: Install the AVR core and clang-tidy
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-tidy python3
+
+      # SerialControl, because it is the example that uses every part, MaxMatrixCommand too;
+      # arduino-cli lists the whole library either way.
+      - name: Write the compile database
+        run: |
+          arduino-cli compile --fqbn arduino:avr:uno --library . --only-compilation-database \
+            --build-property "compiler.cpp.extra_flags=-DMAXMATRIX_DEV_ERROR_DETECT=${{ matrix.det }}" \
+            --build-path build/avr examples/SerialControl
+
+      - name: Analyse
+        run: python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cppcheck
+
+      # No compile database: cppcheck is given the include directories and works out the
+      # configurations itself, the mock of the Arduino core standing in for the real one.
+      #
+      # --enable: warning and portability, not style or performance, for the reason .clang-tidy
+      # gives for leaving the style checks out: those report how the code is written rather than
+      # what it does.
+      # --inline-suppr so that a finding can be answered next to the code, with the reason there.
+      - name: Analyse
+        run: |
+          INCLUDES=$(find src -type d | sed 's/^/-I/')
+          cppcheck \
+            --enable=warning,portability \
+            --check-level=exhaustive \
+            --std=c++17 \
+            --inline-suppr \
+            --error-exitcode=1 \
+            --quiet \
+            $INCLUDES \
+            -Itest/mock \
+            -Isimulator \
+            src simulator

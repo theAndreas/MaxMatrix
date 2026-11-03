@@ -139,7 +139,7 @@ void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, const byte* Registe
  *  \return         -
  *  \post           stopTransmission() has to be called after data was transferred
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::startTransmission()
+void MaxMatrixChain::startTransmission() /* NOLINT(readability-make-member-function-const) */
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.beginTransaction(SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
@@ -162,7 +162,7 @@ void MaxMatrixChain::startTransmission()
  *  \return         -
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::stopTransmission()
+void MaxMatrixChain::stopTransmission() /* NOLINT(readability-make-member-function-const) */
 {
 #if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
     digitalWriteFast(ChipSelectPin, HIGH);
@@ -186,6 +186,7 @@ void MaxMatrixChain::stopTransmission()
  *  \return         -
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
+/* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */
 void MaxMatrixChain::transfer(byte RegisterAddress, byte RegisterValue)
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)

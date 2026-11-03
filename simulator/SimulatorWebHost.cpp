@@ -37,7 +37,7 @@
  *  LOCAL CONSTANT MACROS
  *****************************************************************************************************************************************************/
 /* SimulatorWebHost Parameter */
-#define SIMULATOR_WEB_HOST_NO_SOCKET                                -1
+#define SIMULATOR_WEB_HOST_NO_SOCKET                                (-1)
 #define SIMULATOR_WEB_HOST_BACKLOG                                  4
 #define SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH                     4096u
 #define SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH                       2048u

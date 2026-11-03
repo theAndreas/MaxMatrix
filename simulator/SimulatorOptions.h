@@ -30,6 +30,7 @@
 /* SimulatorOptions Parameter */
 #define SIMULATOR_OPTIONS_DEFAULT_PORT                              8080u
 #define SIMULATOR_OPTIONS_MAX_PORT                                  65535u
+#define SIMULATOR_OPTIONS_MAX_RUN_FOR                               UINT32_MAX /* milliseconds */
 
 
 /******************************************************************************************************************************************************
@@ -48,6 +49,7 @@ class SimulatorOptions
 
     bool parseOption(int, char**, int*);
     static bool convertToPort(const char*, uint16_t*);
+    static bool convertToRunFor(const char*, uint32_t*);
 
   public:
     SimulatorOptions();

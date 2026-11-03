@@ -17,6 +17,7 @@ Container**:
 | `g++`, `gdb` (from the base image) | host-side tests against a mock of `Arduino.h` |
 | `cmake`, `ninja`, GoogleTest (apt) | building and running those tests: `cmake --workflow --preset default` |
 | `clangd` (apt) | IntelliSense, see below |
+| `clang-tidy`, `cppcheck`, `python3` (apt) | the static analysis of `.github/workflows/static-analysis.yml`, see `.clang-tidy` |
 | `gh` | branches and pull requests from the container |
 
 Compile an example for an Arduino Uno:
@@ -37,7 +38,8 @@ container can see anything at all. Build here, flash from the host.
 
 ## IntelliSense: clangd
 
-clangd does completion, navigation and the compiler's diagnostics, from `build/compile_commands.json`,
+clangd does completion, navigation, the compiler's diagnostics and the findings of clang-tidy, with
+the repository's `.clang-tidy`, from `build/compile_commands.json`,
 which `cmake --preset default` writes and the `postCreateCommand` runs, and which clangd finds on
 its own. The simulator compiles every example into it, so an `.ino` is understood as well, against
 the mock. cpptools stays installed for debugging, with its IntelliSense off, so that the two do not
@@ -51,7 +53,8 @@ the one such place.
 One warning clangd alone gives: it parses headers such as GoogleTest's without their function
 bodies, for speed, so a `PrintTo()` or an `operator==` that only `EXPECT_EQ` calls looks unused to
 it. `.clangd` suppresses `-Wunused-function` in `test/` for that; g++ and a full clang build see
-the use.
+the use. It also leaves clang-tidy out in `test/`, which CI does not read with it either: the tests
+keep a lighter style.
 
 ## The Arduino data directory
 
