@@ -253,7 +253,8 @@ does not belong in a display library.
 The variant "by its address" above was built out on its own in November 2026, as the library
 [Utl](https://github.com/theAndreas/Utl), to see how it reads and what it costs beyond a table.
 Measured with `arduino-cli` and Arduino AVR Boards 1.8.8 on `arduino:avr:uno`; it has run in simavr,
-not on a board.
+not on a board. What follows is its first version, with virtual groups; Utl has since dropped
+`virtual`, see "Tried out: MaxMatrix on Utl" below.
 
 - **What it is.** `utl::Error` is a pointer to its group and a code, 3 bytes. A group is a class
   derived from `ErrorGroup` with a virtual `Name()` and `Message()`, one object per program, defined
@@ -285,7 +286,9 @@ not on a board.
   in the core's printing of an `unsigned long` and made `Basics` 62 bytes larger without texts than
   with them, and `code / 100` brought two division routines of libgcc, 80 bytes.
 - **`[[nodiscard]]` on a type works under gnu++11.** avr-gcc 7.3 takes it and warns where a returned
-  `Status` or `Result` is dropped, and nowhere else (checked with a sketch).
+  `Status` or `Result` is dropped, and nowhere else (checked with a sketch). Since
+  [Utl #27](https://github.com/theAndreas/Utl/pull/27) only a `Result<T>` and an `Error` carry it,
+  for the reason given below.
 - **arduino-cli finds a library only by a header directly in its `src/`.** Utl's headers lie in
   `src/utl/`, so a sketch includes `<Utl.h>` first, before any header of its own that includes
   `<utl/...>`: the includes are gone through in order.
@@ -307,8 +310,8 @@ were not moved over. Flash and RAM of the examples on the Uno, Arduino AVR Board
 |---|---|---|---|---|---|
 | `Basics` | 3570 / 70 | 3714 / 70 | 3714 / 70 | 3590 / 70 | 3568 / 70 |
 | `ScrollText` | 3632 / 82 | 3778 / 82 | 3778 / 82 | 3654 / 82 | 3632 / 82 |
-| `Messages` | 3706 / 153 | 3872 / 163 | 3872 / 155 | 3748 / 155 | 3728 / 155 |
-| `SerialControl` | 5866 / 377 | 6182 / 387 | 6184 / 361 | 6062 / 361 | 6268 / 387 |
+| `Messages` | 3706 / 153 | 3872 / 163 | 3872 / 155 | 3748 / 155 | 3726 / 153 |
+| `SerialControl` | 5866 / 377 | 6182 / 387 | 6184 / 361 | 6062 / 361 | 6244 / 385 |
 
 `Animation` and `Sprites`, which draw no text, were the same in every column. The plugin alone,
 without Utl, takes `SerialControl` to 5866 / 359, by moving the vtable of `HardwareSerial`; that
@@ -321,23 +324,29 @@ is no gain of Utl's.
   build, and the Arduino IDE sets it only in `platform.local.txt`; `SerialControl` then answers
   `error: ` without a reason.
 - **Without `virtual`**, the last column, with Utl's groups changed in
-  [Utl #24](https://github.com/theAndreas/Utl/pull/24): a group is the address of its name, and
-  a sketch turns a group's texts on with a call, `maxMatrixUseErrorTexts()` in `SerialControl`.
-  The sketches that print no error are back where they are today, with no plugin and no switch.
+  [Utl #24](https://github.com/theAndreas/Utl/pull/24) and
+  [#25](https://github.com/theAndreas/Utl/pull/25): a group is the address of its name in flash,
+  with no object behind it, and a sketch turns a group's texts on with a call,
+  `maxMatrixUseErrorTexts()` in `SerialControl`. The sketches that print no error are back where
+  they are today, with no plugin and no switch, and `Messages` takes the RAM of today as well.
   Fully automatic, without the call, was tried first: a table in a section of its own that only
   the printing code names through `__start_`/`__stop_`. The linker dropped it when unused, but the
   AVR linker script does not know the section and placed it in the data space at the address of
   `.bss`, and the sections it places in flash have no `__start_` symbol and no `KEEP`.
-- **A sketch that prints errors pays more than today**: `SerialControl` 402 bytes of flash and 10 of
+- **A sketch that prints errors pays more than today**: `SerialControl` 378 bytes of flash and 8 of
   RAM. About 130 are the wider error, a group pointer and a code in 3 bytes where an enum takes one:
   each function that passes a `Result` on, `GetCharSprite()` and `ConvertToNumber()` among them,
-  grows by 64. About 120 are the list of the groups whose texts are on, which LTO puts into
-  `main()`.
-- **`[[nodiscard]]` warns in sketches**: eight calls in the examples and two in the library that
-  drop a status on purpose, `matrix.SetIntensity(2)` and `matrix.SetText("Hi!")` among them. A
-  sketch would need `static_cast<void>()` before each.
-- **The names change** to Google's, `IsOk()`, `error()->Message()`, beside `GetState()` and
-  `SetText()`; `Status == MaxMatrixError::kOutOfRange` still compiles.
+  grows by 64. About 200 are the texts turned on: 70 of data, the texts, their table and the
+  group's entry in the list, and 130 of code that hangs the entry in and looks a group up at run
+  time. It is no matter of inlining; `noinline` made it 20 bytes larger.
+- **`[[nodiscard]]` warned in sketches**: eight calls in the examples and two in the library that
+  drop a status on purpose, `matrix.SetIntensity(2)` and `matrix.SetText("Hi!")` among them, each
+  needed a `static_cast<void>()`. [Utl #27](https://github.com/theAndreas/Utl/pull/27) took the
+  attribute off `Status` and kept it on `Result<T>`, where a dropped value is a mistake: the
+  prototype then builds without a warning of its own, at the same size.
+- **The names were Google's**, `IsOk()`, `error()->Message()`, beside MaxMatrix's `getState()`
+  and `setText()`. Since MaxMatrix took Google's names as well (#44), they read alike;
+  `Status == MaxMatrixError::kOutOfRange` still compiles.
 
 ## Why the virtual group was questioned late
 
@@ -363,9 +372,8 @@ without the cause first, and in a library that uses it.
   itself. A domain costs RAM with a vtable, or keeps its texts linked in `PROGMEM`; either breaks "the
   parts cost no RAM" and "a sketch that does not use it pays nothing".
   Utl, without `virtual`, has since removed both costs for a sketch that prints no error, but one
-  that does pays 402 bytes of flash more in `SerialControl`, and every sketch gets warnings for the
-  statuses it drops; see "Tried out: MaxMatrix on Utl" above. OIL item 28 is dropped until errors
-  come from outside the library.
+  that does pays 378 bytes of flash more in `SerialControl`; see "Tried out: MaxMatrix on Utl"
+  above. OIL item 28 is dropped until errors come from outside the library.
 - **Drawing clips**, decided first: `SetDot()`, `SetColumn()` and `SetRow()` take `int16_t`, leave out
   what lies off the panel as `SetChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
   Out of range is left for the getters, the intensity and the commands, and `MaxMatrixCommand` checks
