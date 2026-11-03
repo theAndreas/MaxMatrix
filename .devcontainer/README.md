@@ -16,6 +16,7 @@ Container**:
 | `arduino-lint` | checking the library layout against the Arduino Library Manager rules |
 | `g++`, `gdb` (from the base image) | host-side tests against a mock of `Arduino.h` |
 | `cmake`, `ninja`, GoogleTest (apt) | building and running those tests: `cmake --workflow --preset default` |
+| `clangd` (apt) | IntelliSense, see below |
 | `gh` | branches and pull requests from the container |
 
 Compile an example for an Arduino Uno:
@@ -33,6 +34,24 @@ arduino-lint --library-manager submit
 **Flashing is not covered.** The container can build; getting the USB serial adapter into
 it is another matter, and under WSL2 it needs `usbipd-win` on the Windows side before the
 container can see anything at all. Build here, flash from the host.
+
+## IntelliSense: clangd
+
+clangd does completion, navigation and the compiler's diagnostics, from `build/compile_commands.json`,
+which `cmake --preset default` writes and the `postCreateCommand` runs, and which clangd finds on
+its own. The simulator compiles every example into it, so an `.ino` is understood as well, against
+the mock. cpptools stays installed for debugging, with its IntelliSense off, so that the two do not
+answer twice. clangd inserts no includes: an include in `src/` names its header by its path from
+`src/`, which the editor would not know. After adding a file, run `cmake --preset default` again.
+
+clang warns about some things GCC does not, and the tests are built with `-Werror`, so clangd shows
+them as errors: a lambda that captured constants it could use without, in `MaxMatrixTest.cpp`, was
+the one such place.
+
+One warning clangd alone gives: it parses headers such as GoogleTest's without their function
+bodies, for speed, so a `PrintTo()` or an `operator==` that only `EXPECT_EQ` calls looks unused to
+it. `.clangd` suppresses `-Wunused-function` in `test/` for that; g++ and a full clang build see
+the use.
 
 ## The Arduino data directory
 

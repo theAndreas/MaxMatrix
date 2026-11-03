@@ -1,0 +1,11 @@
+# clangd reads build/compile_commands.json on its own; this file only quiets
+# what it alone reports.
+#
+# In test/, -Wunused-function: clangd parses headers such as GoogleTest's
+# without their function bodies, for speed, so a function used only from a
+# template in one - a PrintTo() or an operator== that EXPECT_EQ calls - looks
+# unused to it. g++ and a full clang build see the use and do not warn.
+If:
+  PathMatch: test/.*
+Diagnostics:
+  Suppress: unused-function

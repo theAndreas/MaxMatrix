@@ -301,7 +301,7 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
         Matrix.clear();
         drawPattern(Matrix);
         Case.Shift(Matrix);
-        EXPECT_EQ(shownPicture(Matrix), picture([&Case, Width, Height](int16_t X, int16_t Y) {
+        EXPECT_EQ(shownPicture(Matrix), picture([&Case](int16_t X, int16_t Y) {
             int16_t SourceX = X + Case.SourceX, SourceY = Y + Case.SourceY;
             if(Case.Rotate) return pattern((SourceX + Width) % Width, (SourceY + Height) % Height);
             return SourceX >= 0 && SourceX < Width && SourceY >= 0 && SourceY < Height && pattern(SourceX, SourceY);
