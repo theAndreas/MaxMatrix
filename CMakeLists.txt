@@ -93,6 +93,9 @@ function(add_simulator_variant Variant)
         # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
         target_compile_definitions(Simulator-${Example}-${Variant} PRIVATE
                                    SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
+        # Every example for two seconds: it builds against the mock, and every frame it sends reaches the chain whole.
+        # What it draws depends on the host's clock, so only Basics, which stands still at first, is compared.
+        add_test(NAME ${Variant}/simulator/run/${Example} COMMAND Simulator-${Example}-${Variant} --for 2)
     endforeach()
 
     # Basics shows "Hi!" for its first two seconds; one second in, the panel of an FC-16 board has to read it.
