@@ -80,8 +80,6 @@ static SimulatorWeb Web;
 /*! \brief          ends a run with --for
  *  \details        this function prints the panel and exits, from within the sketch's loop() or delay(), which never
  *                  return on their own
- *
- *  \return         - (does not return)
  *****************************************************************************************************************************************************/
 static void finish()
 {
@@ -97,8 +95,6 @@ static void finish()
 /*! \brief          follows the sketch
  *  \details        this function is called after every frame and every millisecond of delay(), so that the panel is
  *                  drawn while a sketch blocks. In a run with --for the terminal draws only at the end.
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 static void tick()
 {

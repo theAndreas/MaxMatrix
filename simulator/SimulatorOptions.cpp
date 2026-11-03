@@ -34,8 +34,6 @@
 /*! \brief          SimulatorOptions constructor
  *  \details        Instantiation of the options a simulator has without any on its command line: the default wiring,
  *                  mounted upright, in the terminal, until Ctrl+C
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 SimulatorOptions::SimulatorOptions()
 {
@@ -76,7 +74,6 @@ bool SimulatorOptions::parse(int argc, char** argv)
  *  \details        this function writes to stderr, beside whatever went wrong
  *
  *  \param[in]      Program         the program's name, argv[0]
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorOptions::printUsage(char const* Program)
 {

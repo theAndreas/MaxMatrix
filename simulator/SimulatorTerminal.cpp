@@ -51,8 +51,6 @@
 ******************************************************************************************************************************************************/
 /*! \brief          clears the terminal
  *  \details        this function is called once before the first draw; every draw after it only moves the cursor home
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorTerminal::clear()
 {
@@ -91,7 +89,6 @@ std::string SimulatorTerminal::getStatusLine(SimulatorPanel const& Panel)
  *                  writes the status line above the panel
  *
  *  \param[in]      Panel           the panel to draw
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorTerminal::draw(SimulatorPanel const& Panel)
 {

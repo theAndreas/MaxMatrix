@@ -37,7 +37,6 @@
  *  \param[in]      sDataInPin         number of the Data Input Pin
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrixWired::MaxMatrixWired(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Chain(sDataInPin, sChipSelectPin, sClockPin)
 {
@@ -56,7 +55,6 @@ MaxMatrixWired::MaxMatrixWired(byte sDataInPin, byte sChipSelectPin, byte sClock
  *  \param[in]      Column      column in the buffer
  *  \param[in]      Bit         bit in the column, the row as wired
  *  \param[in]      Value       true for a lit LED
- *  \return         -
  *  \pre            Column is within the buffer and Bit within a byte: MaxMatrixPanel has checked and mapped them
  *****************************************************************************************************************************************************/
 void MaxMatrixWired::storeBit(byte Column, byte Bit, bool Value)
@@ -77,8 +75,6 @@ void MaxMatrixWired::storeBit(byte Column, byte Bit, bool Value)
 /*! \brief          turns every LED off
  *  \details        this function empties the buffer and marks every column as changed, even one that was empty
  *                  already: after power-up the registers of the MAX7219 hold anything, and init() clears them this way
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixWired::clear()
 {
@@ -93,8 +89,6 @@ void MaxMatrixWired::clear()
 /*! \brief          sends what has changed
  *  \details        this function sends every changed column of a module in one frame for all modules, and nothing
  *                  when nothing has changed
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixWired::send()
 {

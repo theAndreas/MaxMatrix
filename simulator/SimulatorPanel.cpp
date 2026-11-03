@@ -46,8 +46,6 @@ static struct {
 ******************************************************************************************************************************************************/
 /*! \brief          SimulatorPanel constructor
  *  \details        Instantiation of a panel of the default wiring, mounted upright, that has never been drawn
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 SimulatorPanel::SimulatorPanel()
 {
@@ -128,7 +126,6 @@ bool SimulatorPanel::setWiring(std::string const& Name)
  *  \details        this function turns the panel, so that the next draw shows it as a board mounted this way lights it
  *
  *  \param[in]      sUpsideDown     true if the board is mounted upside down
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorPanel::setUpsideDown(bool sUpsideDown)
 {
@@ -162,7 +159,6 @@ bool SimulatorPanel::isDrawDue(uint32_t Now) const
  *  \details        this function remembers the frame count and the time, so that isDrawDue() waits for the next change
  *
  *  \param[in]      Now             millis()
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorPanel::setDrawn(uint32_t Now)
 {

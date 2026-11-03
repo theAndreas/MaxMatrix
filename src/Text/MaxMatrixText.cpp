@@ -31,8 +31,6 @@
 ******************************************************************************************************************************************************/
 /*! \brief          MaxMatrixText constructor
  *  \details        Instantiation of the text on a matrix
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrixText::MaxMatrixText()
 {
@@ -148,7 +146,6 @@ MaxMatrixStatus MaxMatrixText::setTextWithShift(char* sString)
  *  \param[in]      X           x coordinate
  *  \param[in]      Y           y coordinate
  *  \param[in]      Sprite      sprite from sprite table (width, height, value column 1 ... 5)
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, spriteType const Sprite)
 {
@@ -180,7 +177,6 @@ void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, sprit
  *  \details        this function sets the number of spaces between chars
  *                  
  *  \param[in]      sSpaceBetweenChars      number of spaces
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixText::setSpaceBetweenChars(byte sSpaceBetweenChars)
 {

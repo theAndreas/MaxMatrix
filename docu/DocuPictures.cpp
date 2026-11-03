@@ -297,7 +297,6 @@ static uint16_t getPictureHeight()
  *  \param[in]      Y               row as the viewer sees it
  *  \param[in]      Colour          fill colour
  *  \param[in]      Label           text in the LED, or empty
- *  \return         -
  *****************************************************************************************************************************************************/
 static void drawLed(DocuSvg* Svg, byte X, byte Y, char const* Colour, std::string const& Label)
 {
@@ -317,7 +316,6 @@ static void drawLed(DocuSvg* Svg, byte X, byte Y, char const* Colour, std::strin
  *
  *  \param[out]     Svg             the picture
  *  \param[in]      Title           the line above the panel, or empty for none
- *  \return         -
  *****************************************************************************************************************************************************/
 static void drawPanel(DocuSvg* Svg, std::string const& Title)
 {

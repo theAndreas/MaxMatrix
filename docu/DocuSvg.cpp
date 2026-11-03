@@ -46,7 +46,6 @@
  *  \param[in]      sWidth          width in pixels
  *  \param[in]      sHeight         height in pixels
  *  \param[in]      sTop            the coordinate shown at the top edge
- *  \return         -
  *****************************************************************************************************************************************************/
 DocuSvg::DocuSvg(uint16_t sWidth, uint16_t sHeight, int16_t sTop)
 {
@@ -89,7 +88,6 @@ std::string DocuSvg::getDocument() const
  *  \param[in]      Fill            fill colour, or "none"
  *  \param[in]      Stroke          outline colour, or "none" for no outline
  *  \param[in]      Radius          radius of the corners
- *  \return         -
  *****************************************************************************************************************************************************/
 void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHeight, char const* Fill, char const* Stroke, uint8_t Radius)
 {
@@ -111,7 +109,6 @@ void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHei
  *  \param[in]      Fill            colour
  *  \param[in]      Anchor          "start", "middle" or "end": which part of the text lies at X
  *  \param[in]      Bold            true for bold
- *  \return         -
  *****************************************************************************************************************************************************/
 void DocuSvg::addText(int16_t X, int16_t Y, std::string const& Text, uint8_t Size, char const* Fill, char const* Anchor, bool Bold)
 {
@@ -131,7 +128,6 @@ void DocuSvg::addText(int16_t X, int16_t Y, std::string const& Text, uint8_t Siz
  *  \param[in]      Y               height of the arrow
  *  \param[in]      Thickness       width of the line
  *  \param[in]      Colour          colour of line and head
- *  \return         -
  *****************************************************************************************************************************************************/
 void DocuSvg::addArrow(int16_t FromX, int16_t ToX, int16_t Y, int16_t Thickness, char const* Colour)
 {

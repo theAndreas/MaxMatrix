@@ -35,7 +35,6 @@
  *  \param[in]      sDataInPin         number of the Data Input Pin
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
- *  \return         -
  *****************************************************************************************************************************************************/
 MaxMatrixPanel::MaxMatrixPanel(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Wired(sDataInPin, sChipSelectPin, sClockPin)
 {
@@ -91,7 +90,6 @@ MaxMatrixResult<byte> MaxMatrixPanel::getColumn(byte Module, byte Column)
  *
  *  \param[in]      Column      column on matrix which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
 {
@@ -110,7 +108,6 @@ void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
  *  \param[in]      Module      module where column should be set
  *  \param[in]      Column      column on module which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
 {
@@ -171,7 +168,6 @@ MaxMatrixResult<byte> MaxMatrixPanel::getRow(byte Module, byte Row)
  *
  *  \param[in]      Row         row on matrix
  *  \param[in]      Value       led value in row, bit 7 of each byte is the leftmost column of its module
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setRow(int16_t Row, rowType const Value)
 {
@@ -191,7 +187,6 @@ void MaxMatrixPanel::setRow(int16_t Row, rowType const Value)
  *  \param[in]      Module      module where row should be set
  *  \param[in]      Row         row on module which contains eight LEDs
  *  \param[in]      Value       led value in row, bit 7 is the leftmost column
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
 {
@@ -235,7 +230,6 @@ MaxMatrixResult<bool> MaxMatrixPanel::getDot(int16_t Column, int16_t Row)
  *  \param[in]      Column      column where to set the pixel, negative to the left of the panel
  *  \param[in]      Row         row where to set the pixel, negative above the panel
  *  \param[in]      Value       value of the pixel
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setDot(int16_t Column, int16_t Row, bool Value)
 {
@@ -257,7 +251,6 @@ void MaxMatrixPanel::setDot(int16_t Column, int16_t Row, bool Value)
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *  \param[in]      FillWithZero    initialize the column on the right side with zero.
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::shiftLeft(bool Rotate, bool FillWithZero)
 {
@@ -282,7 +275,6 @@ void MaxMatrixPanel::shiftLeft(bool Rotate, bool FillWithZero)
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *  \param[in]      FillWithZero    initialize the column on the left side with zero.
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::shiftRight(bool Rotate, bool FillWithZero)
 {
@@ -306,7 +298,6 @@ void MaxMatrixPanel::shiftRight(bool Rotate, bool FillWithZero)
  *                  By activating rotation, the last row will be first.
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::shiftUp(bool Rotate)
 {
@@ -331,7 +322,6 @@ void MaxMatrixPanel::shiftUp(bool Rotate)
  *                  By activating rotation, the last row will be first.
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::shiftDown(bool Rotate)
 {
@@ -354,7 +344,6 @@ void MaxMatrixPanel::shiftDown(bool Rotate)
  *                  mounted. The picture stays as the viewer sees it; the buffer is turned along.
  *
  *  \param[in]      sModuleOrientation      orientation in degree
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)
 {
@@ -375,7 +364,6 @@ void MaxMatrixPanel::setModuleOrientation(MaxMatrixModuleOrientationType sModule
  *                  orientation. The picture stays as the viewer sees it; the buffer is turned along.
  *
  *  \param[in]      sMatrixOrientation      orientation in degree
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation)
 {
@@ -422,7 +410,6 @@ byte MaxMatrixPanel::reverseByte(byte Input)
  *  \param[in]      Row             row of the dot as the viewer sees it
  *  \param[out]     BufferColumn    column in the matrix buffer
  *  \param[out]     BufferBit       bit in that column
- *  \return         -
  *  \pre            Column and Row are within the matrix
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::convertDotToBuffer(byte Column, byte Row, byte* BufferColumn, byte* BufferBit)
@@ -491,7 +478,6 @@ byte MaxMatrixPanel::getLine(byte Column, byte Row, bool Vertical)
  *  \param[in]      Row         row of the first dot
  *  \param[in]      Vertical    downwards rather than to the right
  *  \param[in]      Value       the dots, the first one in bit 0
- *  \return         -
  *  \pre            the line is within one module
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setLine(byte Column, byte Row, bool Vertical, byte Value)
@@ -514,7 +500,6 @@ void MaxMatrixPanel::setLine(byte Column, byte Row, bool Vertical, byte Value)
  *                  are the same in every orientation.
  *
  *  \param[out]     Picture     one byte per column of the matrix
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::getPicture(byte* Picture)
 {
@@ -529,7 +514,6 @@ void MaxMatrixPanel::getPicture(byte* Picture)
  *  \details        this function writes a picture as the viewer sees it into the buffer
  *
  *  \param[in]      Picture     one byte per column of the matrix, the top row in bit 0
- *  \return         -
  *****************************************************************************************************************************************************/
 void MaxMatrixPanel::setPicture(byte const* Picture)
 {

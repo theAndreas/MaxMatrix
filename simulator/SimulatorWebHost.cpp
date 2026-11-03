@@ -54,8 +54,6 @@
 ******************************************************************************************************************************************************/
 /*! \brief          SimulatorWebHost constructor
  *  \details        Instantiation of a host that listens nowhere until begin()
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 SimulatorWebHost::SimulatorWebHost()
 {
@@ -92,7 +90,6 @@ bool SimulatorWebHost::begin(uint16_t Port, char const* sPagePath)
  *  \details        this function accepts and answers new connections and reads the frames of the open WebSockets
  *
  *  \param[out]     Messages        every text message a page has sent since the last call is appended
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::task(std::vector<std::string>* Messages)
 {
@@ -112,7 +109,6 @@ void SimulatorWebHost::task(std::vector<std::string>* Messages)
  *  \details        this function drops a client it cannot send to
  *
  *  \param[in]      Text            the message
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::broadcast(std::string const& Text)
 {
@@ -134,8 +130,6 @@ void SimulatorWebHost::broadcast(std::string const& Text)
 /*! \brief          answers every new connection
  *  \details        this function keeps a connection that became a WebSocket, as long as there is a free slot for it,
  *                  and closes every other one
- *
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::acceptClients()
 {
@@ -162,7 +156,6 @@ void SimulatorWebHost::acceptClients()
  *
  *  \param[in]      Slot            the client's slot
  *  \param[out]     Messages        every complete text message is appended
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::readClient(uint8_t Slot, std::vector<std::string>* Messages)
 {
@@ -221,7 +214,6 @@ bool SimulatorWebHost::answerRequest(int Socket, std::string const& Request)
  *  \details        this function reads the page from its path, so that the browser always gets the current one
  *
  *  \param[in]      Socket          the connection
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::sendPage(int Socket)
 {
@@ -258,7 +250,6 @@ uint8_t SimulatorWebHost::findFreeSlot() const
  *  \details        this function frees the slot and forgets what the client sent that was not yet a whole frame
  *
  *  \param[in]      Slot            the client's slot
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::dropClient(uint8_t Slot)
 {
@@ -360,7 +351,6 @@ bool SimulatorWebHost::getPath(std::string const& Request, std::string* Path)
  *  \details        this function sets O_NONBLOCK, so that polling a socket from the tick never stops the sketch
  *
  *  \param[in]      Socket          the socket
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::setNonBlocking(int Socket)
 {
@@ -376,7 +366,6 @@ void SimulatorWebHost::setNonBlocking(int Socket)
  *
  *  \param[in]      Socket          the socket
  *  \param[in]      Milliseconds    how long one recv() may wait for the next bytes
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::setReceiveTimeout(int Socket, uint32_t Milliseconds)
 {
@@ -425,7 +414,6 @@ bool SimulatorWebHost::sendAll(int Socket, std::string const& Data)
  *  \param[in]      Status          the status line's code and text, e.g. "200 OK"
  *  \param[in]      ContentType     the type of the body
  *  \param[in]      Body            the body
- *  \return         -
  *****************************************************************************************************************************************************/
 void SimulatorWebHost::sendResponse(int Socket, char const* Status, char const* ContentType, std::string const& Body)
 {
