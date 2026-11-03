@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "author": "Andreas Burnickl",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-max7219-matrix",
+      "id": "matrix",
+      "top": -140,
+      "left": -40,
+      "attrs": { "chain": "4", "layout": "fc16" }
+    }
+  ],
+  "connections": [
+    [ "matrix:VCC", "uno:5V", "red", [] ],
+    [ "matrix:GND", "uno:GND.1", "black", [] ],
+    [ "matrix:DIN", "uno:11", "green", [] ],
+    [ "matrix:CS", "uno:10", "orange", [] ],
+    [ "matrix:CLK", "uno:13", "blue", [] ],
+    [ "uno:0", "$serialMonitor:TX", "", [] ],
+    [ "uno:1", "$serialMonitor:RX", "", [] ]
+  ],
+  "dependencies": {}
+}

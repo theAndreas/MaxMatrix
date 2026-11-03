@@ -286,5 +286,17 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 
 With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it.
 
+[Wokwi](https://wokwi.com) runs the real AVR binary instead, on a simulated Uno with four FC-16 modules at pins 11, 10
+and 13, so that the bit banging and the SPI of the board are what drive the LEDs. `diagram.json` and `wokwi.toml` in
+the root describe that board; build an example into the file `wokwi.toml` names and start it with *Wokwi: Start
+Simulator* from the [Wokwi extension](https://docs.wokwi.com/vscode/getting-started) for VS Code, which is free for
+open source:
+
+```sh
+tools/wokwi.py Sprites          # or with --spi, for hardware SPI on the same pins
+```
+
+Wokwi has two of the eight module types (FC-16 and Parola) and shows no frames; the simulator above covers those.
+
 The pictures in [docu/](docu/README.md) are drawn from the library and the MAX7219 model, not by hand. After a change
 that moves a dot, `build/DocuPictures --write docu` draws them again; until then the test `docu/pictures` fails.

@@ -41,6 +41,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the commands of
   the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`), and `PageTest.js`
   the page's own script, against stand-ins for the DOM, the WebSocket and a board on Web Serial.
+- `diagram.json`, `wokwi.toml` — a Uno with four FC-16 modules for Wokwi, which runs the real
+  AVR binary that `tools/wokwi.py EXAMPLE` builds; to look at, not tested in CI.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
