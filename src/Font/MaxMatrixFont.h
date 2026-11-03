@@ -39,21 +39,21 @@
 /******************************************************************************************************************************************************
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
-/* sprite types */
+/*! the index of a sprite in the font, the char's code minus 32 for ASCII */
 typedef byte spriteIndexType;
 
-/* sprite array type */
+/*! a sprite: its width, its height and up to five columns, bit 0 the top row, as the bytes are named below */
 typedef byte spriteType[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
 
-/* types for sprite table columns */
+/*! the bytes of a spriteType */
 enum : uint8_t {
-    ASCII_TABLE_SPRITE_WIDTH,
-    ASCII_TABLE_SPRITE_HEIGHT,
-    ASCII_TABLE_SPRITE_COLUMN1,
-    ASCII_TABLE_SPRITE_COLUMN2,
-    ASCII_TABLE_SPRITE_COLUMN3,
-    ASCII_TABLE_SPRITE_COLUMN4,
-    ASCII_TABLE_SPRITE_COLUMN5
+    ASCII_TABLE_SPRITE_WIDTH,               /*!< the columns it takes, 1 to 5 */
+    ASCII_TABLE_SPRITE_HEIGHT,              /*!< the rows it takes, 1 to 8 */
+    ASCII_TABLE_SPRITE_COLUMN1,             /*!< its leftmost column */
+    ASCII_TABLE_SPRITE_COLUMN2,             /*!< its second column */
+    ASCII_TABLE_SPRITE_COLUMN3,             /*!< its third column */
+    ASCII_TABLE_SPRITE_COLUMN4,             /*!< its fourth column */
+    ASCII_TABLE_SPRITE_COLUMN5              /*!< its fifth column */
 };
 
 

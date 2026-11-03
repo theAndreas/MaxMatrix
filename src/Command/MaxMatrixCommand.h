@@ -30,10 +30,10 @@
 /******************************************************************************************************************************************************
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
-/* what feed() says about the char it was given, when the line did not fail; why it failed is the error beside it */
+/*! what feed() says about the char it was given, when the line did not fail; why it failed is the error beside it */
 typedef enum : uint8_t {
-    MAXMATRIX_COMMAND_PENDING,              /* the line goes on, or was empty */
-    MAXMATRIX_COMMAND_DONE                  /* the line was a command, and it is carried out */
+    MAXMATRIX_COMMAND_PENDING,              /*!< the line goes on, or was empty */
+    MAXMATRIX_COMMAND_DONE                  /*!< the line was a command, and it is carried out */
 } MaxMatrixCommandStateType;
 
 class MaxMatrix;
@@ -42,7 +42,7 @@ class MaxMatrix;
 /******************************************************************************************************************************************************
  *  CLASS  MaxMatrixCommand
  *****************************************************************************************************************************************************/
-/* The commands of the Windows tool in AndreasBur/Led-Matrix, one per line: text=, textShift=, intensity=, speed=,
+/*! The commands of the Windows tool in AndreasBur/Led-Matrix, one per line: text=, textShift=, intensity=, speed=,
  * space=, setDot=column,row,value and clear. The text of textShift= is kept in a buffer of its own, because
  * setTextWithShift() only keeps a pointer and the next line overwrites the line buffer. As MaxMatrixText is, the class
  * is handed the matrix by every call rather than keeping a reference to it. */

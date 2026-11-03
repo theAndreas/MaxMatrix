@@ -30,21 +30,21 @@
 /******************************************************************************************************************************************************
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
-/* Type which describes the orientation of the whole Matrix, 180 for a board mounted upside down */
+/*! how the whole matrix is turned, 180 for a board mounted upside down */
 typedef enum : uint8_t {
-    MAXMATRIX_MATRIX_ORIENTATION_0,
-    MAXMATRIX_MATRIX_ORIENTATION_180
+    MAXMATRIX_MATRIX_ORIENTATION_0,         /*!< the board as it is meant to be mounted */
+    MAXMATRIX_MATRIX_ORIENTATION_180        /*!< the board upside down: the module at the input on the left */
 } MaxMatrixMatrixOrientationType;
 
-/* Type which describes the orientation of every Module in its place */
+/*! how every module is turned in its place, by how its LEDs are wired; the README says which fits which module */
 typedef enum : uint8_t {
-    MAXMATRIX_MODULE_ORIENTATION_0,
-    MAXMATRIX_MODULE_ORIENTATION_90,
-    MAXMATRIX_MODULE_ORIENTATION_180,
-    MAXMATRIX_MODULE_ORIENTATION_270
+    MAXMATRIX_MODULE_ORIENTATION_0,         /*!< as wired */
+    MAXMATRIX_MODULE_ORIENTATION_90,        /*!< turned by 90 degrees */
+    MAXMATRIX_MODULE_ORIENTATION_180,       /*!< turned by 180 degrees */
+    MAXMATRIX_MODULE_ORIENTATION_270        /*!< turned by 270 degrees, as on an FC-16 board */
 } MaxMatrixModuleOrientationType;
 
-/* row array type */
+/*! a row of the whole matrix, one byte per module from the left, bit 7 of each the leftmost column of its module */
 typedef byte rowType[MAXMATRIX_NUMBER_OF_MODULES];
 
 
