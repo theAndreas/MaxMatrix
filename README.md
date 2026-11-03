@@ -286,7 +286,15 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 
 With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it.
 
-[Wokwi](https://wokwi.com) runs the real AVR binary instead, on a simulated Uno with four FC-16 modules at pins 11, 10
+`build/SimulatorAvr` runs the same, but with the binary avr-gcc made for the Uno rather than with the sketch built for
+the PC: [simavr](https://github.com/buserror/simavr) simulates the ATmega328P, and its pins and SPI drive the MAX7219
+model. CMake builds the examples for it with `arduino-cli` into `build/avr/` when it finds both:
+
+```sh
+build/SimulatorAvr --elf build/avr/bitbang/ScrollText/ScrollText.ino.elf --wiring FC16
+```
+
+[Wokwi](https://wokwi.com) runs the real AVR binary as well, on a simulated Uno with four FC-16 modules at pins 11, 10
 and 13, so that the bit banging and the SPI of the board are what drive the LEDs. `diagram.json` and `wokwi.toml` in
 the root describe that board; build an example into the file `wokwi.toml` names and start it with *Wokwi: Start
 Simulator* from the [Wokwi extension](https://docs.wokwi.com/vscode/getting-started) for VS Code, which is free for
