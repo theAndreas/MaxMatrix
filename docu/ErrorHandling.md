@@ -290,9 +290,69 @@ not on a board.
   `src/utl/`, so a sketch includes `<Utl.h>` first, before any header of its own that includes
   `<utl/...>`: the includes are gone through in order.
 
-For MaxMatrix it changes the reason given below for not taking domains: with the vtables in flash a
-group costs 2 bytes of RAM, and the texts can be switched off. What it does not change is that no
-error comes from outside the library yet. Whether MaxMatrix takes Utl over is OIL item 28.
+For MaxMatrix it changed the reason given below for not taking domains: with the vtables in flash a
+group costs 2 bytes of RAM, and the texts can be switched off. What it did not change is that no
+error comes from outside the library yet. Whether MaxMatrix takes Utl over was OIL item 28; the next
+section is what a prototype of it showed.
+
+## Tried out: MaxMatrix on Utl
+
+A prototype on a branch that was not merged put MaxMatrix's errors onto Utl:
+`MaxMatrixStatus` and `MaxMatrixResult<T>` became `utl::Status` and `utl::Result<T>`, the codes
+kept their names in a group of their own, and `MAXMATRIX_E_OK` went, as "ok" is no code there. It
+was built for the Uno and run in simavr, where `SerialControl` answered as before; the host tests
+were not moved over. Flash and RAM of the examples on the Uno, Arduino AVR Boards 1.8.8:
+
+| Example | today | Utl | Utl, plugin | Utl, plugin, no texts | Utl without `virtual` |
+|---|---|---|---|---|---|
+| `Basics` | 3570 / 70 | 3714 / 70 | 3714 / 70 | 3590 / 70 | 3568 / 70 |
+| `ScrollText` | 3632 / 82 | 3778 / 82 | 3778 / 82 | 3654 / 82 | 3632 / 82 |
+| `Messages` | 3706 / 153 | 3872 / 163 | 3872 / 155 | 3748 / 155 | 3728 / 155 |
+| `SerialControl` | 5866 / 377 | 6182 / 387 | 6184 / 361 | 6062 / 361 | 6268 / 387 |
+
+`Animation` and `Sprites`, which draw no text, were the same in every column. The plugin alone,
+without Utl, takes `SerialControl` to 5866 / 359, by moving the vtable of `HardwareSerial`; that
+is no gain of Utl's.
+
+- **With virtual groups, every sketch that draws text paid for texts it never printed**, 144 to
+  166 bytes in the three examples that do not print an error, as `Message()` was virtual. Today
+  they pay nothing: `getErrorText()` is no virtual function, and the linker drops it with its
+  texts where no one calls it. The switch `UTL_ERROR_TEXTS` takes the texts out, but for the whole
+  build, and the Arduino IDE sets it only in `platform.local.txt`; `SerialControl` then answers
+  `error: ` without a reason.
+- **Without `virtual`**, the last column, with Utl's groups changed in
+  [Utl #24](https://github.com/theAndreas/Utl/pull/24): a group is the address of its name, and
+  a sketch turns a group's texts on with a call, `maxMatrixUseErrorTexts()` in `SerialControl`.
+  The sketches that print no error are back where they are today, with no plugin and no switch.
+  Fully automatic, without the call, was tried first: a table in a section of its own that only
+  the printing code names through `__start_`/`__stop_`. The linker dropped it when unused, but the
+  AVR linker script does not know the section and placed it in the data space at the address of
+  `.bss`, and the sections it places in flash have no `__start_` symbol and no `KEEP`.
+- **A sketch that prints errors pays more than today**: `SerialControl` 402 bytes of flash and 10 of
+  RAM. About 130 are the wider error, a group pointer and a code in 3 bytes where an enum takes one:
+  each function that passes a `Result` on, `getCharSprite()` and `convertToNumber()` among them,
+  grows by 64. About 120 are the list of the groups whose texts are on, which LTO puts into
+  `main()`.
+- **`[[nodiscard]]` warns in sketches**: eight calls in the examples and two in the library that
+  drop a status on purpose, `Matrix.setIntensity(2)` and `Matrix.setText("Hi!")` among them. A
+  sketch would need `static_cast<void>()` before each.
+- **The names change** to Google's, `IsOk()`, `error()->Message()`, beside `getState()` and
+  `setText()`; `Status == MAXMATRIX_E_OUT_OF_RANGE` still compiles.
+
+## Why the virtual group was questioned late
+
+The domain with a virtual `Name()` and `Message()` was taken from `std::error_category` and
+`ara::core::ErrorDomain`, as the known form, not weighed against one without `virtual`. Both of
+its costs come from `virtual`, the vtable in RAM and the texts that stay linked, and both were
+answered with a workaround, the plugin and the switch, each measured against itself rather than
+against a group without `virtual`. That GCC cannot drop an unused virtual function was written
+down in Utl and above as the reason for the switch, not as a question to the design. And the
+counterexample was at hand all along: `getErrorText()` here, which is not virtual and costs nothing
+where it is not called. It showed only when both were measured side by side in a real user of the
+library, MaxMatrix, rather than in Utl's own examples, which have nothing to compare with.
+
+What follows from it: where a design needs workarounds to keep its own costs down, measure the one
+without the cause first, and in a library that uses it.
 
 ## Decided, and open
 
@@ -302,8 +362,10 @@ error comes from outside the library yet. Whether MaxMatrix takes Utl over is OI
 - **Not domains**, because no one needs the open set they buy: every error comes from the library
   itself. A domain costs RAM with a vtable, or keeps its texts linked in `PROGMEM`; either breaks "the
   parts cost no RAM" and "a sketch that does not use it pays nothing".
-  With the vtables in flash a group costs 2 bytes of RAM, at the price of a plugin in every build,
-  and its texts can be switched off; see Utl above and OIL item 28.
+  Utl, without `virtual`, has since removed both costs for a sketch that prints no error, but one
+  that does pays 402 bytes of flash more in `SerialControl`, and every sketch gets warnings for the
+  statuses it drops; see "Tried out: MaxMatrix on Utl" above. OIL item 28 is dropped until errors
+  come from outside the library.
 - **Drawing clips**, decided first: `setDot()`, `setColumn()` and `setRow()` take `int16_t`, leave out
   what lies off the panel as `setChar()`, `embedded-graphics` and Adafruit GFX do, and return nothing.
   Out of range is left for the getters, the intensity and the commands, and `MaxMatrixCommand` checks
