@@ -53,6 +53,26 @@ TEST(SimulatorTest, PortThatIsNoNumberIsRefused)
     EXPECT_FALSE(parse(Options, { "--port", "80x" }));
 }
 
+TEST(SimulatorTest, RunForIsTakenInMilliseconds)
+{
+    SimulatorOptions Options;
+
+    ASSERT_TRUE(parse(Options, { "--for", "1.5" }));
+    EXPECT_EQ(Options.getRunFor(), 1500u);
+}
+
+/* Bug: atof() took --for 2x as two seconds, and turned -1 and 1e10 into a value a cast to uint32_t is undefined for. */
+TEST(SimulatorTest, RunForThatIsNoDurationIsRefused)
+{
+    SimulatorOptions Options;
+
+    EXPECT_FALSE(parse(Options, { "--for", "2x" }));
+    EXPECT_FALSE(parse(Options, { "--for", "-1" }));
+    EXPECT_FALSE(parse(Options, { "--for", "1e10" }));
+    EXPECT_FALSE(parse(Options, { "--for", "nan" }));
+    EXPECT_FALSE(parse(Options, { "--for", "0" }));
+}
+
 /* chipAt() places the chips as the viewer sees them: upright the leftmost module is the chip at the far end */
 TEST(SimulatorTest, IntensityIsCountedFromTheLeft)
 {
