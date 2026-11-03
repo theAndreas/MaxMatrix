@@ -1,5 +1,8 @@
-# clangd reads build/compile_commands.json on its own; this file only quiets
-# what it alone reports.
+# clangd reads build/compile_commands.json and .clang-tidy on its own; this
+# file only quiets what CI does not report.
+#
+# In test/, clang-tidy: static-analysis.yml reads src/ and simulator/ only,
+# and the tests keep a lighter style.
 #
 # In test/, -Wunused-function: clangd parses headers such as GoogleTest's
 # without their function bodies, for speed, so a function used only from a
@@ -9,3 +12,5 @@ If:
   PathMatch: test/.*
 Diagnostics:
   Suppress: unused-function
+  ClangTidy:
+    Remove: '*'

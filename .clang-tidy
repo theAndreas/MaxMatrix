@@ -1,0 +1,77 @@
+# What static analysis is asked for here, and what it is not; the same choice as Wordclock's.
+#
+# The checks that are on are the ones that answer "is this wrong": the bug patterns, the
+# path-sensitive analyser, the CERT rules and the performance ones. The ones that are off
+# argue with decisions this project has already made, and a check that is answered by
+# "no, on purpose" every time is a check nobody reads.
+#
+# Of the style checks only two: whether a member function can be static or const. The
+# conventions are in CLAUDE.md and are not clang-tidy's to have an opinion about:
+# readability-identifier-naming would report every PascalCase member, and the modernize-
+# family every configuration macro.
+#
+# Run over the host build's compile database, which covers the library in all three variants
+# of the tests, and the simulator:
+#
+#   cmake --preset default
+#   run-clang-tidy -p build -quiet "$PWD/(src|simulator)/"
+#
+# and over the Uno's, through tools/cross-clang-tidy.py: the same checks, with the database
+# rewritten so that clang can read what avr-gcc was told, where an int has 16 bits:
+#
+#   arduino-cli compile --fqbn arduino:avr:uno --library . --only-compilation-database \
+#                       --build-path build/avr examples/SerialControl
+#   python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+#
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  performance-*,
+  readability-convert-member-functions-to-static,
+  readability-make-member-function-const,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-reserved-identifier,
+  -bugprone-too-small-loop-variable,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
+  -cert-err33-c,
+  -cert-err58-cpp
+
+# Why each of those is off:
+#
+# bugprone-reserved-identifier, cert-dcl37-c, cert-dcl51-cpp
+#   Report the include guards. _MAXMATRIX_PANEL_H_ is reserved to the implementation, and
+#   all 32 files of src/ and simulator/ name their guard that way, as Wordclock does;
+#   renaming them would be the largest diff in the repository for no change in behaviour.
+#
+# bugprone-easily-swappable-parameters
+#   Reports every pair of coordinates, convertDotToBuffer(byte Column, byte Row, ...), and
+#   the three pins of MaxMatrixChain. The answer would be a type per coordinate and per pin,
+#   which is not what this library is; the parameters are named and documented.
+#
+# bugprone-too-small-loop-variable
+#   A byte counting the columns, while MAXMATRIX_NUMBER_OF_COLUMNS is an int. The check
+#   reads the types, not the values: MaxMatrixConfig.h asserts that the columns fit into a
+#   byte, which every index into MatrixBuffer relies on, not only the loops.
+#
+# cert-err33-c
+#   Reports the simulator's prints to the terminal and its snprintf() into buffers that are
+#   large enough. A simulator that cannot print has nobody to tell; the library calls none
+#   of the functions the rule lists.
+#
+# cert-err58-cpp
+#   Reports the simulator's static objects, which a sketch has as well: a static object
+#   whose constructor could throw. Nothing here throws, and the library is built without
+#   exceptions on the board.
+
+# A finding can be reported under several names at once, a bugprone- check and the CERT
+# rules that alias it, and which of them leads depends on the version. A NOLINT therefore
+# names all of them.
+#
+# Only what this repository owns: the headers of src/ and simulator/, not the mock of the
+# Arduino core in test/mock/, which stands in for code that is not ours either. The leading
+# slash keeps a directory that merely ends in src from matching.
+HeaderFilterRegex: '/(src|simulator)/'
+WarningsAsErrors: '*'

@@ -25,7 +25,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
-| 16 | Static analysis in CI | 1 | open | |
+| 16 | Static analysis in CI | 1 | in progress | |
 | 17 | Documentation from the Doxygen blocks | – | open | |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
@@ -252,6 +252,28 @@ tooling rather than invent one. Whatever comes keeps the latin-1 lookup behind `
 
 `clang-tidy` and `cppcheck` over the library, as Wordclock's `static-analysis.yml` does.
 Needs the `compile_commands.json` from 1.
+
+As built, `.github/workflows/static-analysis.yml` has Wordclock's checks and its jobs:
+clang-tidy over the host build's database, which holds the library in all three variants and
+the simulator; clang-tidy over the database arduino-cli writes for the Uno, once with
+`MAXMATRIX_DEV_ERROR_DETECT` off and once on, read through `tools/cross-clang-tidy.py` so that
+clang sees avr-libc and a 16-bit int; and cppcheck over `src/` and `simulator/` against the
+mock. `.clang-tidy` says why each check that is off is off: the include guards, the
+coordinates side by side, a byte counting the columns, and the simulator's prints and statics.
+
+What the checks found was fixed rather than switched off where a fix was cheap:
+
+- `--for` of the simulator went through `atof()`, which took `2x` as two seconds and passed a
+  negative number to a cast to `uint32_t` that is undefined for it; it is checked now, as
+  `--port` is, with a test.
+- Nothing kept the chain under 32 modules, past which a byte no longer counts the columns;
+  `MaxMatrixConfig.h` asserts it now.
+- Five enums got `uint8_t` as their base, as `MaxMatrixErrorType` has: 44 to 80 bytes of flash
+  and 3 of RAM in every example.
+- `SpriteTable` is an array of sprites rather than of bytes, the getters are `const`, functions
+  without state `static`, and the unused bit macros of `MaxMatrixStandardTypes.h` are gone.
+
+cppcheck found nothing; that it reads the tree was checked with a write past `MatrixBuffer`.
 
 ### 17 Documentation from the Doxygen blocks
 

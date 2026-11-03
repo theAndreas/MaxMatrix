@@ -1,6 +1,7 @@
 # MaxMatrix
 
 [![CI](https://img.shields.io/github/actions/workflow/status/theAndreas/MaxMatrix/ci.yml?branch=main&label=CI&logo=github)](https://github.com/theAndreas/MaxMatrix/actions/workflows/ci.yml)
+[![static analysis](https://img.shields.io/github/actions/workflow/status/theAndreas/MaxMatrix/static-analysis.yml?branch=main&label=static%20analysis&logo=github)](https://github.com/theAndreas/MaxMatrix/actions/workflows/static-analysis.yml)
 [![issues](https://img.shields.io/github/issues/theAndreas/MaxMatrix)](https://github.com/theAndreas/MaxMatrix/issues)
 
 [![license](https://img.shields.io/github/license/theAndreas/MaxMatrix)](LICENSE)

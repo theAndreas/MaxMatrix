@@ -18,7 +18,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `MaxMatrixError.h` / `.cpp` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
     what a function that can fail returns, with `getErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
-  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and bit macros.
+  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `MatrixBuffer` lie on a module in each module orientation (`Wiring_*.svg`). None is
@@ -46,6 +46,9 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
   the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
+- `.github/workflows/static-analysis.yml` — clang-tidy over the host build and the Uno's, and
+  cppcheck; `.clang-tidy` says which checks and why the rest are off, and
+  `tools/cross-clang-tidy.py` lets clang read what `avr-gcc` was told.
 - `.devcontainer/` — one `Dockerfile` plus a `devcontainer.json` per host (`linux`, `wsl2`);
   shared editor settings and volumes live in the local `shared/` feature.
 
@@ -236,6 +239,23 @@ cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
 ```
+
+and what `static-analysis.yml` reads the code with, each of which fails on any finding:
+
+```bash
+run-clang-tidy -p build -quiet "$PWD/(src|simulator)/"
+arduino-cli compile --fqbn arduino:avr:uno --library . --only-compilation-database \
+                    --build-path build/avr examples/SerialControl
+python3 tools/cross-clang-tidy.py build/avr "$PWD/src/"
+cppcheck --enable=warning,portability --check-level=exhaustive --std=c++17 --inline-suppr \
+         --error-exitcode=1 --quiet $(find src -type d | sed 's/^/-I/') -Itest/mock -Isimulator \
+         src simulator
+```
+
+A finding is fixed rather than silenced where the fix is cheap. Where it is not, a NOLINT names
+the check, and every name it is reported under, with the reason in a comment beside it; a check
+that argues with a convention of this file is switched off in `.clang-tidy`, with the reason
+there.
 
 Compile every example after a change to the library, not just the one that uses the change —
 the examples are the only code that instantiates the class with the real AVR toolchain. CI
