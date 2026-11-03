@@ -47,6 +47,9 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`,
   and `tools/east-const.py`, which finds a `const` left of what it qualifies.
+- `.github/workflows/docs.yml` — the reference from the Doxygen blocks, checked on every pull
+  request by `tools/docs.py` and published on GitHub Pages from `main`; `Doxyfile` says what
+  Doxygen reads.
 - `.github/workflows/static-analysis.yml` — clang-tidy over the host build and the Uno's, and
   cppcheck; `.clang-tidy` says which checks and why the rest are off, and
   `tools/cross-clang-tidy.py` lets clang read what `avr-gcc` was told.
@@ -219,7 +222,16 @@ Every file starts with the copyright and `\file` header. Sections are separated 
 banner comments (`INCLUDES`, `GLOBAL CONSTANT MACROS`, `P U B L I C   F U N C T I O N S`, …).
 Every function has a banner with its name, a Doxygen block (`\brief`, `\details`,
 `\param[in]` / `\param[out]`, `\return`, `\pre` where it applies) and ends with
-`} /* functionName */`. Indentation is four spaces.
+`} /* functionName */`. A function that returns nothing has no `\return`: Doxygen warns of one.
+Indentation is four spaces.
+
+What a sketch reads is in the reference, so it is documented whole: in `src/MaxMatrix.h`,
+`MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixStandardTypes.h` and `Command/`, every class,
+member, type, enum value and macro has a `/*! */` block or a `/*!< */` beside it, and the types
+the facade takes from the parts, such as `spriteType` and the orientations, as well. A one-line
+function in a header gets a one-line `\brief`; one that only passes a call on takes the block of
+the function it calls with `\copydoc`, rather than a second text that would drift from it.
+`tools/docs.py` fails on a gap there; below the facade a member may go without.
 
 An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
 header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
@@ -252,6 +264,12 @@ cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
 tools/east-const.py
+```
+
+the reference that `docs.yml` builds, into `build/docu/html`, failing on any warning that counts:
+
+```bash
+tools/docs.py
 ```
 
 and what `static-analysis.yml` reads the code with, each of which fails on any finding:

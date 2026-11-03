@@ -1,0 +1,35 @@
+# The reference on GitHub Pages, from the Doxygen blocks of src/ and the README as its main page.
+# Only what differs from Doxygen's defaults is set. Written and checked by tools/docs.py, which
+# fails on every warning but a member left undocumented below the facade; published by
+# .github/workflows/docs.yml.
+
+PROJECT_NAME           = MaxMatrix
+PROJECT_BRIEF          = "Chained 8x8 LED dot matrix modules with the MAX7219, for Arduino"
+OUTPUT_DIRECTORY       = build/docu
+
+# docu/README.md becomes the page of docu/, with the pictures of the wirings. The examples are
+# not read: they are sketches, not reference, and the README links them on GitHub.
+INPUT                  = README.md docu/README.md src
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.cpp *.md
+USE_MDFILE_AS_MAINPAGE = README.md
+# so that the README's links to its own headings, written for GitHub, find them here as well
+MARKDOWN_ID_STYLE      = GITHUB
+IMAGE_PATH             = docu
+
+# PROGMEM and the weak attribute mean nothing to Doxygen; read as they are, a table in flash
+# became a symbol "not declared" and maxMatrixReportError() a function without parameters.
+# MAXMATRIX_DEV_ERROR_DETECT on, so that the report and its default are in the reference; the
+# switch itself is then not, and the README's table of the configuration has it.
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = PROGMEM= "__attribute__(x)=" MAXMATRIX_DEV_ERROR_DETECT=1u
+
+# No graphs: they need Graphviz, and the parts are few enough to read from the README.
+HAVE_DOT               = NO
+DIRECTORY_GRAPH        = NO
+GENERATE_LATEX         = NO
+
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_LOGFILE           = build/docu/warnings.log

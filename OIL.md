@@ -26,7 +26,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
 | 16 | Static analysis in CI | 1 | done | #36 |
-| 17 | Documentation from the Doxygen blocks | – | open | |
+| 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
 | 20 | More examples | 5 | done | #38 |
@@ -279,6 +279,17 @@ cppcheck found nothing; that it reads the tree was checked with a write past `Ma
 
 Every function already carries a Doxygen block; generate HTML from them, for instance on
 GitHub Pages, together with the pictures in `docu/`.
+
+As built, `.github/workflows/docs.yml` runs Doxygen over `src/`, with the README as the main page
+and `docu/README.md` with the pictures of the wirings as the page of `docu/`, and publishes the
+HTML on GitHub Pages from `main`. Every pull request builds it, and `tools/docs.py` fails on any
+warning but a member left undocumented below the facade.
+
+Every function did not carry a block after all: the one-line functions of the facade in
+`MaxMatrix.h` had none, nor did the configuration, the error classes and the enums - what a sketch
+reads most. They have one now; a function that only passes a call on takes the block below with
+`\copydoc`. `\return -` went from every function that returns nothing, as Doxygen warns of it,
+and the README's links to the examples point at GitHub, as Pages has no copy of them.
 
 ### 18 Releases and the Library Manager
 

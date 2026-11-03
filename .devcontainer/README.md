@@ -18,6 +18,7 @@ Container**:
 | `cmake`, `ninja`, GoogleTest (apt) | building and running those tests: `cmake --workflow --preset default` |
 | `clangd` (apt) | IntelliSense, see below |
 | `clang-tidy`, `cppcheck`, `python3` (apt) | the static analysis of `.github/workflows/static-analysis.yml`, see `.clang-tidy` |
+| `doxygen` (apt) | the reference of `.github/workflows/docs.yml`: `tools/docs.py` |
 | `gh` | branches and pull requests from the container |
 
 Compile an example for an Arduino Uno:
