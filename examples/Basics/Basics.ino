@@ -23,7 +23,7 @@ void loop()
     matrix.SetText("Hi!");
     delay(2000);
 
-    /* draw a diagonal line dot by dot */
+    /* Draw a diagonal line dot by dot */
     matrix.Clear();
     for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
         matrix.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
@@ -37,7 +37,7 @@ void loop()
     }
     delay(1000);
 
-    /* draw a frame from many dots and show it at once, rather than dot by dot */
+    /* Draw a frame from many dots and show it at once, rather than dot by dot */
     {
         MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
         matrix.Clear();

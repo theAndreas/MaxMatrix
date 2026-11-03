@@ -12,7 +12,7 @@
  *      \brief      Transfer to the chain of MAX7219
  *
  *      \details    Every module in the chain gets one address/value pair per frame, module 0 first; a module that is not
- *                  addressed gets the no-op. The bytes go out through transfer(), the only place that knows whether
+ *                  addressed gets the no-op. The bytes go out through Transfer(), the only place that knows whether
  *                  they are bit banged or sent by hardware SPI - before, every function that sent a frame had its own
  *                  loop with its own \#if.
  *
@@ -39,9 +39,9 @@
 /*! \brief          MaxMatrixChain constructor
  *  \details        Instantiation of the transfer to the chain
  *
- *  \param[in]      sDataInPin         number of the Data Input Pin
- *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
- *  \param[in]      sClockPin          number of the Clock Pin
+ *  \param[in]      data_in_pin        number of the Data Input Pin
+ *  \param[in]      chip_select_pin    number of the Chip Select (CS) Pin
+ *  \param[in]      clock_pin          number of the Clock Pin
  *****************************************************************************************************************************************************/
 MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin)
 {
@@ -52,7 +52,7 @@ MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte cloc
 
 
 /******************************************************************************************************************************************************
-  init()
+  Init()
 ******************************************************************************************************************************************************/
 /*! \brief          initialization of the pins and the MAX7219
  *  \details        this function initializes the IO hardware and sets every MAX7219 up to drive an 8x8 matrix:
@@ -83,41 +83,41 @@ void MaxMatrixChain::Init()
     WriteRegisterAll(MAX7219_REG_DECODE_MODE_ADDRESS, MAX7219_REG_DECODE_MODE_NO_DECODE);              // using an led matrix (not digits)
     WriteRegisterAll(MAX7219_REG_SHUTDOWN_ADDRESS, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);        // normal operation mode
     WriteRegisterAll(MAX7219_REG_DISPLAY_TEST_ADDRESS, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);     // no display test
-} /* init */
+} /* Init */
 
 
 /******************************************************************************************************************************************************
-  writeRegisterAll()
+  WriteRegisterAll()
 ******************************************************************************************************************************************************/
 /*! \brief          write the same register of every MAX7219
  *  \details        this function sends one frame with the same address and value for every module
  *
- *  \param[in]      RegisterAddress     address of the MAX7219 register
- *  \param[in]      RegisterValue       register value
+ *  \param[in]      register_address    address of the MAX7219 register
+ *  \param[in]      register_value      register value
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::WriteRegisterAll(byte register_address, byte register_value)
 {
     StartTransmission();
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_value);
     StopTransmission();
-} /* writeRegisterAll */
+} /* WriteRegisterAll */
 
 
 /******************************************************************************************************************************************************
-  writeRegisterEach()
+  WriteRegisterEach()
 ******************************************************************************************************************************************************/
 /*! \brief          write the same register of every MAX7219, each with its own value
  *  \details        this function sends one frame with the same address and one value per module
  *
- *  \param[in]      RegisterAddress     address of the MAX7219 register
- *  \param[in]      RegisterValues      one value per module, module 0 first
+ *  \param[in]      register_address    address of the MAX7219 register
+ *  \param[in]      register_values     one value per module, module 0 first
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* register_values)
 {
     StartTransmission();
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_values[i]);
     StopTransmission();
-} /* writeRegisterEach */
+} /* WriteRegisterEach */
 
 
 /******************************************************************************************************************************************************
@@ -125,12 +125,12 @@ void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* regist
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  startTransmission()
+  StartTransmission()
 ******************************************************************************************************************************************************/
 /*! \brief          start transmission to MAX7219
  *  \details        this function pulls chip select low, in SPI mode the SPI bus will be reserved too
  *
- *  \post           stopTransmission() has to be called after data was transferred
+ *  \post           StopTransmission() has to be called after data was transferred
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-function-const) */
 {
@@ -142,17 +142,17 @@ void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-funct
 #else
     digitalWrite(chip_select_pin_, LOW);
 #endif
-} /* startTransmission */
+} /* StartTransmission */
 
 
 /******************************************************************************************************************************************************
-  stopTransmission()
+  StopTransmission()
 ******************************************************************************************************************************************************/
 /*! \brief          stop transmission to MAX7219
  *  \details        this function pulls chip select high, so the MAX7219 latches the transferred data.
  *                  In SPI mode the SPI bus will be released for other devices.
  *
- *  \pre            startTransmission() has to be called first
+ *  \pre            StartTransmission() has to be called first
  *****************************************************************************************************************************************************/
 void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-function-const) */
 {
@@ -164,18 +164,18 @@ void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-functi
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.endTransaction();
 #endif
-} /* stopTransmission */
+} /* StopTransmission */
 
 
 /******************************************************************************************************************************************************
-  transfer()
+  Transfer()
 ******************************************************************************************************************************************************/
 /*! \brief          send one address/value pair
  *  \details        this function sends the pair for one module of a frame
  *
- *  \param[in]      RegisterAddress     address of the MAX7219 register
- *  \param[in]      RegisterValue       register value
- *  \pre            startTransmission() has to be called first
+ *  \param[in]      register_address    address of the MAX7219 register
+ *  \param[in]      register_value      register value
+ *  \pre            StartTransmission() has to be called first
  *****************************************************************************************************************************************************/
 /* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */
 void MaxMatrixChain::Transfer(byte register_address, byte register_value)
@@ -187,7 +187,7 @@ void MaxMatrixChain::Transfer(byte register_address, byte register_value)
     shiftOut(data_in_pin_, clock_pin_, MSBFIRST, register_address);
     shiftOut(data_in_pin_, clock_pin_, MSBFIRST, register_value);
 #endif
-} /* transfer */
+} /* Transfer */
 
 
 /******************************************************************************************************************************************************

@@ -39,11 +39,11 @@
 ******************************************************************************************************************************************************/
 /*! \brief          DocuSvg constructor
  *  \details        Instantiation of an empty picture with a white background. A picture that leaves out what other
- *                  pictures have at the top shows its shapes from sTop on, so that both can share one layout.
+ *                  pictures have at the top shows its shapes from top on, so that both can share one layout.
  *
- *  \param[in]      sWidth          width in pixels
- *  \param[in]      sHeight         height in pixels
- *  \param[in]      sTop            the coordinate shown at the top edge
+ *  \param[in]      width           width in pixels
+ *  \param[in]      height          height in pixels
+ *  \param[in]      top             the coordinate shown at the top edge
  *****************************************************************************************************************************************************/
 DocuSvg::DocuSvg(uint16_t width, uint16_t height, int16_t top)
 {
@@ -55,7 +55,7 @@ DocuSvg::DocuSvg(uint16_t width, uint16_t height, int16_t top)
 
 
 /******************************************************************************************************************************************************
-  getDocument()
+  GetDocument()
 ******************************************************************************************************************************************************/
 /*! \brief          the picture as an SVG document
  *  \details        this function wraps what was added into the svg element, with a line break at the end
@@ -70,62 +70,62 @@ std::string DocuSvg::GetDocument() const
              << "\" viewBox=\"0 " << top_ << " " << width_ << " " << height_ << "\" font-family=\"" << DOCU_SVG_FONT << "\">\n"
              << body_.str() << "</svg>\n";
     return document.str();
-} /* getDocument */
+} /* GetDocument */
 
 
 /******************************************************************************************************************************************************
-  addRect()
+  AddRect()
 ******************************************************************************************************************************************************/
 /*! \brief          adds a rectangle
  *  \details        this function draws a rectangle with an outline 2 pixels wide where it has one
  *
- *  \param[in]      X               left edge
- *  \param[in]      Y               top edge
- *  \param[in]      RectWidth       width
- *  \param[in]      RectHeight      height
- *  \param[in]      Fill            fill colour, or "none"
- *  \param[in]      Stroke          outline colour, or "none" for no outline
- *  \param[in]      Radius          radius of the corners
+ *  \param[in]      x               left edge
+ *  \param[in]      y               top edge
+ *  \param[in]      rect_width      width
+ *  \param[in]      rect_height     height
+ *  \param[in]      fill            fill colour, or "none"
+ *  \param[in]      stroke          outline colour, or "none" for no outline
+ *  \param[in]      radius          radius of the corners
  *****************************************************************************************************************************************************/
 void DocuSvg::AddRect(int16_t x, int16_t y, uint16_t rect_width, uint16_t rect_height, char const* fill, char const* stroke, uint8_t radius)
 {
     body_ << "  <rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << rect_width << "\" height=\"" << rect_height
          << "\" rx=\"" << static_cast<uint16_t>(radius) << "\" fill=\"" << fill << "\" stroke=\"" << stroke << "\" stroke-width=\"2\"/>\n";
-} /* addRect */
+} /* AddRect */
 
 
 /******************************************************************************************************************************************************
-  addText()
+  AddText()
 ******************************************************************************************************************************************************/
 /*! \brief          adds a line of text
  *  \details        this function places the text with its baseline at Y; the text must not hold &, < or >
  *
- *  \param[in]      X               where the text is anchored
- *  \param[in]      Y               baseline
- *  \param[in]      Text            the text
- *  \param[in]      Size            font size in pixels
- *  \param[in]      Fill            colour
- *  \param[in]      Anchor          "start", "middle" or "end": which part of the text lies at X
- *  \param[in]      Bold            true for bold
+ *  \param[in]      x               where the text is anchored
+ *  \param[in]      y               baseline
+ *  \param[in]      text            the text
+ *  \param[in]      size            font size in pixels
+ *  \param[in]      fill            colour
+ *  \param[in]      anchor          "start", "middle" or "end": which part of the text lies at X
+ *  \param[in]      bold            true for bold
  *****************************************************************************************************************************************************/
 void DocuSvg::AddText(int16_t x, int16_t y, std::string const& text, uint8_t size, char const* fill, char const* anchor, bool bold)
 {
     body_ << "  <text x=\"" << x << "\" y=\"" << y << "\" font-size=\"" << static_cast<uint16_t>(size) << "\" fill=\"" << fill
          << "\" text-anchor=\"" << anchor << "\"" << (bold ? " font-weight=\"bold\"" : "") << ">" << text << "</text>\n";
-} /* addText */
+} /* AddText */
 
 
 /******************************************************************************************************************************************************
-  addArrow()
+  AddArrow()
 ******************************************************************************************************************************************************/
 /*! \brief          adds a horizontal arrow
- *  \details        this function draws a line from FromX to ToX at height Y and a head at ToX
+ *  \details        this function draws a line from from_x to to_x at height Y and a head at to_x
  *
- *  \param[in]      FromX           where the arrow starts
- *  \param[in]      ToX             where its head points to
- *  \param[in]      Y               height of the arrow
- *  \param[in]      Thickness       width of the line
- *  \param[in]      Colour          colour of line and head
+ *  \param[in]      from_x          where the arrow starts
+ *  \param[in]      to_x            where its head points to
+ *  \param[in]      y               height of the arrow
+ *  \param[in]      thickness       width of the line
+ *  \param[in]      colour          colour of line and head
  *****************************************************************************************************************************************************/
 void DocuSvg::AddArrow(int16_t from_x, int16_t to_x, int16_t y, int16_t thickness, char const* colour)
 {
@@ -136,7 +136,7 @@ void DocuSvg::AddArrow(int16_t from_x, int16_t to_x, int16_t y, int16_t thicknes
          << "\" stroke-width=\"" << thickness << "\"/>\n";
     body_ << "  <polygon points=\"" << to_x << "," << y << " " << head_base << "," << y - DOCU_SVG_ARROW_HEAD_HALF_WIDTH << " " << head_base << ","
          << y + DOCU_SVG_ARROW_HEAD_HALF_WIDTH << "\" fill=\"" << colour << "\"/>\n";
-} /* addArrow */
+} /* AddArrow */
 
 
 /******************************************************************************************************************************************************

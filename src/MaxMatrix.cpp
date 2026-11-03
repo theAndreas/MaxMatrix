@@ -33,9 +33,9 @@
 /*! \brief          MaxMatrix constructor
  *  \details        Instantiation of the MaxMatrix library
  *
- *  \param[in]      sDataInPin         number of the Data Input Pin
- *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
- *  \param[in]      sClockPin          number of the Clock Pin
+ *  \param[in]      data_in_pin        number of the Data Input Pin
+ *  \param[in]      chip_select_pin    number of the Chip Select (CS) Pin
+ *  \param[in]      clock_pin          number of the Clock Pin
  *****************************************************************************************************************************************************/
 MaxMatrix::MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin) : panel_(data_in_pin, chip_select_pin, clock_pin)
 {
@@ -56,12 +56,12 @@ MaxMatrix::~MaxMatrix()
 
 
 /******************************************************************************************************************************************************
-  init()
+  Init()
 ******************************************************************************************************************************************************/
 /*! \brief          initialization of the Matrix hardware
  *  \details        this function initializes the IO hardware and the MAX7219 controller
  *                  all LEDs of the matrix will be cleared and intensity will be set to init value.
- *                  The cleared matrix is sent even with AutoUpdate off: after power-up the LEDs show anything.
+ *                  The cleared matrix is sent even with auto_update_ off: after power-up the LEDs show anything.
  *****************************************************************************************************************************************************/
 void MaxMatrix::Init()
 {
@@ -75,19 +75,19 @@ void MaxMatrix::Init()
 
     SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
     state_ = MaxMatrixState::kReady;
-} /* init */
+} /* Init */
 
 
 /******************************************************************************************************************************************************
-  shiftTask()
+  ShiftTask()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts char or string over the matrix
  *  \details        this function may be called on every loop() until the state changes from
  *                  MaxMatrixState::kCharShift or MaxMatrixState::kStringShift to MaxMatrixState::kReady. It takes a step
- *                  only when ShiftInterval has passed since the last one, and with an interval of 0 on every call.
+ *                  only when shift_interval_ has passed since the last one, and with an interval of 0 on every call.
  *                  A call that comes late takes one step, not the ones it missed: catching up would make the text
  *                  jump after loop() was held up, and the interval counts from this step on.
- *  \pre            setCharWithShift or setTextWithShift must be called first
+ *  \pre            SetCharWithShift or SetTextWithShift must be called first
  *****************************************************************************************************************************************************/
 void MaxMatrix::ShiftTask()
 {
@@ -103,45 +103,45 @@ void MaxMatrix::ShiftTask()
         if(!text_.CharShiftTask(panel_)) state_ = MaxMatrixState::kReady;
     }
     UpdateIfAuto();
-} /* shiftTask */
+} /* ShiftTask */
 
 
 /******************************************************************************************************************************************************
-  setAutoUpdate()
+  SetAutoUpdate()
 ******************************************************************************************************************************************************/
 /*! \brief          sets whether drawing is sent at once
  *  \details        this function switches between sending after every call that draws, the default, and sending only
- *                  when update() is called. Switching it on sends what was drawn while it was off.
+ *                  when Update() is called. Switching it on sends what was drawn while it was off.
  *
- *  \param[in]      sAutoUpdate     true to send after every call that draws
+ *  \param[in]      auto_update     true to send after every call that draws
  *****************************************************************************************************************************************************/
 void MaxMatrix::SetAutoUpdate(bool auto_update)
 {
     auto_update_ = auto_update;
     UpdateIfAuto();
-} /* setAutoUpdate */
+} /* SetAutoUpdate */
 
 
 /******************************************************************************************************************************************************
-  setIntensity()
+  SetIntensity()
 ******************************************************************************************************************************************************/
 /*! \brief          set led intensity of matrix module
  *  \details        
  *                  
- *  \param[in]      Intensity       intensity value from 0 to 15
+ *  \param[in]      intensity       intensity value from 0 to 15
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kOutOfRange    above 15; the intensity stays as it was
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::SetIntensity(byte intensity)
 {
-    if(intensity > MAX7219_REG_INTENSITY_MAX_VALUE) return MAXMATRIX_REPORT_ERROR("setIntensity", MaxMatrixStatus(MaxMatrixError::kOutOfRange));
+    if(intensity > MAX7219_REG_INTENSITY_MAX_VALUE) return MAXMATRIX_REPORT_ERROR("SetIntensity", MaxMatrixStatus(MaxMatrixError::kOutOfRange));
     RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, intensity);
     return MaxMatrixError::kOk;
-} /* setIntensity */
+} /* SetIntensity */
 
 
 /******************************************************************************************************************************************************
-  setCharWithShift()
+  SetCharWithShift()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts a char into the matrix and stops on the right side
  *  \details        this function shifts a given char into the matrix and stops shifting on the right side.
@@ -153,31 +153,31 @@ MaxMatrixStatus MaxMatrix::SetIntensity(byte intensity)
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::SetCharWithShift(char c)
 {
-    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("setCharWithShift", text_.SetCharWithShift(c));
+    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c));
 
     if(status.IsOk()) StartShift(MaxMatrixState::kCharShift);
     return status;
-} /* setCharWithShift */
+} /* SetCharWithShift */
 
 
 /******************************************************************************************************************************************************
-  setTextWithShift()
+  SetTextWithShift()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts a string into the matrix and stops after the last char on the right side
  *  \details        this function shifts a given string into the matrix and stops shifting on the right side,
  *                  when the last char appears on the matrix.
  *
- *  \param[in]      sString     string to print on matrix
+ *  \param[in]      string      string to print on matrix
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kNoText         the string is NULL; nothing starts
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrix::SetTextWithShift(char* string)
 {
-    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("setTextWithShift", text_.SetTextWithShift(string));
+    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("SetTextWithShift", text_.SetTextWithShift(string));
 
     if(status.IsOk()) StartShift(MaxMatrixState::kStringShift);
     return status;
-} /* setTextWithShift */
+} /* SetTextWithShift */
 
 
 /******************************************************************************************************************************************************
@@ -185,19 +185,19 @@ MaxMatrixStatus MaxMatrix::SetTextWithShift(char* string)
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  startShift()
+  StartShift()
 ******************************************************************************************************************************************************/
 /*! \brief          starts shifting a char or a string
  *  \details        this function sets the state and dates the last step one interval back, so that the first step
- *                  comes on the next call of shiftTask() rather than an interval later
+ *                  comes on the next call of ShiftTask() rather than an interval later
  *
- *  \param[in]      ShiftState      MaxMatrixState::kCharShift or MaxMatrixState::kStringShift
+ *  \param[in]      shift_state     MaxMatrixState::kCharShift or MaxMatrixState::kStringShift
  *****************************************************************************************************************************************************/
 void MaxMatrix::StartShift(MaxMatrixState shift_state)
 {
     state_ = shift_state;
     last_shift_ = millis() - shift_interval_;
-} /* startShift */
+} /* StartShift */
 
 
 /******************************************************************************************************************************************************

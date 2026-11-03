@@ -23,7 +23,7 @@
 /******************************************************************************************************************************************************
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
-/* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1 from Max7219Wirings */
+/* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1 from kMax7219Wirings */
 static struct {
     char const* name;
     Max7219Wiring const* wiring;
@@ -57,14 +57,14 @@ SimulatorPanel::SimulatorPanel()
 
 
 /******************************************************************************************************************************************************
-  getText()
+  GetText()
 ******************************************************************************************************************************************************/
 /*! \brief          the panel as text
  *  \details        this function writes the LEDs row after row, as the chosen module lights them
  *
- *  \param[in]      Lit             what stands for a lit LED
- *  \param[in]      Dark            what stands for a dark LED
- *  \param[in]      EndOfRow        what follows every row
+ *  \param[in]      lit             what stands for a lit LED
+ *  \param[in]      dark            what stands for a dark LED
+ *  \param[in]      end_of_row      what follows every row
  *  \return         the panel
  *****************************************************************************************************************************************************/
 std::string SimulatorPanel::GetText(char const* lit, char const* dark, char const* end_of_row) const
@@ -76,31 +76,31 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark, char cons
         text += end_of_row;
     }
     return text;
-} /* getText */
+} /* GetText */
 
 
 /******************************************************************************************************************************************************
-  getIntensity()
+  GetIntensity()
 ******************************************************************************************************************************************************/
 /*! \brief          the brightness of a module
  *  \details        this function asks the chip that lights the module at this place, which depends on the mounting
  *
- *  \param[in]      Module          the module's place, counted from the left as the viewer sees the panel
+ *  \param[in]      module          the module's place, counted from the left as the viewer sees the panel
  *  \return         the intensity register of its chip
  *****************************************************************************************************************************************************/
 uint8_t SimulatorPanel::GetIntensity(uint8_t module) const
 {
     return mock::chain.ChipAt(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, upside_down_).intensity;
-} /* getIntensity */
+} /* GetIntensity */
 
 
 /******************************************************************************************************************************************************
-  setWiring()
+  SetWiring()
 ******************************************************************************************************************************************************/
 /*! \brief          chooses the wiring of the modules
  *  \details        this function accepts the four names MD_MAX72XX has and DR0CR0RR0 ... DR1CR1RR1
  *
- *  \param[in]      Name            the wiring's name
+ *  \param[in]      name            the wiring's name
  *  \return         true
  *                  false           no wiring has this name; the panel keeps the one it has
  *****************************************************************************************************************************************************/
@@ -114,32 +114,32 @@ bool SimulatorPanel::SetWiring(std::string const& name)
         draw_requested_ = true;
         return true;
     } else return false;
-} /* setWiring */
+} /* SetWiring */
 
 
 /******************************************************************************************************************************************************
-  setUpsideDown()
+  SetUpsideDown()
 ******************************************************************************************************************************************************/
 /*! \brief          chooses how the board is mounted
  *  \details        this function turns the panel, so that the next draw shows it as a board mounted this way lights it
  *
- *  \param[in]      sUpsideDown     true if the board is mounted upside down
+ *  \param[in]      upside_down     true if the board is mounted upside down
  *****************************************************************************************************************************************************/
 void SimulatorPanel::SetUpsideDown(bool upside_down)
 {
     upside_down_ = upside_down;
     draw_requested_ = true;
-} /* setUpsideDown */
+} /* SetUpsideDown */
 
 
 /******************************************************************************************************************************************************
-  isDrawDue()
+  IsDrawDue()
 ******************************************************************************************************************************************************/
 /*! \brief          says whether the panel has to be drawn
  *  \details        this function says so when a frame arrived or a draw was requested since the last draw, but no more
  *                  often than every SIMULATOR_PANEL_REDRAW_INTERVAL
  *
- *  \param[in]      Now             millis()
+ *  \param[in]      now             millis()
  *  \return         true if it is time to draw
  *****************************************************************************************************************************************************/
 bool SimulatorPanel::IsDrawDue(uint32_t now) const
@@ -147,23 +147,23 @@ bool SimulatorPanel::IsDrawDue(uint32_t now) const
     bool const changed = mock::frames != drawn_frames_ || draw_requested_;
 
     return changed && now - last_draw_ >= SIMULATOR_PANEL_REDRAW_INTERVAL;
-} /* isDrawDue */
+} /* IsDrawDue */
 
 
 /******************************************************************************************************************************************************
-  setDrawn()
+  SetDrawn()
 ******************************************************************************************************************************************************/
 /*! \brief          notes that the panel was drawn
- *  \details        this function remembers the frame count and the time, so that isDrawDue() waits for the next change
+ *  \details        this function remembers the frame count and the time, so that IsDrawDue() waits for the next change
  *
- *  \param[in]      Now             millis()
+ *  \param[in]      now             millis()
  *****************************************************************************************************************************************************/
 void SimulatorPanel::SetDrawn(uint32_t now)
 {
     drawn_frames_ = mock::frames;
     last_draw_ = now;
     draw_requested_ = false;
-} /* setDrawn */
+} /* SetDrawn */
 
 
 /******************************************************************************************************************************************************
@@ -171,12 +171,12 @@ void SimulatorPanel::SetDrawn(uint32_t now)
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  findWiring()
+  FindWiring()
 ******************************************************************************************************************************************************/
 /*! \brief          finds a wiring by its name
  *  \details        this function looks at the names MD_MAX72XX has first, then at DR0CR0RR0 ... DR1CR1RR1
  *
- *  \param[in]      Name            the wiring's name
+ *  \param[in]      name            the wiring's name
  *  \return         the wiring, or nullptr if no wiring has this name
  *****************************************************************************************************************************************************/
 Max7219Wiring const* SimulatorPanel::FindWiring(std::string const& name)
@@ -188,7 +188,7 @@ Max7219Wiring const* SimulatorPanel::FindWiring(std::string const& name)
         if(name == each.name) return &each;
     }
     return nullptr;
-} /* findWiring */
+} /* FindWiring */
 
 
 /******************************************************************************************************************************************************

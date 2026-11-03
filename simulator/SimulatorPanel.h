@@ -11,7 +11,7 @@
 /**     \file       SimulatorPanel.h
  *      \brief      The LED panel of the simulator, as a module of the chosen wiring lights it
  *
- *      \details    Reads the model's LEDs rather than MatrixBuffer, so a sketch with the wrong orientation for its module
+ *      \details    Reads the model's LEDs rather than matrix_buffer_, so a sketch with the wrong orientation for its module
  *                  shows it wrong here too - which is the point. Knows nothing of where the panel is drawn.
  *
  *****************************************************************************************************************************************************/

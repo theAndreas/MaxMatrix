@@ -64,7 +64,7 @@ void loop();
 /******************************************************************************************************************************************************
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
-/* Mock::Tick is a plain function pointer, so what tick() works on has to be reachable without an object. */
+/* mock::tick is a plain function pointer, so what Tick() works on has to be reachable without an object. */
 static SimulatorOptions options;
 static SimulatorPanel panel;
 static SimulatorWeb web;
@@ -75,7 +75,7 @@ static SimulatorWeb web;
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  finish()
+  Finish()
 ******************************************************************************************************************************************************/
 /*! \brief          ends a run with --for
  *  \details        this function prints the panel and exits, from within the sketch's loop() or delay(), which never
@@ -86,11 +86,11 @@ static void Finish()
     bool const passed = SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) && mock::errors == 0;
 
     exit(passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
-} /* finish */
+} /* Finish */
 
 
 /******************************************************************************************************************************************************
-  tick()
+  Tick()
 ******************************************************************************************************************************************************/
 /*! \brief          follows the sketch
  *  \details        this function is called after every frame and every millisecond of delay(), so that the panel is
@@ -108,11 +108,11 @@ static void Tick()
         else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
         panel.SetDrawn(now);
     }
-} /* tick */
+} /* Tick */
 
 
 /******************************************************************************************************************************************************
-  begin()
+  Begin()
 ******************************************************************************************************************************************************/
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
@@ -133,7 +133,7 @@ static bool Begin()
         SimulatorTerminal::Clear();
     }
     return true;
-} /* begin */
+} /* Begin */
 
 
 /******************************************************************************************************************************************************

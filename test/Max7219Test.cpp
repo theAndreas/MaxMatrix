@@ -205,11 +205,11 @@ TEST(Max7219Test, NamedWiringsMatchMdMax72xx)
         { &kMaX7219WiringIcstation, Led(0, 7) },
     };
 
-    for(auto const& Case : expected) {
-        SCOPED_TRACE(Case.first->name);
-        std::vector<Led> leds = LitLeds(ChainWithOneSegment(1, 0, 0, 0), *Case.first);
+    for(auto const& test_case : expected) {
+        SCOPED_TRACE(test_case.first->name);
+        std::vector<Led> leds = LitLeds(ChainWithOneSegment(1, 0, 0, 0), *test_case.first);
         ASSERT_EQ(leds.size(), 1u);
-        EXPECT_EQ(leds[0], Case.second);
+        EXPECT_EQ(leds[0], test_case.second);
     }
 }
 

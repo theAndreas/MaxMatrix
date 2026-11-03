@@ -18,7 +18,7 @@
 static uint16_t const kPort = 18081;
 
 /* a connection that is opened and sends nothing is what a browser does when it opens a socket ahead of a request it
- * may never make; task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
+ * may never make; Task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
  * The socket is shut down from a second thread after three seconds, so that a host that waits ends the test late and
  * failed rather than never. */
 TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
@@ -48,5 +48,5 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
     task_done.set_value();
     closer.join();
     close(idle);
-    EXPECT_LT(elapsed.count(), 1000) << "milliseconds in task()";
+    EXPECT_LT(elapsed.count(), 1000) << "milliseconds in Task()";
 }

@@ -14,9 +14,9 @@
  *      \details    build/DocuPictures --write docu     writes them
  *                  build/DocuPictures --check docu     fails if one in docu/ is not what it would write
  *
- *                  Nothing in the pictures is drawn by hand. Every LED is placed by calling the library, with setDot(),
- *                  setColumn() or setRow(), and reading back which register bit of which MAX7219 the model in
- *                  test/mock/ latched, or which dot getDot() reports. The module types in the titles are the wirings
+ *                  Nothing in the pictures is drawn by hand. Every LED is placed by calling the library, with SetDot(),
+ *                  SetColumn() or SetRow(), and reading back which register bit of which MAX7219 the model in
+ *                  test/mock/ latched, or which dot GetDot() reports. The module types in the titles are the wirings
  *                  of the model on which a pattern set in that orientation appears upright. So a picture cannot say
  *                  something the library does not do, and the test docu/pictures fails when the library changes and
  *                  the pictures were not written again.
@@ -74,7 +74,7 @@
 #define DOCU_CHIP_SELECT_PIN                                        10
 #define DOCU_CLOCK_PIN                                              13
 
-/* what the coordinate picture shows setColumn() and setRow() with */
+/* what the coordinate picture shows SetColumn() and SetRow() with */
 #define DOCU_EXAMPLE_COLUMN                                         5
 #define DOCU_EXAMPLE_ROW_MODULE                                     2
 #define DOCU_EXAMPLE_ROW                                            2
@@ -123,12 +123,12 @@ static struct {
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  findLed()
+  FindLed()
 ******************************************************************************************************************************************************/
 /*! \brief          finds the one LED the model has lit
  *  \details        this function reads the digit registers of every chip in the model
  *
- *  \param[out]     Led             the chip, digit and bit of the lit LED
+ *  \param[out]     led             the chip, digit and bit of the lit LED
  *  \return         true
  *                  false           no LED or more than one is lit
  *****************************************************************************************************************************************************/
@@ -149,18 +149,18 @@ static bool FindLed(DocuLed* led)
         }
     }
     return lit == 1;
-} /* findLed */
+} /* FindLed */
 
 
 /******************************************************************************************************************************************************
-  findLedOfDot()
+  FindLedOfDot()
 ******************************************************************************************************************************************************/
 /*! \brief          finds the LED that drives a dot as the viewer sees it
- *  \details        this function clears the matrix, sets the one dot with setDot() and asks the model which LED it lit
+ *  \details        this function clears the matrix, sets the one dot with SetDot() and asks the model which LED it lit
  *
- *  \param[in]      X               column as the viewer sees it
- *  \param[in]      Y               row as the viewer sees it
- *  \param[out]     Led             the chip, digit and bit
+ *  \param[in]      x               column as the viewer sees it
+ *  \param[in]      y               row as the viewer sees it
+ *  \param[out]     led             the chip, digit and bit
  *  \return         true
  *                  false           the dot did not light exactly one LED
  *****************************************************************************************************************************************************/
@@ -169,17 +169,17 @@ static bool FindLedOfDot(byte x, byte y, DocuLed* led)
     matrix.Clear();
     matrix.SetDot(x, y, true);
     return FindLed(led);
-} /* findLedOfDot */
+} /* FindLedOfDot */
 
 
 /******************************************************************************************************************************************************
-  isUpright()
+  IsUpright()
 ******************************************************************************************************************************************************/
 /*! \brief          says whether a module of a wiring shows the panel upright
  *  \details        this function sets a pattern without symmetry dot by dot and compares it with what the model lights
  *                  for that wiring, as MaxMatrixModuleTest does
  *
- *  \param[in]      Wiring          the wiring of the modules
+ *  \param[in]      wiring          the wiring of the modules
  *  \return         true if every dot is lit where it was set
  *****************************************************************************************************************************************************/
 static bool IsUpright(Max7219Wiring const& wiring)
@@ -196,11 +196,11 @@ static bool IsUpright(Max7219Wiring const& wiring)
         }
     }
     return upright;
-} /* isUpright */
+} /* IsUpright */
 
 
 /******************************************************************************************************************************************************
-  getModules()
+  GetModules()
 ******************************************************************************************************************************************************/
 /*! \brief          the modules the current orientation fits
  *  \details        this function names every wiring of the model on which the panel is upright, with the name
@@ -222,42 +222,42 @@ static std::string GetModules()
         }
     }
     return modules.empty() ? "no module" : modules;
-} /* getModules */
+} /* GetModules */
 
 
 /******************************************************************************************************************************************************
-  getCellX()
+  GetCellX()
 ******************************************************************************************************************************************************/
 /*! \brief          the left edge of the cell of a column
  *  \details        this function leaves a gap between the modules
  *
- *  \param[in]      X               column as the viewer sees it
+ *  \param[in]      x               column as the viewer sees it
  *  \return         pixels from the left
  *****************************************************************************************************************************************************/
 static int16_t GetCellX(byte x)
 {
     return DOCU_LEFT + (x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * (MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL + DOCU_MODULE_GAP)
            + (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL;
-} /* getCellX */
+} /* GetCellX */
 
 
 /******************************************************************************************************************************************************
-  getCellY()
+  GetCellY()
 ******************************************************************************************************************************************************/
 /*! \brief          the top edge of the cell of a row
  *  \details        this function counts the rows from the top of the panel
  *
- *  \param[in]      Y               row as the viewer sees it
+ *  \param[in]      y               row as the viewer sees it
  *  \return         pixels from the top
  *****************************************************************************************************************************************************/
 static int16_t GetCellY(byte y)
 {
     return DOCU_TOP + y * DOCU_CELL;
-} /* getCellY */
+} /* GetCellY */
 
 
 /******************************************************************************************************************************************************
-  getPictureWidth()
+  GetPictureWidth()
 ******************************************************************************************************************************************************/
 /*! \brief          the width of a picture of the whole panel
  *  \details        this function leaves room on the right for the arrow into the module DIN reaches first
@@ -267,11 +267,11 @@ static int16_t GetCellY(byte y)
 static uint16_t GetPictureWidth()
 {
     return GetCellX(MAXMATRIX_NUMBER_OF_COLUMNS - 1) + DOCU_CELL + DOCU_RIGHT;
-} /* getPictureWidth */
+} /* GetPictureWidth */
 
 
 /******************************************************************************************************************************************************
-  getPictureHeight()
+  GetPictureHeight()
 ******************************************************************************************************************************************************/
 /*! \brief          the height of a picture of the whole panel
  *  \details        this function leaves room below the panel for the coordinates and two lines of legend
@@ -281,20 +281,20 @@ static uint16_t GetPictureWidth()
 static uint16_t GetPictureHeight()
 {
     return GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + DOCU_BOTTOM;
-} /* getPictureHeight */
+} /* GetPictureHeight */
 
 
 /******************************************************************************************************************************************************
-  drawLed()
+  DrawLed()
 ******************************************************************************************************************************************************/
 /*! \brief          draws the LED of a dot, with a label
  *  \details        this function draws a rounded square in the middle of the cell, with the label in white on it
  *
- *  \param[out]     Svg             the picture
- *  \param[in]      X               column as the viewer sees it
- *  \param[in]      Y               row as the viewer sees it
- *  \param[in]      Colour          fill colour
- *  \param[in]      Label           text in the LED, or empty
+ *  \param[out]     svg             the picture
+ *  \param[in]      x               column as the viewer sees it
+ *  \param[in]      y               row as the viewer sees it
+ *  \param[in]      colour          fill colour
+ *  \param[in]      label           text in the LED, or empty
  *****************************************************************************************************************************************************/
 static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour, std::string const& label)
 {
@@ -302,18 +302,18 @@ static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour, std::strin
 
     svg->AddRect(GetCellX(x) + inset, GetCellY(y) + inset, DOCU_LED, DOCU_LED, colour, "none", 3);
     if(!label.empty()) svg->AddText(GetCellX(x) + DOCU_CELL / 2, GetCellY(y) + DOCU_CELL / 2 + 4, label, DOCU_FONT_LED, "#ffffff", "middle", true);
-} /* drawLed */
+} /* DrawLed */
 
 
 /******************************************************************************************************************************************************
-  drawPanel()
+  DrawPanel()
 ******************************************************************************************************************************************************/
 /*! \brief          draws what both pictures share
  *  \details        this function draws the title, a frame and a label per module, the coordinates along both edges
  *                  and an arrow into the module that DIN reaches first, which it finds by asking the model
  *
- *  \param[out]     Svg             the picture
- *  \param[in]      Title           the line above the panel, or empty for none
+ *  \param[out]     svg             the picture
+ *  \param[in]      title           the line above the panel, or empty for none
  *****************************************************************************************************************************************************/
 static void DrawPanel(DocuSvg* svg, std::string const& title)
 {
@@ -343,18 +343,18 @@ static void DrawPanel(DocuSvg* svg, std::string const& title)
     }
     svg->AddText(DOCU_LEFT - 40, DOCU_TOP + module_height / 2 + 5, "Y", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT, "middle", true);
     svg->AddText(DOCU_LEFT - 14, DOCU_TOP + module_height + 22, "X", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT, "end", true);
-} /* drawPanel */
+} /* DrawPanel */
 
 
 /******************************************************************************************************************************************************
-  drawWiring()
+  DrawWiring()
 ******************************************************************************************************************************************************/
 /*! \brief          the picture of how the bytes lie on the modules in one module orientation
  *  \details        this function labels every LED with the digit register and the bit that drive it, and joins the LEDs
- *                  of one register in a band: a register is one byte of MatrixBuffer
+ *                  of one register in a band: a register is one byte of matrix_buffer_
  *
- *  \param[in]      Orientation     the module orientation
- *  \param[in]      Degrees         the same in degrees, for the title
+ *  \param[in]      orientation     the module orientation
+ *  \param[in]      degrees         the same in degrees, for the title
  *  \return         the SVG text
  *****************************************************************************************************************************************************/
 static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t degrees)
@@ -393,16 +393,16 @@ static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t d
     svg.AddText(DOCU_LEFT, legend, "Each LED is labelled byte.bit: byte n is digit register n of the module's MAX7219 and "
                 "MatrixBuffer[8 * module + n], bit b is bit b of it.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
     svg.AddText(DOCU_LEFT, legend + 22, "A blue band joins the LEDs of one byte, the darker one is its bit 0. Matrix orientation 0. "
-                "Drawn by docu/DocuPictures.cpp from setDot() and the MAX7219 model.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
+                "Drawn by docu/DocuPictures.cpp from SetDot() and the MAX7219 model.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
     return svg.GetDocument();
-} /* drawWiring */
+} /* DrawWiring */
 
 
 /******************************************************************************************************************************************************
-  drawCoordinates()
+  DrawCoordinates()
 ******************************************************************************************************************************************************/
 /*! \brief          the picture of the coordinates a sketch uses
- *  \details        this function marks which dot each bit of setColumn() and setRow() sets, as getDot() reports it,
+ *  \details        this function marks which dot each bit of SetColumn() and SetRow() sets, as GetDot() reports it,
  *                  and names the function under what it set. The coordinates are the same in every orientation once it
  *                  fits the module, so the picture is drawn in the one of FC-16 boards. It has no title and no legend:
  *                  the README explains it right below, so the picture shows the panel only.
@@ -445,21 +445,21 @@ static std::string DrawCoordinates()
 
     int16_t const names = DOCU_TOP + panel_height + 46;
     int16_t const row_module_left = GetCellX(DOCU_EXAMPLE_ROW_MODULE * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-    svg.AddText(GetCellX(DOCU_EXAMPLE_COLUMN) + DOCU_CELL / 2, names, "setColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value)",
+    svg.AddText(GetCellX(DOCU_EXAMPLE_COLUMN) + DOCU_CELL / 2, names, "SetColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value)",
                 DOCU_FONT_MODULE, DOCU_COLOUR_LED, "middle", true);
-    svg.AddText(row_module_left + MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL / 2, names, "setRow(" + std::to_string(DOCU_EXAMPLE_ROW_MODULE)
+    svg.AddText(row_module_left + MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL / 2, names, "SetRow(" + std::to_string(DOCU_EXAMPLE_ROW_MODULE)
                 + ", " + std::to_string(DOCU_EXAMPLE_ROW) + ", value)", DOCU_FONT_MODULE, DOCU_COLOUR_ROW, "middle", true);
     return svg.GetDocument();
-} /* drawCoordinates */
+} /* DrawCoordinates */
 
 
 /******************************************************************************************************************************************************
-  readFile()
+  ReadFile()
 ******************************************************************************************************************************************************/
 /*! \brief          reads a whole file
  *  \details        this function returns an empty text for a missing file, which no picture equals
  *
- *  \param[in]      Path            the file
+ *  \param[in]      path            the file
  *  \return         what it holds, or an empty text if it cannot be read
  *****************************************************************************************************************************************************/
 static std::string ReadFile(std::string const& path)
@@ -469,7 +469,7 @@ static std::string ReadFile(std::string const& path)
 
     content << file.rdbuf();
     return content.str();
-} /* readFile */
+} /* ReadFile */
 
 
 /******************************************************************************************************************************************************

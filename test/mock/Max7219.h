@@ -1,6 +1,6 @@
 /* Model of a chain of MAX7219, fed from the wire by the Arduino stand-in.
  *
- * Driven by the bytes the library shifts out and by the rising edge of chip select, not by MatrixBuffer: the buffer
+ * Driven by the bytes the library shifts out and by the rising edge of chip select, not by matrix_buffer_: the buffer
  * only says what the library believes is on the LEDs, and a wrong module, register or frame length leaves it right
  * and the display wrong. Only the logic is modelled - no timing, nothing electrical, and no multiplexing: a digit
  * within the scan limit shows its register for as long as the chip is not shut down. */
@@ -31,9 +31,9 @@ class Max7219 {
  * MD_MAX72XX names its hardware types by, DR0CR0RR0_HW to DR1CR1RR1_HW, and with the same meaning, so that a module
  * MD_MAX72XX has tested is the same module here. As there, a module's column is counted from the right and its row
  * from the top:
- *   DigitsAsRows      a digit drives a row of LEDs and a segment bit a column; otherwise a digit drives a column
- *   ReversedColumns   the segment bit index is reversed, bit 7 - x for x
- *   ReversedRows      the digit index is reversed, digit 7 - x for x */
+ *   digits_as_rows      a digit drives a row of LEDs and a segment bit a column; otherwise a digit drives a column
+ *   reversed_columns   the segment bit index is reversed, bit 7 - x for x
+ *   reversed_rows      the digit index is reversed, digit 7 - x for x */
 struct Max7219Wiring {
     char const* name;
     bool digits_as_rows;
@@ -63,7 +63,7 @@ class Max7219Chain {
     Max7219 const& ChipAt(uint16_t x, bool upside_down = false) const;
 
   private:
-    /* two bytes per chip, ShiftRegister[2 * Chip] its data byte and ShiftRegister[2 * Chip + 1] its address byte */
+    /* two bytes per chip, shift_register_[2 * Chip] its data byte and shift_register_[2 * Chip + 1] its address byte */
     std::vector<uint8_t> shift_register_;
 };
 

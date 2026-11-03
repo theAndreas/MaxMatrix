@@ -48,7 +48,7 @@ static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) == static_cast<uint8_
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  getErrorText()
+  GetErrorText()
 ******************************************************************************************************************************************************/
 /*! \brief          the error in words
  *  \details        this function returns a few words a sketch can print with Serial.print(), "out of range" for
@@ -64,7 +64,7 @@ __FlashStringHelper const* MaxMatrixStatus::GetErrorText() const
 
     if(index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));
     return reinterpret_cast<__FlashStringHelper const*>(text);
-} /* getErrorText */
+} /* GetErrorText */
 
 
 /******************************************************************************************************************************************************

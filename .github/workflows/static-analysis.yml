@@ -52,6 +52,14 @@ jobs:
       - name: Analyse
         run: run-clang-tidy -p build -quiet -j "$(nproc)" "$PWD/(src|simulator)/"
 
+      # The names of the tests, the pictures' program and the examples as well, and only
+      # those: in the tests `#define private public` shows every member of the library as
+      # public, which would want its `_` gone, and the run above checks those headers already.
+      - name: Names in test/, docu/ and examples/
+        run: |
+          run-clang-tidy -p build -quiet -j "$(nproc)" -checks='-*,readability-identifier-naming' \
+            -header-filter="$PWD/(test|docu|examples)/" "$PWD/(test|docu|examples)/"
+
   clang-tidy-avr:
     name: clang-tidy (arduino:avr:uno, dev error detect ${{ matrix.det }})
     runs-on: ubuntu-26.04

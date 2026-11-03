@@ -17,7 +17,7 @@ uint16_t const kShiftIntervalMs = 50;
 
 MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin);
 
-/* text must stay valid while it is shifted, so don't use a local variable */
+/* Text must stay valid while it is shifted, so don't use a local variable */
 char text[] = "Hello World!   ";
 
 void setup()
@@ -32,7 +32,7 @@ void setup()
 
 void loop()
 {
-    /* takes a step only every SHIFT_INTERVAL_MS, so it can be called on every loop() */
+    /* takes a step only every kShiftIntervalMs, so it can be called on every loop() */
     matrix.ShiftTask();
     /* restart when the whole text was shifted */
     if(matrix.GetState() == MaxMatrixState::kReady) matrix.SetTextWithShift(text);

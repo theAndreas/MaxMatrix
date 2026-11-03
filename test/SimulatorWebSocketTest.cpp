@@ -125,13 +125,13 @@ TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends)
 
 TEST(SimulatorWebSocketTest, DecodeReadsThe16BitLength)
 {
-    std::string const Long(200, 'x');
-    std::string buffer = ClientFrame(Long);
+    std::string const long_text(200, 'x');
+    std::string buffer = ClientFrame(long_text);
     std::string payload;
     uint8_t opcode = 0;
 
     ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
-    EXPECT_EQ(payload, Long);
+    EXPECT_EQ(payload, long_text);
 }
 
 /* a frame may arrive over several reads; until it is whole, nothing is taken from the buffer */

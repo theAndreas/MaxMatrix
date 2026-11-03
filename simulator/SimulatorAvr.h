@@ -12,8 +12,8 @@
  *      \brief      An example as the Uno runs it, in simavr, wired to the MAX7219 model
  *
  *      \details    The .elf avr-gcc made runs on a simulated ATmega328P at 16 MHz. Pins 10, 11 and 13 - CS, DIN and CLK,
- *                  which are SS, MOSI and SCK as well - and the SPI output drive Mock::Chain, and the UART reads
- *                  Mock::SerialInput and writes Mock::SerialOutput: the variables the Arduino stand-in drives for the
+ *                  which are SS, MOSI and SCK as well - and the SPI output drive mock::chain, and the UART reads
+ *                  mock::serial_input and writes mock::serial_output: the variables the Arduino stand-in drives for the
  *                  simulator a sketch is built into, so that the panel, the terminal and the page work on either.
  *
  *****************************************************************************************************************************************************/

@@ -11,10 +11,10 @@
 #include "Arduino.h"
 
 /* The parts of the library and the matrix buffer are private members of MaxMatrix, and some of what is
- * tested here has no public path: MaxMatrixWired::setColumnOnAllModules is only reached through clear(),
+ * tested here has no public path: MaxMatrixWired::setColumnOnAllModules is only reached through Clear(),
  * which zeroes the buffer afterwards and so hides a wrong index. Included after GoogleTest and the
  * standard headers, which must not see it - defined above them, it rewrites their classes too. */
-#define private public
+#define private public  // NOLINT(readability-identifier-naming): what it redefines is a keyword
 #include "MaxMatrix.h"
 #undef private
 
@@ -36,7 +36,7 @@ static void PrintTo(MaxMatrixError error, std::ostream* out)
     else *out << "error " << static_cast<uint16_t>(error);
 }
 
-/* what feed() returns, compared with a state as with an error: a line is done only if it did not fail as well */
+/* what Feed() returns, compared with a state as with an error: a line is done only if it did not fail as well */
 static bool operator==(MaxMatrixResult<MaxMatrixCommandState> const& result, MaxMatrixCommandState state)
 {
     return result.IsOk() && result.GetValue() == state;
@@ -48,7 +48,7 @@ static void PrintTo(MaxMatrixResult<MaxMatrixCommandState> const& result, std::o
     else *out << (result.GetValue() == MaxMatrixCommandState::kDone ? "MaxMatrixCommandState::kDone" : "MaxMatrixCommandState::kPending");
 }
 
-/* the text of F() and getErrorText(), which lies in RAM on the host */
+/* the text of F() and GetErrorText(), which lies in RAM on the host */
 static std::string Text(__FlashStringHelper const* text)
 {
     return reinterpret_cast<char const*>(text);
@@ -89,7 +89,7 @@ static Max7219 const& ChipOfModule(byte module)
     return mock::chain.chips[MAXMATRIX_NUMBER_OF_MODULES - 1 - module];
 }
 
-/* what the chain shows, laid out like MatrixBuffer: a column of a module is a digit, a row a segment */
+/* what the chain shows, laid out like matrix_buffer_: a column of a module is a digit, a row a segment */
 static std::vector<byte> Display()
 {
     std::vector<byte> columns;
@@ -121,7 +121,7 @@ class MaxMatrixTest : public ::testing::Test {
         EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_, sizeof(matrix_.panel_.wired_.matrix_buffer_))) << "display differs from MatrixBuffer";
     }
 
-    /* the shiftTask() calls the last shiftWholeText() took, each one a step of the text on the panel */
+    /* the ShiftTask() calls the last ShiftWholeText() took, each one a step of the text on the panel */
     uint16_t shift_calls_ = 0;
 
     /* returns the number of frames the shift sent to the chain */
@@ -196,18 +196,18 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
 }
 
 /* Whatever a call draws, it sends one frame per changed column of a module at most. Every dot and column used to be a
- * frame of its own: setText("Hi!") in module orientation 270 sent 64, and each step of a shifting text nine. */
+ * frame of its own: SetText("Hi!") in module orientation 270 sent 64, and each step of a shifting text nine. */
 TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
 {
     struct {
         char const* name;
         void (*draw)(MaxMatrix&);
     } const calls[] = {
-        { "setText", [](MaxMatrix& m) { m.SetText("Hi!"); } },
-        { "setChar off the top row", [](MaxMatrix& m) { m.SetChar(9, 1, 'A'); } },
-        { "setRow", [](MaxMatrix& m) { MaxMatrixRow row = { 0xFF, 0x0F, 0xF0, 0x3C }; m.SetRow(5, row); } },
-        { "setColumn", [](MaxMatrix& m) { m.SetColumn(17, 0x5A); } },
-        { "shiftUp", [](MaxMatrix& m) { m.ShiftUp(true); } },
+        { "SetText", [](MaxMatrix& m) { m.SetText("Hi!"); } },
+        { "SetChar off the top row", [](MaxMatrix& m) { m.SetChar(9, 1, 'A'); } },
+        { "SetRow", [](MaxMatrix& m) { MaxMatrixRow row = { 0xFF, 0x0F, 0xF0, 0x3C }; m.SetRow(5, row); } },
+        { "SetColumn", [](MaxMatrix& m) { m.SetColumn(17, 0x5A); } },
+        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(true); } },
         { "clear", [](MaxMatrix& m) { m.Clear(); } },
     };
     char text[] = "Hi \xC4!";
@@ -243,7 +243,7 @@ static std::vector<std::string> Picture(DotType dot)
     return rows;
 }
 
-/* the picture as the library reports it, through getDot */
+/* the picture as the library reports it, through GetDot */
 static std::vector<std::string> ShownPicture(MaxMatrix& matrix)
 {
     return Picture([&matrix](int16_t x, int16_t y) { return matrix.GetDot(x, y).GetValue(); });
@@ -256,7 +256,7 @@ static void DrawPattern(MaxMatrix& matrix)
     }
 }
 
-/* rows and columns are two views of one picture: in orientation 180 setColumn turned the whole panel while setRow
+/* rows and columns are two views of one picture: in orientation 180 SetColumn turned the whole panel while SetRow
  * turned each module */
 TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
 {
@@ -287,31 +287,31 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
         int16_t source_x, source_y;
         bool rotate;
     } const cases[] = {
-        { "shiftLeft", [](MaxMatrix& m) { m.ShiftLeft(false, true); }, 1, 0, false },
-        { "shiftLeft rotating", [](MaxMatrix& m) { m.ShiftLeft(true, false); }, 1, 0, true },
-        { "shiftRight", [](MaxMatrix& m) { m.ShiftRight(false, true); }, -1, 0, false },
-        { "shiftRight rotating", [](MaxMatrix& m) { m.ShiftRight(true, false); }, -1, 0, true },
-        { "shiftUp", [](MaxMatrix& m) { m.ShiftUp(false); }, 0, 1, false },
-        { "shiftUp rotating", [](MaxMatrix& m) { m.ShiftUp(true); }, 0, 1, true },
-        { "shiftDown", [](MaxMatrix& m) { m.ShiftDown(false); }, 0, -1, false },
-        { "shiftDown rotating", [](MaxMatrix& m) { m.ShiftDown(true); }, 0, -1, true },
+        { "ShiftLeft", [](MaxMatrix& m) { m.ShiftLeft(false, true); }, 1, 0, false },
+        { "ShiftLeft rotating", [](MaxMatrix& m) { m.ShiftLeft(true, false); }, 1, 0, true },
+        { "ShiftRight", [](MaxMatrix& m) { m.ShiftRight(false, true); }, -1, 0, false },
+        { "ShiftRight rotating", [](MaxMatrix& m) { m.ShiftRight(true, false); }, -1, 0, true },
+        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(false); }, 0, 1, false },
+        { "ShiftUp rotating", [](MaxMatrix& m) { m.ShiftUp(true); }, 0, 1, true },
+        { "ShiftDown", [](MaxMatrix& m) { m.ShiftDown(false); }, 0, -1, false },
+        { "ShiftDown rotating", [](MaxMatrix& m) { m.ShiftDown(true); }, 0, -1, true },
     };
     int16_t const width = MAXMATRIX_NUMBER_OF_COLUMNS, height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
 
-    for(auto const& Case : cases) {
+    for(auto const& test_case : cases) {
         matrix_.Clear();
         DrawPattern(matrix_);
-        Case.shift(matrix_);
-        EXPECT_EQ(ShownPicture(matrix_), Picture([&Case](int16_t x, int16_t y) {
-            int16_t source_x = x + Case.source_x, source_y = y + Case.source_y;
-            if(Case.rotate) return Pattern((source_x + width) % width, (source_y + height) % height);
+        test_case.shift(matrix_);
+        EXPECT_EQ(ShownPicture(matrix_), Picture([&test_case](int16_t x, int16_t y) {
+            int16_t source_x = x + test_case.source_x, source_y = y + test_case.source_y;
+            if(test_case.rotate) return Pattern((source_x + width) % width, (source_y + height) % height);
             return source_x >= 0 && source_x < width && source_y >= 0 && source_y < height && Pattern(source_x, source_y);
-        })) << Case.name;
+        })) << test_case.name;
     }
 }
 
 /* changing an orientation turns the buffer along, so the viewer still sees the same picture; changing the module
- * orientation to or from 180 turned each module while setColumn had turned the whole panel */
+ * orientation to or from 180 turned each module while SetColumn had turned the whole panel */
 TEST_P(MaxMatrixOrientationTest, PictureStaysWhenTheOrientationChanges)
 {
     for(MaxMatrixMatrixOrientation matrix_orientation : kMatrixOrientations) {
@@ -436,25 +436,25 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         MaxMatrixError expected;
         char const* api;
     } const cases[] = {
-        { "getColumn left", [](MaxMatrix& m) { return m.GetColumn(-1).GetError(); }, MaxMatrixError::kOutOfRange, "getColumn" },
-        { "getColumn right", [](MaxMatrix& m) { return m.GetColumn(MAXMATRIX_NUMBER_OF_COLUMNS).GetError(); }, MaxMatrixError::kOutOfRange, "getColumn" },
-        { "getColumn no module", [](MaxMatrix& m) { return m.GetColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).GetError(); }, MaxMatrixError::kOutOfRange, "getColumn" },
-        { "getColumn off its module", [](MaxMatrix& m) { return m.GetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "getColumn" },
-        { "getRow above", [](MaxMatrix& m) { MaxMatrixRow row; return m.GetRow(-1, row).GetError(); }, MaxMatrixError::kOutOfRange, "getRow" },
-        { "getRow below", [](MaxMatrix& m) { MaxMatrixRow row; return m.GetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, row).GetError(); }, MaxMatrixError::kOutOfRange, "getRow" },
-        { "getRow no module", [](MaxMatrix& m) { return m.GetRow(MAXMATRIX_NUMBER_OF_MODULES, 0).GetError(); }, MaxMatrixError::kOutOfRange, "getRow" },
-        { "getRow off its module", [](MaxMatrix& m) { return m.GetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "getRow" },
-        { "getDot left", [](MaxMatrix& m) { return m.GetDot(-1, 0).GetError(); }, MaxMatrixError::kOutOfRange, "getDot" },
-        { "getDot right", [](MaxMatrix& m) { return m.GetDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).GetError(); }, MaxMatrixError::kOutOfRange, "getDot" },
-        { "getDot above", [](MaxMatrix& m) { return m.GetDot(0, -1).GetError(); }, MaxMatrixError::kOutOfRange, "getDot" },
-        { "getDot below", [](MaxMatrix& m) { return m.GetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "getDot" },
-        { "getSprite", [](MaxMatrix& m) { MaxMatrixSprite sprite; return m.GetSprite(255, &sprite).GetError(); }, MaxMatrixError::kOutOfRange, "getSprite" },
-        { "setIntensity", [](MaxMatrix& m) { return m.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).GetError(); }, MaxMatrixError::kOutOfRange, "setIntensity" },
-        { "setChar", [](MaxMatrix& m) { return m.SetChar(0, 0, '\x01').GetError(); }, MaxMatrixError::kUnknownChar, "setChar" },
-        { "setText unknown char", [](MaxMatrix& m) { return m.SetText("\x01").GetError(); }, MaxMatrixError::kUnknownChar, "setText" },
-        { "setText NULL", [](MaxMatrix& m) { return m.SetText(NULL).GetError(); }, MaxMatrixError::kNoText, "setText" },
-        { "setCharWithShift", [](MaxMatrix& m) { return m.SetCharWithShift('\x01').GetError(); }, MaxMatrixError::kUnknownChar, "setCharWithShift" },
-        { "setTextWithShift NULL", [](MaxMatrix& m) { return m.SetTextWithShift(NULL).GetError(); }, MaxMatrixError::kNoText, "setTextWithShift" },
+        { "GetColumn left", [](MaxMatrix& m) { return m.GetColumn(-1).GetError(); }, MaxMatrixError::kOutOfRange, "GetColumn" },
+        { "GetColumn right", [](MaxMatrix& m) { return m.GetColumn(MAXMATRIX_NUMBER_OF_COLUMNS).GetError(); }, MaxMatrixError::kOutOfRange, "GetColumn" },
+        { "GetColumn no module", [](MaxMatrix& m) { return m.GetColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).GetError(); }, MaxMatrixError::kOutOfRange, "GetColumn" },
+        { "GetColumn off its module", [](MaxMatrix& m) { return m.GetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "GetColumn" },
+        { "GetRow above", [](MaxMatrix& m) { MaxMatrixRow row; return m.GetRow(-1, row).GetError(); }, MaxMatrixError::kOutOfRange, "GetRow" },
+        { "GetRow below", [](MaxMatrix& m) { MaxMatrixRow row; return m.GetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, row).GetError(); }, MaxMatrixError::kOutOfRange, "GetRow" },
+        { "GetRow no module", [](MaxMatrix& m) { return m.GetRow(MAXMATRIX_NUMBER_OF_MODULES, 0).GetError(); }, MaxMatrixError::kOutOfRange, "GetRow" },
+        { "GetRow off its module", [](MaxMatrix& m) { return m.GetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "GetRow" },
+        { "GetDot left", [](MaxMatrix& m) { return m.GetDot(-1, 0).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
+        { "GetDot right", [](MaxMatrix& m) { return m.GetDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
+        { "GetDot above", [](MaxMatrix& m) { return m.GetDot(0, -1).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
+        { "GetDot below", [](MaxMatrix& m) { return m.GetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
+        { "GetSprite", [](MaxMatrix& m) { MaxMatrixSprite sprite; return m.GetSprite(255, &sprite).GetError(); }, MaxMatrixError::kOutOfRange, "GetSprite" },
+        { "SetIntensity", [](MaxMatrix& m) { return m.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).GetError(); }, MaxMatrixError::kOutOfRange, "SetIntensity" },
+        { "SetChar", [](MaxMatrix& m) { return m.SetChar(0, 0, '\x01').GetError(); }, MaxMatrixError::kUnknownChar, "SetChar" },
+        { "SetText unknown char", [](MaxMatrix& m) { return m.SetText("\x01").GetError(); }, MaxMatrixError::kUnknownChar, "SetText" },
+        { "SetText NULL", [](MaxMatrix& m) { return m.SetText(NULL).GetError(); }, MaxMatrixError::kNoText, "SetText" },
+        { "SetCharWithShift", [](MaxMatrix& m) { return m.SetCharWithShift('\x01').GetError(); }, MaxMatrixError::kUnknownChar, "SetCharWithShift" },
+        { "SetTextWithShift NULL", [](MaxMatrix& m) { return m.SetTextWithShift(NULL).GetError(); }, MaxMatrixError::kNoText, "SetTextWithShift" },
         { "number empty", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("", 255).GetError(); }, MaxMatrixError::kNotANumber, NULL },
         { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("12a", 255).GetError(); }, MaxMatrixError::kNotANumber, NULL },
         { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("256", 255).GetError(); }, MaxMatrixError::kOutOfRange, NULL },
@@ -463,19 +463,19 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         { "line too long", [](MaxMatrix& m) { return FeedText(m, "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n"); }, MaxMatrixError::kLineTooLong, NULL },
     };
 
-    for(auto const& Case : cases) {
+    for(auto const& test_case : cases) {
         matrix_.Clear();
         int32_t frames_before = mock::frames;
         byte intensity_before = ChipOfModule(0).intensity;
         reports.clear();
-        EXPECT_EQ(Case.call(matrix_), Case.expected) << Case.name;
-        EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << Case.name;
-        EXPECT_EQ(mock::frames, frames_before) << Case.name;
-        EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << Case.name;
-        EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady) << Case.name;
+        EXPECT_EQ(test_case.call(matrix_), test_case.expected) << test_case.name;
+        EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << test_case.name;
+        EXPECT_EQ(mock::frames, frames_before) << test_case.name;
+        EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << test_case.name;
+        EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady) << test_case.name;
         std::vector<Report> expected;
-        if(kDevErrorDetect && Case.api != NULL) expected.push_back(Report(Case.api, Case.expected));
-        EXPECT_EQ(reports, expected) << Case.name;
+        if(kDevErrorDetect && test_case.api != NULL) expected.push_back(Report(test_case.api, test_case.expected));
+        EXPECT_EQ(reports, expected) << test_case.name;
     }
 }
 
@@ -492,7 +492,7 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
         EXPECT_EQ(Text(MaxMatrixStatus(static_cast<MaxMatrixError>(error)).GetErrorText()), texts[error]) << kErrorNames[error];
     }
     EXPECT_EQ(Text(MaxMatrixResult<byte>(MaxMatrixError::kUnknownChar).GetErrorText()), "unknown char");
-    /* a new error that ErrorNames lacks has a text of its own here, and fails */
+    /* a new error that kErrorNames lacks has a text of its own here, and fails */
     EXPECT_EQ(Text(MaxMatrixStatus(static_cast<MaxMatrixError>(kNumberOfErrors)).GetErrorText()), "unknown error");
 }
 
@@ -501,8 +501,8 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
 TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError)
 {
     mock::serial_output.clear();
-    MaxMatrixPrintError(F("setText"), MaxMatrixError::kUnknownChar);
-    EXPECT_EQ(mock::serial_output, "MaxMatrix setText: unknown char\r\n");
+    MaxMatrixPrintError(F("SetText"), MaxMatrixError::kUnknownChar);
+    EXPECT_EQ(mock::serial_output, "MaxMatrix SetText: unknown char\r\n");
 }
 #endif
 
@@ -515,31 +515,31 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
         char const* name;
         void (*draw)(MaxMatrix&, MaxMatrixRow const);
     } const cases[] = {
-        { "setDot left", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(-1, 0, true); } },
-        { "setDot right", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true); } },
-        { "setDot above", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(0, -1, true); } },
-        { "setDot below", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true); } },
-        { "setColumn left", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(-1, 0xFF); } },
-        { "setColumn right", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF); } },
-        { "setColumn no module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
-        { "setColumn off its module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF); } },
-        { "setRow above", [](MaxMatrix& m, MaxMatrixRow const r) { m.SetRow(-1, r); } },
-        { "setRow below", [](MaxMatrix& m, MaxMatrixRow const r) { m.SetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, r); } },
-        { "setRow no module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetRow(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
-        { "setRow off its module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF); } },
+        { "SetDot left", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(-1, 0, true); } },
+        { "SetDot right", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true); } },
+        { "SetDot above", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(0, -1, true); } },
+        { "SetDot below", [](MaxMatrix& m, MaxMatrixRow const) { m.SetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true); } },
+        { "SetColumn left", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(-1, 0xFF); } },
+        { "SetColumn right", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF); } },
+        { "SetColumn no module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "SetColumn off its module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF); } },
+        { "SetRow above", [](MaxMatrix& m, MaxMatrixRow const r) { m.SetRow(-1, r); } },
+        { "SetRow below", [](MaxMatrix& m, MaxMatrixRow const r) { m.SetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, r); } },
+        { "SetRow no module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetRow(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "SetRow off its module", [](MaxMatrix& m, MaxMatrixRow const) { m.SetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF); } },
     };
 
-    for(auto const& Case : cases) {
+    for(auto const& test_case : cases) {
         matrix_.Clear();
         int32_t frames_before = mock::frames;
-        Case.draw(matrix_, row);
-        EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << Case.name;
-        EXPECT_EQ(mock::frames, frames_before) << Case.name;
-        EXPECT_TRUE(reports.empty()) << Case.name << " reported an error";
+        test_case.draw(matrix_, row);
+        EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << test_case.name;
+        EXPECT_EQ(mock::frames, frames_before) << test_case.name;
+        EXPECT_TRUE(reports.empty()) << test_case.name << " reported an error";
     }
 }
 
-/* a char partly off the panel shows the part on it, through either path of setSprite(): whole columns for a char
+/* a char partly off the panel shows the part on it, through either path of SetSprite(): whole columns for a char
  * at the top, single dots for one moved down */
 TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 {
@@ -578,7 +578,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule)
     }
 }
 
-/* clear() has to reach LEDs the buffer knows nothing of: after power-up the registers hold anything while the buffer
+/* Clear() has to reach LEDs the buffer knows nothing of: after power-up the registers hold anything while the buffer
  * is empty, so a clear that sent only what changed in the buffer would send nothing */
 TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft)
 {
@@ -600,7 +600,7 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing)
     EXPECT_EQ(mock::frames, frames_before);
 }
 
-/* the same drawing in both modes: a frame for every call that changed something, or none until update(), which sends
+/* the same drawing in both modes: a frame for every call that changed something, or none until Update(), which sends
  * each changed column of a module once */
 TEST_F(MaxMatrixTest, DrawingInBothModes)
 {
@@ -616,7 +616,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes)
     frames_before = mock::frames;
     for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) matrix_.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
     EXPECT_EQ(mock::frames, frames_before);
-    EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0)) << "shown before update()";
+    EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0)) << "shown before Update()";
 
     matrix_.Update();
     EXPECT_EQ(mock::frames - frames_before, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
@@ -665,7 +665,7 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost)
     EXPECT_GT(mock::frames, frames_before);
 }
 
-/* a batch inside a sketch that sends with update() itself leaves it that way */
+/* a batch inside a sketch that sends with Update() itself leaves it that way */
 TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff)
 {
     matrix_.SetAutoUpdate(false);
@@ -687,7 +687,7 @@ TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue)
     EXPECT_EQ(fresh.GetShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
 }
 
-/* The tests below count the steps of a shifting char in SpriteShiftCounter, which charShiftTask() moves on by one per
+/* The tests below count the steps of a shifting char in sprite_shift_counter_, which CharShiftTask() moves on by one per
  * step, and hold the clock, so that a step 50 ms on does not depend on how fast the host is. */
 
 /* the first step comes at once, every further one an interval after the step before */
@@ -823,7 +823,7 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnSprite)
     EXPECT_NE(Bytes(ue, sizeof(ue)), Bytes(o, sizeof(o)));
 }
 
-/* Bug: the font had no ß and no °, so setText() failed on them and a shifting text, "Grüße" or "21 °C", lost them
+/* Bug: the font had no ß and no °, so SetText() failed on them and a shifting text, "Grüße" or "21 °C", lost them
  * without a word */
 TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn)
 {
@@ -853,7 +853,7 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString)
 
 /* an unknown char used to be shifted in all the same, with whatever sprite was left over; that the
  * shift finishes does not show it, so what went to the chain is compared with the text without it.
- * Skipping it then took a shiftTask() call of its own that sent nothing, and the text stood still for
+ * Skipping it then took a ShiftTask() call of its own that sent nothing, and the text stood still for
  * a step, so the calls are compared as well - in the middle of the text and at its end. */
 TEST_F(MaxMatrixTest, UnknownChars)
 {
@@ -931,7 +931,7 @@ TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix)
     EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
 }
 
-/* setTextWithShift() keeps only a pointer: a shift that read its text out of the line buffer would shift whatever
+/* SetTextWithShift() keeps only a pointer: a shift that read its text out of the line buffer would shift whatever
  * line came next */
 TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow)
 {
@@ -970,7 +970,7 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused)
         { "text=a\x01\n", MaxMatrixError::kUnknownChar },
     };
 
-    for(auto const& Case : cases) EXPECT_EQ(FeedLine(Case.line), Case.error) << Case.line;
+    for(auto const& test_case : cases) EXPECT_EQ(FeedLine(test_case.line), test_case.error) << test_case.line;
     EXPECT_EQ(matrix_.GetShiftInterval(), 0) << "changed by a refused speed=";
 }
 
@@ -985,9 +985,9 @@ TEST_F(MaxMatrixCommandTest, LineEndsInNewlineOrCarriageReturnNewline)
 /* a line cut short would carry out a different command, so a line too long is dropped whole; the next one is read */
 TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
 {
-    std::string const Long = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
+    std::string const long_text = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
 
-    EXPECT_EQ(FeedLine(Long), MaxMatrixError::kLineTooLong);
+    EXPECT_EQ(FeedLine(long_text), MaxMatrixError::kLineTooLong);
     EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
     EXPECT_EQ(FeedLine("intensity=2\n"), MaxMatrixCommandState::kDone);
     EXPECT_EQ(ChipOfModule(0).intensity, 2);

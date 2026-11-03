@@ -110,7 +110,7 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y, boo
     return (chip.Segments(digit) >> segment) & 0x01;
 }
 
-/* the chip that drives the LEDs in column X of the panel, by the same placement as isLit() */
+/* the chip that drives the LEDs in column X of the panel, by the same placement as IsLit() */
 Max7219 const& Max7219Chain::ChipAt(uint16_t x, bool upside_down) const
 {
     if(upside_down) x = chips.size() * Max7219::kNumberOfDigits - 1 - x;

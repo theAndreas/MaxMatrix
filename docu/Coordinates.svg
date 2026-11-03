@@ -325,6 +325,6 @@
   <rect x="1015" y="229" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
   <rect x="1015" y="257" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
   <rect x="1015" y="285" width="22" height="22" rx="3" fill="#d6d6d6" stroke="none" stroke-width="2"/>
-  <text x="214" y="356" font-size="15" fill="#e53935" text-anchor="middle" font-weight="bold">setColumn(5, value)</text>
-  <text x="676" y="356" font-size="15" fill="#1e88e5" text-anchor="middle" font-weight="bold">setRow(2, 2, value)</text>
+  <text x="214" y="356" font-size="15" fill="#e53935" text-anchor="middle" font-weight="bold">SetColumn(5, value)</text>
+  <text x="676" y="356" font-size="15" fill="#1e88e5" text-anchor="middle" font-weight="bold">SetRow(2, 2, value)</text>
 </svg>

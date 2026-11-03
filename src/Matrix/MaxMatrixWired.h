@@ -12,7 +12,7 @@
  *      \brief      The matrix as it is wired
  *
  *      \details    The matrix buffer and what sends it: columns as the MAX7219 drive them, without any orientation. Writing
- *                  only changes the buffer; send() brings the changes to the chain.
+ *                  only changes the buffer; Send() brings the changes to the chain.
  *
  *****************************************************************************************************************************************************/
 #ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
@@ -30,7 +30,7 @@
  *  CLASS  MaxMatrixWired
  *****************************************************************************************************************************************************/
 /* A frame carries one register of every module, so the same column of all modules goes out in one frame. The buffer
- * therefore keeps which columns of a module have changed, as one bit each in ChangedColumns, and send() needs one frame
+ * therefore keeps which columns of a module have changed, as one bit each in changed_columns_, and Send() needs one frame
  * per changed column: eight at most for a whole picture, however many calls drew it. */
 class MaxMatrixWired
 {

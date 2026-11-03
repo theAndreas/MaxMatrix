@@ -47,7 +47,7 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
 | `MAXMATRIX_USE_DIGITAL_WRITE_FAST`         | `STD_OFF` | meant for the digitalWriteFast library; has no effect yet, see [OIL.md](https://github.com/theAndreas/MaxMatrix/blob/main/OIL.md) item 22 |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
-| `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `init()` (0 to 15)                |
+| `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `Init()` (0 to 15)                |
 | `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
 | `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `MaxMatrixCommand`, in chars   |
 | `MAXMATRIX_DEV_ERROR_DETECT`               | `STD_OFF` | report every failed call, see [Functions](#functions)  |
@@ -57,29 +57,29 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 ```cpp
 #include <MaxMatrix.h>
 
-MaxMatrix Matrix(11, 10, 13);   // DIN, CS, CLK
-char Text[] = "Hello World!   ";
+MaxMatrix matrix(11, 10, 13);   // DIN, CS, CLK
+char text[] = "Hello World!   ";
 
 void setup()
 {
-    Matrix.init();
-    Matrix.setModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see "Module orientation"
-    Matrix.setTextWithShift(Text);
+    matrix.Init();
+    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see "Module orientation"
+    matrix.SetTextWithShift(text);
 }
 
 void loop()
 {
-    Matrix.shiftTask();     // shifts the text one column every 50 ms
-    if(Matrix.getState() == MaxMatrixState::kReady) Matrix.setTextWithShift(Text);
+    matrix.ShiftTask();     // shifts the text one column every 50 ms
+    if(matrix.GetState() == MaxMatrixState::kReady) matrix.SetTextWithShift(text);
 }
 ```
 
-`shiftTask()` keeps the pace itself: call it on every `loop()`, and it takes a step only when the shift interval has
-passed since the last one. `setShiftInterval()` sets the interval in milliseconds per column; with `0` every call is a
+`ShiftTask()` keeps the pace itself: call it on every `loop()`, and it takes a step only when the shift interval has
+passed since the last one. `SetShiftInterval()` sets the interval in milliseconds per column; with `0` every call is a
 step, for a sketch that times the steps itself. A call that comes late, because `loop()` was busy, takes one step and
 does not catch up.
 
-`setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MaxMatrixState::kReady`.
+`SetTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MaxMatrixState::kReady`.
 
 More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
@@ -96,65 +96,65 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 
 ![Coordinates as a sketch uses them](docu/Coordinates.svg)
 
-`setDot(X, Y)` counts X from the left and Y from the top, across all modules: X from 0 to
-`MAXMATRIX_NUMBER_OF_COLUMNS - 1`, Y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
+`SetDot(x, y)` counts x from the left and y from the top, across all modules: x from 0 to
+`MAXMATRIX_NUMBER_OF_COLUMNS - 1`, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
 This holds for every type of module once the orientation fits it, see [Module orientation](#module-orientation).
 
 The two functions that set eight LEDs at once read their byte in different directions:
 
-- `setColumn(X, Value)` sets a column, **bit 0 at the top**.
-- `setRow(Module, Row, Value)` sets the row of one module, **bit 7 on the left**, so the byte reads as it is
-  written: `0b10000000` lights the leftmost LED. `setRow(Row, Values)` sets a whole row, one byte per module,
+- `SetColumn(x, value)` sets a column, **bit 0 at the top**.
+- `SetRow(module, row, value)` sets the row of one module, **bit 7 on the left**, so the byte reads as it is
+  written: `0b10000000` lights the leftmost LED. `SetRow(row, values)` sets a whole row, one byte per module,
   module 0 first.
 
 ## Functions
 
 | Function | What it does |
 |----------|--------------|
-| `init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
-| `clear()` | turns every LED off |
-| `setDot(X, Y, Value)`, `getDot(X, Y)` | one LED |
-| `setColumn(X, Value)`, `setColumn(Module, Column, Value)`, `getColumn(…)` | a column, bit 0 at the top |
-| `setRow(Row, Values)`, `setRow(Module, Row, Value)`, `getRow(…)` | a row, bit 7 on the left |
-| `setChar(X, Y, Char)`, `setText(Text)` | a char at X, Y, or a text from the left edge |
-| `setSprite(X, Y, Sprite)`, `getSprite(Index, &Sprite)` | a sprite of the font, or one of your own |
-| `setCharWithShift(Char)`, `setTextWithShift(Text)`, `shiftTask()`, `getState()` | a char or a text that shifts in from the right |
-| `setShiftInterval(Milliseconds)`, `setSpaceBetweenChars(Columns)` | how fast a text shifts and how far apart its chars are |
-| `shiftLeft()`, `shiftRight()`, `shiftUp()`, `shiftDown()` | moves the whole picture by one dot, rotating or filling up |
-| `setIntensity(Intensity)` | brightness of every module, 0 to 15 |
-| `MaxMatrixBatch`, `setAutoUpdate(On)`, `update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
-| `setModuleOrientation(…)`, `setMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
-| `RegisterWrite(Address, Value)` | writes a register of every MAX7219, past the picture |
-| `MaxMatrixCommand`, `feed(Matrix, Char)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
+| `Init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
+| `Clear()` | turns every LED off |
+| `SetDot(x, y, value)`, `GetDot(x, y)` | one LED |
+| `SetColumn(x, value)`, `SetColumn(module, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
+| `SetRow(row, values)`, `SetRow(module, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
+| `SetChar(x, y, c)`, `SetText(text)` | a char at x, y, or a text from the left edge |
+| `SetSprite(x, y, sprite)`, `GetSprite(index, &sprite)` | a sprite of the font, or one of your own |
+| `SetCharWithShift(c)`, `SetTextWithShift(text)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right |
+| `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
+| `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
+| `SetIntensity(intensity)` | brightness of every module, 0 to 15 |
+| `MaxMatrixBatch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
+| `SetModuleOrientation(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
+| `RegisterWrite(address, value)` | writes a register of every MAX7219, past the picture |
+| `MaxMatrixCommand`, `Feed(matrix, c)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
-in or out: `setDot(-1, 0, true)` does nothing, and a char at X = -2 shows its right part. X and Y may be negative.
+in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative.
 A function that can fail says why, and changes nothing when it does. A getter returns the value together with the
-error, so ask `isOk()` before you use `getValue()`:
+error, so ask `IsOk()` before you use `GetValue()`:
 
 ```cpp
-MaxMatrixResult<bool> Lit = Matrix.getDot(X, Y);
-if(Lit.isOk() && Lit.getValue()) { /* the LED at X, Y is on */ }
+MaxMatrixResult<bool> lit = matrix.GetDot(x, y);
+if(lit.IsOk() && lit.GetValue()) { /* the LED at x, y is on */ }
 
-MaxMatrixStatus Status = Matrix.setText(Text);
-if(Status == MaxMatrixError::kUnknownChar) { /* the font lacks a char of Text */ }
+MaxMatrixStatus status = matrix.SetText(text);
+if(status == MaxMatrixError::kUnknownChar) { /* the font lacks a char of Text */ }
 ```
 
 The errors are `MaxMatrixError::kOutOfRange`, `MaxMatrixError::kUnknownChar` and `MaxMatrixError::kNoText`, and from
 `MaxMatrixCommand` also `MaxMatrixError::kNotANumber`, `MaxMatrixError::kUnknownCommand` and `MaxMatrixError::kLineTooLong`;
-`MaxMatrixError::kOk` means none. A status is not a `bool`: write `Status.isOk()`, not `if(Status)`.
-`Serial.println(Status.getErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
+`MaxMatrixError::kOk` means none. A status is not a `bool`: write `Status.IsOk()`, not `if(Status)`.
+`Serial.println(Status.GetErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
 and a sketch that never asks for one does not carry them.
 
 To find a call that fails where the sketch checks nothing, switch `MAXMATRIX_DEV_ERROR_DETECT` to `STD_ON`: in
 `MaxMatrixConfig.h`, as the Arduino IDE passes no define of a sketch to a library, or with arduino-cli as
 `--build-property "compiler.cpp.extra_flags=-DMAXMATRIX_DEV_ERROR_DETECT=STD_ON"`. Every function that fails then
-prints a line on `Serial`, such as `MaxMatrix setText: unknown char`, so call `Serial.begin()` in `setup()`. A sketch
+prints a line on `Serial`, such as `MaxMatrix SetText: unknown char`, so call `Serial.begin()` in `setup()`. A sketch
 whose `Serial` carries something else, or which would rather blink or halt, defines the report itself, and the one
 that prints is left out:
 
 ```cpp
-void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixError Error)
+void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error)
 {
     digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -171,9 +171,9 @@ draw it inside a block that starts with a `MaxMatrixBatch`; the picture is sent 
 
 ```cpp
 {
-    MaxMatrixBatch Batch(Matrix);   // nothing is sent until the end of this block
-    Matrix.clear();
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Matrix.setDot(Column, Column % 8, true);
+    MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
+    matrix.Clear();
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) matrix.SetDot(column, column % 8, true);
 }                                   // the whole picture at once, in at most eight frames
 ```
 
@@ -181,9 +181,9 @@ The batch needs a name: `MaxMatrixBatch{Matrix};` on its own is gone again befor
 back. Batches can be nested; only the outermost one sends.
 
 A picture that is built over several calls of `loop()` does not fit into a block. There, turn the automatic update
-off with `setAutoUpdate(false)` and send with `update()` whenever the picture is complete.
+off with `SetAutoUpdate(false)` and send with `Update()` whenever the picture is complete.
 
-`setIntensity()` takes effect at once either way. `init()` always clears the LEDs, whatever the setting.
+`SetIntensity()` takes effect at once either way. `Init()` always clears the LEDs, whatever the setting.
 
 ## Control over Serial
 `MaxMatrixCommand` carries out commands that arrive as lines of text, one command per line:
@@ -203,24 +203,24 @@ A line ends in `\n` or `\r\n`. The [SerialControl](https://github.com/theAndreas
 Arduino IDE sends them with "Newline" as line ending:
 
 ```cpp
-MaxMatrixCommand Command;
+MaxMatrixCommand command;
 
 void loop()
 {
     while(Serial.available() > 0) {
-        MaxMatrixResult<MaxMatrixCommandState> Line = Command.feed(Matrix, Serial.read());
-        if(!Line.isOk()) {
+        MaxMatrixResult<MaxMatrixCommandState> line = command.Feed(matrix, Serial.read());
+        if(!line.IsOk()) {
             Serial.print(F("error: "));
-            Serial.println(Line.getErrorText());
-        } else if(Line.getValue() == MaxMatrixCommandState::kDone) {
+            Serial.println(line.GetErrorText());
+        } else if(line.GetValue() == MaxMatrixCommandState::kDone) {
             Serial.println(F("ok"));
         }
     }
-    Matrix.shiftTask();
+    matrix.ShiftTask();
 }
 ```
 
-`feed()` returns `MaxMatrixCommandState::kPending` while a line goes on, `MaxMatrixCommandState::kDone` when it is carried out, and
+`Feed()` returns `MaxMatrixCommandState::kPending` while a line goes on, `MaxMatrixCommandState::kDone` when it is carried out, and
 why it failed otherwise: `intensity=16` is `MaxMatrixError::kOutOfRange`, `intensity=x` `MaxMatrixError::kNotANumber`. A line
 longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The class keeps the
 line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it pays nothing.
@@ -239,8 +239,8 @@ Opening the port resets an Uno; the page sends the board nothing until SerialCon
 ## Module orientation
 Two settings make the text upright:
 
-- `setModuleOrientation()` turns every module in its place by 0, 90, 180 or 270 degrees. Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical, and this setting follows from the type of module.
-- `setMatrixOrientation()` turns the whole display by 0 or 180 degrees, for a board mounted upside down, with the input (DIN) on the left.
+- `SetModuleOrientation()` turns every module in its place by 0, 90, 180 or 270 degrees. Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical, and this setting follows from the type of module.
+- `SetMatrixOrientation()` turns the whole display by 0 or 180 degrees, for a board mounted upside down, with the input (DIN) on the left.
 
 Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), whose hardware types describe the same wiring:
 
@@ -257,8 +257,8 @@ How the bytes of the MAX7219 lie on the LEDs in each module orientation is drawn
 does not need it, only work on the library does.
 
 ## Umlauts
-The German umlauts Ä, Ö, Ü, ä, ö and ü, the ß and the degree sign ° are supported in texts. `setText()` and `setTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
-`setChar()` and `setCharWithShift()` take a single `char`, so these have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä, `'\xDF'` for ß or `'\xB0'` for °.
+The German umlauts Ä, Ö, Ü, ä, ö and ü, the ß and the degree sign ° are supported in texts. `SetText()` and `SetTextWithShift()` accept UTF-8 (the encoding of the Arduino IDE) and ISO 8859-1.
+`SetChar()` and `SetCharWithShift()` take a single `char`, so these have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä, `'\xDF'` for ß or `'\xB0'` for °.
 The € is not in ISO 8859-1, and its three bytes of UTF-8 are not read.
 While shifting a text, chars which are not part of the font are skipped.
 

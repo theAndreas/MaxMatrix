@@ -143,13 +143,13 @@ MaxMatrixSprite const SpriteTable[] PROGMEM = {
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  getSprite()
+  GetSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          get an sprite from the sprite table
  *  \details        this function returns an sprite by an given sprite index
  *                  
- *  \param[in]      SpriteIndex     index of sprite from sprite table
- *  \param[out]     Sprite          sprite from sprite table (width, height, value column 1 ... 5)
+ *  \param[in]      sprite_index    index of sprite from sprite table
+ *  \param[out]     sprite          sprite from sprite table (width, height, value column 1 ... 5)
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kOutOfRange    the table has no sprite with this index; Sprite is left as it was
  *****************************************************************************************************************************************************/
@@ -159,18 +159,18 @@ MaxMatrixStatus MaxMatrixFont::GetSprite(MaxMatrixSpriteIndex sprite_index, MaxM
         memcpy_P(*sprite, SpriteTable[sprite_index], sizeof(MaxMatrixSprite));
         return MaxMatrixError::kOk;
     } else return MaxMatrixError::kOutOfRange;
-} /* getSprite */
+} /* GetSprite */
 
 
 /******************************************************************************************************************************************************
-  getCharSprite()
+  GetCharSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          get the sprite of a char
  *  \details        this function looks the char up and copies its sprite, what every function of MaxMatrixText that
  *                  draws a char needs
  *
- *  \param[in]      c            latin-1 char, as decodeChar() returns it
- *  \param[out]     Sprite          sprite of the char (width, height, value column 1 ... 5)
+ *  \param[in]      c            latin-1 char, as DecodeChar() returns it
+ *  \param[out]     sprite          sprite of the char (width, height, value column 1 ... 5)
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char; Sprite is left as it was
  *****************************************************************************************************************************************************/
@@ -180,11 +180,11 @@ MaxMatrixStatus MaxMatrixFont::GetCharSprite(char c, MaxMatrixSprite* sprite)
 
     if(sprite_index.IsOk()) return GetSprite(sprite_index.GetValue(), sprite);
     else return sprite_index.GetError();
-} /* getCharSprite */
+} /* GetCharSprite */
 
 
 /******************************************************************************************************************************************************
-  convertCharToSprite()
+  ConvertCharToSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          converts char to sprite
  *  \details        this function converts the ASCII char to sprite index
@@ -210,17 +210,17 @@ MaxMatrixResult<MaxMatrixSpriteIndex> MaxMatrixFont::ConvertCharToSprite(char c)
     else if(c >= MAXMATRIX_ASCII_CHAR_MIN && c <= MAXMATRIX_ASCII_CHAR_MAX)
         return static_cast<MaxMatrixSpriteIndex>(c + MAXMATRIX_ASCII_TABLE_OFFSET);
     else return MaxMatrixError::kUnknownChar;
-} /* convertCharToSprite */
+} /* ConvertCharToSprite */
 
 
 /******************************************************************************************************************************************************
-  decodeChar()
+  DecodeChar()
 ******************************************************************************************************************************************************/
 /*! \brief          decodes the next char of a string
  *  \details        this function decodes UTF-8 sequences of latin-1 chars (e.g. umlauts) to a single latin-1 char,
  *                  all other bytes are returned unchanged
  *
- *  \param[in]      String          string where the next char should be decoded, must not point to the null character
+ *  \param[in]      string          string where the next char should be decoded, must not point to the null character
  *  \param[out]     c            decoded char
  *  \return         number of bytes of the decoded char
  *****************************************************************************************************************************************************/
@@ -237,7 +237,7 @@ byte MaxMatrixFont::DecodeChar(char const* string, char* c)
         *c = static_cast<char>(lead_byte);
         return 1;
     }
-} /* decodeChar */
+} /* DecodeChar */
 
 /******************************************************************************************************************************************************
  *  E N D   O F   F I L E

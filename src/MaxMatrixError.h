@@ -29,7 +29,7 @@
  *  GLOBAL FUNCTION MACROS
  *****************************************************************************************************************************************************/
 /*! passes on what Call returns, after reporting its error, if it has one, under Api: the name of the facade function, as
- * a string literal. See maxMatrixReportError() below. */
+ * a string literal. See MaxMatrixReportError() below. */
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 #define MAXMATRIX_REPORT_ERROR(Api, Call)                           MaxMatrixReportIfError(F(Api), Call)
 #else
@@ -56,7 +56,7 @@ enum class MaxMatrixError : uint8_t {
  *  CLASS  MaxMatrixStatus
  *****************************************************************************************************************************************************/
 /*! What a function that can fail returns when it has no value to return. It has no conversion to bool on purpose: with
- * stdReturnType, E_OK was 0, so if(Matrix.setText(…)) was true on an error. A sketch asks isOk() or compares with an
+ * stdReturnType, E_OK was 0, so if(matrix.SetText(…)) was true on an error. A sketch asks IsOk() or compares with an
  * error, and reaches the error only through this class, so that the class could carry more than the enum one day
  * without a sketch changing. */
 class MaxMatrixStatus
@@ -88,8 +88,8 @@ class MaxMatrixStatus
  *****************************************************************************************************************************************************/
 /*! What a getter of a single value returns: the value, or why there is none, instead of the value through a pointer
  * beside a status. The two lie side by side rather than in a union: a byte and its error still return in registers on
- * the AVR, and the value is never left undefined, as it is 0 after an error. An array cannot be returned, so getRow()
- * of the whole panel and getSprite() keep their parameter and return a MaxMatrixStatus. */
+ * the AVR, and the value is never left undefined, as it is 0 after an error. An array cannot be returned, so GetRow()
+ * of the whole panel and GetSprite() keep their parameter and return a MaxMatrixStatus. */
 template<typename ValueType>
 class MaxMatrixResult
 {
@@ -108,7 +108,7 @@ class MaxMatrixResult
     ValueType GetValue() const { return value_; }
     /*! \brief why there is no value, or MaxMatrixError::kOk */
     MaxMatrixError GetError() const { return error_; }
-    /*! \copydoc MaxMatrixStatus::getErrorText() */
+    /*! \copydoc MaxMatrixStatus::GetErrorText() */
     __FlashStringHelper const* GetErrorText() const { return MaxMatrixStatus(error_).GetErrorText(); }
 
     // methods
@@ -125,8 +125,8 @@ class MaxMatrixResult
  *  GLOBAL FUNCTION PROTOTYPES
  *****************************************************************************************************************************************************/
 /* With MAXMATRIX_DEV_ERROR_DETECT, as the DET of AUTOSAR Classic, every function of MaxMatrix that fails reports its name
- * and the error to maxMatrixReportError(), so that a sketch which checks no return value still learns where it went
- * wrong. The default is weak and prints with maxMatrixPrintError(); a sketch replaces it by defining its own. Switched
+ * and the error to MaxMatrixReportError(), so that a sketch which checks no return value still learns where it went
+ * wrong. The default is weak and prints with MaxMatrixPrintError(); a sketch replaces it by defining its own. Switched
  * off, MAXMATRIX_REPORT_ERROR() is the bare call: no report, no name in flash, no Serial. */
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error);

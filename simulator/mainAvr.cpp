@@ -64,7 +64,7 @@ static SimulatorAvr avr;
  *****************************************************************************************************************************************************/
 
 /******************************************************************************************************************************************************
-  begin()
+  Begin()
 ******************************************************************************************************************************************************/
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
@@ -85,16 +85,16 @@ static bool Begin()
         SimulatorTerminal::Clear();
     }
     return true;
-} /* begin */
+} /* Begin */
 
 
 /******************************************************************************************************************************************************
-  follow()
+  Follow()
 ******************************************************************************************************************************************************/
 /*! \brief          follows the AVR, once per simulated millisecond
- *  \details        this function serves the page and draws the panel when it is due, as tick() of main.cpp does
+ *  \details        this function serves the page and draws the panel when it is due, as Tick() of main.cpp does
  *
- *  \param[in]      Now             the simulated time
+ *  \param[in]      now             the simulated time
  *****************************************************************************************************************************************************/
 static void Follow(uint32_t now)
 {
@@ -104,7 +104,7 @@ static void Follow(uint32_t now)
         else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
         panel.SetDrawn(now);
     }
-} /* follow */
+} /* Follow */
 
 
 /******************************************************************************************************************************************************

@@ -40,14 +40,14 @@ MaxMatrixText::MaxMatrixText()
 
 
 /******************************************************************************************************************************************************
-  setChar()
+  SetChar()
 ******************************************************************************************************************************************************/
 /*! \brief          prints a char on the matrix
  *  \details        
  *                  
- *  \param[in]      Panel       the matrix the text is drawn on
- *  \param[in]      X           x coordinate
- *  \param[in]      Y           y coordinate
+ *  \param[in]      panel       the matrix the text is drawn on
+ *  \param[in]      x           x coordinate
+ *  \param[in]      y           y coordinate
  *  \param[in]      c        char to print on matrix
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char; nothing is drawn
@@ -59,11 +59,11 @@ MaxMatrixStatus MaxMatrixText::SetChar(MaxMatrixPanel& panel, int16_t x, int16_t
 
     if(status.IsOk()) SetSprite(panel, x, y, sprite);
     return status;
-} /* setChar */
+} /* SetChar */
 
 
 /******************************************************************************************************************************************************
-  setCharWithShift()
+  SetCharWithShift()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts a char into the matrix and stops on the right side
  *  \details        this function shifts a given char into the matrix and stops shifting on the right side.
@@ -79,17 +79,17 @@ MaxMatrixStatus MaxMatrixText::SetCharWithShift(char c)
 
     if(status.IsOk()) sprite_shift_counter_ = kShiftStart;
     return status;
-} /* setCharWithShift */
+} /* SetCharWithShift */
 
 
 /******************************************************************************************************************************************************
-  setText()
+  SetText()
 ******************************************************************************************************************************************************/
 /*! \brief          prints a string on the matrix
  *  \details        
  *                  
- *  \param[in]      Panel       the matrix the text is drawn on
- *  \param[in]      String        string to print on matrix
+ *  \param[in]      panel       the matrix the text is drawn on
+ *  \param[in]      string        string to print on matrix
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kNoText         the string is NULL
  *                  MaxMatrixError::kUnknownChar    the font lacks a char; the chars before it are drawn
@@ -111,17 +111,17 @@ MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel, char const* string
         if(char_column > MAXMATRIX_NUMBER_OF_COLUMNS) break;
     }
     return MaxMatrixError::kOk;
-} /* setText */
+} /* SetText */
 
 
 /******************************************************************************************************************************************************
-  setTextWithShift()
+  SetTextWithShift()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts a string into the matrix and stops after the last char on the right side
  *  \details        this function shifts a given string into the matrix and stops shifting on the right side,
  *                  when the last char appears on the matrix.
  *
- *  \param[in]      sString     string to print on matrix
+ *  \param[in]      string      string to print on matrix
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kNoText         the string is NULL; nothing starts
  *****************************************************************************************************************************************************/
@@ -131,19 +131,19 @@ MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* string)
     sprite_shift_counter_ = kShiftIdle;
     string_ = string;
     return MaxMatrixError::kOk;
-} /* setTextWithShift */
+} /* SetTextWithShift */
 
 
 /******************************************************************************************************************************************************
-  setSprite()
+  SetSprite()
 ******************************************************************************************************************************************************/
 /*! \brief          print sprite on matrix
  *  \details        this function prints an sprite on the matrix located to the given coordinates
  *                  
- *  \param[in]      Panel       the matrix the text is drawn on
- *  \param[in]      X           x coordinate
- *  \param[in]      Y           y coordinate
- *  \param[in]      Sprite      sprite from sprite table (width, height, value column 1 ... 5)
+ *  \param[in]      panel       the matrix the text is drawn on
+ *  \param[in]      x           x coordinate
+ *  \param[in]      y           y coordinate
+ *  \param[in]      sprite      sprite from sprite table (width, height, value column 1 ... 5)
  *****************************************************************************************************************************************************/
 void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixSprite const sprite)
 {
@@ -165,32 +165,32 @@ void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMa
             }
         }
     }
-} /* setSprite */
+} /* SetSprite */
 
 
 /******************************************************************************************************************************************************
-  setSpaceBetweenChars()
+  SetSpaceBetweenChars()
 ******************************************************************************************************************************************************/
 /*! \brief          set space between chars
  *  \details        this function sets the number of spaces between chars
  *                  
- *  \param[in]      sSpaceBetweenChars      number of spaces
+ *  \param[in]      space_between_chars     number of spaces
  *****************************************************************************************************************************************************/
 void MaxMatrixText::SetSpaceBetweenChars(byte space_between_chars)
 {
     /* every byte value is a valid number of spaces, so it cannot fail */
     space_between_chars_ = space_between_chars;
-} /* setSpaceBetweenChars */
+} /* SetSpaceBetweenChars */
 
 
 /******************************************************************************************************************************************************
-  charShiftTask()
+  CharShiftTask()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts char one column to the left
  *  \details        this function has to be called periodically until it returns false
- *  \param[in]      Panel       the matrix the text is drawn on
+ *  \param[in]      panel       the matrix the text is drawn on
  *  \return         true while the char or the space after it is still shifting
- *  \pre            has to be called from MaxMatrix::shiftTask() or stringShiftTask()
+ *  \pre            has to be called from MaxMatrix::ShiftTask() or StringShiftTask()
  *****************************************************************************************************************************************************/
 bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
 {
@@ -207,17 +207,17 @@ bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
         return false;
     }
     return true;
-} /* charShiftTask */
+} /* CharShiftTask */
 
 
 /******************************************************************************************************************************************************
-  stringShiftTask()
+  StringShiftTask()
 ******************************************************************************************************************************************************/
 /*! \brief          shifts string one column to the left
  *  \details        this function has to be called periodically until it returns false
- *  \param[in]      Panel       the matrix the text is drawn on
+ *  \param[in]      panel       the matrix the text is drawn on
  *  \return         true while the string is still shifting
- *  \pre            has to be called from MaxMatrix::shiftTask()
+ *  \pre            has to be called from MaxMatrix::ShiftTask()
  *****************************************************************************************************************************************************/
 bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
 {
@@ -243,7 +243,7 @@ bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
         CharShiftTask(panel);
     }
     return true;
-} /* stringShiftTask */
+} /* StringShiftTask */
 
 
 /******************************************************************************************************************************************************

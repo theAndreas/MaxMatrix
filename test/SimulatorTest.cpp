@@ -73,7 +73,7 @@ TEST(SimulatorTest, RunForThatIsNoDurationIsRefused)
     EXPECT_FALSE(Parse(options, { "--for", "0" }));
 }
 
-/* chipAt() places the chips as the viewer sees them: upright the leftmost module is the chip at the far end */
+/* ChipAt() places the chips as the viewer sees them: upright the leftmost module is the chip at the far end */
 TEST(SimulatorTest, IntensityIsCountedFromTheLeft)
 {
     SimulatorPanel panel;
