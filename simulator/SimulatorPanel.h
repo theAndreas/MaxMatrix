@@ -44,25 +44,25 @@ class SimulatorPanel
 {
   private:
     std::string WiringName;
-    const Max7219WiringType* Wiring;
+    Max7219WiringType const* Wiring;
     bool UpsideDown;
     int32_t DrawnFrames;
     uint32_t LastDraw;
     bool DrawRequested;
 
-    static const Max7219WiringType* findWiring(const std::string&);
+    static Max7219WiringType const* findWiring(std::string const&);
 
   public:
     SimulatorPanel();
 
     // get methods
-    const std::string& getWiringName() const { return WiringName; }
+    std::string const& getWiringName() const { return WiringName; }
     bool isUpsideDown() const { return UpsideDown; }
-    std::string getText(const char*, const char*, const char*) const;
+    std::string getText(char const*, char const*, char const*) const;
     uint8_t getIntensity(uint8_t) const;
 
     // set methods
-    bool setWiring(const std::string&);
+    bool setWiring(std::string const&);
     void setUpsideDown(bool);
 
     // methods

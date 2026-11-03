@@ -173,7 +173,7 @@ MaxMatrixResult<byte> MaxMatrixPanel::getRow(byte Module, byte Row)
  *  \param[in]      Value       led value in row, bit 7 of each byte is the leftmost column of its module
  *  \return         -
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setRow(int16_t Row, const rowType Value)
+void MaxMatrixPanel::setRow(int16_t Row, rowType const Value)
 {
     if(Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
         for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) setRow(Module, Row, Value[Module]);
@@ -531,7 +531,7 @@ void MaxMatrixPanel::getPicture(byte* Picture)
  *  \param[in]      Picture     one byte per column of the matrix, the top row in bit 0
  *  \return         -
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setPicture(const byte* Picture)
+void MaxMatrixPanel::setPicture(byte const* Picture)
 {
     byte BufferColumn, BufferBit;
 

@@ -44,7 +44,7 @@ class MaxMatrixWired
 
     // get methods
     MaxMatrixChain& getChain() { return Chain; }
-    const MaxMatrixChain& getChain() const { return Chain; }
+    MaxMatrixChain const& getChain() const { return Chain; }
     /* the buffer alone, unchecked: for MaxMatrixPanel, whose coordinates are checked and mapped already */
     byte getColumn(byte Column) { return MatrixBuffer[Column]; }
 

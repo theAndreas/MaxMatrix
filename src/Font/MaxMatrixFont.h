@@ -67,7 +67,7 @@ class MaxMatrixFont
     static MaxMatrixStatus getSprite(spriteIndexType, spriteType*);
     static MaxMatrixStatus getCharSprite(char, spriteType*);
     static MaxMatrixResult<spriteIndexType> convertCharToSprite(char);
-    static byte decodeChar(const char*, char*);
+    static byte decodeChar(char const*, char*);
 };
 
 #endif

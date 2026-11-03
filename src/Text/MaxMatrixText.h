@@ -59,10 +59,10 @@ class MaxMatrixText
     // set methods
     static MaxMatrixStatus setChar(MaxMatrixPanel&, int16_t, int16_t, char);
     MaxMatrixStatus setCharWithShift(char);
-    MaxMatrixStatus setText(MaxMatrixPanel&, const char*) const;
+    MaxMatrixStatus setText(MaxMatrixPanel&, char const*) const;
     MaxMatrixStatus setTextWithShift(char*);
     void setSpaceBetweenChars(byte);
-    static void setSprite(MaxMatrixPanel&, int16_t, int16_t, const spriteType);
+    static void setSprite(MaxMatrixPanel&, int16_t, int16_t, spriteType const);
 
     // methods
     bool charShiftTask(MaxMatrixPanel&);

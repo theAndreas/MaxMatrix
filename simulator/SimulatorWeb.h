@@ -49,19 +49,19 @@ class SimulatorWeb
     int32_t LoggedFrames;
 
     void logFrame();
-    static void command(SimulatorPanel&, const std::string&);
-    std::string getMessage(const SimulatorPanel&) const;
+    static void command(SimulatorPanel&, std::string const&);
+    std::string getMessage(SimulatorPanel const&) const;
     std::string getLog() const;
-    static std::string getIntensities(const SimulatorPanel&);
+    static std::string getIntensities(SimulatorPanel const&);
 
   public:
     SimulatorWeb();
 
     // methods
-    bool begin(uint16_t, const char*);
+    bool begin(uint16_t, char const*);
     void task(SimulatorPanel&);
-    void send(const SimulatorPanel&);
-    static std::string convertToJsonString(const std::string&);
+    void send(SimulatorPanel const&);
+    static std::string convertToJsonString(std::string const&);
 };
 
 #endif

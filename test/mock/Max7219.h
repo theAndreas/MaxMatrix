@@ -12,7 +12,7 @@
 
 class Max7219 {
   public:
-    static const uint8_t NumberOfDigits = 8;
+    static uint8_t const NumberOfDigits = 8;
 
     uint8_t Digit[NumberOfDigits];
     uint8_t DecodeMode;
@@ -35,20 +35,20 @@ class Max7219 {
  *   ReversedColumns   the segment bit index is reversed, bit 7 - x for x
  *   ReversedRows      the digit index is reversed, digit 7 - x for x */
 struct Max7219WiringType {
-    const char* Name;
+    char const* Name;
     bool DigitsAsRows;
     bool ReversedColumns;
     bool ReversedRows;
 };
 
 /* the four MD_MAX72XX has names for */
-extern const Max7219WiringType MAX7219_WIRING_FC16;
-extern const Max7219WiringType MAX7219_WIRING_GENERIC;
-extern const Max7219WiringType MAX7219_WIRING_PAROLA;
-extern const Max7219WiringType MAX7219_WIRING_ICSTATION;
+extern Max7219WiringType const MAX7219_WIRING_FC16;
+extern Max7219WiringType const MAX7219_WIRING_GENERIC;
+extern Max7219WiringType const MAX7219_WIRING_PAROLA;
+extern Max7219WiringType const MAX7219_WIRING_ICSTATION;
 
 /* all eight, DR0CR0RR0 to DR1CR1RR1 */
-extern const Max7219WiringType Max7219Wirings[8];
+extern Max7219WiringType const Max7219Wirings[8];
 
 class Max7219Chain {
   public:
@@ -58,8 +58,8 @@ class Max7219Chain {
     void reset(uint8_t NumberOfChips);
     void shift(uint8_t Value);
     void latch();
-    bool isLit(const Max7219WiringType& Wiring, uint16_t X, uint8_t Y, bool UpsideDown = false) const;
-    const Max7219& chipAt(uint16_t X, bool UpsideDown = false) const;
+    bool isLit(Max7219WiringType const& Wiring, uint16_t X, uint8_t Y, bool UpsideDown = false) const;
+    Max7219 const& chipAt(uint16_t X, bool UpsideDown = false) const;
 
   private:
     /* two bytes per chip, ShiftRegister[2 * Chip] its data byte and ShiftRegister[2 * Chip + 1] its address byte */

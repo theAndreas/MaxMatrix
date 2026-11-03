@@ -85,7 +85,7 @@ static SimulatorWeb Web;
  *****************************************************************************************************************************************************/
 static void finish()
 {
-    const bool Passed = SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
+    bool const Passed = SimulatorTerminal::printResult(Panel, Options.getExpectFile()) && Mock::Errors == 0;
 
     exit(Passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
 } /* finish */
@@ -102,7 +102,7 @@ static void finish()
  *****************************************************************************************************************************************************/
 static void tick()
 {
-    const uint32_t Now = millis();
+    uint32_t const Now = millis();
 
     if(Options.isWeb()) Web.task(Panel);
     if(Options.getRunFor() != 0 && Now >= Options.getRunFor()) finish();

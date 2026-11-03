@@ -78,7 +78,7 @@ bool SimulatorOptions::parse(int argc, char** argv)
  *  \param[in]      Program         the program's name, argv[0]
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorOptions::printUsage(const char* Program)
+void SimulatorOptions::printUsage(char const* Program)
 {
     fprintf(stderr, "usage: %s [--wiring NAME] [--upside-down] [--web [--port PORT]] [--for SECONDS [--expect FILE]]\n", Program);
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
@@ -103,8 +103,8 @@ void SimulatorOptions::printUsage(const char* Program)
  *****************************************************************************************************************************************************/
 bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
 {
-    const std::string Option = argv[*Index];
-    const bool HasValue = *Index + 1 < argc;
+    std::string const Option = argv[*Index];
+    bool const HasValue = *Index + 1 < argc;
 
     if(Option == "--upside-down") {
         UpsideDown = true;
@@ -136,10 +136,10 @@ bool SimulatorOptions::parseOption(int argc, char** argv, int* Index)
  *  \return         true
  *                  false           the value is no number, or out of range; the port is left as it was
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
+bool SimulatorOptions::convertToPort(char const* Text, uint16_t* Port)
 {
     char* End;
-    const unsigned long Value = strtoul(Text, &End, 10);
+    unsigned long const Value = strtoul(Text, &End, 10);
 
     /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range check then refuses */
     if(End == Text || *End != '\0' || Value == 0 || Value > SIMULATOR_OPTIONS_MAX_PORT) return false;
@@ -162,10 +162,10 @@ bool SimulatorOptions::convertToPort(const char* Text, uint16_t* Port)
  *                  false           the value is no number, or not a single millisecond, or more than the milliseconds fit;
  *                                  the time is left as it was
  *****************************************************************************************************************************************************/
-bool SimulatorOptions::convertToRunFor(const char* Text, uint32_t* RunFor)
+bool SimulatorOptions::convertToRunFor(char const* Text, uint32_t* RunFor)
 {
     char* End;
-    const double Milliseconds = strtod(Text, &End) * 1000;
+    double const Milliseconds = strtod(Text, &End) * 1000;
 
     /* written so that NaN, which compares false with everything, is refused as well */
     if(End == Text || *End != '\0' || !(Milliseconds >= 1 && Milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) return false;

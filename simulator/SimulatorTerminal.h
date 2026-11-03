@@ -31,16 +31,16 @@
 class SimulatorTerminal
 {
   private:
-    static bool readFile(const char*, std::string*);
+    static bool readFile(char const*, std::string*);
 
   public:
     // get methods
-    static std::string getStatusLine(const SimulatorPanel&);
+    static std::string getStatusLine(SimulatorPanel const&);
 
     // methods
     static void clear();
-    static void draw(const SimulatorPanel&);
-    static bool printResult(const SimulatorPanel&, const char*);
+    static void draw(SimulatorPanel const&);
+    static bool printResult(SimulatorPanel const&, char const*);
 };
 
 #endif

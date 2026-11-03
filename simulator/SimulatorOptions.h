@@ -45,26 +45,26 @@ class SimulatorOptions
     bool Web;
     uint16_t Port;
     uint32_t RunFor;
-    const char* ExpectFile;
+    char const* ExpectFile;
 
     bool parseOption(int, char**, int*);
-    static bool convertToPort(const char*, uint16_t*);
-    static bool convertToRunFor(const char*, uint32_t*);
+    static bool convertToPort(char const*, uint16_t*);
+    static bool convertToRunFor(char const*, uint32_t*);
 
   public:
     SimulatorOptions();
 
     // get methods
-    const std::string& getWiringName() const { return WiringName; }
+    std::string const& getWiringName() const { return WiringName; }
     bool isUpsideDown() const { return UpsideDown; }
     bool isWeb() const { return Web; }
     uint16_t getPort() const { return Port; }
     uint32_t getRunFor() const { return RunFor; }
-    const char* getExpectFile() const { return ExpectFile; }
+    char const* getExpectFile() const { return ExpectFile; }
 
     // methods
     bool parse(int, char**);
-    static void printUsage(const char*);
+    static void printUsage(char const*);
 };
 
 #endif

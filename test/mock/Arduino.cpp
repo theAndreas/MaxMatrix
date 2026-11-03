@@ -90,31 +90,31 @@ int HardwareSerial::available()
 int HardwareSerial::read()
 {
     if(Mock::SerialInput.empty()) return -1;
-    const uint8_t Byte = static_cast<uint8_t>(Mock::SerialInput[0]);
+    uint8_t const Byte = static_cast<uint8_t>(Mock::SerialInput[0]);
     Mock::SerialInput.erase(0, 1);
     return Byte;
 }
 
-size_t HardwareSerial::print(const char* Text)
+size_t HardwareSerial::print(char const* Text)
 {
     Mock::SerialOutput += Text;
     return strlen(Text);
 }
 
 /* a line ends in \r\n, as the Arduino core prints it */
-size_t HardwareSerial::println(const char* Text)
+size_t HardwareSerial::println(char const* Text)
 {
     return print(Text) + print("\r\n");
 }
 
-size_t HardwareSerial::print(const __FlashStringHelper* Text)
+size_t HardwareSerial::print(__FlashStringHelper const* Text)
 {
-    return print(reinterpret_cast<const char*>(Text));
+    return print(reinterpret_cast<char const*>(Text));
 }
 
-size_t HardwareSerial::println(const __FlashStringHelper* Text)
+size_t HardwareSerial::println(__FlashStringHelper const* Text)
 {
-    return println(reinterpret_cast<const char*>(Text));
+    return println(reinterpret_cast<char const*>(Text));
 }
 
 SPIClass SPI;
@@ -161,7 +161,7 @@ void delay(unsigned long Milliseconds)
         }
         return;
     }
-    const uint32_t Begin = millis();
+    uint32_t const Begin = millis();
     while(static_cast<uint32_t>(millis()) - Begin < Milliseconds) {
         if(Mock::Tick) Mock::Tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

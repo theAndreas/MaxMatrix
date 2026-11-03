@@ -44,22 +44,22 @@
 class SimulatorWebSocket
 {
   private:
-    static bool getKey(const std::string&, std::string*);
-    static std::string padSha1Message(const std::string&);
-    static void processSha1Block(const uint8_t*, uint32_t*);
+    static bool getKey(std::string const&, std::string*);
+    static std::string padSha1Message(std::string const&);
+    static void processSha1Block(uint8_t const*, uint32_t*);
     static uint32_t mixSha1(uint8_t, uint32_t, uint32_t, uint32_t);
     static uint32_t rotateLeft(uint32_t, uint8_t);
 
   public:
     // get methods
-    static bool getHandshakeAnswer(const std::string&, std::string*);
+    static bool getHandshakeAnswer(std::string const&, std::string*);
 
     // methods
-    static std::string encodeFrame(const std::string&);
+    static std::string encodeFrame(std::string const&);
     static bool decodeFrame(std::string*, uint8_t*, std::string*);
-    static std::string convertKeyToAcceptKey(const std::string&);
-    static void calculateSha1(const std::string&, uint8_t*);
-    static std::string convertToBase64(const uint8_t*, size_t);
+    static std::string convertKeyToAcceptKey(std::string const&);
+    static void calculateSha1(std::string const&, uint8_t*);
+    static std::string convertToBase64(uint8_t const*, size_t);
 };
 
 #endif

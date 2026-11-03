@@ -96,7 +96,7 @@ void MaxMatrix::init()
  *****************************************************************************************************************************************************/
 void MaxMatrix::shiftTask()
 {
-    const uint32_t Now = millis();
+    uint32_t const Now = millis();
 
     if(Now - LastShift < ShiftInterval) return;
     LastShift = Now;

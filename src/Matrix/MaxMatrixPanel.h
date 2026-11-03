@@ -64,14 +64,14 @@ class MaxMatrixPanel
     byte getLine(byte, byte, bool);
     void setLine(byte, byte, bool, byte);
     void getPicture(byte*);
-    void setPicture(const byte*);
+    void setPicture(byte const*);
 
   public:
     MaxMatrixPanel(byte, byte, byte);
 
     // get methods
     MaxMatrixWired& getWired() { return Wired; }
-    const MaxMatrixWired& getWired() const { return Wired; }
+    MaxMatrixWired const& getWired() const { return Wired; }
     MaxMatrixModuleOrientationType getModuleOrientation() const { return ModuleOrientation; }
     MaxMatrixMatrixOrientationType getMatrixOrientation() const { return MatrixOrientation; }
 
@@ -84,7 +84,7 @@ class MaxMatrixPanel
     // set methods
     void setColumn(int16_t, byte);
     void setColumn(byte, byte, byte);
-    void setRow(int16_t, const rowType);
+    void setRow(int16_t, rowType const);
     void setRow(byte, byte, byte);
     void setDot(int16_t, int16_t, bool);
     void setModuleOrientation(MaxMatrixModuleOrientationType);

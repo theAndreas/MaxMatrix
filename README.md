@@ -143,7 +143,7 @@ whose `Serial` carries something else, or which would rather blink or halt, defi
 that prints is left out:
 
 ```cpp
-void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
 {
     digitalWrite(LED_BUILTIN, HIGH);
 }

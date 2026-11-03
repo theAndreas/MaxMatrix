@@ -10,10 +10,10 @@
  */
 #include <MaxMatrix.h>
 
-const byte DATA_IN_PIN = 11;
-const byte CHIP_SELECT_PIN = 10;
-const byte CLOCK_PIN = 13;
-const uint16_t SHIFT_INTERVAL_MS = 50;
+byte const DATA_IN_PIN = 11;
+byte const CHIP_SELECT_PIN = 10;
+byte const CLOCK_PIN = 13;
+uint16_t const SHIFT_INTERVAL_MS = 50;
 
 MaxMatrix Matrix(DATA_IN_PIN, CHIP_SELECT_PIN, CLOCK_PIN);
 

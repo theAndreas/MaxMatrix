@@ -98,7 +98,7 @@ MaxMatrixStatus MaxMatrixText::setCharWithShift(char Char)
  *                  MAXMATRIX_E_NO_TEXT         the string is NULL
  *                  MAXMATRIX_E_UNKNOWN_CHAR    the font lacks a char; the chars before it are drawn
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, const char* String) const
+MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, char const* String) const
 {
     spriteType Sprite;
     int16_t CharColumn = 0;
@@ -150,7 +150,7 @@ MaxMatrixStatus MaxMatrixText::setTextWithShift(char* sString)
  *  \param[in]      Sprite      sprite from sprite table (width, height, value column 1 ... 5)
  *  \return         -
  *****************************************************************************************************************************************************/
-void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, const spriteType Sprite)
+void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, spriteType const Sprite)
 {
     byte SpriteWidth = Sprite[ASCII_TABLE_SPRITE_WIDTH];
     byte SpriteHeight = Sprite[ASCII_TABLE_SPRITE_HEIGHT];

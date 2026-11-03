@@ -69,7 +69,7 @@ class MaxMatrixStatus
 
     // get methods
     MaxMatrixErrorType getError() const { return Error; }
-    const __FlashStringHelper* getErrorText() const;
+    __FlashStringHelper const* getErrorText() const;
 
     // methods
     bool isOk() const { return Error == MAXMATRIX_E_OK; }
@@ -99,7 +99,7 @@ class MaxMatrixResult
     // get methods
     ValueType getValue() const { return Value; }
     MaxMatrixErrorType getError() const { return Error; }
-    const __FlashStringHelper* getErrorText() const { return MaxMatrixStatus(Error).getErrorText(); }
+    __FlashStringHelper const* getErrorText() const { return MaxMatrixStatus(Error).getErrorText(); }
 
     // methods
     bool isOk() const { return Error == MAXMATRIX_E_OK; }
@@ -116,12 +116,12 @@ class MaxMatrixResult
  * wrong. The default is weak and prints with maxMatrixPrintError(); a sketch replaces it by defining its own. Switched
  * off, MAXMATRIX_REPORT_ERROR() is the bare call: no report, no name in flash, no Serial. */
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
-void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error);
-void maxMatrixPrintError(const __FlashStringHelper* Api, MaxMatrixErrorType Error);
+void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error);
+void maxMatrixPrintError(__FlashStringHelper const* Api, MaxMatrixErrorType Error);
 
 /* passes a MaxMatrixStatus or MaxMatrixResult<T> on, after reporting its error, if it has one */
 template<typename ResultType>
-ResultType maxMatrixReportIfError(const __FlashStringHelper* Api, ResultType Result)
+ResultType maxMatrixReportIfError(__FlashStringHelper const* Api, ResultType Result)
 {
     if(!Result.isOk()) maxMatrixReportError(Api, Result.getError());
     return Result;

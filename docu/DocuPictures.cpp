@@ -98,10 +98,10 @@ typedef struct {
  *****************************************************************************************************************************************************/
 static MaxMatrix Matrix(DOCU_DATA_IN_PIN, DOCU_CHIP_SELECT_PIN, DOCU_CLOCK_PIN);
 
-static const struct {
+static struct {
     MaxMatrixModuleOrientationType Orientation;
     uint16_t Degrees;
-} ModuleOrientations[] = {
+} const ModuleOrientations[] = {
     { MAXMATRIX_MODULE_ORIENTATION_0, 0 },
     { MAXMATRIX_MODULE_ORIENTATION_90, 90 },
     { MAXMATRIX_MODULE_ORIENTATION_180, 180 },
@@ -109,10 +109,10 @@ static const struct {
 };
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them */
-static const struct {
-    const Max7219WiringType* Wiring;
-    const char* Name;
-} ModuleNames[] = {
+static struct {
+    Max7219WiringType const* Wiring;
+    char const* Name;
+} const ModuleNames[] = {
     { &MAX7219_WIRING_FC16, "FC-16" },
     { &MAX7219_WIRING_GENERIC, "Generic" },
     { &MAX7219_WIRING_PAROLA, "Parola" },
@@ -184,7 +184,7 @@ static bool findLedOfDot(byte X, byte Y, DocuLedType* Led)
  *  \param[in]      Wiring          the wiring of the modules
  *  \return         true if every dot is lit where it was set
  *****************************************************************************************************************************************************/
-static bool isUpright(const Max7219WiringType& Wiring)
+static bool isUpright(Max7219WiringType const& Wiring)
 {
     bool Upright = true;
 
@@ -214,11 +214,11 @@ static std::string getModules()
 {
     std::string Modules;
 
-    for(const Max7219WiringType& Wiring : Max7219Wirings) {
+    for(Max7219WiringType const& Wiring : Max7219Wirings) {
         if(!isUpright(Wiring)) continue;
         if(!Modules.empty()) Modules += ", ";
         Modules += Wiring.Name;
-        for(const auto& Named : ModuleNames) {
+        for(auto const& Named : ModuleNames) {
             if(Named.Wiring->DigitsAsRows == Wiring.DigitsAsRows && Named.Wiring->ReversedColumns == Wiring.ReversedColumns &&
                Named.Wiring->ReversedRows == Wiring.ReversedRows) Modules += std::string(" (") + Named.Name + ")";
         }
@@ -299,9 +299,9 @@ static uint16_t getPictureHeight()
  *  \param[in]      Label           text in the LED, or empty
  *  \return         -
  *****************************************************************************************************************************************************/
-static void drawLed(DocuSvg* Svg, byte X, byte Y, const char* Colour, const std::string& Label)
+static void drawLed(DocuSvg* Svg, byte X, byte Y, char const* Colour, std::string const& Label)
 {
-    const int16_t Inset = (DOCU_CELL - DOCU_LED) / 2;
+    int16_t const Inset = (DOCU_CELL - DOCU_LED) / 2;
 
     Svg->addRect(getCellX(X) + Inset, getCellY(Y) + Inset, DOCU_LED, DOCU_LED, Colour, "none", 3);
     if(!Label.empty()) Svg->addText(getCellX(X) + DOCU_CELL / 2, getCellY(Y) + DOCU_CELL / 2 + 4, Label, DOCU_FONT_LED, "#ffffff", "middle", true);
@@ -319,22 +319,22 @@ static void drawLed(DocuSvg* Svg, byte X, byte Y, const char* Colour, const std:
  *  \param[in]      Title           the line above the panel, or empty for none
  *  \return         -
  *****************************************************************************************************************************************************/
-static void drawPanel(DocuSvg* Svg, const std::string& Title)
+static void drawPanel(DocuSvg* Svg, std::string const& Title)
 {
-    const int16_t ModuleWidth = MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL;
-    const int16_t ModuleHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
+    int16_t const ModuleWidth = MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL;
+    int16_t const ModuleHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
     DocuLedType Led;
 
     if(!Title.empty()) Svg->addText(DOCU_LEFT, 30, Title, DOCU_FONT_TITLE, DOCU_COLOUR_TEXT, "start", true);
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        const int16_t Left = getCellX(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+        int16_t const Left = getCellX(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
         Svg->addRect(Left - 4, DOCU_TOP - 4, ModuleWidth + 8, ModuleHeight + 8, "none", DOCU_COLOUR_FRAME, 4);
         Svg->addText(Left + ModuleWidth / 2, DOCU_TOP - 14, "Module " + std::to_string(Module), DOCU_FONT_MODULE, DOCU_COLOUR_TEXT, "middle", true);
 
         if(findLedOfDot(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0, &Led) && Led.Chip == 0) {
-            const bool Right = Module == MAXMATRIX_NUMBER_OF_MODULES - 1;
-            const int16_t Edge = Right ? Left + ModuleWidth + 8 : Left - 8;
-            const int16_t Outside = Right ? Edge + 70 : Edge - 70;
+            bool const Right = Module == MAXMATRIX_NUMBER_OF_MODULES - 1;
+            int16_t const Edge = Right ? Left + ModuleWidth + 8 : Left - 8;
+            int16_t const Outside = Right ? Edge + 70 : Edge - 70;
             Svg->addArrow(Outside, Edge, DOCU_TOP + ModuleHeight / 2, 3, DOCU_COLOUR_FRAME);
             Svg->addText((Outside + Edge) / 2, DOCU_TOP + ModuleHeight / 2 - 10, "DIN", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT);
         }
@@ -365,7 +365,7 @@ static std::string drawWiring(MaxMatrixModuleOrientationType Orientation, uint16
 {
     DocuSvg Svg(getPictureWidth(), getPictureHeight());
     DocuLedType Leds[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
-    const int16_t Inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
+    int16_t const Inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
 
     Matrix.setModuleOrientation(Orientation);
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
@@ -388,12 +388,12 @@ static std::string drawWiring(MaxMatrixModuleOrientationType Orientation, uint16
     }
     for(byte X = 0; X < MAXMATRIX_NUMBER_OF_COLUMNS; X++) {
         for(byte Y = 0; Y < MAXMATRIX_ROW_NUMBER_OF_MODULE; Y++) {
-            const char* Colour = Leds[X][Y].Bit == 0 ? DOCU_COLOUR_LED_BIT_0 : DOCU_COLOUR_LED;
+            char const* Colour = Leds[X][Y].Bit == 0 ? DOCU_COLOUR_LED_BIT_0 : DOCU_COLOUR_LED;
             drawLed(&Svg, X, Y, Colour, std::to_string(Leds[X][Y].Digit) + "." + std::to_string(Leds[X][Y].Bit));
         }
     }
 
-    const int16_t Legend = getCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + 56;
+    int16_t const Legend = getCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + 56;
     Svg.addText(DOCU_LEFT, Legend, "Each LED is labelled byte.bit: byte n is digit register n of the module's MAX7219 and "
                 "MatrixBuffer[8 * module + n], bit b is bit b of it.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
     Svg.addText(DOCU_LEFT, Legend + 22, "A blue band joins the LEDs of one byte, the darker one is its bit 0. Matrix orientation 0. "
@@ -415,7 +415,7 @@ static std::string drawWiring(MaxMatrixModuleOrientationType Orientation, uint16
  *****************************************************************************************************************************************************/
 static std::string drawCoordinates()
 {
-    const int16_t PanelHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
+    int16_t const PanelHeight = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
     DocuSvg Svg(getPictureWidth(), DOCU_COORDINATES_ABOVE + PanelHeight + DOCU_COORDINATES_BELOW, DOCU_TOP - DOCU_COORDINATES_ABOVE);
     std::string ColumnLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     std::string RowLabels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
@@ -447,8 +447,8 @@ static std::string drawCoordinates()
         }
     }
 
-    const int16_t Names = DOCU_TOP + PanelHeight + 46;
-    const int16_t RowModuleLeft = getCellX(DOCU_EXAMPLE_ROW_MODULE * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    int16_t const Names = DOCU_TOP + PanelHeight + 46;
+    int16_t const RowModuleLeft = getCellX(DOCU_EXAMPLE_ROW_MODULE * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
     Svg.addText(getCellX(DOCU_EXAMPLE_COLUMN) + DOCU_CELL / 2, Names, "setColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value)",
                 DOCU_FONT_MODULE, DOCU_COLOUR_LED, "middle", true);
     Svg.addText(RowModuleLeft + MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL / 2, Names, "setRow(" + std::to_string(DOCU_EXAMPLE_ROW_MODULE)
@@ -466,7 +466,7 @@ static std::string drawCoordinates()
  *  \param[in]      Path            the file
  *  \return         what it holds, or an empty text if it cannot be read
  *****************************************************************************************************************************************************/
-static std::string readFile(const std::string& Path)
+static std::string readFile(std::string const& Path)
 {
     std::ifstream File(Path);
     std::stringstream Content;
@@ -497,8 +497,8 @@ int main(int argc, char** argv)
         fprintf(stderr, "usage: %s --write|--check FOLDER\n", argv[0]);
         return 2;
     }
-    const bool Write = strcmp(argv[1], "--write") == 0;
-    const std::string Folder = argv[2];
+    bool const Write = strcmp(argv[1], "--write") == 0;
+    std::string const Folder = argv[2];
     byte Failed = 0;
 
     Mock::reset(DOCU_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
@@ -506,12 +506,12 @@ int main(int argc, char** argv)
 
     std::vector<std::pair<std::string, std::string>> Pictures;
     Pictures.push_back(std::make_pair("Coordinates.svg", drawCoordinates()));
-    for(const auto& Each : ModuleOrientations) {
+    for(auto const& Each : ModuleOrientations) {
         Pictures.push_back(std::make_pair("Wiring_" + std::to_string(Each.Degrees) + ".svg", drawWiring(Each.Orientation, Each.Degrees)));
     }
 
-    for(const auto& Picture : Pictures) {
-        const std::string Path = Folder + "/" + Picture.first;
+    for(auto const& Picture : Pictures) {
+        std::string const Path = Folder + "/" + Picture.first;
         if(Picture.second.empty()) {
             fprintf(stderr, "%s: a dot did not light exactly one LED\n", Picture.first.c_str());
             Failed++;
