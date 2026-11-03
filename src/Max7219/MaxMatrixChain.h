@@ -83,6 +83,9 @@ class MaxMatrixChain
     byte ClockPin;
 
     // functions
+    /* not const, though they change no member: they change the chain this object stands for, and a const MaxMatrixChain
+     * that still sends would be a lie. transfer() is not static either, though with SPI it uses no member: bit banging
+     * needs the pins. clang-tidy reports all three, and each definition answers it with a NOLINT. */
     void startTransmission();
     void stopTransmission();
     void transfer(byte, byte);
@@ -91,9 +94,9 @@ class MaxMatrixChain
     MaxMatrixChain(byte, byte, byte);
 
     // get methods
-    byte getDataInPin() { return DataInPin; }
-    byte getChipSelectPin() { return ChipSelectPin; }
-    byte getClockPin() { return ClockPin; }
+    byte getDataInPin() const { return DataInPin; }
+    byte getChipSelectPin() const { return ChipSelectPin; }
+    byte getClockPin() const { return ClockPin; }
 
     // set methods
     void setDataInPin(byte sDataInPin) { DataInPin = sDataInPin; }

@@ -30,7 +30,7 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /* Type which describes the internal state of the MaxMatrix shift task */
-typedef enum {
+typedef enum : uint8_t {
     MAXMATRIX_SPRITE_SHIFT_STATE_READY,
     MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING
 } MaxMatrixShiftStateType;
@@ -54,15 +54,15 @@ class MaxMatrixText
     MaxMatrixText();
 
     // get methods
-    byte getSpaceBetweenChars() { return SpaceBetweenChars; }
+    byte getSpaceBetweenChars() const { return SpaceBetweenChars; }
 
     // set methods
-    MaxMatrixStatus setChar(MaxMatrixPanel&, int16_t, int16_t, char);
+    static MaxMatrixStatus setChar(MaxMatrixPanel&, int16_t, int16_t, char);
     MaxMatrixStatus setCharWithShift(char);
-    MaxMatrixStatus setText(MaxMatrixPanel&, const char*);
+    MaxMatrixStatus setText(MaxMatrixPanel&, const char*) const;
     MaxMatrixStatus setTextWithShift(char*);
     void setSpaceBetweenChars(byte);
-    void setSprite(MaxMatrixPanel&, int16_t, int16_t, const spriteType);
+    static void setSprite(MaxMatrixPanel&, int16_t, int16_t, const spriteType);
 
     // methods
     bool charShiftTask(MaxMatrixPanel&);

@@ -291,9 +291,9 @@ void SimulatorWebSocket::processSha1Block(const uint8_t* Block, uint32_t* State)
     uint32_t Word[SIMULATOR_WEB_SOCKET_SHA1_ROUNDS];
     uint32_t A = State[0], B = State[1], C = State[2], D = State[3], E = State[4];
 
-    for(uint8_t i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i++) {
-        Word[i] = (static_cast<uint32_t>(Block[4 * i]) << 24) | (static_cast<uint32_t>(Block[4 * i + 1]) << 16) |
-                  (static_cast<uint32_t>(Block[4 * i + 2]) << 8) | Block[4 * i + 3];
+    for(uint8_t i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i++, Block += 4) {
+        Word[i] = (static_cast<uint32_t>(Block[0]) << 24) | (static_cast<uint32_t>(Block[1]) << 16) |
+                  (static_cast<uint32_t>(Block[2]) << 8) | Block[3];
     }
     for(uint8_t i = SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK; i < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; i++) {
         Word[i] = rotateLeft(Word[i - 3] ^ Word[i - 8] ^ Word[i - 14] ^ Word[i - 16], 1);

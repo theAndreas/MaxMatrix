@@ -19,12 +19,22 @@ typedef uint8_t byte;
 
 #define PROGMEM
 #define memcpy_P memcpy
-#define pgm_read_ptr(Address) (static_cast<const void*>(*(Address)))
 #define PSTR(Text) (Text)
 #define strcmp_P strcmp
 /* F() has the type it has in the Arduino core, so that a function returning a text in flash builds as on the board */
 class __FlashStringHelper;
 #define F(Text) (reinterpret_cast<const __FlashStringHelper*>(PSTR(Text)))
+/* pgm_read_ptr() reads the bytes of the pointer at Address, as avr-libc reads them from flash, and takes the address
+ * as it is given, as avr-libc's macro does. A macro that cast the stored pointer to void* made the library's cast back
+ * to its own type one through void, and a parameter of const void* a conversion of the address: clang-tidy reports
+ * both in the library, though neither is there on the board. */
+template <typename AddressType>
+inline void* pgm_read_ptr(const AddressType* Address)
+{
+    void* Value;
+    memcpy(&Value, Address, sizeof(Value));
+    return Value;
+}
 
 #define HIGH 1
 #define LOW 0

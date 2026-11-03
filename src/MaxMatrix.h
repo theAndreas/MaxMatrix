@@ -41,7 +41,7 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /* Type which describes the internal state of the MaxMatrix */
-typedef enum {
+typedef enum : uint8_t {
     MAXMATRIX_STATE_NONE,
     MAXMATRIX_STATE_INIT,
     MAXMATRIX_STATE_READY,
@@ -81,22 +81,22 @@ class MaxMatrix
 
 
     // get methods
-    MaxMatrixStateType getState() { return State; }
-    bool getAutoUpdate() { return AutoUpdate; }
-    uint16_t getShiftInterval() { return ShiftInterval; }
-    byte getDataInPin() { return Panel.getWired().getChain().getDataInPin(); }
-    byte getChipSelectPin() { return Panel.getWired().getChain().getChipSelectPin(); }
-    byte getClockPin() { return Panel.getWired().getChain().getClockPin(); }
-    MaxMatrixModuleOrientationType getModuleOrientation() { return Panel.getModuleOrientation(); }
-    MaxMatrixMatrixOrientationType getMatrixOrientation() { return Panel.getMatrixOrientation(); }
-    byte getSpaceBetweenChars() { return Text.getSpaceBetweenChars(); }
+    MaxMatrixStateType getState() const { return State; }
+    bool getAutoUpdate() const { return AutoUpdate; }
+    uint16_t getShiftInterval() const { return ShiftInterval; }
+    byte getDataInPin() const { return Panel.getWired().getChain().getDataInPin(); }
+    byte getChipSelectPin() const { return Panel.getWired().getChain().getChipSelectPin(); }
+    byte getClockPin() const { return Panel.getWired().getChain().getClockPin(); }
+    MaxMatrixModuleOrientationType getModuleOrientation() const { return Panel.getModuleOrientation(); }
+    MaxMatrixMatrixOrientationType getMatrixOrientation() const { return Panel.getMatrixOrientation(); }
+    byte getSpaceBetweenChars() const { return Text.getSpaceBetweenChars(); }
 
     MaxMatrixResult<byte> getColumn(int16_t Column) { return MAXMATRIX_REPORT_ERROR("getColumn", Panel.getColumn(Column)); }
     MaxMatrixResult<byte> getColumn(byte Module, byte Column) { return MAXMATRIX_REPORT_ERROR("getColumn", Panel.getColumn(Module, Column)); }
     MaxMatrixStatus getRow(int16_t Row, rowType& Value) { return MAXMATRIX_REPORT_ERROR("getRow", Panel.getRow(Row, Value)); }
     MaxMatrixResult<byte> getRow(byte Module, byte Row) { return MAXMATRIX_REPORT_ERROR("getRow", Panel.getRow(Module, Row)); }
     MaxMatrixResult<bool> getDot(int16_t Column, int16_t Row) { return MAXMATRIX_REPORT_ERROR("getDot", Panel.getDot(Column, Row)); }
-    MaxMatrixStatus getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MAXMATRIX_REPORT_ERROR("getSprite", MaxMatrixFont::getSprite(SpriteIndex, Sprite)); }
+    static MaxMatrixStatus getSprite(spriteIndexType SpriteIndex, spriteType* Sprite) { return MAXMATRIX_REPORT_ERROR("getSprite", MaxMatrixFont::getSprite(SpriteIndex, Sprite)); }
 
 
     // set methods

@@ -33,20 +33,6 @@
 #define STD_NULL_CHARACTER		'\0'
 
 
-/******************************************************************************************************************************************************
- *  GLOBAL FUNCTION MACROS
- *****************************************************************************************************************************************************/
-#define writeBit(Var, Bit, Value) \
-(Var = (Var & ~(1 << Bit)) | (Value << Bit))
-
-/* read Bit Group */
-#define readBitGroup(Var, BitGroupMask, BitGroupPosition) \
-(Var = ((Var & static_cast<uint8_t>(BitGroupMask)) >> BitGroupPosition))
-
-/* write Bit Group */
-#define writeBitGroup(Var, BitGroupMask, BitGroupPosition, Value) \
-(Var = ((Var & ~static_cast<uint8_t>(BitGroupMask)) | ((Value << BitGroupPosition) & static_cast<uint8_t>(BitGroupMask))))
-
 #endif
 
 /******************************************************************************************************************************************************

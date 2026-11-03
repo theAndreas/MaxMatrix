@@ -144,8 +144,12 @@ MaxMatrixStatus MaxMatrixCommand::execute(MaxMatrix& Matrix, char* Text)
  *****************************************************************************************************************************************************/
 MaxMatrixStatus MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, const char* Value)
 {
+    /* the text is part of Line, so it fits into ShiftText as long as that is no shorter; strlcpy() would check the
+       same at run time, for 30 bytes of flash in SerialControl */
+    static_assert(sizeof(ShiftText) >= sizeof(Line), "ShiftText has to hold any text of a line");
+
     if(*Value == STD_NULL_CHARACTER) return MAXMATRIX_E_NO_TEXT;
-    strcpy(ShiftText, Value);
+    strcpy(ShiftText, Value); /* NOLINT(clang-analyzer-security.insecureAPI.strcpy) */
     return Matrix.setTextWithShift(ShiftText);
 } /* executeTextShift */
 
@@ -199,7 +203,7 @@ MaxMatrixStatus MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char* Value)
     if(!Column.isOk()) return Column.getError();
     if(!Row.isOk()) return Row.getError();
     if(!Lit.isOk()) return Lit.getError();
-    Matrix.setDot(Column.getValue(), Row.getValue(), Lit.getValue() == 1);
+    Matrix.setDot(static_cast<int16_t>(Column.getValue()), static_cast<int16_t>(Row.getValue()), Lit.getValue() == 1);
     return MAXMATRIX_E_OK;
 } /* executeDot */
 

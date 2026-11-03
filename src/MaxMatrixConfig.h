@@ -64,6 +64,9 @@
 #define MAXMATRIX_NUMBER_OF_COLUMNS                                 (MAXMATRIX_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
 #define MAXMATRIX_BUFFER_SIZE                                       MAXMATRIX_NUMBER_OF_COLUMNS
 
+/* a column is counted in a byte throughout, as an index into MatrixBuffer and in every loop over the columns */
+static_assert(MAXMATRIX_NUMBER_OF_COLUMNS <= 255, "at most 31 modules: their columns have to be counted in a byte");
+
 #endif
 
 /******************************************************************************************************************************************************
