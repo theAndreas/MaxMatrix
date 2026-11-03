@@ -118,7 +118,7 @@ class MaxMatrixTest : public ::testing::Test {
      * the MAX7219 cannot be read back, so a buffer that drifts from the display makes them lie */
     void TearDown() override
     {
-        EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_, sizeof(matrix_.panel_.wired_.matrix_buffer_))) << "display differs from MatrixBuffer";
+        EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_, sizeof(matrix_.panel_.wired_.matrix_buffer_))) << "display differs from matrix_buffer_";
     }
 
     /* the ShiftTask() calls the last ShiftWholeText() took, each one a step of the text on the panel */

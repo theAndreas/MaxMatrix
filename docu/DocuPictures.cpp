@@ -391,7 +391,7 @@ static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t d
 
     int16_t const legend = GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + 56;
     svg.AddText(DOCU_LEFT, legend, "Each LED is labelled byte.bit: byte n is digit register n of the module's MAX7219 and "
-                "MatrixBuffer[8 * module + n], bit b is bit b of it.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
+                "matrix_buffer_[8 * module + n], bit b is bit b of it.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
     svg.AddText(DOCU_LEFT, legend + 22, "A blue band joins the LEDs of one byte, the darker one is its bit 0. Matrix orientation 0. "
                 "Drawn by docu/DocuPictures.cpp from SetDot() and the MAX7219 model.", DOCU_FONT_LEGEND, DOCU_COLOUR_TEXT, "start");
     return svg.GetDocument();

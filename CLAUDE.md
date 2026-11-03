@@ -159,6 +159,10 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   `MaxMatrixSprite`, `MaxMatrixRow`.
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
+- Files are named after their class, in `PascalCase`, as Arduino names its own (`Arduino.h`,
+  `HardwareSerial.h`, `Servo.h`): `Matrix/MaxMatrixPanel.h`, `simulator/SimulatorWebHost.cpp`.
+  `src/MaxMatrix.h` has to keep that form, as a sketch includes it by the library's name. Google's
+  `snake_case` for files was tried and dropped (#45); Utl keeps it, as it stands in for the STL.
 
 ### Integer types
 
@@ -387,7 +391,7 @@ The tests reach private members through `#define private public`, because some o
 check has no public path — which frame a change to one buffer column turns into, for instance,
 is checked by storing the bit with `MaxMatrixWired::StoreBit()`, so that the test names the
 buffer column itself rather than reaching it through an orientation. The parts are private
-members of `MaxMatrix`, so a test reaches the buffer as `matrix.Panel.Wired.matrix_buffer_`. 
+members of `MaxMatrix`, so a test reaches the buffer as `matrix_.panel_.wired_.matrix_buffer_`. 
 The define comes after the GoogleTest and standard headers, which it would rewrite as well.
 
 ### Hardware
