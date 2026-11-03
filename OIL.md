@@ -25,7 +25,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
-| 16 | Static analysis in CI | 1 | in progress | |
+| 16 | Static analysis in CI | 1 | in progress | #36 |
 | 17 | Documentation from the Doxygen blocks | – | open | |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
