@@ -25,7 +25,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
 | 15 | Font format | 13 | open | |
-| 16 | Static analysis in CI | 1 | in progress | #36 |
+| 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | open | |
 | 18 | Releases and the Library Manager | 13 | open | |
 | 19 | More of the MAX7219 in the public API | 3 | open | |
@@ -441,7 +441,7 @@ empty, no number or too large. The command answers all of them with
   conversion to `bool`. A getter of a single value returns the value and the error together
   (`MaxMatrixResult<T>`) rather than through a pointer; both fit into registers on the AVR.
   `getRow()` and `getSprite()` keep their pointer, as C++ cannot return an array.
-- **`getErrorText()`** returns the text from `PROGMEM` as a `const __FlashStringHelper*`, which
+- **`getErrorText()`** returns the text from `PROGMEM` as a `__FlashStringHelper const*`, which
   `Serial.print` reads from flash. A sketch that does not call it pays nothing; the linker
   drops it. `MaxMatrixCommand` passes the error on, so that `SerialControl` and the page of 21
   can say what was wrong.
