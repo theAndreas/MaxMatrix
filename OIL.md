@@ -533,11 +533,11 @@ decided, and if taken, the examples' flash and RAM against today are in the PR.
 
 Dropped, after a prototype that was not merged; its numbers are in `docu/ErrorHandling.md`, "Tried
 out: MaxMatrix on Utl". The vtable and the texts linked into every sketch that draws text, 144 to
-166 bytes of flash, are gone with Utl's groups without `virtual` (Utl #24): a sketch that prints no
-error is where it is today. What stays: a sketch that prints errors pays more, `SerialControl` 402
-bytes of flash and 10 of RAM, as an error is 3 bytes where an enum is one; `[[nodiscard]]` warns at
-every dropped status in a sketch; the names follow Google beside the conventions here; and every
-user installs Utl. What it buys, one type for errors from several sources, has no user here, as
+166 bytes of flash, are gone with Utl's groups without `virtual` (Utl #24, #25): a sketch that
+prints no error is where it is today. So are the warnings at every dropped status (Utl #27) and the
+mix of names (#44). What stays: a sketch that prints errors pays more, `SerialControl` 378 bytes of
+flash and 8 of RAM, as an error is 3 bytes where an enum is one and the texts are looked up at run
+time; and every user installs Utl. What it buys, one type for errors from several sources, has no user here, as
 every error comes from the library itself.
 
 Taken up again when an error comes from outside the library, from commands a sketch registers or a
