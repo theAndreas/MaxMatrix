@@ -17,8 +17,6 @@
  *                  loop with its own \#if.
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_CHAIN_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -45,11 +43,11 @@
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
  *****************************************************************************************************************************************************/
-MaxMatrixChain::MaxMatrixChain(byte sDataInPin, byte sChipSelectPin, byte sClockPin)
+MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin)
 {
-    DataInPin = sDataInPin;
-    ChipSelectPin = sChipSelectPin;
-    ClockPin = sClockPin;
+    data_in_pin_ = data_in_pin;
+    chip_select_pin_ = chip_select_pin;
+    clock_pin_ = clock_pin;
 } /* MaxMatrixChain */
 
 
@@ -60,31 +58,31 @@ MaxMatrixChain::MaxMatrixChain(byte sDataInPin, byte sChipSelectPin, byte sClock
  *  \details        this function initializes the IO hardware and sets every MAX7219 up to drive an 8x8 matrix:
  *                  all eight digits, no decoding, normal operation
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::init()
+void MaxMatrixChain::Init()
 {
-    pinMode(ChipSelectPin, OUTPUT);
+    pinMode(chip_select_pin_, OUTPUT);
 #if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ChipSelectPin, HIGH);
+    digitalWriteFast(chip_select_pin_, HIGH);
 #else
-    digitalWrite(ChipSelectPin, HIGH);
+    digitalWrite(chip_select_pin_, HIGH);
 #endif
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.begin();
 #else
-    pinMode(DataInPin, OUTPUT);
-    pinMode(ClockPin, OUTPUT);
+    pinMode(data_in_pin_, OUTPUT);
+    pinMode(clock_pin_, OUTPUT);
     /* clock idles low, MAX7219 samples data on the rising edge */
 # if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ClockPin, LOW);
+    digitalWriteFast(clock_pin_, LOW);
 # else
-    digitalWrite(ClockPin, LOW);
+    digitalWrite(clock_pin_, LOW);
 # endif
 #endif
 
-    writeRegisterAll(MAX7219_REG_SCAN_LIMIT_ADDRESS, MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);     // display all digits
-    writeRegisterAll(MAX7219_REG_DECODE_MODE_ADDRESS, MAX7219_REG_DECODE_MODE_NO_DECODE);              // using an led matrix (not digits)
-    writeRegisterAll(MAX7219_REG_SHUTDOWN_ADDRESS, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);        // normal operation mode
-    writeRegisterAll(MAX7219_REG_DISPLAY_TEST_ADDRESS, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);     // no display test
+    WriteRegisterAll(MAX7219_REG_SCAN_LIMIT_ADDRESS, MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);     // display all digits
+    WriteRegisterAll(MAX7219_REG_DECODE_MODE_ADDRESS, MAX7219_REG_DECODE_MODE_NO_DECODE);              // using an led matrix (not digits)
+    WriteRegisterAll(MAX7219_REG_SHUTDOWN_ADDRESS, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);        // normal operation mode
+    WriteRegisterAll(MAX7219_REG_DISPLAY_TEST_ADDRESS, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);     // no display test
 } /* init */
 
 
@@ -97,11 +95,11 @@ void MaxMatrixChain::init()
  *  \param[in]      RegisterAddress     address of the MAX7219 register
  *  \param[in]      RegisterValue       register value
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::writeRegisterAll(byte RegisterAddress, byte RegisterValue)
+void MaxMatrixChain::WriteRegisterAll(byte register_address, byte register_value)
 {
-    startTransmission();
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) transfer(RegisterAddress, RegisterValue);
-    stopTransmission();
+    StartTransmission();
+    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_value);
+    StopTransmission();
 } /* writeRegisterAll */
 
 
@@ -114,11 +112,11 @@ void MaxMatrixChain::writeRegisterAll(byte RegisterAddress, byte RegisterValue)
  *  \param[in]      RegisterAddress     address of the MAX7219 register
  *  \param[in]      RegisterValues      one value per module, module 0 first
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, byte const* RegisterValues)
+void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* register_values)
 {
-    startTransmission();
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) transfer(RegisterAddress, RegisterValues[i]);
-    stopTransmission();
+    StartTransmission();
+    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_values[i]);
+    StopTransmission();
 } /* writeRegisterEach */
 
 
@@ -134,15 +132,15 @@ void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, byte const* Registe
  *
  *  \post           stopTransmission() has to be called after data was transferred
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::startTransmission() /* NOLINT(readability-make-member-function-const) */
+void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-function-const) */
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.beginTransaction(SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
 #endif
 #if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ChipSelectPin, LOW);
+    digitalWriteFast(chip_select_pin_, LOW);
 #else
-    digitalWrite(ChipSelectPin, LOW);
+    digitalWrite(chip_select_pin_, LOW);
 #endif
 } /* startTransmission */
 
@@ -156,12 +154,12 @@ void MaxMatrixChain::startTransmission() /* NOLINT(readability-make-member-funct
  *
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::stopTransmission() /* NOLINT(readability-make-member-function-const) */
+void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-function-const) */
 {
 #if(MAXMATRIX_USE_DIGITAL_WRITE_FAST == STD_ON)
-    digitalWriteFast(ChipSelectPin, HIGH);
+    digitalWriteFast(chip_select_pin_, HIGH);
 #else
-    digitalWrite(ChipSelectPin, HIGH);
+    digitalWrite(chip_select_pin_, HIGH);
 #endif
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.endTransaction();
@@ -180,14 +178,14 @@ void MaxMatrixChain::stopTransmission() /* NOLINT(readability-make-member-functi
  *  \pre            startTransmission() has to be called first
  *****************************************************************************************************************************************************/
 /* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */
-void MaxMatrixChain::transfer(byte RegisterAddress, byte RegisterValue)
+void MaxMatrixChain::Transfer(byte register_address, byte register_value)
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
-    SPI.transfer(RegisterAddress);
-    SPI.transfer(RegisterValue);
+    SPI.transfer(register_address);
+    SPI.transfer(register_value);
 #else
-    shiftOut(DataInPin, ClockPin, MSBFIRST, RegisterAddress);
-    shiftOut(DataInPin, ClockPin, MSBFIRST, RegisterValue);
+    shiftOut(data_in_pin_, clock_pin_, MSBFIRST, register_address);
+    shiftOut(data_in_pin_, clock_pin_, MSBFIRST, register_value);
 #endif
 } /* transfer */
 

@@ -15,8 +15,8 @@
  *                  the wire - and what it sends back: the wiring and the mounting to choose while the sketch runs.
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_WEB_H_
-#define _SIMULATOR_WEB_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -43,25 +43,25 @@
 class SimulatorWeb
 {
   private:
-    SimulatorWebHost Host;
+    SimulatorWebHost host_;
     /* the frames since the page was last sent the panel, as hex pairs, one string per frame */
-    std::vector<std::string> FrameLog;
-    int32_t LoggedFrames;
+    std::vector<std::string> frame_log_;
+    int32_t logged_frames_;
 
-    void logFrame();
-    static void command(SimulatorPanel&, std::string const&);
-    std::string getMessage(SimulatorPanel const&) const;
-    std::string getLog() const;
-    static std::string getIntensities(SimulatorPanel const&);
+    void LogFrame();
+    static void Command(SimulatorPanel&, std::string const&);
+    std::string GetMessage(SimulatorPanel const&) const;
+    std::string GetLog() const;
+    static std::string GetIntensities(SimulatorPanel const&);
 
   public:
     SimulatorWeb();
 
     // methods
-    bool begin(uint16_t, char const*);
-    void task(SimulatorPanel&);
-    void send(SimulatorPanel const&);
-    static std::string convertToJsonString(std::string const&);
+    bool Begin(uint16_t, char const*);
+    void Task(SimulatorPanel&);
+    void Send(SimulatorPanel const&);
+    static std::string ConvertToJsonString(std::string const&);
 };
 
 #endif

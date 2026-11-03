@@ -15,8 +15,8 @@
  *                  [--for SECONDS [--expect FILE]]
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_OPTIONS_H_
-#define _SIMULATOR_OPTIONS_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_
+#define MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -42,36 +42,36 @@
 class SimulatorOptions
 {
   private:
-    std::string WiringName;
-    bool UpsideDown;
-    bool Web;
-    uint16_t Port;
-    uint32_t RunFor;
-    char const* ExpectFile;
-    char const* ElfFile;
-    std::string SerialInput;
+    std::string wiring_name_;
+    bool upside_down_;
+    bool web_;
+    uint16_t port_;
+    uint32_t run_for_;
+    char const* expect_file_;
+    char const* elf_file_;
+    std::string serial_input_;
 
-    bool parseOption(int, char**, int*);
-    static bool convertToPort(char const*, uint16_t*);
-    static bool convertToRunFor(char const*, uint32_t*);
+    bool ParseOption(int, char**, int*);
+    static bool ConvertToPort(char const*, uint16_t*);
+    static bool ConvertToRunFor(char const*, uint32_t*);
 
   public:
     SimulatorOptions();
 
     // get methods
-    std::string const& getWiringName() const { return WiringName; }
-    bool isUpsideDown() const { return UpsideDown; }
-    bool isWeb() const { return Web; }
-    uint16_t getPort() const { return Port; }
-    uint32_t getRunFor() const { return RunFor; }
-    char const* getExpectFile() const { return ExpectFile; }
-    char const* getElfFile() const { return ElfFile; }
+    std::string const& GetWiringName() const { return wiring_name_; }
+    bool IsUpsideDown() const { return upside_down_; }
+    bool IsWeb() const { return web_; }
+    uint16_t GetPort() const { return port_; }
+    uint32_t GetRunFor() const { return run_for_; }
+    char const* GetExpectFile() const { return expect_file_; }
+    char const* GetElfFile() const { return elf_file_; }
     /* the lines of every --serial, each ended with a line feed, for the sketch's Serial to read */
-    std::string const& getSerialInput() const { return SerialInput; }
+    std::string const& GetSerialInput() const { return serial_input_; }
 
     // methods
-    bool parse(int, char**);
-    static void printUsage(char const*);
+    bool Parse(int, char**);
+    static void PrintUsage(char const*);
 };
 
 #endif

@@ -15,8 +15,8 @@
  *                  on a MaxMatrix. Knows nothing of where the chars come from.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_COMMAND_H_
-#define _MAXMATRIX_COMMAND_H_
+#ifndef MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
+#define MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -31,10 +31,10 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /*! what feed() says about the char it was given, when the line did not fail; why it failed is the error beside it */
-typedef enum : uint8_t {
-    MAXMATRIX_COMMAND_PENDING,              /*!< the line goes on, or was empty */
-    MAXMATRIX_COMMAND_DONE                  /*!< the line was a command, and it is carried out */
-} MaxMatrixCommandStateType;
+enum class MaxMatrixCommandState : uint8_t {
+    kPending,              /*!< the line goes on, or was empty */
+    kDone                  /*!< the line was a command, and it is carried out */
+};
 
 class MaxMatrix;
 
@@ -49,24 +49,24 @@ class MaxMatrix;
 class MaxMatrixCommand
 {
   private:
-    char Line[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
-    char ShiftText[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
-    byte LineLength;
-    bool LineTooLong;
+    char line_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
+    char shift_text_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
+    byte line_length_;
+    bool line_too_long_;
 
     // functions
-    MaxMatrixStatus execute(MaxMatrix&, char*);
-    MaxMatrixStatus executeTextShift(MaxMatrix&, char const*);
-    static MaxMatrixStatus executeText(MaxMatrix&, char const*);
-    static MaxMatrixStatus executeDot(MaxMatrix&, char*);
-    static MaxMatrixStatus executeSetting(MaxMatrix&, char const*, char const*);
-    static MaxMatrixResult<uint16_t> convertToNumber(char const*, uint16_t);
+    MaxMatrixStatus Execute(MaxMatrix&, char*);
+    MaxMatrixStatus ExecuteTextShift(MaxMatrix&, char const*);
+    static MaxMatrixStatus ExecuteText(MaxMatrix&, char const*);
+    static MaxMatrixStatus ExecuteDot(MaxMatrix&, char*);
+    static MaxMatrixStatus ExecuteSetting(MaxMatrix&, char const*, char const*);
+    static MaxMatrixResult<uint16_t> ConvertToNumber(char const*, uint16_t);
 
   public:
     MaxMatrixCommand();
 
     // methods
-    MaxMatrixResult<MaxMatrixCommandStateType> feed(MaxMatrix&, char);
+    MaxMatrixResult<MaxMatrixCommandState> Feed(MaxMatrix&, char);
 };
 
 #endif

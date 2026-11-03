@@ -16,8 +16,8 @@
  *                  JSON documents, Windows).
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_WEB_HOST_H_
-#define _SIMULATOR_WEB_HOST_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -41,32 +41,32 @@
 class SimulatorWebHost
 {
   private:
-    int Listener;
-    int Clients[SIMULATOR_WEB_HOST_MAX_CLIENTS];
-    std::string Pending[SIMULATOR_WEB_HOST_MAX_CLIENTS];
-    char const* PagePath;
+    int listener_;
+    int clients_[SIMULATOR_WEB_HOST_MAX_CLIENTS];
+    std::string pending_[SIMULATOR_WEB_HOST_MAX_CLIENTS];
+    char const* page_path_;
 
-    void acceptClients();
-    void readClient(uint8_t, std::vector<std::string>*);
-    bool answerRequest(int, std::string const&);
-    void sendPage(int);
-    uint8_t findFreeSlot() const;
-    void dropClient(uint8_t);
-    static int openListener(uint16_t);
-    static std::string readRequest(int);
-    static bool getPath(std::string const&, std::string*);
-    static void setNonBlocking(int);
-    static void setReceiveTimeout(int, uint32_t);
-    static bool sendAll(int, std::string const&);
-    static void sendResponse(int, char const*, char const*, std::string const&);
+    void AcceptClients();
+    void ReadClient(uint8_t, std::vector<std::string>*);
+    bool AnswerRequest(int, std::string const&);
+    void SendPage(int);
+    uint8_t FindFreeSlot() const;
+    void DropClient(uint8_t);
+    static int OpenListener(uint16_t);
+    static std::string ReadRequest(int);
+    static bool GetPath(std::string const&, std::string*);
+    static void SetNonBlocking(int);
+    static void SetReceiveTimeout(int, uint32_t);
+    static bool SendAll(int, std::string const&);
+    static void SendResponse(int, char const*, char const*, std::string const&);
 
   public:
     SimulatorWebHost();
 
     // methods
-    bool begin(uint16_t, char const*);
-    void task(std::vector<std::string>*);
-    void broadcast(std::string const&);
+    bool Begin(uint16_t, char const*);
+    void Task(std::vector<std::string>*);
+    void Broadcast(std::string const&);
 };
 
 #endif

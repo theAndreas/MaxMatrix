@@ -15,8 +15,6 @@
  *                  keep-alive bookkeeping not existing, for a page load's worth of connections on loopback.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_WEB_HOST_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -57,9 +55,9 @@
  *****************************************************************************************************************************************************/
 SimulatorWebHost::SimulatorWebHost()
 {
-    Listener = SIMULATOR_WEB_HOST_NO_SOCKET;
-    PagePath = nullptr;
-    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) Clients[Slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
+    listener_ = SIMULATOR_WEB_HOST_NO_SOCKET;
+    page_path_ = nullptr;
+    for(uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) clients_[slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
 } /* SimulatorWebHost */
 
 
@@ -75,11 +73,11 @@ SimulatorWebHost::SimulatorWebHost()
  *  \return         true
  *                  false           the port is taken, so that the caller can say so
  *****************************************************************************************************************************************************/
-bool SimulatorWebHost::begin(uint16_t Port, char const* sPagePath)
+bool SimulatorWebHost::Begin(uint16_t port, char const* page_path)
 {
-    PagePath = sPagePath;
-    Listener = openListener(Port);
-    return Listener != SIMULATOR_WEB_HOST_NO_SOCKET;
+    page_path_ = page_path;
+    listener_ = OpenListener(port);
+    return listener_ != SIMULATOR_WEB_HOST_NO_SOCKET;
 } /* begin */
 
 
@@ -91,13 +89,13 @@ bool SimulatorWebHost::begin(uint16_t Port, char const* sPagePath)
  *
  *  \param[out]     Messages        every text message a page has sent since the last call is appended
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::task(std::vector<std::string>* Messages)
+void SimulatorWebHost::Task(std::vector<std::string>* messages)
 {
-    if(Listener == SIMULATOR_WEB_HOST_NO_SOCKET) return;
+    if(listener_ == SIMULATOR_WEB_HOST_NO_SOCKET) return;
 
-    acceptClients();
-    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
-        if(Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET) readClient(Slot, Messages);
+    AcceptClients();
+    for(uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
+        if(clients_[slot] != SIMULATOR_WEB_HOST_NO_SOCKET) ReadClient(slot, messages);
     }
 } /* task */
 
@@ -110,12 +108,12 @@ void SimulatorWebHost::task(std::vector<std::string>* Messages)
  *
  *  \param[in]      Text            the message
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::broadcast(std::string const& Text)
+void SimulatorWebHost::Broadcast(std::string const& text)
 {
-    std::string const Frame = SimulatorWebSocket::encodeFrame(Text);
+    std::string const frame = SimulatorWebSocket::EncodeFrame(text);
 
-    for(uint8_t Slot = 0; Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; Slot++) {
-        if(Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET && !sendAll(Clients[Slot], Frame)) dropClient(Slot);
+    for(uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
+        if(clients_[slot] != SIMULATOR_WEB_HOST_NO_SOCKET && !SendAll(clients_[slot], frame)) DropClient(slot);
     }
 } /* broadcast */
 
@@ -131,18 +129,18 @@ void SimulatorWebHost::broadcast(std::string const& Text)
  *  \details        this function keeps a connection that became a WebSocket, as long as there is a free slot for it,
  *                  and closes every other one
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::acceptClients()
+void SimulatorWebHost::AcceptClients()
 {
-    int Accepted;
+    int accepted;
 
-    while((Accepted = accept(Listener, nullptr, nullptr)) >= 0) {
-        std::string const Request = readRequest(Accepted);
-        uint8_t const Slot = findFreeSlot();
+    while((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
+        std::string const request = ReadRequest(accepted);
+        uint8_t const slot = FindFreeSlot();
 
-        if(Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && answerRequest(Accepted, Request)) {
-            setNonBlocking(Accepted);
-            Clients[Slot] = Accepted;
-        } else close(Accepted);
+        if(slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && AnswerRequest(accepted, request)) {
+            SetNonBlocking(accepted);
+            clients_[slot] = accepted;
+        } else close(accepted);
     }
 } /* acceptClients */
 
@@ -157,25 +155,25 @@ void SimulatorWebHost::acceptClients()
  *  \param[in]      Slot            the client's slot
  *  \param[out]     Messages        every complete text message is appended
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::readClient(uint8_t Slot, std::vector<std::string>* Messages)
+void SimulatorWebHost::ReadClient(uint8_t slot, std::vector<std::string>* messages)
 {
-    char Chunk[SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH];
-    ssize_t const Read = recv(Clients[Slot], Chunk, sizeof(Chunk), 0);
-    uint8_t Opcode;
-    std::string Payload;
+    char chunk[SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH];
+    ssize_t const received = recv(clients_[slot], chunk, sizeof(chunk), 0);
+    uint8_t opcode;
+    std::string payload;
 
-    if(Read == 0 || (Read < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
-        dropClient(Slot);
+    if(received == 0 || (received < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+        DropClient(slot);
         return;
     }
-    if(Read > 0) Pending[Slot].append(Chunk, static_cast<size_t>(Read));
+    if(received > 0) pending_[slot].append(chunk, static_cast<size_t>(received));
 
-    while(SimulatorWebSocket::decodeFrame(&Pending[Slot], &Opcode, &Payload)) {
-        if(Opcode == SIMULATOR_WEB_SOCKET_OPCODE_CLOSE) {
-            dropClient(Slot);
+    while(SimulatorWebSocket::DecodeFrame(&pending_[slot], &opcode, &payload)) {
+        if(opcode == SIMULATOR_WEB_SOCKET_OPCODE_CLOSE) {
+            DropClient(slot);
             return;
         }
-        if(Opcode == SIMULATOR_WEB_SOCKET_OPCODE_TEXT) Messages->push_back(Payload);
+        if(opcode == SIMULATOR_WEB_SOCKET_OPCODE_TEXT) messages->push_back(payload);
     }
 } /* readClient */
 
@@ -191,18 +189,18 @@ void SimulatorWebHost::readClient(uint8_t Slot, std::vector<std::string>* Messag
  *  \return         true            the connection stays, which only a WebSocket does
  *                  false           the connection is done
  *****************************************************************************************************************************************************/
-bool SimulatorWebHost::answerRequest(int Socket, std::string const& Request)
+bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request)
 {
-    std::string Path;
-    std::string Answer;
+    std::string path;
+    std::string answer;
 
-    if(!getPath(Request, &Path)) return false;
+    if(!GetPath(request, &path)) return false;
 
-    if(Path == SIMULATOR_WEB_HOST_WEB_SOCKET_PATH) {
-        return SimulatorWebSocket::getHandshakeAnswer(Request, &Answer) && sendAll(Socket, Answer);
+    if(path == SIMULATOR_WEB_HOST_WEB_SOCKET_PATH) {
+        return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) && SendAll(socket, answer);
     }
-    if(Path == "/" || Path == "/index.html") sendPage(Socket);
-    else sendResponse(Socket, "404 Not Found", "text/plain", "no such route on the simulator\n");
+    if(path == "/" || path == "/index.html") SendPage(socket);
+    else SendResponse(socket, "404 Not Found", "text/plain", "no such route on the simulator\n");
     return false;
 } /* answerRequest */
 
@@ -215,14 +213,14 @@ bool SimulatorWebHost::answerRequest(int Socket, std::string const& Request)
  *
  *  \param[in]      Socket          the connection
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::sendPage(int Socket)
+void SimulatorWebHost::SendPage(int socket)
 {
-    std::ifstream File(PagePath);
-    std::stringstream Body;
+    std::ifstream file(page_path_);
+    std::stringstream body;
 
-    Body << File.rdbuf();
-    if(File) sendResponse(Socket, "200 OK", "text/html; charset=utf-8", Body.str());
-    else sendResponse(Socket, "500 Internal Server Error", "text/plain", std::string("cannot read ") + PagePath + "\n");
+    body << file.rdbuf();
+    if(file) SendResponse(socket, "200 OK", "text/html; charset=utf-8", body.str());
+    else SendResponse(socket, "500 Internal Server Error", "text/plain", std::string("cannot read ") + page_path_ + "\n");
 } /* sendPage */
 
 
@@ -234,12 +232,12 @@ void SimulatorWebHost::sendPage(int Socket)
  *
  *  \return         the first free slot, or SIMULATOR_WEB_HOST_MAX_CLIENTS when all are taken
  *****************************************************************************************************************************************************/
-uint8_t SimulatorWebHost::findFreeSlot() const
+uint8_t SimulatorWebHost::FindFreeSlot() const
 {
-    uint8_t Slot = 0;
+    uint8_t slot = 0;
 
-    while(Slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && Clients[Slot] != SIMULATOR_WEB_HOST_NO_SOCKET) Slot++;
-    return Slot;
+    while(slot < SIMULATOR_WEB_HOST_MAX_CLIENTS && clients_[slot] != SIMULATOR_WEB_HOST_NO_SOCKET) slot++;
+    return slot;
 } /* findFreeSlot */
 
 
@@ -251,11 +249,11 @@ uint8_t SimulatorWebHost::findFreeSlot() const
  *
  *  \param[in]      Slot            the client's slot
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::dropClient(uint8_t Slot)
+void SimulatorWebHost::DropClient(uint8_t slot)
 {
-    close(Clients[Slot]);
-    Clients[Slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
-    Pending[Slot].clear();
+    close(clients_[slot]);
+    clients_[slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
+    pending_[slot].clear();
 } /* dropClient */
 
 
@@ -269,26 +267,26 @@ void SimulatorWebHost::dropClient(uint8_t Slot)
  *  \param[in]      Port            the port to listen on
  *  \return         the socket, or SIMULATOR_WEB_HOST_NO_SOCKET when the port is taken
  *****************************************************************************************************************************************************/
-int SimulatorWebHost::openListener(uint16_t Port)
+int SimulatorWebHost::OpenListener(uint16_t port)
 {
-    int const Socket = socket(AF_INET, SOCK_STREAM, 0);
-    int const Reuse = 1;
-    sockaddr_in Address = sockaddr_in();
+    int const listening = socket(AF_INET, SOCK_STREAM, 0);
+    int const reuse = 1;
+    sockaddr_in address = sockaddr_in();
 
-    if(Socket < 0) return SIMULATOR_WEB_HOST_NO_SOCKET;
+    if(listening < 0) return SIMULATOR_WEB_HOST_NO_SOCKET;
 
     /* so that a restart does not wait out the last connection's TIME_WAIT */
-    setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &Reuse, sizeof(Reuse));
-    Address.sin_family = AF_INET;
-    Address.sin_port = htons(Port);
-    Address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    if(bind(Socket, reinterpret_cast<sockaddr*>(&Address), sizeof(Address)) != 0 || listen(Socket, SIMULATOR_WEB_HOST_BACKLOG) != 0) {
-        close(Socket);
+    if(bind(listening, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != 0 || listen(listening, SIMULATOR_WEB_HOST_BACKLOG) != 0) {
+        close(listening);
         return SIMULATOR_WEB_HOST_NO_SOCKET;
     }
-    setNonBlocking(Socket);
-    return Socket;
+    SetNonBlocking(listening);
+    return listening;
 } /* openListener */
 
 
@@ -306,19 +304,19 @@ int SimulatorWebHost::openListener(uint16_t Port)
  *  \param[in]      Socket          the new connection
  *  \return         the request, or what arrived of it before the connection closed or went quiet
  *****************************************************************************************************************************************************/
-std::string SimulatorWebHost::readRequest(int Socket)
+std::string SimulatorWebHost::ReadRequest(int socket)
 {
-    std::string Request;
-    char Chunk[SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH];
+    std::string request;
+    char chunk[SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH];
 
-    setReceiveTimeout(Socket, SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS);
+    SetReceiveTimeout(socket, SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS);
 
-    while(Request.find("\r\n\r\n") == std::string::npos) {
-        ssize_t const Read = recv(Socket, Chunk, sizeof(Chunk), 0);
-        if(Read <= 0) break;
-        Request.append(Chunk, static_cast<size_t>(Read));
+    while(request.find("\r\n\r\n") == std::string::npos) {
+        ssize_t const received = recv(socket, chunk, sizeof(chunk), 0);
+        if(received <= 0) break;
+        request.append(chunk, static_cast<size_t>(received));
     }
-    return Request;
+    return request;
 } /* readRequest */
 
 
@@ -333,13 +331,13 @@ std::string SimulatorWebHost::readRequest(int Socket)
  *  \return         true
  *                  false           the request line has no path
  *****************************************************************************************************************************************************/
-bool SimulatorWebHost::getPath(std::string const& Request, std::string* Path)
+bool SimulatorWebHost::GetPath(std::string const& request, std::string* path)
 {
-    size_t const Start = Request.find(' ');
-    size_t const End = Start == std::string::npos ? std::string::npos : Request.find(' ', Start + 1);
+    size_t const start = request.find(' ');
+    size_t const end = start == std::string::npos ? std::string::npos : request.find(' ', start + 1);
 
-    if(End == std::string::npos) return false;
-    *Path = Request.substr(Start + 1, End - Start - 1);
+    if(end == std::string::npos) return false;
+    *path = request.substr(start + 1, end - start - 1);
     return true;
 } /* getPath */
 
@@ -352,9 +350,9 @@ bool SimulatorWebHost::getPath(std::string const& Request, std::string* Path)
  *
  *  \param[in]      Socket          the socket
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::setNonBlocking(int Socket)
+void SimulatorWebHost::SetNonBlocking(int socket)
 {
-    fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
+    fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
 } /* setNonBlocking */
 
 
@@ -367,13 +365,13 @@ void SimulatorWebHost::setNonBlocking(int Socket)
  *  \param[in]      Socket          the socket
  *  \param[in]      Milliseconds    how long one recv() may wait for the next bytes
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::setReceiveTimeout(int Socket, uint32_t Milliseconds)
+void SimulatorWebHost::SetReceiveTimeout(int socket, uint32_t milliseconds)
 {
-    timeval Timeout = timeval();
+    timeval timeout = timeval();
 
-    Timeout.tv_sec = static_cast<time_t>(Milliseconds / 1000);
-    Timeout.tv_usec = static_cast<suseconds_t>((Milliseconds % 1000) * 1000);
-    setsockopt(Socket, SOL_SOCKET, SO_RCVTIMEO, &Timeout, sizeof(Timeout));
+    timeout.tv_sec = static_cast<time_t>(milliseconds / 1000);
+    timeout.tv_usec = static_cast<suseconds_t>((milliseconds % 1000) * 1000);
+    setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 } /* setReceiveTimeout */
 
 
@@ -389,14 +387,14 @@ void SimulatorWebHost::setReceiveTimeout(int Socket, uint32_t Milliseconds)
  *  \return         true            all was sent
  *                  false           the connection is broken
  *****************************************************************************************************************************************************/
-bool SimulatorWebHost::sendAll(int Socket, std::string const& Data)
+bool SimulatorWebHost::SendAll(int socket, std::string const& data)
 {
-    size_t Sent = 0;
+    size_t sent = 0;
 
-    while(Sent < Data.size()) {
-        ssize_t const Written = send(Socket, Data.data() + Sent, Data.size() - Sent, MSG_NOSIGNAL);
-        if(Written > 0) Sent += static_cast<size_t>(Written);
-        else if(Written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) continue;
+    while(sent < data.size()) {
+        ssize_t const written = send(socket, data.data() + sent, data.size() - sent, MSG_NOSIGNAL);
+        if(written > 0) sent += static_cast<size_t>(written);
+        else if(written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) continue;
         else return false;
     }
     return true;
@@ -415,13 +413,13 @@ bool SimulatorWebHost::sendAll(int Socket, std::string const& Data)
  *  \param[in]      ContentType     the type of the body
  *  \param[in]      Body            the body
  *****************************************************************************************************************************************************/
-void SimulatorWebHost::sendResponse(int Socket, char const* Status, char const* ContentType, std::string const& Body)
+void SimulatorWebHost::SendResponse(int socket, char const* status, char const* content_type, std::string const& body)
 {
-    std::ostringstream Response;
+    std::ostringstream response;
 
-    Response << "HTTP/1.1 " << Status << "\r\nContent-Type: " << ContentType << "\r\nContent-Length: " << Body.size()
-             << "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n" << Body;
-    sendAll(Socket, Response.str());
+    response << "HTTP/1.1 " << status << "\r\nContent-Type: " << content_type << "\r\nContent-Length: " << body.size()
+             << "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n" << body;
+    SendAll(socket, response.str());
 } /* sendResponse */
 
 

@@ -15,8 +15,8 @@
  *                  the panel a test expects.
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_TERMINAL_H_
-#define _SIMULATOR_TERMINAL_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -31,16 +31,16 @@
 class SimulatorTerminal
 {
   private:
-    static bool readFile(char const*, std::string*);
+    static bool ReadFile(char const*, std::string*);
 
   public:
     // get methods
-    static std::string getStatusLine(SimulatorPanel const&);
+    static std::string GetStatusLine(SimulatorPanel const&);
 
     // methods
-    static void clear();
-    static void draw(SimulatorPanel const&);
-    static bool printResult(SimulatorPanel const&, char const*);
+    static void Clear();
+    static void Draw(SimulatorPanel const&);
+    static bool PrintResult(SimulatorPanel const&, char const*);
 };
 
 #endif

@@ -14,8 +14,6 @@
  *      \details    Columns, rows and dots in the viewer's coordinates, mapped onto the buffer as wired by the matrix and the module orientation.
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_PANEL_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -36,10 +34,10 @@
  *  \param[in]      sChipSelectPin     number of the Chip Select (CS) Pin
  *  \param[in]      sClockPin          number of the Clock Pin
  *****************************************************************************************************************************************************/
-MaxMatrixPanel::MaxMatrixPanel(byte sDataInPin, byte sChipSelectPin, byte sClockPin) : Wired(sDataInPin, sChipSelectPin, sClockPin)
+MaxMatrixPanel::MaxMatrixPanel(byte data_in_pin, byte chip_select_pin, byte clock_pin) : wired_(data_in_pin, chip_select_pin, clock_pin)
 {
-    ModuleOrientation = MAXMATRIX_MODULE_ORIENTATION_0;
-    MatrixOrientation = MAXMATRIX_MATRIX_ORIENTATION_0;
+    module_orientation_ = MaxMatrixModuleOrientation::k0;
+    matrix_orientation_ = MaxMatrixMatrixOrientation::k0;
 } /* MaxMatrixPanel */
 
 
@@ -52,12 +50,12 @@ MaxMatrixPanel::MaxMatrixPanel(byte sDataInPin, byte sChipSelectPin, byte sClock
  *
  *  \param[in]      Column      column on matrix which contains eight LEDs
  *  \return         led value in column, bit 0 is the top row
- *                  MAXMATRIX_E_OUT_OF_RANGE    the column is off the panel
+ *                  MaxMatrixError::kOutOfRange    the column is off the panel
  *****************************************************************************************************************************************************/
-MaxMatrixResult<byte> MaxMatrixPanel::getColumn(int16_t Column)
+MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(int16_t column)
 {
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) return getLine(Column, 0, true);
-    else return MAXMATRIX_E_OUT_OF_RANGE;
+    if(column >= 0 && column < MAXMATRIX_NUMBER_OF_COLUMNS) return GetLine(column, 0, true);
+    else return MaxMatrixError::kOutOfRange;
 } /* getColumn */
 
 
@@ -70,13 +68,13 @@ MaxMatrixResult<byte> MaxMatrixPanel::getColumn(int16_t Column)
  *  \param[in]      Module      module where column will be returned
  *  \param[in]      Column      column on module which contains eight LEDs
  *  \return         led value in column, bit 0 is the top row
- *                  MAXMATRIX_E_OUT_OF_RANGE    the module or the column does not exist
+ *                  MaxMatrixError::kOutOfRange    the module or the column does not exist
  *****************************************************************************************************************************************************/
-MaxMatrixResult<byte> MaxMatrixPanel::getColumn(byte Module, byte Column)
+MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(byte module, byte column)
 {
-    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        return getColumn(static_cast<int16_t>((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column));
-    } else return MAXMATRIX_E_OUT_OF_RANGE;
+    if(module < MAXMATRIX_NUMBER_OF_MODULES && column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
+        return GetColumn(static_cast<int16_t>((module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column));
+    } else return MaxMatrixError::kOutOfRange;
 } /* getColumn */
 
 
@@ -91,9 +89,9 @@ MaxMatrixResult<byte> MaxMatrixPanel::getColumn(byte Module, byte Column)
  *  \param[in]      Column      column on matrix which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
+void MaxMatrixPanel::SetColumn(int16_t column, byte value)
 {
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS) setLine(Column, 0, true, Value);
+    if(column >= 0 && column < MAXMATRIX_NUMBER_OF_COLUMNS) SetLine(column, 0, true, value);
 } /* setColumn */
 
 
@@ -109,10 +107,10 @@ void MaxMatrixPanel::setColumn(int16_t Column, byte Value)
  *  \param[in]      Column      column on module which contains eight LEDs
  *  \param[in]      Value       led value in column, bit 0 is the top row
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
+void MaxMatrixPanel::SetColumn(byte module, byte column, byte value)
 {
-    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-        setColumn(static_cast<int16_t>((Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + Column), Value);
+    if(module < MAXMATRIX_NUMBER_OF_MODULES && column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
+        SetColumn(static_cast<int16_t>((module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column), value);
     }
 } /* setColumn */
 
@@ -127,15 +125,15 @@ void MaxMatrixPanel::setColumn(byte Module, byte Column, byte Value)
  *
  *  \param[in]      Row         row on matrix
  *  \param[out]     Value       led value in row, bit 7 of each byte is the leftmost column of its module
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_OUT_OF_RANGE    the row is off the panel; Value is left as it was
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kOutOfRange    the row is off the panel; Value is left as it was
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixPanel::getRow(int16_t Row, rowType& Value)
+MaxMatrixStatus MaxMatrixPanel::GetRow(int16_t row, MaxMatrixRow& value)
 {
-    if(Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) Value[Module] = getRow(Module, Row).getValue();
-        return MAXMATRIX_E_OK;
-    } else return MAXMATRIX_E_OUT_OF_RANGE;
+    if(row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) value[module] = GetRow(module, row).GetValue();
+        return MaxMatrixError::kOk;
+    } else return MaxMatrixError::kOutOfRange;
 } /* getRow */
 
 
@@ -149,13 +147,13 @@ MaxMatrixStatus MaxMatrixPanel::getRow(int16_t Row, rowType& Value)
  *  \param[in]      Module      module where row should be returned
  *  \param[in]      Row         row on module which contains eight LEDs
  *  \return         led value in row, bit 7 is the leftmost column
- *                  MAXMATRIX_E_OUT_OF_RANGE    the module or the row does not exist
+ *                  MaxMatrixError::kOutOfRange    the module or the row does not exist
  *****************************************************************************************************************************************************/
-MaxMatrixResult<byte> MaxMatrixPanel::getRow(byte Module, byte Row)
+MaxMatrixResult<byte> MaxMatrixPanel::GetRow(byte module, byte row)
 {
-    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        return reverseByte(getLine(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, Row, false));
-    } else return MAXMATRIX_E_OUT_OF_RANGE;
+    if(module < MAXMATRIX_NUMBER_OF_MODULES && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        return ReverseByte(GetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false));
+    } else return MaxMatrixError::kOutOfRange;
 } /* getRow */
 
 
@@ -169,10 +167,10 @@ MaxMatrixResult<byte> MaxMatrixPanel::getRow(byte Module, byte Row)
  *  \param[in]      Row         row on matrix
  *  \param[in]      Value       led value in row, bit 7 of each byte is the leftmost column of its module
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setRow(int16_t Row, rowType const Value)
+void MaxMatrixPanel::SetRow(int16_t row, MaxMatrixRow const value)
 {
-    if(Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) setRow(Module, Row, Value[Module]);
+    if(row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) SetRow(module, row, value[module]);
     }
 } /* setRow */
 
@@ -188,10 +186,10 @@ void MaxMatrixPanel::setRow(int16_t Row, rowType const Value)
  *  \param[in]      Row         row on module which contains eight LEDs
  *  \param[in]      Value       led value in row, bit 7 is the leftmost column
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
+void MaxMatrixPanel::SetRow(byte module, byte row, byte value)
 {
-    if(Module < MAXMATRIX_NUMBER_OF_MODULES && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        setLine(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, Row, false, reverseByte(Value));
+    if(module < MAXMATRIX_NUMBER_OF_MODULES && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        SetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false, ReverseByte(value));
     }
 } /* setRow */
 
@@ -205,16 +203,16 @@ void MaxMatrixPanel::setRow(byte Module, byte Row, byte Value)
  *  \param[in]      Column      column where to get the pixel, negative to the left of the panel
  *  \param[in]      Row         row where to get the pixel, negative above the panel
  *  \return         value of the pixel
- *                  MAXMATRIX_E_OUT_OF_RANGE    the dot is off the panel
+ *                  MaxMatrixError::kOutOfRange    the dot is off the panel
  *****************************************************************************************************************************************************/
-MaxMatrixResult<bool> MaxMatrixPanel::getDot(int16_t Column, int16_t Row)
+MaxMatrixResult<bool> MaxMatrixPanel::GetDot(int16_t column, int16_t row)
 {
-    byte BufferColumn, BufferBit;
+    byte buffer_column, buffer_bit;
 
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
-        return static_cast<bool>(bitRead(Wired.getColumn(BufferColumn), BufferBit));
-    } else return MAXMATRIX_E_OUT_OF_RANGE;
+    if(column >= 0 && column < MAXMATRIX_NUMBER_OF_COLUMNS && row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
+        return static_cast<bool>(bitRead(wired_.GetColumn(buffer_column), buffer_bit));
+    } else return MaxMatrixError::kOutOfRange;
 } /* getDot */
 
 
@@ -231,13 +229,13 @@ MaxMatrixResult<bool> MaxMatrixPanel::getDot(int16_t Column, int16_t Row)
  *  \param[in]      Row         row where to set the pixel, negative above the panel
  *  \param[in]      Value       value of the pixel
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setDot(int16_t Column, int16_t Row, bool Value)
+void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value)
 {
-    byte BufferColumn, BufferBit;
+    byte buffer_column, buffer_bit;
 
-    if(Column >= 0 && Column < MAXMATRIX_NUMBER_OF_COLUMNS && Row >= 0 && Row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-        convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
-        Wired.storeBit(BufferColumn, BufferBit, Value);
+    if(column >= 0 && column < MAXMATRIX_NUMBER_OF_COLUMNS && row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
+        wired_.StoreBit(buffer_column, buffer_bit, value);
     }
 } /* setDot */
 
@@ -252,16 +250,16 @@ void MaxMatrixPanel::setDot(int16_t Column, int16_t Row, bool Value)
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *  \param[in]      FillWithZero    initialize the column on the right side with zero.
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::shiftLeft(bool Rotate, bool FillWithZero)
+void MaxMatrixPanel::ShiftLeft(bool rotate, bool fill_with_zero)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    byte ColumnLeft = Picture[0];
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column++) Picture[Column] = Picture[Column + 1];
-    if(Rotate) Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = ColumnLeft;
-    else if(FillWithZero) Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = 0;
-    setPicture(Picture);
+    GetPicture(picture);
+    byte column_left = picture[0];
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS - 1; column++) picture[column] = picture[column + 1];
+    if(rotate) picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = column_left;
+    else if(fill_with_zero) picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1] = 0;
+    SetPicture(picture);
 } /* shiftLeft */
 
 
@@ -276,16 +274,16 @@ void MaxMatrixPanel::shiftLeft(bool Rotate, bool FillWithZero)
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *  \param[in]      FillWithZero    initialize the column on the left side with zero.
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::shiftRight(bool Rotate, bool FillWithZero)
+void MaxMatrixPanel::ShiftRight(bool rotate, bool fill_with_zero)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    byte ColumnRight = Picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1];
-    for(byte Column = MAXMATRIX_NUMBER_OF_COLUMNS - 1; Column > 0; Column--) Picture[Column] = Picture[Column - 1];
-    if(Rotate) Picture[0] = ColumnRight;
-    else if(FillWithZero) Picture[0] = 0;
-    setPicture(Picture);
+    GetPicture(picture);
+    byte column_right = picture[MAXMATRIX_NUMBER_OF_COLUMNS - 1];
+    for(byte column = MAXMATRIX_NUMBER_OF_COLUMNS - 1; column > 0; column--) picture[column] = picture[column - 1];
+    if(rotate) picture[0] = column_right;
+    else if(fill_with_zero) picture[0] = 0;
+    SetPicture(picture);
 } /* shiftRight */
 
 
@@ -299,17 +297,17 @@ void MaxMatrixPanel::shiftRight(bool Rotate, bool FillWithZero)
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::shiftUp(bool Rotate)
+void MaxMatrixPanel::ShiftUp(bool rotate)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-        bool TopDot = bitRead(Picture[Column], 0);
-        Picture[Column] >>= 1;
-        if(Rotate) bitWrite(Picture[Column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, TopDot);
+    GetPicture(picture);
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        bool top_dot = bitRead(picture[column], 0);
+        picture[column] >>= 1;
+        if(rotate) bitWrite(picture[column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, top_dot);
     }
-    setPicture(Picture);
+    SetPicture(picture);
 } /* shiftUp */
 
 
@@ -323,17 +321,17 @@ void MaxMatrixPanel::shiftUp(bool Rotate)
  *
  *  \param[in]      Rotate          activate rotation of the matrix LED states
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::shiftDown(bool Rotate)
+void MaxMatrixPanel::ShiftDown(bool rotate)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-        bool BottomDot = bitRead(Picture[Column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
-        Picture[Column] <<= 1;
-        if(Rotate) bitWrite(Picture[Column], 0, BottomDot);
+    GetPicture(picture);
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        bool bottom_dot = bitRead(picture[column], MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
+        picture[column] <<= 1;
+        if(rotate) bitWrite(picture[column], 0, bottom_dot);
     }
-    setPicture(Picture);
+    SetPicture(picture);
 } /* shiftDown */
 
 /******************************************************************************************************************************************************
@@ -345,13 +343,13 @@ void MaxMatrixPanel::shiftDown(bool Rotate)
  *
  *  \param[in]      sModuleOrientation      orientation in degree
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)
+void MaxMatrixPanel::SetModuleOrientation(MaxMatrixModuleOrientation module_orientation)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    ModuleOrientation = sModuleOrientation;
-    setPicture(Picture);
+    GetPicture(picture);
+    module_orientation_ = module_orientation;
+    SetPicture(picture);
 } /* setModuleOrientation */
 
 
@@ -365,13 +363,13 @@ void MaxMatrixPanel::setModuleOrientation(MaxMatrixModuleOrientationType sModule
  *
  *  \param[in]      sMatrixOrientation      orientation in degree
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation)
+void MaxMatrixPanel::SetMatrixOrientation(MaxMatrixMatrixOrientation matrix_orientation)
 {
-    byte Picture[MAXMATRIX_NUMBER_OF_COLUMNS];
+    byte picture[MAXMATRIX_NUMBER_OF_COLUMNS];
 
-    getPicture(Picture);
-    MatrixOrientation = sMatrixOrientation;
-    setPicture(Picture);
+    GetPicture(picture);
+    matrix_orientation_ = matrix_orientation;
+    SetPicture(picture);
 } /* setMatrixOrientation */
 
 /******************************************************************************************************************************************************
@@ -387,13 +385,13 @@ void MaxMatrixPanel::setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrix
  *  \param[in]      Input           byte which should be reversed
  *  \return         reversed Byte
  *****************************************************************************************************************************************************/
-byte MaxMatrixPanel::reverseByte(byte Input)
+byte MaxMatrixPanel::ReverseByte(byte input)
 {
-   Input = (Input & 0xF0) >> 4 | (Input & 0x0F) << 4;
-   Input = (Input & 0xCC) >> 2 | (Input & 0x33) << 2;
-   Input = (Input & 0xAA) >> 1 | (Input & 0x55) << 1;
+   input = (input & 0xF0) >> 4 | (input & 0x0F) << 4;
+   input = (input & 0xCC) >> 2 | (input & 0x33) << 2;
+   input = (input & 0xAA) >> 1 | (input & 0x55) << 1;
    
-   return Input;
+   return input;
 } /* reverseByte */
 
 /******************************************************************************************************************************************************
@@ -412,32 +410,32 @@ byte MaxMatrixPanel::reverseByte(byte Input)
  *  \param[out]     BufferBit       bit in that column
  *  \pre            Column and Row are within the matrix
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::convertDotToBuffer(byte Column, byte Row, byte* BufferColumn, byte* BufferBit)
+void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column, byte* buffer_bit)
 {
-    if(MatrixOrientation == MAXMATRIX_MATRIX_ORIENTATION_180) {
-        Column = MAXMATRIX_NUMBER_OF_COLUMNS - 1 - Column;
-        Row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - Row;
+    if(matrix_orientation_ == MaxMatrixMatrixOrientation::k180) {
+        column = MAXMATRIX_NUMBER_OF_COLUMNS - 1 - column;
+        row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
     }
 
-    byte Module = Column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-    byte ModuleColumn = Column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-    byte WiredColumn, WiredRow;
+    byte module = column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
+    byte module_column = column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
+    byte wired_column, wired_row;
 
-    if(ModuleOrientation == MAXMATRIX_MODULE_ORIENTATION_90) {
-        WiredColumn = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - Row;
-        WiredRow = ModuleColumn;
-    } else if(ModuleOrientation == MAXMATRIX_MODULE_ORIENTATION_180) {
-        WiredColumn = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - ModuleColumn;
-        WiredRow = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - Row;
-    } else if(ModuleOrientation == MAXMATRIX_MODULE_ORIENTATION_270) {
-        WiredColumn = Row;
-        WiredRow = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - ModuleColumn;
+    if(module_orientation_ == MaxMatrixModuleOrientation::k90) {
+        wired_column = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - row;
+        wired_row = module_column;
+    } else if(module_orientation_ == MaxMatrixModuleOrientation::k180) {
+        wired_column = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - module_column;
+        wired_row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
+    } else if(module_orientation_ == MaxMatrixModuleOrientation::k270) {
+        wired_column = row;
+        wired_row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - module_column;
     } else {
-        WiredColumn = ModuleColumn;
-        WiredRow = Row;
+        wired_column = module_column;
+        wired_row = row;
     }
-    *BufferColumn = (Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + WiredColumn;
-    *BufferBit = WiredRow;
+    *buffer_column = (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + wired_column;
+    *buffer_bit = wired_row;
 } /* convertDotToBuffer */
 
 
@@ -454,16 +452,16 @@ void MaxMatrixPanel::convertDotToBuffer(byte Column, byte Row, byte* BufferColum
  *  \return         the dots, the first one in bit 0
  *  \pre            the line is within the matrix
  *****************************************************************************************************************************************************/
-byte MaxMatrixPanel::getLine(byte Column, byte Row, bool Vertical)
+byte MaxMatrixPanel::GetLine(byte column, byte row, bool vertical)
 {
-    byte BufferColumn, BufferBit;
-    byte Value = 0;
+    byte buffer_column, buffer_bit;
+    byte value = 0;
 
-    for(byte Dot = 0; Dot < 8; Dot++) {
-        convertDotToBuffer(Vertical ? Column : Column + Dot, Vertical ? Row + Dot : Row, &BufferColumn, &BufferBit);
-        bitWrite(Value, Dot, bitRead(Wired.getColumn(BufferColumn), BufferBit));
+    for(byte dot = 0; dot < 8; dot++) {
+        ConvertDotToBuffer(vertical ? column : column + dot, vertical ? row + dot : row, &buffer_column, &buffer_bit);
+        bitWrite(value, dot, bitRead(wired_.GetColumn(buffer_column), buffer_bit));
     }
-    return Value;
+    return value;
 } /* getLine */
 
 
@@ -480,13 +478,13 @@ byte MaxMatrixPanel::getLine(byte Column, byte Row, bool Vertical)
  *  \param[in]      Value       the dots, the first one in bit 0
  *  \pre            the line is within one module
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setLine(byte Column, byte Row, bool Vertical, byte Value)
+void MaxMatrixPanel::SetLine(byte column, byte row, bool vertical, byte value)
 {
-    byte BufferColumn, BufferBit;
+    byte buffer_column, buffer_bit;
 
-    for(byte Dot = 0; Dot < 8; Dot++) {
-        convertDotToBuffer(Vertical ? Column : Column + Dot, Vertical ? Row + Dot : Row, &BufferColumn, &BufferBit);
-        Wired.storeBit(BufferColumn, BufferBit, bitRead(Value, Dot));
+    for(byte dot = 0; dot < 8; dot++) {
+        ConvertDotToBuffer(vertical ? column : column + dot, vertical ? row + dot : row, &buffer_column, &buffer_bit);
+        wired_.StoreBit(buffer_column, buffer_bit, bitRead(value, dot));
     }
 } /* setLine */
 
@@ -501,9 +499,9 @@ void MaxMatrixPanel::setLine(byte Column, byte Row, bool Vertical, byte Value)
  *
  *  \param[out]     Picture     one byte per column of the matrix
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::getPicture(byte* Picture)
+void MaxMatrixPanel::GetPicture(byte* picture)
 {
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) Picture[Column] = getLine(Column, 0, true);
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) picture[column] = GetLine(column, 0, true);
 } /* getPicture */
 
 
@@ -515,14 +513,14 @@ void MaxMatrixPanel::getPicture(byte* Picture)
  *
  *  \param[in]      Picture     one byte per column of the matrix, the top row in bit 0
  *****************************************************************************************************************************************************/
-void MaxMatrixPanel::setPicture(byte const* Picture)
+void MaxMatrixPanel::SetPicture(byte const* picture)
 {
-    byte BufferColumn, BufferBit;
+    byte buffer_column, buffer_bit;
 
-    for(byte Column = 0; Column < MAXMATRIX_NUMBER_OF_COLUMNS; Column++) {
-        for(byte Row = 0; Row < MAXMATRIX_ROW_NUMBER_OF_MODULE; Row++) {
-            convertDotToBuffer(Column, Row, &BufferColumn, &BufferBit);
-            Wired.storeBit(BufferColumn, BufferBit, bitRead(Picture[Column], Row));
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        for(byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+            ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
+            wired_.StoreBit(buffer_column, buffer_bit, bitRead(picture[column], row));
         }
     }
 } /* setPicture */

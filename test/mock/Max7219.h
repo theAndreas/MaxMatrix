@@ -4,27 +4,27 @@
  * only says what the library believes is on the LEDs, and a wrong module, register or frame length leaves it right
  * and the display wrong. Only the logic is modelled - no timing, nothing electrical, and no multiplexing: a digit
  * within the scan limit shows its register for as long as the chip is not shut down. */
-#ifndef _MOCK_MAX7219_H_
-#define _MOCK_MAX7219_H_
+#ifndef MAXMATRIX_TEST_MOCK_MAX7219_H_
+#define MAXMATRIX_TEST_MOCK_MAX7219_H_
 
 #include <stdint.h>
 #include <vector>
 
 class Max7219 {
   public:
-    static uint8_t const NumberOfDigits = 8;
+    static uint8_t const kNumberOfDigits = 8;
 
-    uint8_t Digit[NumberOfDigits];
-    uint8_t DecodeMode;
-    uint8_t Intensity;
-    uint8_t ScanLimit;
-    uint8_t Shutdown;
-    uint8_t DisplayTest;
+    uint8_t digit[kNumberOfDigits];
+    uint8_t decode_mode;
+    uint8_t intensity;
+    uint8_t scan_limit;
+    uint8_t shutdown;
+    uint8_t display_test;
 
-    Max7219() { reset(); }
-    void reset();
-    void latch(uint8_t Address, uint8_t Data);
-    uint8_t segments(uint8_t DigitIndex) const;
+    Max7219() { Reset(); }
+    void Reset();
+    void Latch(uint8_t address, uint8_t data);
+    uint8_t Segments(uint8_t digit_index) const;
 };
 
 /* How the LEDs of a module are wired to digits and segments, as the viewer sees them, in the three properties
@@ -34,37 +34,37 @@ class Max7219 {
  *   DigitsAsRows      a digit drives a row of LEDs and a segment bit a column; otherwise a digit drives a column
  *   ReversedColumns   the segment bit index is reversed, bit 7 - x for x
  *   ReversedRows      the digit index is reversed, digit 7 - x for x */
-struct Max7219WiringType {
-    char const* Name;
-    bool DigitsAsRows;
-    bool ReversedColumns;
-    bool ReversedRows;
+struct Max7219Wiring {
+    char const* name;
+    bool digits_as_rows;
+    bool reversed_columns;
+    bool reversed_rows;
 };
 
 /* the four MD_MAX72XX has names for */
-extern Max7219WiringType const MAX7219_WIRING_FC16;
-extern Max7219WiringType const MAX7219_WIRING_GENERIC;
-extern Max7219WiringType const MAX7219_WIRING_PAROLA;
-extern Max7219WiringType const MAX7219_WIRING_ICSTATION;
+extern Max7219Wiring const kMaX7219WiringFC16;
+extern Max7219Wiring const kMaX7219WiringGeneric;
+extern Max7219Wiring const kMaX7219WiringParola;
+extern Max7219Wiring const kMaX7219WiringIcstation;
 
 /* all eight, DR0CR0RR0 to DR1CR1RR1 */
-extern Max7219WiringType const Max7219Wirings[8];
+extern Max7219Wiring const kMax7219Wirings[8];
 
 class Max7219Chain {
   public:
     /* Chips[0] is the chip at DIN, next to the Arduino; a byte reaches the far end last */
-    std::vector<Max7219> Chips;
+    std::vector<Max7219> chips;
 
-    void reset(uint8_t NumberOfChips);
-    void shift(uint8_t Value);
-    void shiftBit(bool Value);
-    void latch();
-    bool isLit(Max7219WiringType const& Wiring, uint16_t X, uint8_t Y, bool UpsideDown = false) const;
-    Max7219 const& chipAt(uint16_t X, bool UpsideDown = false) const;
+    void Reset(uint8_t number_of_chips);
+    void Shift(uint8_t value);
+    void ShiftBit(bool value);
+    void Latch();
+    bool IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y, bool upside_down = false) const;
+    Max7219 const& ChipAt(uint16_t x, bool upside_down = false) const;
 
   private:
     /* two bytes per chip, ShiftRegister[2 * Chip] its data byte and ShiftRegister[2 * Chip + 1] its address byte */
-    std::vector<uint8_t> ShiftRegister;
+    std::vector<uint8_t> shift_register_;
 };
 
 #endif

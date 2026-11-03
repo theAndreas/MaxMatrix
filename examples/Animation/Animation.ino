@@ -9,36 +9,36 @@
  */
 #include <MaxMatrix.h>
 
-uint32_t const STEP_INTERVAL_MS = 40;
+uint32_t const kStepIntervalMs = 40;
 
-MaxMatrix Matrix(11, 10, 13);
+MaxMatrix matrix(11, 10, 13);
 
-int16_t BallX = 0;
-int16_t BallY = 0;
-int8_t StepX = 1;
-int8_t StepY = 1;
-uint32_t LastStep = 0;
+int16_t ball_x = 0;
+int16_t ball_y = 0;
+int8_t step_x = 1;
+int8_t step_y = 1;
+uint32_t last_step = 0;
 
 void setup()
 {
-    Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see the README
-    Matrix.setDot(BallX, BallY, true);
+    matrix.Init();
+    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
+    matrix.SetDot(ball_x, ball_y, true);
 }
 
 void loop()
 {
     /* a step only every STEP_INTERVAL_MS; the rest of loop() is free for other work */
-    if(millis() - LastStep < STEP_INTERVAL_MS) return;
-    LastStep = millis();
+    if(millis() - last_step < kStepIntervalMs) return;
+    last_step = millis();
 
     /* without the batch the matrix would show the frame without a ball in between, as a flicker */
-    MaxMatrixBatch Batch(Matrix);
-    Matrix.setDot(BallX, BallY, false);
+    MaxMatrixBatch batch(matrix);
+    matrix.SetDot(ball_x, ball_y, false);
     /* turn round at an edge rather than leave the matrix */
-    if(BallX + StepX < 0 || BallX + StepX >= MAXMATRIX_NUMBER_OF_COLUMNS) StepX = -StepX;
-    if(BallY + StepY < 0 || BallY + StepY >= MAXMATRIX_ROW_NUMBER_OF_MODULE) StepY = -StepY;
-    BallX += StepX;
-    BallY += StepY;
-    Matrix.setDot(BallX, BallY, true);
+    if(ball_x + step_x < 0 || ball_x + step_x >= MAXMATRIX_NUMBER_OF_COLUMNS) step_x = -step_x;
+    if(ball_y + step_y < 0 || ball_y + step_y >= MAXMATRIX_ROW_NUMBER_OF_MODULE) step_y = -step_y;
+    ball_x += step_x;
+    ball_y += step_y;
+    matrix.SetDot(ball_x, ball_y, true);
 }

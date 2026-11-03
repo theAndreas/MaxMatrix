@@ -15,8 +15,6 @@
  *                  sketch's Serial as a line, and "hello" when it opens, which asks for the panel.
  *
  *****************************************************************************************************************************************************/
-#define _SIMULATOR_WEB_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -51,7 +49,7 @@
  *****************************************************************************************************************************************************/
 SimulatorWeb::SimulatorWeb()
 {
-    LoggedFrames = 0;
+    logged_frames_ = 0;
 } /* SimulatorWeb */
 
 
@@ -66,9 +64,9 @@ SimulatorWeb::SimulatorWeb()
  *  \return         true
  *                  false           the port is taken
  *****************************************************************************************************************************************************/
-bool SimulatorWeb::begin(uint16_t Port, char const* PagePath)
+bool SimulatorWeb::Begin(uint16_t port, char const* page_path)
 {
-    return Host.begin(Port, PagePath);
+    return host_.Begin(port, page_path);
 } /* begin */
 
 
@@ -82,14 +80,14 @@ bool SimulatorWeb::begin(uint16_t Port, char const* PagePath)
  *
  *  \param[in,out]  Panel           the panel the page's commands change
  *****************************************************************************************************************************************************/
-void SimulatorWeb::task(SimulatorPanel& Panel)
+void SimulatorWeb::Task(SimulatorPanel& panel)
 {
-    std::vector<std::string> Messages;
+    std::vector<std::string> messages;
 
-    if(Mock::Frames != LoggedFrames) logFrame();
-    Host.task(&Messages);
-    for(std::string const& Message : Messages) command(Panel, Message);
-    if(!Mock::SerialOutput.empty()) Panel.requestDraw();
+    if(mock::frames != logged_frames_) LogFrame();
+    host_.Task(&messages);
+    for(std::string const& message : messages) Command(panel, message);
+    if(!mock::serial_output.empty()) panel.RequestDraw();
 } /* task */
 
 
@@ -102,11 +100,11 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
  *
  *  \param[in]      Panel           the panel to send
  *****************************************************************************************************************************************************/
-void SimulatorWeb::send(SimulatorPanel const& Panel)
+void SimulatorWeb::Send(SimulatorPanel const& panel)
 {
-    Host.broadcast(getMessage(Panel));
-    FrameLog.clear();
-    Mock::SerialOutput.clear();
+    host_.Broadcast(GetMessage(panel));
+    frame_log_.clear();
+    mock::serial_output.clear();
 } /* send */
 
 
@@ -121,24 +119,24 @@ void SimulatorWeb::send(SimulatorPanel const& Panel)
  *  \param[in]      Text            the bytes, as the sketch printed them
  *  \return         the text for between the quotes of a JSON string
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::convertToJsonString(std::string const& Text)
+std::string SimulatorWeb::ConvertToJsonString(std::string const& text)
 {
-    std::string Json;
-    char Escaped[8];
+    std::string json;
+    char escaped[8];
 
-    for(char const Char : Text) {
-        uint8_t const Byte = static_cast<uint8_t>(Char);
-        if(Char == '"' || Char == '\\') {
-            Json += '\\';
-            Json += Char;
-        } else if(Byte >= SIMULATOR_WEB_JSON_FIRST_PLAIN && Byte <= SIMULATOR_WEB_JSON_LAST_PLAIN) {
-            Json += Char;
+    for(char const c : text) {
+        uint8_t const code = static_cast<uint8_t>(c);
+        if(c == '"' || c == '\\') {
+            json += '\\';
+            json += c;
+        } else if(code >= SIMULATOR_WEB_JSON_FIRST_PLAIN && code <= SIMULATOR_WEB_JSON_LAST_PLAIN) {
+            json += c;
         } else {
-            snprintf(Escaped, sizeof(Escaped), "\\u%04X", static_cast<uint16_t>(Byte));
-            Json += Escaped;
+            snprintf(escaped, sizeof(escaped), "\\u%04X", static_cast<uint16_t>(code));
+            json += escaped;
         }
     }
-    return Json;
+    return json;
 } /* convertToJsonString */
 
 
@@ -153,19 +151,19 @@ std::string SimulatorWeb::convertToJsonString(std::string const& Text)
  *  \details        this function writes the frame as address/value pairs, one pair per module, and keeps no more than
  *                  SIMULATOR_WEB_FRAME_LOG_LENGTH frames
  *****************************************************************************************************************************************************/
-void SimulatorWeb::logFrame()
+void SimulatorWeb::LogFrame()
 {
-    std::string Line = "#" + std::to_string(Mock::Frames) + ":";
-    char Pair[8];
+    std::string line = "#" + std::to_string(mock::frames) + ":";
+    char pair[8];
 
-    for(size_t i = 0; i + 1 < Mock::LastFrame.size(); i += 2) {
-        snprintf(Pair, sizeof(Pair), "%02X %02X", Mock::LastFrame[i], Mock::LastFrame[i + 1]);
-        Line += i == 0 ? " " : " | ";
-        Line += Pair;
+    for(size_t i = 0; i + 1 < mock::last_frame.size(); i += 2) {
+        snprintf(pair, sizeof(pair), "%02X %02X", mock::last_frame[i], mock::last_frame[i + 1]);
+        line += i == 0 ? " " : " | ";
+        line += pair;
     }
-    FrameLog.push_back(Line);
-    if(FrameLog.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH) FrameLog.erase(FrameLog.begin());
-    LoggedFrames = Mock::Frames;
+    frame_log_.push_back(line);
+    if(frame_log_.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH) frame_log_.erase(frame_log_.begin());
+    logged_frames_ = mock::frames;
 } /* logFrame */
 
 
@@ -180,16 +178,16 @@ void SimulatorWeb::logFrame()
  *  \param[in,out]  Panel           the panel to change
  *  \param[in]      Message         the command
  *****************************************************************************************************************************************************/
-void SimulatorWeb::command(SimulatorPanel& Panel, std::string const& Message)
+void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message)
 {
-    std::string const WiringCommand = SIMULATOR_WEB_COMMAND_WIRING;
-    std::string const SerialCommand = SIMULATOR_WEB_COMMAND_SERIAL;
+    std::string const wiring_command = SIMULATOR_WEB_COMMAND_WIRING;
+    std::string const serial_command = SIMULATOR_WEB_COMMAND_SERIAL;
 
-    if(Message.compare(0, WiringCommand.size(), WiringCommand) == 0) Panel.setWiring(Message.substr(WiringCommand.size()));
-    else if(Message.compare(0, SerialCommand.size(), SerialCommand) == 0) Mock::SerialInput += Message.substr(SerialCommand.size()) + "\n";
-    else if(Message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) Panel.setUpsideDown(true);
-    else if(Message == SIMULATOR_WEB_COMMAND_UPRIGHT) Panel.setUpsideDown(false);
-    Panel.requestDraw();
+    if(message.compare(0, wiring_command.size(), wiring_command) == 0) panel.SetWiring(message.substr(wiring_command.size()));
+    else if(message.compare(0, serial_command.size(), serial_command) == 0) mock::serial_input += message.substr(serial_command.size()) + "\n";
+    else if(message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) panel.SetUpsideDown(true);
+    else if(message == SIMULATOR_WEB_COMMAND_UPRIGHT) panel.SetUpsideDown(false);
+    panel.RequestDraw();
 } /* command */
 
 
@@ -204,18 +202,18 @@ void SimulatorWeb::command(SimulatorPanel& Panel, std::string const& Message)
  *  \param[in]      Panel           the panel to send
  *  \return         the JSON text
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::getMessage(SimulatorPanel const& Panel) const
+std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const
 {
-    std::ostringstream Json;
+    std::ostringstream json;
 
-    Json << "{\"wiring\":\"" << Panel.getWiringName() << "\",\"upsideDown\":" << (Panel.isUpsideDown() ? "true" : "false")
+    json << "{\"wiring\":\"" << panel.GetWiringName() << "\",\"upsideDown\":" << (panel.IsUpsideDown() ? "true" : "false")
          << ",\"columns\":" << MAXMATRIX_NUMBER_OF_COLUMNS << ",\"rows\":" << MAXMATRIX_ROW_NUMBER_OF_MODULE
-         << ",\"dots\":\"" << Panel.getText("1", "0", "") << "\""
-         << ",\"intensity\":[" << getIntensities(Panel) << "]"
-         << ",\"frames\":" << Mock::Frames << ",\"errors\":" << Mock::Errors
-         << ",\"log\":[" << getLog() << "]"
-         << ",\"serial\":\"" << convertToJsonString(Mock::SerialOutput) << "\"}";
-    return Json.str();
+         << ",\"dots\":\"" << panel.GetText("1", "0", "") << "\""
+         << ",\"intensity\":[" << GetIntensities(panel) << "]"
+         << ",\"frames\":" << mock::frames << ",\"errors\":" << mock::errors
+         << ",\"log\":[" << GetLog() << "]"
+         << ",\"serial\":\"" << ConvertToJsonString(mock::serial_output) << "\"}";
+    return json.str();
 } /* getMessage */
 
 
@@ -227,12 +225,12 @@ std::string SimulatorWeb::getMessage(SimulatorPanel const& Panel) const
  *
  *  \return         the frames as JSON strings, separated by commas
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::getLog() const
+std::string SimulatorWeb::GetLog() const
 {
-    std::string Log;
+    std::string log;
 
-    for(size_t i = 0; i < FrameLog.size(); i++) Log += (i > 0 ? ",\"" : "\"") + FrameLog[i] + "\"";
-    return Log;
+    for(size_t i = 0; i < frame_log_.size(); i++) log += (i > 0 ? ",\"" : "\"") + frame_log_[i] + "\"";
+    return log;
 } /* getLog */
 
 
@@ -245,14 +243,14 @@ std::string SimulatorWeb::getLog() const
  *  \param[in]      Panel           the panel
  *  \return         the intensities from the left, separated by commas
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::getIntensities(SimulatorPanel const& Panel)
+std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel)
 {
-    std::string Intensities;
+    std::string intensities;
 
-    for(uint8_t Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
-        Intensities += (Module > 0 ? "," : "") + std::to_string(Panel.getIntensity(Module));
+    for(uint8_t module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
+        intensities += (module > 0 ? "," : "") + std::to_string(panel.GetIntensity(module));
     }
-    return Intensities;
+    return intensities;
 } /* getIntensities */
 
 

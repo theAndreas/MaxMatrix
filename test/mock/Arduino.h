@@ -4,8 +4,8 @@
  * library sends between a falling and a rising chip select, which is the frame the MAX7219 chain latches,
  * and counts every transfer that happens outside such a frame or outside an SPI transaction as an error.
  * Every byte and every rising chip select also go to the MAX7219 model in Max7219.h, Mock::Chain. */
-#ifndef _MOCK_ARDUINO_H_
-#define _MOCK_ARDUINO_H_
+#ifndef MAXMATRIX_TEST_MOCK_ARDUINO_H_
+#define MAXMATRIX_TEST_MOCK_ARDUINO_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -15,25 +15,27 @@
 #include "binary.h"
 #include "Max7219.h"
 
+/* The names of the Arduino core and avr-libc, which the library calls by them. */
+// NOLINTBEGIN(readability-identifier-naming)
 typedef uint8_t byte;
 
 #define PROGMEM
 #define memcpy_P memcpy
-#define PSTR(Text) (Text)
+#define PSTR(text) (text)
 #define strcmp_P strcmp
 /* F() has the type it has in the Arduino core, so that a function returning a text in flash builds as on the board */
 class __FlashStringHelper;
-#define F(Text) (reinterpret_cast<__FlashStringHelper const*>(PSTR(Text)))
-/* pgm_read_ptr() reads the bytes of the pointer at Address, as avr-libc reads them from flash, and takes the address
+#define F(text) (reinterpret_cast<__FlashStringHelper const*>(PSTR(text)))
+/* pgm_read_ptr() reads the bytes of the pointer at address, as avr-libc reads them from flash, and takes the address
  * as it is given, as avr-libc's macro does. A macro that cast the stored pointer to void* made the library's cast back
  * to its own type one through void, and a parameter of const void* a conversion of the address: clang-tidy reports
  * both in the library, though neither is there on the board. */
 template <typename AddressType>
-inline void* pgm_read_ptr(AddressType const* Address)
+inline void* pgm_read_ptr(AddressType const* address)
 {
-    void* Value;
-    memcpy(&Value, Address, sizeof(Value));
-    return Value;
+    void* value;
+    memcpy(&value, address, sizeof(value));
+    return value;
 }
 
 #define HIGH 1
@@ -48,52 +50,53 @@ inline void* pgm_read_ptr(AddressType const* Address)
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-void pinMode(uint8_t Pin, uint8_t Mode);
-void digitalWrite(uint8_t Pin, uint8_t Value);
-void shiftOut(uint8_t DataPin, uint8_t ClockPin, uint8_t BitOrder, uint8_t Value);
+void pinMode(uint8_t pin, uint8_t mode);
+void digitalWrite(uint8_t pin, uint8_t value);
+void shiftOut(uint8_t data_pin, uint8_t clock_pin, uint8_t bit_order, uint8_t value);
 unsigned long millis();
 unsigned long micros();
-void delay(unsigned long Milliseconds);
+void delay(unsigned long milliseconds);
 
 /* Serial as far as the examples use it, declared with the types of the Arduino core: it reads what a test or the
  * simulator has put into Mock::SerialInput and appends what the sketch prints to Mock::SerialOutput */
 class HardwareSerial {
   public:
-    void begin(unsigned long Baud);
+    void begin(unsigned long baud);
     int available();
     int read();
-    size_t print(char const* Text);
-    size_t println(char const* Text);
-    size_t print(__FlashStringHelper const* Text);
-    size_t println(__FlashStringHelper const* Text);
+    size_t print(char const* text);
+    size_t println(char const* text);
+    size_t print(__FlashStringHelper const* text);
+    size_t println(__FlashStringHelper const* text);
 };
 
 extern HardwareSerial Serial;
+// NOLINTEND(readability-identifier-naming)
 
-namespace Mock {
-    uint8_t const NumberOfPins = 64;
+namespace mock {
+    uint8_t const kNumberOfPins = 64;
 
-    extern uint8_t PinMode[NumberOfPins];
-    extern uint8_t PinLevel[NumberOfPins];
-    extern uint8_t ChipSelectPin;
-    extern bool TransactionOpen;
-    extern int32_t Errors;
-    extern int32_t Frames;
-    extern std::vector<byte> Frame;
-    extern std::vector<byte> LastFrame;
-    extern Max7219Chain Chain;
+    extern uint8_t pin_mode[kNumberOfPins];
+    extern uint8_t pin_level[kNumberOfPins];
+    extern uint8_t chip_select_pin;
+    extern bool transaction_open;
+    extern int32_t errors;
+    extern int32_t frames;
+    extern std::vector<byte> frame;
+    extern std::vector<byte> last_frame;
+    extern Max7219Chain chain;
     /* the bytes Serial has yet to read, and what the sketch has printed */
-    extern std::string SerialInput;
-    extern std::string SerialOutput;
+    extern std::string serial_input;
+    extern std::string serial_output;
     /* called after every latched frame and every millisecond delay() waits, so that the simulator can draw
      * while a sketch blocks in delay(); none in the tests */
-    extern void (*Tick)();
+    extern void (*tick)();
 
-    void reset(uint8_t sChipSelectPin, uint8_t NumberOfChips);
+    void Reset(uint8_t chip_select_pin, uint8_t number_of_chips);
     /* holds millis() at Milliseconds until the next reset(); delay() then moves it on without waiting */
-    void setMillis(uint32_t Milliseconds);
-    void transfer(uint8_t Value);
-    bool usesSpi();
+    void SetMillis(uint32_t milliseconds);
+    void Transfer(uint8_t value);
+    bool UsesSpi();
 }
 
 #endif

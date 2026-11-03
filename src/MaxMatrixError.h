@@ -15,8 +15,8 @@
  *                  weighed against it, error domains among them, is in docu/ErrorHandling.md.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_ERROR_H_
-#define _MAXMATRIX_ERROR_H_
+#ifndef MAXMATRIX_SRC_MAXMATRIXERROR_H_
+#define MAXMATRIX_SRC_MAXMATRIXERROR_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -31,7 +31,7 @@
 /*! passes on what Call returns, after reporting its error, if it has one, under Api: the name of the facade function, as
  * a string literal. See maxMatrixReportError() below. */
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
-#define MAXMATRIX_REPORT_ERROR(Api, Call)                           maxMatrixReportIfError(F(Api), Call)
+#define MAXMATRIX_REPORT_ERROR(Api, Call)                           MaxMatrixReportIfError(F(Api), Call)
 #else
 #define MAXMATRIX_REPORT_ERROR(Api, Call)                           (Call)
 #endif
@@ -41,15 +41,15 @@
  *  GLOBAL DATA TYPES AND STRUCTURES
  *****************************************************************************************************************************************************/
 /*! why a call did not do what it was asked; one byte, so that it returns in a register */
-typedef enum : uint8_t {
-    MAXMATRIX_E_OK = 0,                     /*!< no error */
-    MAXMATRIX_E_OUT_OF_RANGE,               /*!< a coordinate, module, sprite index, intensity or number beyond its range */
-    MAXMATRIX_E_UNKNOWN_CHAR,               /*!< the font has no sprite for the char */
-    MAXMATRIX_E_NO_TEXT,                    /*!< the text is NULL, or the text of a command empty */
-    MAXMATRIX_E_NOT_A_NUMBER,               /*!< the value of a command is empty or holds anything but digits */
-    MAXMATRIX_E_UNKNOWN_COMMAND,            /*!< no command has this name */
-    MAXMATRIX_E_LINE_TOO_LONG               /*!< a command line did not fit into MAXMATRIX_COMMAND_LINE_LENGTH */
-} MaxMatrixErrorType;
+enum class MaxMatrixError : uint8_t {
+    kOk = 0,                     /*!< no error */
+    kOutOfRange,               /*!< a coordinate, module, sprite index, intensity or number beyond its range */
+    kUnknownChar,               /*!< the font has no sprite for the char */
+    kNoText,                    /*!< the text is NULL, or the text of a command empty */
+    kNotANumber,               /*!< the value of a command is empty or holds anything but digits */
+    kUnknownCommand,            /*!< no command has this name */
+    kLineTooLong               /*!< a command line did not fit into MAXMATRIX_COMMAND_LINE_LENGTH */
+};
 
 
 /******************************************************************************************************************************************************
@@ -62,24 +62,24 @@ typedef enum : uint8_t {
 class MaxMatrixStatus
 {
   private:
-    MaxMatrixErrorType Error;
+    MaxMatrixError error_;
 
   public:
-    /*! \brief a status of the error, MAXMATRIX_E_OK when none is given; a function returns an error as it is */
-    MaxMatrixStatus(MaxMatrixErrorType sError = MAXMATRIX_E_OK) : Error(sError) {}
+    /*! \brief a status of the error, MaxMatrixError::kOk when none is given; a function returns an error as it is */
+    MaxMatrixStatus(MaxMatrixError error = MaxMatrixError::kOk) : error_(error) {}
 
     // get methods
-    /*! \brief why the call failed, or MAXMATRIX_E_OK */
-    MaxMatrixErrorType getError() const { return Error; }
-    __FlashStringHelper const* getErrorText() const;
+    /*! \brief why the call failed, or MaxMatrixError::kOk */
+    MaxMatrixError GetError() const { return error_; }
+    __FlashStringHelper const* GetErrorText() const;
 
     // methods
     /*! \brief whether the call did what it was asked */
-    bool isOk() const { return Error == MAXMATRIX_E_OK; }
+    bool IsOk() const { return error_ == MaxMatrixError::kOk; }
     /*! \brief whether the call failed for this reason */
-    bool operator==(MaxMatrixErrorType Other) const { return Error == Other; }
+    bool operator==(MaxMatrixError other) const { return error_ == other; }
     /*! \brief whether the call did not fail for this reason */
-    bool operator!=(MaxMatrixErrorType Other) const { return Error != Other; }
+    bool operator!=(MaxMatrixError other) const { return error_ != other; }
 };
 
 
@@ -94,30 +94,30 @@ template<typename ValueType>
 class MaxMatrixResult
 {
   private:
-    ValueType Value;
-    MaxMatrixErrorType Error;
+    ValueType value_;
+    MaxMatrixError error_;
 
   public:
     /*! \brief a result that holds a value; a function returns the value as it is */
-    MaxMatrixResult(ValueType sValue) : Value(sValue), Error(MAXMATRIX_E_OK) {}
+    MaxMatrixResult(ValueType value) : value_(value), error_(MaxMatrixError::kOk) {}
     /*! \brief a result that holds why there is no value; a function returns the error as it is */
-    MaxMatrixResult(MaxMatrixErrorType sError) : Value(), Error(sError) {}
+    MaxMatrixResult(MaxMatrixError error) : value_(), error_(error) {}
 
     // get methods
     /*! \brief the value; 0, or what ValueType() is, after an error */
-    ValueType getValue() const { return Value; }
-    /*! \brief why there is no value, or MAXMATRIX_E_OK */
-    MaxMatrixErrorType getError() const { return Error; }
+    ValueType GetValue() const { return value_; }
+    /*! \brief why there is no value, or MaxMatrixError::kOk */
+    MaxMatrixError GetError() const { return error_; }
     /*! \copydoc MaxMatrixStatus::getErrorText() */
-    __FlashStringHelper const* getErrorText() const { return MaxMatrixStatus(Error).getErrorText(); }
+    __FlashStringHelper const* GetErrorText() const { return MaxMatrixStatus(error_).GetErrorText(); }
 
     // methods
     /*! \brief whether there is a value */
-    bool isOk() const { return Error == MAXMATRIX_E_OK; }
+    bool IsOk() const { return error_ == MaxMatrixError::kOk; }
     /*! \brief whether the call failed for this reason */
-    bool operator==(MaxMatrixErrorType Other) const { return Error == Other; }
+    bool operator==(MaxMatrixError other) const { return error_ == other; }
     /*! \brief whether the call did not fail for this reason */
-    bool operator!=(MaxMatrixErrorType Other) const { return Error != Other; }
+    bool operator!=(MaxMatrixError other) const { return error_ != other; }
 };
 
 
@@ -129,15 +129,15 @@ class MaxMatrixResult
  * wrong. The default is weak and prints with maxMatrixPrintError(); a sketch replaces it by defining its own. Switched
  * off, MAXMATRIX_REPORT_ERROR() is the bare call: no report, no name in flash, no Serial. */
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
-void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error);
-void maxMatrixPrintError(__FlashStringHelper const* Api, MaxMatrixErrorType Error);
+void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error);
+void MaxMatrixPrintError(__FlashStringHelper const* api, MaxMatrixError error);
 
 /* passes a MaxMatrixStatus or MaxMatrixResult<T> on, after reporting its error, if it has one */
 template<typename ResultType>
-ResultType maxMatrixReportIfError(__FlashStringHelper const* Api, ResultType Result)
+ResultType MaxMatrixReportIfError(__FlashStringHelper const* api, ResultType result)
 {
-    if(!Result.isOk()) maxMatrixReportError(Api, Result.getError());
-    return Result;
+    if(!result.IsOk()) MaxMatrixReportError(api, result.GetError());
+    return result;
 }
 #endif
 

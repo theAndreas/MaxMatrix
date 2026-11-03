@@ -63,14 +63,14 @@ char Text[] = "Hello World!   ";
 void setup()
 {
     Matrix.init();
-    Matrix.setModuleOrientation(MAXMATRIX_MODULE_ORIENTATION_270);    // FC-16, see "Module orientation"
+    Matrix.setModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see "Module orientation"
     Matrix.setTextWithShift(Text);
 }
 
 void loop()
 {
     Matrix.shiftTask();     // shifts the text one column every 50 ms
-    if(Matrix.getState() == MAXMATRIX_STATE_READY) Matrix.setTextWithShift(Text);
+    if(Matrix.getState() == MaxMatrixState::kReady) Matrix.setTextWithShift(Text);
 }
 ```
 
@@ -79,7 +79,7 @@ passed since the last one. `setShiftInterval()` sets the interval in millisecond
 step, for a sketch that times the steps itself. A call that comes late, because `loop()` was busy, takes one step and
 does not catch up.
 
-`setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MAXMATRIX_STATE_READY`.
+`setTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MaxMatrixState::kReady`.
 
 More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
@@ -137,12 +137,12 @@ MaxMatrixResult<bool> Lit = Matrix.getDot(X, Y);
 if(Lit.isOk() && Lit.getValue()) { /* the LED at X, Y is on */ }
 
 MaxMatrixStatus Status = Matrix.setText(Text);
-if(Status == MAXMATRIX_E_UNKNOWN_CHAR) { /* the font lacks a char of Text */ }
+if(Status == MaxMatrixError::kUnknownChar) { /* the font lacks a char of Text */ }
 ```
 
-The errors are `MAXMATRIX_E_OUT_OF_RANGE`, `MAXMATRIX_E_UNKNOWN_CHAR` and `MAXMATRIX_E_NO_TEXT`, and from
-`MaxMatrixCommand` also `MAXMATRIX_E_NOT_A_NUMBER`, `MAXMATRIX_E_UNKNOWN_COMMAND` and `MAXMATRIX_E_LINE_TOO_LONG`;
-`MAXMATRIX_E_OK` means none. A status is not a `bool`: write `Status.isOk()`, not `if(Status)`.
+The errors are `MaxMatrixError::kOutOfRange`, `MaxMatrixError::kUnknownChar` and `MaxMatrixError::kNoText`, and from
+`MaxMatrixCommand` also `MaxMatrixError::kNotANumber`, `MaxMatrixError::kUnknownCommand` and `MaxMatrixError::kLineTooLong`;
+`MaxMatrixError::kOk` means none. A status is not a `bool`: write `Status.isOk()`, not `if(Status)`.
 `Serial.println(Status.getErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
 and a sketch that never asks for one does not carry them.
 
@@ -154,7 +154,7 @@ whose `Serial` carries something else, or which would rather blink or halt, defi
 that prints is left out:
 
 ```cpp
-void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
+void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixError Error)
 {
     digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -208,11 +208,11 @@ MaxMatrixCommand Command;
 void loop()
 {
     while(Serial.available() > 0) {
-        MaxMatrixResult<MaxMatrixCommandStateType> Line = Command.feed(Matrix, Serial.read());
+        MaxMatrixResult<MaxMatrixCommandState> Line = Command.feed(Matrix, Serial.read());
         if(!Line.isOk()) {
             Serial.print(F("error: "));
             Serial.println(Line.getErrorText());
-        } else if(Line.getValue() == MAXMATRIX_COMMAND_DONE) {
+        } else if(Line.getValue() == MaxMatrixCommandState::kDone) {
             Serial.println(F("ok"));
         }
     }
@@ -220,8 +220,8 @@ void loop()
 }
 ```
 
-`feed()` returns `MAXMATRIX_COMMAND_PENDING` while a line goes on, `MAXMATRIX_COMMAND_DONE` when it is carried out, and
-why it failed otherwise: `intensity=16` is `MAXMATRIX_E_OUT_OF_RANGE`, `intensity=x` `MAXMATRIX_E_NOT_A_NUMBER`. A line
+`feed()` returns `MaxMatrixCommandState::kPending` while a line goes on, `MaxMatrixCommandState::kDone` when it is carried out, and
+why it failed otherwise: `intensity=16` is `MaxMatrixError::kOutOfRange`, `intensity=x` `MaxMatrixError::kNotANumber`. A line
 longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The class keeps the
 line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it pays nothing.
 
@@ -246,12 +246,12 @@ Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX
 
 | Module | Module orientation |
 |--------|--------------------|
-| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MAXMATRIX_MODULE_ORIENTATION_270` (checked on hardware) |
-| ICStation (`ICSTATION_HW`) | `MAXMATRIX_MODULE_ORIENTATION_90` |
-| Generic (`GENERIC_HW`) | `MAXMATRIX_MODULE_ORIENTATION_180` |
-| `DR0CR0RR1_HW` | `MAXMATRIX_MODULE_ORIENTATION_0` |
+| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MaxMatrixModuleOrientation::k270` (checked on hardware) |
+| ICStation (`ICSTATION_HW`) | `MaxMatrixModuleOrientation::k90` |
+| Generic (`GENERIC_HW`) | `MaxMatrixModuleOrientation::k180` |
+| `DR0CR0RR1_HW` | `MaxMatrixModuleOrientation::k0` |
 
-With the input on the right, the matrix orientation stays at `MAXMATRIX_MATRIX_ORIENTATION_0`; mounted upside down, it is `MAXMATRIX_MATRIX_ORIENTATION_180` with the same module orientation. Parola modules (`PAROLA_HW`) are a mirror image of these and cannot be shown upright yet.
+With the input on the right, the matrix orientation stays at `MaxMatrixMatrixOrientation::k0`; mounted upside down, it is `MaxMatrixMatrixOrientation::k180` with the same module orientation. Parola modules (`PAROLA_HW`) are a mirror image of these and cannot be shown upright yet.
 
 How the bytes of the MAX7219 lie on the LEDs in each module orientation is drawn in [docu/](docu/README.md); a sketch
 does not need it, only work on the library does.

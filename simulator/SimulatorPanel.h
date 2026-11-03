@@ -15,8 +15,8 @@
  *                  shows it wrong here too - which is the point. Knows nothing of where the panel is drawn.
  *
  *****************************************************************************************************************************************************/
-#ifndef _SIMULATOR_PANEL_H_
-#define _SIMULATOR_PANEL_H_
+#ifndef MAXMATRIX_SIMULATOR_SIMULATORPANEL_H_
+#define MAXMATRIX_SIMULATOR_SIMULATORPANEL_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -43,32 +43,32 @@
 class SimulatorPanel
 {
   private:
-    std::string WiringName;
-    Max7219WiringType const* Wiring;
-    bool UpsideDown;
-    int32_t DrawnFrames;
-    uint32_t LastDraw;
-    bool DrawRequested;
+    std::string wiring_name_;
+    Max7219Wiring const* wiring_;
+    bool upside_down_;
+    int32_t drawn_frames_;
+    uint32_t last_draw_;
+    bool draw_requested_;
 
-    static Max7219WiringType const* findWiring(std::string const&);
+    static Max7219Wiring const* FindWiring(std::string const&);
 
   public:
     SimulatorPanel();
 
     // get methods
-    std::string const& getWiringName() const { return WiringName; }
-    bool isUpsideDown() const { return UpsideDown; }
-    std::string getText(char const*, char const*, char const*) const;
-    uint8_t getIntensity(uint8_t) const;
+    std::string const& GetWiringName() const { return wiring_name_; }
+    bool IsUpsideDown() const { return upside_down_; }
+    std::string GetText(char const*, char const*, char const*) const;
+    uint8_t GetIntensity(uint8_t) const;
 
     // set methods
-    bool setWiring(std::string const&);
-    void setUpsideDown(bool);
+    bool SetWiring(std::string const&);
+    void SetUpsideDown(bool);
 
     // methods
-    void requestDraw() { DrawRequested = true; }
-    bool isDrawDue(uint32_t) const;
-    void setDrawn(uint32_t);
+    void RequestDraw() { draw_requested_ = true; }
+    bool IsDrawDue(uint32_t) const;
+    void SetDrawn(uint32_t);
 };
 
 #endif

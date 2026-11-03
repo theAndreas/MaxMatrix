@@ -1,6 +1,9 @@
 /* Binary constants as the Arduino core defines them in binary.h, generated for B00000000 to B11111111. */
-#ifndef _MOCK_BINARY_H_
-#define _MOCK_BINARY_H_
+#ifndef MAXMATRIX_TEST_MOCK_BINARY_H_
+#define MAXMATRIX_TEST_MOCK_BINARY_H_
+
+/* The names of the Arduino core, which the library calls by them. */
+// NOLINTBEGIN(readability-identifier-naming)
 
 #define B00000000 0
 #define B00000001 1
@@ -259,4 +262,5 @@
 #define B11111110 254
 #define B11111111 255
 
+// NOLINTEND(readability-identifier-naming)
 #endif

@@ -15,8 +15,8 @@
  *                  
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_STANDARD_TYPES_H_
-#define _MAXMATRIX_STANDARD_TYPES_H_
+#ifndef MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
+#define MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES

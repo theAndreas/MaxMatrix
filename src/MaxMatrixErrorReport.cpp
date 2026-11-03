@@ -19,8 +19,6 @@
  *                  nothing else defines the report or a sketch calls maxMatrixPrintError().
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_ERROR_REPORT_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -43,9 +41,9 @@
  *  \param[in]      Error       why it failed
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
-__attribute__((weak)) void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
+__attribute__((weak)) void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error)
 {
-    maxMatrixPrintError(Api, Error);
+    MaxMatrixPrintError(api, error);
 } /* maxMatrixReportError */
 
 
@@ -61,12 +59,12 @@ __attribute__((weak)) void maxMatrixReportError(__FlashStringHelper const* Api, 
  *  \param[in]      Error       why it failed
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
-void maxMatrixPrintError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
+void MaxMatrixPrintError(__FlashStringHelper const* api, MaxMatrixError error)
 {
     Serial.print(F("MaxMatrix "));
-    Serial.print(Api);
+    Serial.print(api);
     Serial.print(F(": "));
-    Serial.println(MaxMatrixStatus(Error).getErrorText());
+    Serial.println(MaxMatrixStatus(error).GetErrorText());
 } /* maxMatrixPrintError */
 #endif
 

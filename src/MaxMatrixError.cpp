@@ -14,8 +14,6 @@
  *      \details    The text of every error, for a sketch that prints it.
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_ERROR_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -27,22 +25,22 @@
  *****************************************************************************************************************************************************/
 /* The texts and the table of them lie in flash. A switch that returned F("…") for each error was turned by avr-gcc into
  * a table of pointers in .rodata, which the Uno copies into RAM: 14 bytes for seven errors. */
-static char const ErrorTextOk[] PROGMEM = "ok";
-static char const ErrorTextOutOfRange[] PROGMEM = "out of range";
-static char const ErrorTextUnknownChar[] PROGMEM = "unknown char";
-static char const ErrorTextNoText[] PROGMEM = "no text";
-static char const ErrorTextNotANumber[] PROGMEM = "not a number";
-static char const ErrorTextUnknownCommand[] PROGMEM = "unknown command";
-static char const ErrorTextLineTooLong[] PROGMEM = "line too long";
-static char const ErrorTextUnknownError[] PROGMEM = "unknown error";
+static char const kErrorTextOk[] PROGMEM = "ok";
+static char const kErrorTextOutOfRange[] PROGMEM = "out of range";
+static char const kErrorTextUnknownChar[] PROGMEM = "unknown char";
+static char const kErrorTextNoText[] PROGMEM = "no text";
+static char const kErrorTextNotANumber[] PROGMEM = "not a number";
+static char const kErrorTextUnknownCommand[] PROGMEM = "unknown command";
+static char const kErrorTextLineTooLong[] PROGMEM = "line too long";
+static char const kErrorTextUnknownError[] PROGMEM = "unknown error";
 
-/* in the order of MaxMatrixErrorType */
-static char const* const ErrorTexts[] PROGMEM = {
-    ErrorTextOk, ErrorTextOutOfRange, ErrorTextUnknownChar, ErrorTextNoText, ErrorTextNotANumber, ErrorTextUnknownCommand,
-    ErrorTextLineTooLong
+/* in the order of MaxMatrixError */
+static char const* const kErrorTexts[] PROGMEM = {
+    kErrorTextOk, kErrorTextOutOfRange, kErrorTextUnknownChar, kErrorTextNoText, kErrorTextNotANumber, kErrorTextUnknownCommand,
+    kErrorTextLineTooLong
 };
 
-static_assert(sizeof(ErrorTexts) / sizeof(ErrorTexts[0]) == MAXMATRIX_E_LINE_TOO_LONG + 1, "every error needs a text");
+static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) == static_cast<uint8_t>(MaxMatrixError::kLineTooLong) + 1, "every error needs a text");
 
 
 /******************************************************************************************************************************************************
@@ -54,17 +52,18 @@ static_assert(sizeof(ErrorTexts) / sizeof(ErrorTexts[0]) == MAXMATRIX_E_LINE_TOO
 ******************************************************************************************************************************************************/
 /*! \brief          the error in words
  *  \details        this function returns a few words a sketch can print with Serial.print(), "out of range" for
- *                  MAXMATRIX_E_OUT_OF_RANGE. Serial.print() reads a __FlashStringHelper from flash, so the text needs no
+ *                  MaxMatrixError::kOutOfRange. Serial.print() reads a __FlashStringHelper from flash, so the text needs no
  *                  RAM. A sketch that never calls this function pays nothing, as the linker drops it with its texts.
  *
  *  \return         the text, in flash; "unknown error" for a byte cast to the enum that is none of its values
  *****************************************************************************************************************************************************/
-__FlashStringHelper const* MaxMatrixStatus::getErrorText() const
+__FlashStringHelper const* MaxMatrixStatus::GetErrorText() const
 {
-    char const* Text = ErrorTextUnknownError;
+    char const* text = kErrorTextUnknownError;
+    uint8_t const index = static_cast<uint8_t>(error_);
 
-    if(Error < sizeof(ErrorTexts) / sizeof(ErrorTexts[0])) Text = static_cast<char const*>(pgm_read_ptr(&ErrorTexts[Error]));
-    return reinterpret_cast<__FlashStringHelper const*>(Text);
+    if(index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));
+    return reinterpret_cast<__FlashStringHelper const*>(text);
 } /* getErrorText */
 
 

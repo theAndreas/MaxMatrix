@@ -15,7 +15,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
   - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
-  - `MaxMatrixError.h` / `.cpp` — `MaxMatrixErrorType`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
+  - `MaxMatrixError.h` / `.cpp` — `MaxMatrixError`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
     what a function that can fail returns, with `getErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
   - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
@@ -143,10 +143,10 @@ top and one above each test.
   too, so its classes start with `Simulator`.
 - Variables, parameters and members `PascalCase`.
 - A setter parameter that collides with its member is prefixed `s`
-  (`setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation)` assigning
+  (`setModuleOrientation(MaxMatrixModuleOrientation sModuleOrientation)` assigning
   `ModuleOrientation`).
-- Types end in `Type` (`MaxMatrixStateType`); enum values and macros are upper case and
-  prefixed with the module (`MAXMATRIX_STATE_READY`, `MAX7219_REG_INTENSITY_ADDRESS`).
+- Types end in `Type` (`MaxMatrixState`); enum values and macros are upper case and
+  prefixed with the module (`MaxMatrixState::kReady`, `MAX7219_REG_INTENSITY_ADDRESS`).
 
 ### Integer types
 
@@ -187,7 +187,7 @@ SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
 
 ### Return values
 
-A function of the library that can fail says why, in `MaxMatrixErrorType`
+A function of the library that can fail says why, in `MaxMatrixError`
 (`src/MaxMatrixError.h`): it returns a `MaxMatrixStatus`, or a getter of a single value a
 `MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
 `E_OK` was 0 and `if(Matrix.setText(…))` was true on an error; code asks `isOk()` or compares
@@ -206,7 +206,7 @@ leaves out what lies off the panel rather than failing, because drawing partly o
 what a moving sprite or text does all the time (see `MaxMatrixPanel::setDot()`); `setDot`,
 `setColumn` and `setRow` cannot fail at all and return `void`, while `setChar` and `setText`
 still fail on a char the font lacks. A getter or a setting out of range returns
-`MAXMATRIX_E_OUT_OF_RANGE` and changes nothing. `MaxMatrixCommand` checks the coordinates it is
+`MaxMatrixError::kOutOfRange` and changes nothing. `MaxMatrixCommand` checks the coordinates it is
 sent itself, so that a typed line that would do nothing says so.
 
 With `MAXMATRIX_DEV_ERROR_DETECT`, every function of the facade that fails reports its name and
@@ -220,7 +220,7 @@ on the Uno.
 
 Host code whose failures no sketch sees, the simulator and `DocuPictures`, returns `bool`, `true`
 for success: each of its functions fails for one reason, which its `\return` names beside `false`.
-`MaxMatrixErrorType` has no words for a port that is taken, and `std::optional` is C++17, while the
+`MaxMatrixError` has no words for a port that is taken, and `std::optional` is C++17, while the
 simulator is built as `gnu++11` with the library.
 
 ### Layout of a source file
@@ -235,7 +235,7 @@ Indentation is four spaces.
 What a sketch reads is in the reference, so it is documented whole: in `src/MaxMatrix.h`,
 `MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixStandardTypes.h` and `Command/`, every class,
 member, type, enum value and macro has a `/*! */` block or a `/*!< */` beside it, and the types
-the facade takes from the parts, such as `spriteType` and the orientations, as well. A one-line
+the facade takes from the parts, such as `MaxMatrixSprite` and the orientations, as well. A one-line
 function in a header gets a one-line `\brief`; one that only passes a call on takes the block of
 the function it calls with `\copydoc`, rather than a second text that would drift from it.
 `tools/docs.py` fails on a gap there; below the facade a member may go without.

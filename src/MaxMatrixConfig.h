@@ -14,8 +14,8 @@
  *      \details    The parameters every part of the library builds on: the size of the chain and how it is driven.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_CONFIG_H_
-#define _MAXMATRIX_CONFIG_H_
+#ifndef MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
+#define MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES

@@ -15,8 +15,6 @@
  *                  into the repository, so it has to come out the same on every host.
  *
  *****************************************************************************************************************************************************/
-#define _DOCU_SVG_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -47,12 +45,12 @@
  *  \param[in]      sHeight         height in pixels
  *  \param[in]      sTop            the coordinate shown at the top edge
  *****************************************************************************************************************************************************/
-DocuSvg::DocuSvg(uint16_t sWidth, uint16_t sHeight, int16_t sTop)
+DocuSvg::DocuSvg(uint16_t width, uint16_t height, int16_t top)
 {
-    Width = sWidth;
-    Height = sHeight;
-    Top = sTop;
-    addRect(0, Top, Width, Height, "#ffffff");
+    width_ = width;
+    height_ = height;
+    top_ = top;
+    AddRect(0, top_, width_, height_, "#ffffff");
 } /* DocuSvg */
 
 
@@ -64,14 +62,14 @@ DocuSvg::DocuSvg(uint16_t sWidth, uint16_t sHeight, int16_t sTop)
  *
  *  \return         the SVG text
  *****************************************************************************************************************************************************/
-std::string DocuSvg::getDocument() const
+std::string DocuSvg::GetDocument() const
 {
-    std::ostringstream Document;
+    std::ostringstream document;
 
-    Document << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << Width << "\" height=\"" << Height
-             << "\" viewBox=\"0 " << Top << " " << Width << " " << Height << "\" font-family=\"" << DOCU_SVG_FONT << "\">\n"
-             << Body.str() << "</svg>\n";
-    return Document.str();
+    document << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width_ << "\" height=\"" << height_
+             << "\" viewBox=\"0 " << top_ << " " << width_ << " " << height_ << "\" font-family=\"" << DOCU_SVG_FONT << "\">\n"
+             << body_.str() << "</svg>\n";
+    return document.str();
 } /* getDocument */
 
 
@@ -89,10 +87,10 @@ std::string DocuSvg::getDocument() const
  *  \param[in]      Stroke          outline colour, or "none" for no outline
  *  \param[in]      Radius          radius of the corners
  *****************************************************************************************************************************************************/
-void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHeight, char const* Fill, char const* Stroke, uint8_t Radius)
+void DocuSvg::AddRect(int16_t x, int16_t y, uint16_t rect_width, uint16_t rect_height, char const* fill, char const* stroke, uint8_t radius)
 {
-    Body << "  <rect x=\"" << X << "\" y=\"" << Y << "\" width=\"" << RectWidth << "\" height=\"" << RectHeight
-         << "\" rx=\"" << static_cast<uint16_t>(Radius) << "\" fill=\"" << Fill << "\" stroke=\"" << Stroke << "\" stroke-width=\"2\"/>\n";
+    body_ << "  <rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << rect_width << "\" height=\"" << rect_height
+         << "\" rx=\"" << static_cast<uint16_t>(radius) << "\" fill=\"" << fill << "\" stroke=\"" << stroke << "\" stroke-width=\"2\"/>\n";
 } /* addRect */
 
 
@@ -110,10 +108,10 @@ void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHei
  *  \param[in]      Anchor          "start", "middle" or "end": which part of the text lies at X
  *  \param[in]      Bold            true for bold
  *****************************************************************************************************************************************************/
-void DocuSvg::addText(int16_t X, int16_t Y, std::string const& Text, uint8_t Size, char const* Fill, char const* Anchor, bool Bold)
+void DocuSvg::AddText(int16_t x, int16_t y, std::string const& text, uint8_t size, char const* fill, char const* anchor, bool bold)
 {
-    Body << "  <text x=\"" << X << "\" y=\"" << Y << "\" font-size=\"" << static_cast<uint16_t>(Size) << "\" fill=\"" << Fill
-         << "\" text-anchor=\"" << Anchor << "\"" << (Bold ? " font-weight=\"bold\"" : "") << ">" << Text << "</text>\n";
+    body_ << "  <text x=\"" << x << "\" y=\"" << y << "\" font-size=\"" << static_cast<uint16_t>(size) << "\" fill=\"" << fill
+         << "\" text-anchor=\"" << anchor << "\"" << (bold ? " font-weight=\"bold\"" : "") << ">" << text << "</text>\n";
 } /* addText */
 
 
@@ -129,15 +127,15 @@ void DocuSvg::addText(int16_t X, int16_t Y, std::string const& Text, uint8_t Siz
  *  \param[in]      Thickness       width of the line
  *  \param[in]      Colour          colour of line and head
  *****************************************************************************************************************************************************/
-void DocuSvg::addArrow(int16_t FromX, int16_t ToX, int16_t Y, int16_t Thickness, char const* Colour)
+void DocuSvg::AddArrow(int16_t from_x, int16_t to_x, int16_t y, int16_t thickness, char const* colour)
 {
-    int16_t const Direction = ToX < FromX ? 1 : -1;
-    int16_t const HeadBase = ToX + Direction * DOCU_SVG_ARROW_HEAD_LENGTH;
+    int16_t const direction = to_x < from_x ? 1 : -1;
+    int16_t const head_base = to_x + direction * DOCU_SVG_ARROW_HEAD_LENGTH;
 
-    Body << "  <line x1=\"" << FromX << "\" y1=\"" << Y << "\" x2=\"" << HeadBase << "\" y2=\"" << Y << "\" stroke=\"" << Colour
-         << "\" stroke-width=\"" << Thickness << "\"/>\n";
-    Body << "  <polygon points=\"" << ToX << "," << Y << " " << HeadBase << "," << Y - DOCU_SVG_ARROW_HEAD_HALF_WIDTH << " " << HeadBase << ","
-         << Y + DOCU_SVG_ARROW_HEAD_HALF_WIDTH << "\" fill=\"" << Colour << "\"/>\n";
+    body_ << "  <line x1=\"" << from_x << "\" y1=\"" << y << "\" x2=\"" << head_base << "\" y2=\"" << y << "\" stroke=\"" << colour
+         << "\" stroke-width=\"" << thickness << "\"/>\n";
+    body_ << "  <polygon points=\"" << to_x << "," << y << " " << head_base << "," << y - DOCU_SVG_ARROW_HEAD_HALF_WIDTH << " " << head_base << ","
+         << y + DOCU_SVG_ARROW_HEAD_HALF_WIDTH << "\" fill=\"" << colour << "\"/>\n";
 } /* addArrow */
 
 

@@ -14,8 +14,6 @@
  *      \details    Chars and strings on the matrix, standing or shifting in from the right.
  *
  *****************************************************************************************************************************************************/
-#define _MAXMATRIX_TEXT_SOURCE_
-
 /******************************************************************************************************************************************************
  * INCLUDES
  *****************************************************************************************************************************************************/
@@ -34,10 +32,10 @@
  *****************************************************************************************************************************************************/
 MaxMatrixText::MaxMatrixText()
 {
-    String = NULL;
-    SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_READY;
-    SpaceBetweenChars = MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE;
-    for(byte i = 0; i < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS; i++) SpriteBuffer[i] = 0;
+    string_ = NULL;
+    sprite_shift_counter_ = kShiftIdle;
+    space_between_chars_ = MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE;
+    for(byte i = 0; i < MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS; i++) sprite_buffer_[i] = 0;
 } /* MaxMatrixText */
 
 
@@ -50,17 +48,17 @@ MaxMatrixText::MaxMatrixText()
  *  \param[in]      Panel       the matrix the text is drawn on
  *  \param[in]      X           x coordinate
  *  \param[in]      Y           y coordinate
- *  \param[in]      Char        char to print on matrix
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; nothing is drawn
+ *  \param[in]      c        char to print on matrix
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char; nothing is drawn
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setChar(MaxMatrixPanel& Panel, int16_t X, int16_t Y, char Char)
+MaxMatrixStatus MaxMatrixText::SetChar(MaxMatrixPanel& panel, int16_t x, int16_t y, char c)
 {
-    spriteType Sprite;
-    MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &Sprite);
+    MaxMatrixSprite sprite;
+    MaxMatrixStatus status = MaxMatrixFont::GetCharSprite(c, &sprite);
 
-    if(Status.isOk()) setSprite(Panel, X, Y, Sprite);
-    return Status;
+    if(status.IsOk()) SetSprite(panel, x, y, sprite);
+    return status;
 } /* setChar */
 
 
@@ -71,16 +69,16 @@ MaxMatrixStatus MaxMatrixText::setChar(MaxMatrixPanel& Panel, int16_t X, int16_t
  *  \details        this function shifts a given char into the matrix and stops shifting on the right side.
  *                  Every shift process will be triggered by calling the shiftMainFunction. 
  *                  
- *  \param[in]      Char        char to print on matrix
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_UNKNOWN_CHAR    the font has no sprite for the char; nothing starts
+ *  \param[in]      c        char to print on matrix
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kUnknownChar    the font has no sprite for the char; nothing starts
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setCharWithShift(char Char)
+MaxMatrixStatus MaxMatrixText::SetCharWithShift(char c)
 {
-    MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &SpriteBuffer);
+    MaxMatrixStatus status = MaxMatrixFont::GetCharSprite(c, &sprite_buffer_);
 
-    if(Status.isOk()) SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
-    return Status;
+    if(status.IsOk()) sprite_shift_counter_ = kShiftStart;
+    return status;
 } /* setCharWithShift */
 
 
@@ -92,27 +90,27 @@ MaxMatrixStatus MaxMatrixText::setCharWithShift(char Char)
  *                  
  *  \param[in]      Panel       the matrix the text is drawn on
  *  \param[in]      String        string to print on matrix
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_NO_TEXT         the string is NULL
- *                  MAXMATRIX_E_UNKNOWN_CHAR    the font lacks a char; the chars before it are drawn
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kNoText         the string is NULL
+ *                  MaxMatrixError::kUnknownChar    the font lacks a char; the chars before it are drawn
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, char const* String) const
+MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel, char const* string) const
 {
-    spriteType Sprite;
-    int16_t CharColumn = 0;
-    char Char;
+    MaxMatrixSprite sprite;
+    int16_t char_column = 0;
+    char c;
 
-    if(String == NULL) return MAXMATRIX_E_NO_TEXT;
-    while(*String != STD_NULL_CHARACTER)
+    if(string == NULL) return MaxMatrixError::kNoText;
+    while(*string != STD_NULL_CHARACTER)
     {
-        String += MaxMatrixFont::decodeChar(String, &Char);
-        MaxMatrixStatus Status = MaxMatrixFont::getCharSprite(Char, &Sprite);
-        if(!Status.isOk()) return Status;
-        setSprite(Panel, CharColumn, 0, Sprite);
-        CharColumn = static_cast<int16_t>(CharColumn + Sprite[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars);
-        if(CharColumn > MAXMATRIX_NUMBER_OF_COLUMNS) break;
+        string += MaxMatrixFont::DecodeChar(string, &c);
+        MaxMatrixStatus status = MaxMatrixFont::GetCharSprite(c, &sprite);
+        if(!status.IsOk()) return status;
+        SetSprite(panel, char_column, 0, sprite);
+        char_column = static_cast<int16_t>(char_column + sprite[kSpriteWidth] + space_between_chars_);
+        if(char_column > MAXMATRIX_NUMBER_OF_COLUMNS) break;
     }
-    return MAXMATRIX_E_OK;
+    return MaxMatrixError::kOk;
 } /* setText */
 
 
@@ -124,15 +122,15 @@ MaxMatrixStatus MaxMatrixText::setText(MaxMatrixPanel& Panel, char const* String
  *                  when the last char appears on the matrix.
  *
  *  \param[in]      sString     string to print on matrix
- *  \return         MAXMATRIX_E_OK
- *                  MAXMATRIX_E_NO_TEXT         the string is NULL; nothing starts
+ *  \return         MaxMatrixError::kOk
+ *                  MaxMatrixError::kNoText         the string is NULL; nothing starts
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixText::setTextWithShift(char* sString)
+MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* string)
 {
-    if(sString == NULL) return MAXMATRIX_E_NO_TEXT;
-    SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_READY;
-    String = sString;
-    return MAXMATRIX_E_OK;
+    if(string == NULL) return MaxMatrixError::kNoText;
+    sprite_shift_counter_ = kShiftIdle;
+    string_ = string;
+    return MaxMatrixError::kOk;
 } /* setTextWithShift */
 
 
@@ -147,23 +145,23 @@ MaxMatrixStatus MaxMatrixText::setTextWithShift(char* sString)
  *  \param[in]      Y           y coordinate
  *  \param[in]      Sprite      sprite from sprite table (width, height, value column 1 ... 5)
  *****************************************************************************************************************************************************/
-void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, spriteType const Sprite)
+void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixSprite const sprite)
 {
-    byte SpriteWidth = Sprite[ASCII_TABLE_SPRITE_WIDTH];
-    byte SpriteHeight = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
+    byte sprite_width = sprite[kSpriteWidth];
+    byte sprite_height = sprite[kSpriteHeight];
     
     /* if height of Sprite = height of Matrix set whole column; the panel leaves out what lies off it */
-    if(SpriteHeight == MAXMATRIX_ROW_NUMBER_OF_MODULE && Y == 0) {
-        for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
+    if(sprite_height == MAXMATRIX_ROW_NUMBER_OF_MODULE && y == 0) {
+        for(byte sprite_column = 0; sprite_column < sprite_width; sprite_column++)
         {
-            Panel.setColumn(static_cast<int16_t>(X + SpriteColumn), Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1]);
+            panel.SetColumn(static_cast<int16_t>(x + sprite_column), sprite[sprite_column + kSpriteColumn1]);
         }
     } else { /* otherwise we have to set every single dot */
-        for(byte SpriteColumn = 0; SpriteColumn < SpriteWidth; SpriteColumn++)
+        for(byte sprite_column = 0; sprite_column < sprite_width; sprite_column++)
         {
-            for(byte SpriteRow = 0; SpriteRow < SpriteHeight; SpriteRow++)
+            for(byte sprite_row = 0; sprite_row < sprite_height; sprite_row++)
             {
-                Panel.setDot(static_cast<int16_t>(X + SpriteColumn), static_cast<int16_t>(Y + SpriteRow), bitRead(Sprite[SpriteColumn + ASCII_TABLE_SPRITE_COLUMN1], SpriteRow));
+                panel.SetDot(static_cast<int16_t>(x + sprite_column), static_cast<int16_t>(y + sprite_row), bitRead(sprite[sprite_column + kSpriteColumn1], sprite_row));
             }
         }
     }
@@ -178,10 +176,10 @@ void MaxMatrixText::setSprite(MaxMatrixPanel& Panel, int16_t X, int16_t Y, sprit
  *                  
  *  \param[in]      sSpaceBetweenChars      number of spaces
  *****************************************************************************************************************************************************/
-void MaxMatrixText::setSpaceBetweenChars(byte sSpaceBetweenChars)
+void MaxMatrixText::SetSpaceBetweenChars(byte space_between_chars)
 {
     /* every byte value is a valid number of spaces, so it cannot fail */
-    SpaceBetweenChars = sSpaceBetweenChars;
+    space_between_chars_ = space_between_chars;
 } /* setSpaceBetweenChars */
 
 
@@ -194,18 +192,18 @@ void MaxMatrixText::setSpaceBetweenChars(byte sSpaceBetweenChars)
  *  \return         true while the char or the space after it is still shifting
  *  \pre            has to be called from MaxMatrix::shiftTask() or stringShiftTask()
  *****************************************************************************************************************************************************/
-bool MaxMatrixText::charShiftTask(MaxMatrixPanel& Panel)
+bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
 {
-    Panel.shiftLeft(false, true);
-    SpriteShiftCounter++;
+    panel.ShiftLeft(false, true);
+    sprite_shift_counter_++;
 
     /* if sprite is completed set only spaces */
-    if(SpriteShiftCounter <= SpriteBuffer[ASCII_TABLE_SPRITE_WIDTH]) {
-        setSprite(Panel, MAXMATRIX_NUMBER_OF_COLUMNS - SpriteShiftCounter, 0, SpriteBuffer);
+    if(sprite_shift_counter_ <= sprite_buffer_[kSpriteWidth]) {
+        SetSprite(panel, MAXMATRIX_NUMBER_OF_COLUMNS - sprite_shift_counter_, 0, sprite_buffer_);
     }
     /* if sprite and spaces are completed task has finished */
-    else if(SpriteShiftCounter == SpriteBuffer[ASCII_TABLE_SPRITE_WIDTH] + SpaceBetweenChars + 1) {
-        SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_READY;
+    else if(sprite_shift_counter_ == sprite_buffer_[kSpriteWidth] + space_between_chars_ + 1) {
+        sprite_shift_counter_ = kShiftIdle;
         return false;
     }
     return true;
@@ -221,28 +219,28 @@ bool MaxMatrixText::charShiftTask(MaxMatrixPanel& Panel)
  *  \return         true while the string is still shifting
  *  \pre            has to be called from MaxMatrix::shiftTask()
  *****************************************************************************************************************************************************/
-bool MaxMatrixText::stringShiftTask(MaxMatrixPanel& Panel)
+bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
 {
-    char Char;
+    char c;
 
     /* has char shift task finished shifting sprite or char */
-    if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY)
+    if(sprite_shift_counter_ == kShiftIdle)
     {
         /* Unknown chars are skipped within this call: a call spent on one sent nothing, and the text
          * stood still for a step. So read on to the next known char or to the end of the string. */
-        while(*String != STD_NULL_CHARACTER && SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_READY) {
-            String += MaxMatrixFont::decodeChar(String, &Char);
-            if(MaxMatrixFont::getCharSprite(Char, &SpriteBuffer).isOk()) SpriteShiftCounter = MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING;
+        while(*string_ != STD_NULL_CHARACTER && sprite_shift_counter_ == kShiftIdle) {
+            string_ += MaxMatrixFont::DecodeChar(string_, &c);
+            if(MaxMatrixFont::GetCharSprite(c, &sprite_buffer_).IsOk()) sprite_shift_counter_ = kShiftStart;
         }
-        if(SpriteShiftCounter == MAXMATRIX_SPRITE_SHIFT_STATE_RUNNING) {
-            charShiftTask(Panel);
+        if(sprite_shift_counter_ == kShiftStart) {
+            CharShiftTask(panel);
         } else { /* end of string reached, task has finished */
-            Panel.shiftLeft(false, true);
+            panel.ShiftLeft(false, true);
             return false;
         }
     } else {
         /* go on shifting Sprite; the end of a char is not the end of the string */
-        charShiftTask(Panel);
+        CharShiftTask(panel);
     }
     return true;
 } /* stringShiftTask */

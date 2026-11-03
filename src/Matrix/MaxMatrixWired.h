@@ -15,8 +15,8 @@
  *                  only changes the buffer; send() brings the changes to the chain.
  *
  *****************************************************************************************************************************************************/
-#ifndef _MAXMATRIX_WIRED_H_
-#define _MAXMATRIX_WIRED_H_
+#ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
+#define MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
 
 /******************************************************************************************************************************************************
  * INCLUDES
@@ -35,25 +35,25 @@
 class MaxMatrixWired
 {
   private:
-    MaxMatrixChain Chain;
-    byte MatrixBuffer[MAXMATRIX_BUFFER_SIZE];
-    byte ChangedColumns;
+    MaxMatrixChain chain_;
+    byte matrix_buffer_[MAXMATRIX_BUFFER_SIZE];
+    byte changed_columns_;
 
   public:
     MaxMatrixWired(byte, byte, byte);
 
     // get methods
-    MaxMatrixChain& getChain() { return Chain; }
-    MaxMatrixChain const& getChain() const { return Chain; }
+    MaxMatrixChain& GetChain() { return chain_; }
+    MaxMatrixChain const& GetChain() const { return chain_; }
     /* the buffer alone, unchecked: for MaxMatrixPanel, whose coordinates are checked and mapped already */
-    byte getColumn(byte Column) { return MatrixBuffer[Column]; }
+    byte GetColumn(byte column) { return matrix_buffer_[column]; }
 
     // set methods
-    void storeBit(byte, byte, bool);
+    void StoreBit(byte, byte, bool);
 
     // methods
-    void clear();
-    void send();
+    void Clear();
+    void Send();
 };
 
 #endif

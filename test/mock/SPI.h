@@ -1,6 +1,9 @@
 /* Stand-in for the Arduino SPI library, see Arduino.h. */
-#ifndef _MOCK_SPI_H_
-#define _MOCK_SPI_H_
+#ifndef MAXMATRIX_TEST_MOCK_SPI_H_
+#define MAXMATRIX_TEST_MOCK_SPI_H_
+
+/* The names of the Arduino core, which the library calls by them. */
+// NOLINTBEGIN(readability-identifier-naming)
 
 #include "Arduino.h"
 
@@ -16,9 +19,10 @@ class SPIClass {
     void begin() {}
     void beginTransaction(SPISettings);
     void endTransaction();
-    uint8_t transfer(uint8_t Value);
+    uint8_t transfer(uint8_t value);
 };
 
 extern SPIClass SPI;
 
+// NOLINTEND(readability-identifier-naming)
 #endif
