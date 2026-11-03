@@ -37,7 +37,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
 | 26 | Control program for Linux and Windows | 20 | open | |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
-| 28 | Errors and containers from Utl | 27 | open | |
+| 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | open | |
 
 ### 1 Build with CMake
@@ -524,6 +524,20 @@ To decide is whether MaxMatrix takes it over:
 
 After Utl is released, as a dependency has to come from the Library Manager. *Done when* it is
 decided, and if taken, the examples' flash and RAM against today are in the PR.
+
+Dropped, after a prototype that was not merged; its numbers are in `docu/ErrorHandling.md`, "Tried
+out: MaxMatrix on Utl". The vtable and the texts linked into every sketch that draws text, 144 to
+166 bytes of flash, are gone with Utl's groups without `virtual` (Utl #24): a sketch that prints no
+error is where it is today. What stays: a sketch that prints errors pays more, `SerialControl` 402
+bytes of flash and 10 of RAM, as an error is 3 bytes where an enum is one; `[[nodiscard]]` warns at
+every dropped status in a sketch; the names follow Google beside the conventions here; and every
+user installs Utl. What it buys, one type for errors from several sources, has no user here, as
+every error comes from the library itself.
+
+Taken up again when an error comes from outside the library, from commands a sketch registers or a
+transfer that can fail, such as I²C with a NACK; the wrapper is kept so that a sketch would not
+change. The containers alone, `string_view` and `flash_string_view` for the commands, were not
+measured and could be taken without the errors.
 
 ### 29 The real binary against the model, in simavr
 
