@@ -68,7 +68,7 @@ SimulatorWeb::SimulatorWeb()
  *  \return         true
  *                  false           the port is taken
  *****************************************************************************************************************************************************/
-bool SimulatorWeb::begin(uint16_t Port, const char* PagePath)
+bool SimulatorWeb::begin(uint16_t Port, char const* PagePath)
 {
     return Host.begin(Port, PagePath);
 } /* begin */
@@ -91,7 +91,7 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
 
     if(Mock::Frames != LoggedFrames) logFrame();
     Host.task(&Messages);
-    for(const std::string& Message : Messages) command(Panel, Message);
+    for(std::string const& Message : Messages) command(Panel, Message);
     if(!Mock::SerialOutput.empty()) Panel.requestDraw();
 } /* task */
 
@@ -106,7 +106,7 @@ void SimulatorWeb::task(SimulatorPanel& Panel)
  *  \param[in]      Panel           the panel to send
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorWeb::send(const SimulatorPanel& Panel)
+void SimulatorWeb::send(SimulatorPanel const& Panel)
 {
     Host.broadcast(getMessage(Panel));
     FrameLog.clear();
@@ -125,13 +125,13 @@ void SimulatorWeb::send(const SimulatorPanel& Panel)
  *  \param[in]      Text            the bytes, as the sketch printed them
  *  \return         the text for between the quotes of a JSON string
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::convertToJsonString(const std::string& Text)
+std::string SimulatorWeb::convertToJsonString(std::string const& Text)
 {
     std::string Json;
     char Escaped[8];
 
-    for(const char Char : Text) {
-        const uint8_t Byte = static_cast<uint8_t>(Char);
+    for(char const Char : Text) {
+        uint8_t const Byte = static_cast<uint8_t>(Char);
         if(Char == '"' || Char == '\\') {
             Json += '\\';
             Json += Char;
@@ -187,10 +187,10 @@ void SimulatorWeb::logFrame()
  *  \param[in]      Message         the command
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorWeb::command(SimulatorPanel& Panel, const std::string& Message)
+void SimulatorWeb::command(SimulatorPanel& Panel, std::string const& Message)
 {
-    const std::string WiringCommand = SIMULATOR_WEB_COMMAND_WIRING;
-    const std::string SerialCommand = SIMULATOR_WEB_COMMAND_SERIAL;
+    std::string const WiringCommand = SIMULATOR_WEB_COMMAND_WIRING;
+    std::string const SerialCommand = SIMULATOR_WEB_COMMAND_SERIAL;
 
     if(Message.compare(0, WiringCommand.size(), WiringCommand) == 0) Panel.setWiring(Message.substr(WiringCommand.size()));
     else if(Message.compare(0, SerialCommand.size(), SerialCommand) == 0) Mock::SerialInput += Message.substr(SerialCommand.size()) + "\n";
@@ -211,7 +211,7 @@ void SimulatorWeb::command(SimulatorPanel& Panel, const std::string& Message)
  *  \param[in]      Panel           the panel to send
  *  \return         the JSON text
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::getMessage(const SimulatorPanel& Panel) const
+std::string SimulatorWeb::getMessage(SimulatorPanel const& Panel) const
 {
     std::ostringstream Json;
 
@@ -252,7 +252,7 @@ std::string SimulatorWeb::getLog() const
  *  \param[in]      Panel           the panel
  *  \return         the intensities from the left, separated by commas
  *****************************************************************************************************************************************************/
-std::string SimulatorWeb::getIntensities(const SimulatorPanel& Panel)
+std::string SimulatorWeb::getIntensities(SimulatorPanel const& Panel)
 {
     std::string Intensities;
 

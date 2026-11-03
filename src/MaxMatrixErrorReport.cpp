@@ -44,7 +44,7 @@
  *  \return         -
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
-__attribute__((weak)) void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+__attribute__((weak)) void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
 {
     maxMatrixPrintError(Api, Error);
 } /* maxMatrixReportError */
@@ -63,7 +63,7 @@ __attribute__((weak)) void maxMatrixReportError(const __FlashStringHelper* Api, 
  *  \return         -
  *  \pre            the sketch has called Serial.begin()
  *****************************************************************************************************************************************************/
-void maxMatrixPrintError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+void maxMatrixPrintError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
 {
     Serial.print(F("MaxMatrix "));
     Serial.print(Api);

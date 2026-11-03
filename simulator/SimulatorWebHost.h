@@ -44,29 +44,29 @@ class SimulatorWebHost
     int Listener;
     int Clients[SIMULATOR_WEB_HOST_MAX_CLIENTS];
     std::string Pending[SIMULATOR_WEB_HOST_MAX_CLIENTS];
-    const char* PagePath;
+    char const* PagePath;
 
     void acceptClients();
     void readClient(uint8_t, std::vector<std::string>*);
-    bool answerRequest(int, const std::string&);
+    bool answerRequest(int, std::string const&);
     void sendPage(int);
     uint8_t findFreeSlot() const;
     void dropClient(uint8_t);
     static int openListener(uint16_t);
     static std::string readRequest(int);
-    static bool getPath(const std::string&, std::string*);
+    static bool getPath(std::string const&, std::string*);
     static void setNonBlocking(int);
     static void setReceiveTimeout(int, uint32_t);
-    static bool sendAll(int, const std::string&);
-    static void sendResponse(int, const char*, const char*, const std::string&);
+    static bool sendAll(int, std::string const&);
+    static void sendResponse(int, char const*, char const*, std::string const&);
 
   public:
     SimulatorWebHost();
 
     // methods
-    bool begin(uint16_t, const char*);
+    bool begin(uint16_t, char const*);
     void task(std::vector<std::string>*);
-    void broadcast(const std::string&);
+    void broadcast(std::string const&);
 };
 
 #endif

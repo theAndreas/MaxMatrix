@@ -118,7 +118,7 @@ void MaxMatrixChain::writeRegisterAll(byte RegisterAddress, byte RegisterValue)
  *  \param[in]      RegisterValues      one value per module, module 0 first
  *  \return         -
  *****************************************************************************************************************************************************/
-void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, const byte* RegisterValues)
+void MaxMatrixChain::writeRegisterEach(byte RegisterAddress, byte const* RegisterValues)
 {
     startTransmission();
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) transfer(RegisterAddress, RegisterValues[i]);

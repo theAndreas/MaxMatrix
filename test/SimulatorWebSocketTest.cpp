@@ -7,7 +7,7 @@
 #include <string>
 #include "SimulatorWebSocket.h"
 
-static std::string sha1Hex(const std::string& Message)
+static std::string sha1Hex(std::string const& Message)
 {
     uint8_t Digest[SIMULATOR_WEB_SOCKET_SHA1_LENGTH];
     char Hex[3];
@@ -21,16 +21,16 @@ static std::string sha1Hex(const std::string& Message)
     return Text;
 }
 
-static std::string base64(const std::string& Text)
+static std::string base64(std::string const& Text)
 {
-    return SimulatorWebSocket::convertToBase64(reinterpret_cast<const uint8_t*>(Text.data()), Text.size());
+    return SimulatorWebSocket::convertToBase64(reinterpret_cast<uint8_t const*>(Text.data()), Text.size());
 }
 
 /* a text frame as a browser sends it: final, masked, and with a mask that is not zeros, which would leave a decoder
  * that unmasks wrongly undetected */
-static std::string clientFrame(const std::string& Payload)
+static std::string clientFrame(std::string const& Payload)
 {
-    const uint8_t Mask[4] = { 0x12, 0x34, 0x56, 0x78 };
+    uint8_t const Mask[4] = { 0x12, 0x34, 0x56, 0x78 };
     std::string Frame;
 
     Frame += static_cast<char>(0x81);
@@ -41,7 +41,7 @@ static std::string clientFrame(const std::string& Payload)
         Frame += static_cast<char>(Payload.size() >> 8);
         Frame += static_cast<char>(Payload.size() & 0xFF);
     }
-    Frame.append(reinterpret_cast<const char*>(Mask), sizeof(Mask));
+    Frame.append(reinterpret_cast<char const*>(Mask), sizeof(Mask));
     for(size_t i = 0; i < Payload.size(); i++) Frame += static_cast<char>(Payload[i] ^ Mask[i % 4]);
     return Frame;
 }
@@ -93,7 +93,7 @@ TEST(SimulatorWebSocketTest, HandshakeWithoutKeyFails)
 /* 125 bytes is the longest payload whose length fits in the second byte; a panel update is about 400 */
 TEST(SimulatorWebSocketTest, EncodeUsesTheShortLengthUpTo125Bytes)
 {
-    const std::string Frame = SimulatorWebSocket::encodeFrame(std::string(125, 'x'));
+    std::string const Frame = SimulatorWebSocket::encodeFrame(std::string(125, 'x'));
 
     ASSERT_EQ(Frame.size(), 2u + 125u);
     EXPECT_EQ(static_cast<uint8_t>(Frame[0]), 0x81);
@@ -102,7 +102,7 @@ TEST(SimulatorWebSocketTest, EncodeUsesTheShortLengthUpTo125Bytes)
 
 TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes)
 {
-    const std::string Frame = SimulatorWebSocket::encodeFrame(std::string(300, 'x'));
+    std::string const Frame = SimulatorWebSocket::encodeFrame(std::string(300, 'x'));
 
     ASSERT_EQ(Frame.size(), 4u + 300u);
     EXPECT_EQ(static_cast<uint8_t>(Frame[1]), 126);
@@ -125,7 +125,7 @@ TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends)
 
 TEST(SimulatorWebSocketTest, DecodeReadsThe16BitLength)
 {
-    const std::string Long(200, 'x');
+    std::string const Long(200, 'x');
     std::string Buffer = clientFrame(Long);
     std::string Payload;
     uint8_t Opcode = 0;
@@ -137,7 +137,7 @@ TEST(SimulatorWebSocketTest, DecodeReadsThe16BitLength)
 /* a frame may arrive over several reads; until it is whole, nothing is taken from the buffer */
 TEST(SimulatorWebSocketTest, DecodeWaitsForTheWholeFrame)
 {
-    const std::string Frame = clientFrame("hello");
+    std::string const Frame = clientFrame("hello");
     std::string Buffer;
     std::string Payload;
     uint8_t Opcode = 0;

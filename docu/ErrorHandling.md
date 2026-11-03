@@ -23,7 +23,7 @@ obvious ones from AUTOSAR and Rust do not carry over as they are. Measured on 20
 | `stdReturnType` (until #30) | 1 B | 0 | – | no | the trap of `E_OK == 0` |
 | `bool` for the setters | 1 B | 0 | – | no | simple, the Arduino idiom |
 | **Flat enum of one byte**, in a wrapper without a conversion to `bool` | 1 B | 0 | yes, a free function | no | **chosen** |
-| Domain with a vtable, `{const Domain*, uint8_t}` | 3 B | vtable and object per domain | no | yes | no: costs RAM |
+| Domain with a vtable, `{Domain const*, uint8_t}` | 3 B | vtable and object per domain | no | yes | no: costs RAM |
 | Domain as a table in `PROGMEM` | 3 B | 0 | only with a switch | yes | possible, with a trap |
 | Domain id and code, e.g. ErrorKit below | 2 B | 0 | yes, decoded on the host | yes | ids must be handed out |
 | Rust: an enum per part under one enum | 1–2 B | 0 | yes, `Display` | no | the model for the flat enum |
@@ -72,7 +72,7 @@ RAM in bytes:
 
 ## Domains: what makes one unique
 
-**By its address**, as `{const Domain*, uint8_t}`. Within one statically linked program two objects
+**By its address**, as `{Domain const*, uint8_t}`. Within one statically linked program two objects
 never share an address, so no one has to hand out anything. The object must be defined in exactly one
 `.cpp` and declared `extern` in the header: a `const` or `static const` at namespace scope in a header
 has internal linkage, every translation unit gets its own copy, and the comparison depends on the file
@@ -81,7 +81,7 @@ it is made in. C++17 `inline` variables would solve that; the library is gnu++11
 An `operator==` per domain enum compares domain *and* code, so codes of different domains may overlap:
 
 ```cpp
-inline bool operator==(const MaxMatrixError& Error, MaxMatrixFontErrorType Code)
+inline bool operator==(MaxMatrixError const& Error, MaxMatrixFontErrorType Code)
 {
     return Error.getDomain() == &MaxMatrixFontErrors && Error.getCode() == Code;
 }
@@ -90,7 +90,7 @@ inline bool operator==(const MaxMatrixError& Error, MaxMatrixFontErrorType Code)
 The address of a static object as an identity is a known pattern well beyond AUTOSAR:
 
 - **`std::error_category`** (C++11, from Boost.System): two categories are equal when they are the same
-  object, `this == &rhs`, and `std::error_code` is `{int, const error_category*}`. `ara::core` took it
+  object, `this == &rhs`, and `std::error_code` is `{int, error_category const*}`. `ara::core` took it
   from there.
 - **LLVM's `static char ID`**: the passes of the legacy pass manager and `llvm::Error` with
   `ErrorInfo<T>` know their type by the address of a `static char ID;`, a hand-made RTTI.
@@ -189,7 +189,7 @@ references, or pointers that have to pass through C, atomics or intrusive struct
 
 ## Readable errors
 
-- **`getErrorText()`** returns a `const __FlashStringHelper*` from `PROGMEM`, which `Serial.print`
+- **`getErrorText()`** returns a `__FlashStringHelper const*` from `PROGMEM`, which `Serial.print`
   reads from flash. A sketch that does not call it pays nothing, without any switch.
 - **`MAXMATRIX_DEV_ERROR_DETECT`**, `STD_OFF` by default, as the DET of AUTOSAR Classic: where a check
   fails, the library reports the function and the error to a `weak` `maxMatrixReportError()`, so that a

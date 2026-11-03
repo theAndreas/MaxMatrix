@@ -32,7 +32,7 @@
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
 /* sprite table */
-const spriteType SpriteTable[] PROGMEM = {
+spriteType const SpriteTable[] PROGMEM = {
    //width,  height, Column1,    Column2,    Column 3,   Column 4,   Column 5,
     {3,      8,      B00000000,  B00000000,  B00000000,  B00000000,  B00000000}, // space
     {1,      8,      B01011111,  B00000000,  B00000000,  B00000000,  B00000000}, // !
@@ -195,7 +195,7 @@ MaxMatrixStatus MaxMatrixFont::getCharSprite(char Char, spriteType* Sprite)
  *****************************************************************************************************************************************************/
 MaxMatrixResult<spriteIndexType> MaxMatrixFont::convertCharToSprite(char Char)
 {
-    const byte Latin1 = static_cast<byte>(Char);
+    byte const Latin1 = static_cast<byte>(Char);
 
     /* for umlauts we need a special treatment, compare with latin-1 codes to be independent of source file encoding */
     if(0xC4 == Latin1) return static_cast<spriteIndexType>(95);             // Ä
@@ -222,7 +222,7 @@ MaxMatrixResult<spriteIndexType> MaxMatrixFont::convertCharToSprite(char Char)
  *  \param[out]     Char            decoded char
  *  \return         number of bytes of the decoded char
  *****************************************************************************************************************************************************/
-byte MaxMatrixFont::decodeChar(const char* String, char* Char)
+byte MaxMatrixFont::decodeChar(char const* String, char* Char)
 {
     byte LeadByte = String[0];
     byte NextByte = String[1];

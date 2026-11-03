@@ -44,9 +44,9 @@ class DocuSvg
     std::string getDocument() const;
 
     // methods
-    void addRect(int16_t, int16_t, uint16_t, uint16_t, const char*, const char* = "none", uint8_t = 0);
-    void addText(int16_t, int16_t, const std::string&, uint8_t, const char* = "#222222", const char* = "middle", bool = false);
-    void addArrow(int16_t, int16_t, int16_t, int16_t, const char*);
+    void addRect(int16_t, int16_t, uint16_t, uint16_t, char const*, char const* = "none", uint8_t = 0);
+    void addText(int16_t, int16_t, std::string const&, uint8_t, char const* = "#222222", char const* = "middle", bool = false);
+    void addArrow(int16_t, int16_t, int16_t, int16_t, char const*);
 };
 
 #endif

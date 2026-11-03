@@ -1,7 +1,7 @@
 #include "Max7219.h"
 #include <string.h>
 
-const Max7219WiringType Max7219Wirings[8] = {
+Max7219WiringType const Max7219Wirings[8] = {
     { "DR0CR0RR0", false, false, false },
     { "DR0CR0RR1", false, false, true },
     { "DR0CR1RR0", false, true, false },
@@ -12,10 +12,10 @@ const Max7219WiringType Max7219Wirings[8] = {
     { "DR1CR1RR1", true, true, true },
 };
 
-const Max7219WiringType MAX7219_WIRING_GENERIC = Max7219Wirings[2];
-const Max7219WiringType MAX7219_WIRING_FC16 = Max7219Wirings[4];
-const Max7219WiringType MAX7219_WIRING_PAROLA = Max7219Wirings[6];
-const Max7219WiringType MAX7219_WIRING_ICSTATION = Max7219Wirings[7];
+Max7219WiringType const MAX7219_WIRING_GENERIC = Max7219Wirings[2];
+Max7219WiringType const MAX7219_WIRING_FC16 = Max7219Wirings[4];
+Max7219WiringType const MAX7219_WIRING_PAROLA = Max7219Wirings[6];
+Max7219WiringType const MAX7219_WIRING_ICSTATION = Max7219Wirings[7];
 
 /* the datasheet's power-up state: control registers reset, which means shut down, one digit scanned, no decode and
  * minimum intensity; the digit registers are undefined there and zero here */
@@ -48,7 +48,7 @@ void Max7219::latch(uint8_t Address, uint8_t Data)
 uint8_t Max7219::segments(uint8_t DigitIndex) const
 {
     /* Code B font, segments A to G in bits 6 to 0: 0-9, '-', 'E', 'H', 'L', 'P', blank */
-    static const uint8_t CodeB[16] = {
+    static uint8_t const CodeB[16] = {
         0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x01, 0x4F, 0x37, 0x0E, 0x67, 0x00
     };
 
@@ -84,14 +84,14 @@ void Max7219Chain::latch()
 /* whether the LED at X, Y of the panel is lit, X from the left across all modules and Y from the top. The modules
  * are chained from right to left, as MD_MAX72XX has them, so Chips[0] at DIN is the rightmost. A board mounted
  * upside down shows every LED at the opposite place: its chain starts on the left, each module turned around. */
-bool Max7219Chain::isLit(const Max7219WiringType& Wiring, uint16_t X, uint8_t Y, bool UpsideDown) const
+bool Max7219Chain::isLit(Max7219WiringType const& Wiring, uint16_t X, uint8_t Y, bool UpsideDown) const
 {
     if(UpsideDown) {
         X = Chips.size() * Max7219::NumberOfDigits - 1 - X;
         Y = Max7219::NumberOfDigits - 1 - Y;
     }
 
-    const Max7219& Chip = Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];
+    Max7219 const& Chip = Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];
     uint8_t Column = Max7219::NumberOfDigits - 1 - X % Max7219::NumberOfDigits;
     uint8_t Digit = Wiring.DigitsAsRows ? Y : Column;
     uint8_t Segment = Wiring.DigitsAsRows ? Column : Y;
@@ -102,7 +102,7 @@ bool Max7219Chain::isLit(const Max7219WiringType& Wiring, uint16_t X, uint8_t Y,
 }
 
 /* the chip that drives the LEDs in column X of the panel, by the same placement as isLit() */
-const Max7219& Max7219Chain::chipAt(uint16_t X, bool UpsideDown) const
+Max7219 const& Max7219Chain::chipAt(uint16_t X, bool UpsideDown) const
 {
     if(UpsideDown) X = Chips.size() * Max7219::NumberOfDigits - 1 - X;
     return Chips[Chips.size() - 1 - X / Max7219::NumberOfDigits];

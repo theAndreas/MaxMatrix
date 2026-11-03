@@ -27,17 +27,17 @@
  *****************************************************************************************************************************************************/
 /* The texts and the table of them lie in flash. A switch that returned F("…") for each error was turned by avr-gcc into
  * a table of pointers in .rodata, which the Uno copies into RAM: 14 bytes for seven errors. */
-static const char ErrorTextOk[] PROGMEM = "ok";
-static const char ErrorTextOutOfRange[] PROGMEM = "out of range";
-static const char ErrorTextUnknownChar[] PROGMEM = "unknown char";
-static const char ErrorTextNoText[] PROGMEM = "no text";
-static const char ErrorTextNotANumber[] PROGMEM = "not a number";
-static const char ErrorTextUnknownCommand[] PROGMEM = "unknown command";
-static const char ErrorTextLineTooLong[] PROGMEM = "line too long";
-static const char ErrorTextUnknownError[] PROGMEM = "unknown error";
+static char const ErrorTextOk[] PROGMEM = "ok";
+static char const ErrorTextOutOfRange[] PROGMEM = "out of range";
+static char const ErrorTextUnknownChar[] PROGMEM = "unknown char";
+static char const ErrorTextNoText[] PROGMEM = "no text";
+static char const ErrorTextNotANumber[] PROGMEM = "not a number";
+static char const ErrorTextUnknownCommand[] PROGMEM = "unknown command";
+static char const ErrorTextLineTooLong[] PROGMEM = "line too long";
+static char const ErrorTextUnknownError[] PROGMEM = "unknown error";
 
 /* in the order of MaxMatrixErrorType */
-static const char* const ErrorTexts[] PROGMEM = {
+static char const* const ErrorTexts[] PROGMEM = {
     ErrorTextOk, ErrorTextOutOfRange, ErrorTextUnknownChar, ErrorTextNoText, ErrorTextNotANumber, ErrorTextUnknownCommand,
     ErrorTextLineTooLong
 };
@@ -59,12 +59,12 @@ static_assert(sizeof(ErrorTexts) / sizeof(ErrorTexts[0]) == MAXMATRIX_E_LINE_TOO
  *
  *  \return         the text, in flash; "unknown error" for a byte cast to the enum that is none of its values
  *****************************************************************************************************************************************************/
-const __FlashStringHelper* MaxMatrixStatus::getErrorText() const
+__FlashStringHelper const* MaxMatrixStatus::getErrorText() const
 {
-    const char* Text = ErrorTextUnknownError;
+    char const* Text = ErrorTextUnknownError;
 
-    if(Error < sizeof(ErrorTexts) / sizeof(ErrorTexts[0])) Text = static_cast<const char*>(pgm_read_ptr(&ErrorTexts[Error]));
-    return reinterpret_cast<const __FlashStringHelper*>(Text);
+    if(Error < sizeof(ErrorTexts) / sizeof(ErrorTexts[0])) Text = static_cast<char const*>(pgm_read_ptr(&ErrorTexts[Error]));
+    return reinterpret_cast<__FlashStringHelper const*>(Text);
 } /* getErrorText */
 
 

@@ -56,11 +56,11 @@ class MaxMatrixCommand
 
     // functions
     MaxMatrixStatus execute(MaxMatrix&, char*);
-    MaxMatrixStatus executeTextShift(MaxMatrix&, const char*);
-    static MaxMatrixStatus executeText(MaxMatrix&, const char*);
+    MaxMatrixStatus executeTextShift(MaxMatrix&, char const*);
+    static MaxMatrixStatus executeText(MaxMatrix&, char const*);
     static MaxMatrixStatus executeDot(MaxMatrix&, char*);
-    static MaxMatrixStatus executeSetting(MaxMatrix&, const char*, const char*);
-    static MaxMatrixResult<uint16_t> convertToNumber(const char*, uint16_t);
+    static MaxMatrixStatus executeSetting(MaxMatrix&, char const*, char const*);
+    static MaxMatrixResult<uint16_t> convertToNumber(char const*, uint16_t);
 
   public:
     MaxMatrixCommand();

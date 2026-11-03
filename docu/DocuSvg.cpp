@@ -91,7 +91,7 @@ std::string DocuSvg::getDocument() const
  *  \param[in]      Radius          radius of the corners
  *  \return         -
  *****************************************************************************************************************************************************/
-void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHeight, const char* Fill, const char* Stroke, uint8_t Radius)
+void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHeight, char const* Fill, char const* Stroke, uint8_t Radius)
 {
     Body << "  <rect x=\"" << X << "\" y=\"" << Y << "\" width=\"" << RectWidth << "\" height=\"" << RectHeight
          << "\" rx=\"" << static_cast<uint16_t>(Radius) << "\" fill=\"" << Fill << "\" stroke=\"" << Stroke << "\" stroke-width=\"2\"/>\n";
@@ -113,7 +113,7 @@ void DocuSvg::addRect(int16_t X, int16_t Y, uint16_t RectWidth, uint16_t RectHei
  *  \param[in]      Bold            true for bold
  *  \return         -
  *****************************************************************************************************************************************************/
-void DocuSvg::addText(int16_t X, int16_t Y, const std::string& Text, uint8_t Size, const char* Fill, const char* Anchor, bool Bold)
+void DocuSvg::addText(int16_t X, int16_t Y, std::string const& Text, uint8_t Size, char const* Fill, char const* Anchor, bool Bold)
 {
     Body << "  <text x=\"" << X << "\" y=\"" << Y << "\" font-size=\"" << static_cast<uint16_t>(Size) << "\" fill=\"" << Fill
          << "\" text-anchor=\"" << Anchor << "\"" << (Bold ? " font-weight=\"bold\"" : "") << ">" << Text << "</text>\n";
@@ -133,10 +133,10 @@ void DocuSvg::addText(int16_t X, int16_t Y, const std::string& Text, uint8_t Siz
  *  \param[in]      Colour          colour of line and head
  *  \return         -
  *****************************************************************************************************************************************************/
-void DocuSvg::addArrow(int16_t FromX, int16_t ToX, int16_t Y, int16_t Thickness, const char* Colour)
+void DocuSvg::addArrow(int16_t FromX, int16_t ToX, int16_t Y, int16_t Thickness, char const* Colour)
 {
-    const int16_t Direction = ToX < FromX ? 1 : -1;
-    const int16_t HeadBase = ToX + Direction * DOCU_SVG_ARROW_HEAD_LENGTH;
+    int16_t const Direction = ToX < FromX ? 1 : -1;
+    int16_t const HeadBase = ToX + Direction * DOCU_SVG_ARROW_HEAD_LENGTH;
 
     Body << "  <line x1=\"" << FromX << "\" y1=\"" << Y << "\" x2=\"" << HeadBase << "\" y2=\"" << Y << "\" stroke=\"" << Colour
          << "\" stroke-width=\"" << Thickness << "\"/>\n";

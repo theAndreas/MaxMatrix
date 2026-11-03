@@ -106,7 +106,7 @@ class MaxMatrixChain
     // methods
     void init();
     void writeRegisterAll(byte, byte);
-    void writeRegisterEach(byte, const byte*);
+    void writeRegisterEach(byte, byte const*);
 };
 
 #endif

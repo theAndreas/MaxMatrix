@@ -71,7 +71,7 @@ void SimulatorTerminal::clear()
  *  \param[in]      Panel           the panel to describe
  *  \return         the line, without a line break
  *****************************************************************************************************************************************************/
-std::string SimulatorTerminal::getStatusLine(const SimulatorPanel& Panel)
+std::string SimulatorTerminal::getStatusLine(SimulatorPanel const& Panel)
 {
     std::ostringstream Line;
 
@@ -93,7 +93,7 @@ std::string SimulatorTerminal::getStatusLine(const SimulatorPanel& Panel)
  *  \param[in]      Panel           the panel to draw
  *  \return         -
  *****************************************************************************************************************************************************/
-void SimulatorTerminal::draw(const SimulatorPanel& Panel)
+void SimulatorTerminal::draw(SimulatorPanel const& Panel)
 {
     printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s" SIMULATOR_TERMINAL_CLEAR_LINE_END "\n\n", getStatusLine(Panel).c_str());
     fputs(Panel.getText(SIMULATOR_TERMINAL_LIT, SIMULATOR_TERMINAL_DARK, "\n").c_str(), stdout);
@@ -112,9 +112,9 @@ void SimulatorTerminal::draw(const SimulatorPanel& Panel)
  *  \return         true
  *                  false           the panel differs from the file, or the file cannot be read
  *****************************************************************************************************************************************************/
-bool SimulatorTerminal::printResult(const SimulatorPanel& Panel, const char* ExpectFile)
+bool SimulatorTerminal::printResult(SimulatorPanel const& Panel, char const* ExpectFile)
 {
-    const std::string Result = Panel.getText(SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
+    std::string const Result = Panel.getText(SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
     std::string Expected;
 
     fputs(Result.c_str(), stdout);
@@ -142,7 +142,7 @@ bool SimulatorTerminal::printResult(const SimulatorPanel& Panel, const char* Exp
  *  \return         true
  *                  false           the file cannot be read
  *****************************************************************************************************************************************************/
-bool SimulatorTerminal::readFile(const char* Path, std::string* Text)
+bool SimulatorTerminal::readFile(char const* Path, std::string* Text)
 {
     std::ifstream File(Path);
     std::stringstream Content;

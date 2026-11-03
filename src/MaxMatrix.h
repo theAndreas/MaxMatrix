@@ -108,15 +108,15 @@ class MaxMatrix
     MaxMatrixStatus setIntensity(byte);
     void setColumn(int16_t Column, byte Value) { Panel.setColumn(Column, Value); updateIfAuto(); }
     void setColumn(byte Module, byte Column, byte Value) { Panel.setColumn(Module, Column, Value); updateIfAuto(); }
-    void setRow(int16_t Row, const rowType Value) { Panel.setRow(Row, Value); updateIfAuto(); }
+    void setRow(int16_t Row, rowType const Value) { Panel.setRow(Row, Value); updateIfAuto(); }
     void setRow(byte Module, byte Row, byte Value) { Panel.setRow(Module, Row, Value); updateIfAuto(); }
     void setDot(int16_t Column, int16_t Row, bool Value) { Panel.setDot(Column, Row, Value); updateIfAuto(); }
     MaxMatrixStatus setChar(int16_t X, int16_t Y, char Char) { return updateIfAuto(MAXMATRIX_REPORT_ERROR("setChar", Text.setChar(Panel, X, Y, Char))); }
     MaxMatrixStatus setCharWithShift(char);
-    MaxMatrixStatus setText(const char* String) { return updateIfAuto(MAXMATRIX_REPORT_ERROR("setText", Text.setText(Panel, String))); }
+    MaxMatrixStatus setText(char const* String) { return updateIfAuto(MAXMATRIX_REPORT_ERROR("setText", Text.setText(Panel, String))); }
     MaxMatrixStatus setTextWithShift(char*);
     void setSpaceBetweenChars(byte sSpaceBetweenChars) { Text.setSpaceBetweenChars(sSpaceBetweenChars); }
-    void setSprite(int16_t X, int16_t Y, const spriteType Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
+    void setSprite(int16_t X, int16_t Y, spriteType const Sprite) { Text.setSprite(Panel, X, Y, Sprite); updateIfAuto(); }
     void setModuleOrientation(MaxMatrixModuleOrientationType sModuleOrientation) { Panel.setModuleOrientation(sModuleOrientation); updateIfAuto(); }
     void setMatrixOrientation(MaxMatrixMatrixOrientationType sMatrixOrientation) { Panel.setMatrixOrientation(sMatrixOrientation); updateIfAuto(); }
 
@@ -158,8 +158,8 @@ class MaxMatrixBatch
     ~MaxMatrixBatch() { Matrix.setAutoUpdate(PreviousAutoUpdate); }
 
     /* a copy would restore the state twice */
-    MaxMatrixBatch(const MaxMatrixBatch&) = delete;
-    MaxMatrixBatch& operator=(const MaxMatrixBatch&) = delete;
+    MaxMatrixBatch(MaxMatrixBatch const&) = delete;
+    MaxMatrixBatch& operator=(MaxMatrixBatch const&) = delete;
 };
 
 #endif

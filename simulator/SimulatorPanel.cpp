@@ -26,10 +26,10 @@
  *  LOCAL DATA
  *****************************************************************************************************************************************************/
 /* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1 from Max7219Wirings */
-static const struct {
-    const char* Name;
-    const Max7219WiringType* Wiring;
-} NamedWirings[] = {
+static struct {
+    char const* Name;
+    Max7219WiringType const* Wiring;
+} const NamedWirings[] = {
     { "FC16", &MAX7219_WIRING_FC16 },
     { "GENERIC", &MAX7219_WIRING_GENERIC },
     { "PAROLA", &MAX7219_WIRING_PAROLA },
@@ -71,7 +71,7 @@ SimulatorPanel::SimulatorPanel()
  *  \param[in]      EndOfRow        what follows every row
  *  \return         the panel
  *****************************************************************************************************************************************************/
-std::string SimulatorPanel::getText(const char* Lit, const char* Dark, const char* EndOfRow) const
+std::string SimulatorPanel::getText(char const* Lit, char const* Dark, char const* EndOfRow) const
 {
     std::string Text;
 
@@ -108,9 +108,9 @@ uint8_t SimulatorPanel::getIntensity(uint8_t Module) const
  *  \return         true
  *                  false           no wiring has this name; the panel keeps the one it has
  *****************************************************************************************************************************************************/
-bool SimulatorPanel::setWiring(const std::string& Name)
+bool SimulatorPanel::setWiring(std::string const& Name)
 {
-    const Max7219WiringType* Found = findWiring(Name);
+    Max7219WiringType const* Found = findWiring(Name);
 
     if(Found != nullptr) {
         Wiring = Found;
@@ -149,7 +149,7 @@ void SimulatorPanel::setUpsideDown(bool sUpsideDown)
  *****************************************************************************************************************************************************/
 bool SimulatorPanel::isDrawDue(uint32_t Now) const
 {
-    const bool Changed = Mock::Frames != DrawnFrames || DrawRequested;
+    bool const Changed = Mock::Frames != DrawnFrames || DrawRequested;
 
     return Changed && Now - LastDraw >= SIMULATOR_PANEL_REDRAW_INTERVAL;
 } /* isDrawDue */
@@ -185,12 +185,12 @@ void SimulatorPanel::setDrawn(uint32_t Now)
  *  \param[in]      Name            the wiring's name
  *  \return         the wiring, or nullptr if no wiring has this name
  *****************************************************************************************************************************************************/
-const Max7219WiringType* SimulatorPanel::findWiring(const std::string& Name)
+Max7219WiringType const* SimulatorPanel::findWiring(std::string const& Name)
 {
-    for(const auto& Named : NamedWirings) {
+    for(auto const& Named : NamedWirings) {
         if(Name == Named.Name) return Named.Wiring;
     }
-    for(const Max7219WiringType& Each : Max7219Wirings) {
+    for(Max7219WiringType const& Each : Max7219Wirings) {
         if(Name == Each.Name) return &Each;
     }
     return nullptr;

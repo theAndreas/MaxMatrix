@@ -23,13 +23,13 @@ typedef uint8_t byte;
 #define strcmp_P strcmp
 /* F() has the type it has in the Arduino core, so that a function returning a text in flash builds as on the board */
 class __FlashStringHelper;
-#define F(Text) (reinterpret_cast<const __FlashStringHelper*>(PSTR(Text)))
+#define F(Text) (reinterpret_cast<__FlashStringHelper const*>(PSTR(Text)))
 /* pgm_read_ptr() reads the bytes of the pointer at Address, as avr-libc reads them from flash, and takes the address
  * as it is given, as avr-libc's macro does. A macro that cast the stored pointer to void* made the library's cast back
  * to its own type one through void, and a parameter of const void* a conversion of the address: clang-tidy reports
  * both in the library, though neither is there on the board. */
 template <typename AddressType>
-inline void* pgm_read_ptr(const AddressType* Address)
+inline void* pgm_read_ptr(AddressType const* Address)
 {
     void* Value;
     memcpy(&Value, Address, sizeof(Value));
@@ -62,16 +62,16 @@ class HardwareSerial {
     void begin(unsigned long Baud);
     int available();
     int read();
-    size_t print(const char* Text);
-    size_t println(const char* Text);
-    size_t print(const __FlashStringHelper* Text);
-    size_t println(const __FlashStringHelper* Text);
+    size_t print(char const* Text);
+    size_t println(char const* Text);
+    size_t print(__FlashStringHelper const* Text);
+    size_t println(__FlashStringHelper const* Text);
 };
 
 extern HardwareSerial Serial;
 
 namespace Mock {
-    const uint8_t NumberOfPins = 64;
+    uint8_t const NumberOfPins = 64;
 
     extern uint8_t PinMode[NumberOfPins];
     extern uint8_t PinLevel[NumberOfPins];

@@ -83,8 +83,8 @@ MaxMatrixResult<MaxMatrixCommandStateType> MaxMatrixCommand::feed(MaxMatrix& Mat
         return MAXMATRIX_COMMAND_PENDING;
     }
 
-    const bool TooLong = LineTooLong;
-    const bool Empty = LineLength == 0;
+    bool const TooLong = LineTooLong;
+    bool const Empty = LineLength == 0;
 
     Line[LineLength] = STD_NULL_CHARACTER;
     LineLength = 0;
@@ -142,7 +142,7 @@ MaxMatrixStatus MaxMatrixCommand::execute(MaxMatrix& Matrix, char* Text)
  *  \return         MAXMATRIX_E_OK
  *                  MAXMATRIX_E_NO_TEXT     the text is empty
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, char const* Value)
 {
     /* the text is part of Line, so it fits into ShiftText as long as that is no shorter; strlcpy() would check the
        same at run time, for 30 bytes of flash in SerialControl */
@@ -166,7 +166,7 @@ MaxMatrixStatus MaxMatrixCommand::executeTextShift(MaxMatrix& Matrix, const char
  *  \return         MAXMATRIX_E_OK
  *                  MAXMATRIX_E_UNKNOWN_CHAR    a char of the text is not in the font; the chars before it are shown
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixCommand::executeText(MaxMatrix& Matrix, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeText(MaxMatrix& Matrix, char const* Value)
 {
     MaxMatrixBatch Batch(Matrix);
 
@@ -223,7 +223,7 @@ MaxMatrixStatus MaxMatrixCommand::executeDot(MaxMatrix& Matrix, char* Value)
  *                  MAXMATRIX_E_NOT_A_NUMBER        the value is empty or holds anything but digits
  *                  MAXMATRIX_E_OUT_OF_RANGE        the number is too large for the setting
  *****************************************************************************************************************************************************/
-MaxMatrixStatus MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, const char* Name, const char* Value)
+MaxMatrixStatus MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, char const* Name, char const* Value)
 {
     if(0 == strcmp_P(Name, PSTR("intensity"))) {
         MaxMatrixResult<uint16_t> Number = convertToNumber(Value, MAX7219_REG_INTENSITY_MAX_VALUE);
@@ -256,7 +256,7 @@ MaxMatrixStatus MaxMatrixCommand::executeSetting(MaxMatrix& Matrix, const char* 
  *                  MAXMATRIX_E_NOT_A_NUMBER    the text is empty or holds anything but digits
  *                  MAXMATRIX_E_OUT_OF_RANGE    the number is larger than Maximum
  *****************************************************************************************************************************************************/
-MaxMatrixResult<uint16_t> MaxMatrixCommand::convertToNumber(const char* Text, uint16_t Maximum)
+MaxMatrixResult<uint16_t> MaxMatrixCommand::convertToNumber(char const* Text, uint16_t Maximum)
 {
     uint32_t Value = 0;
 

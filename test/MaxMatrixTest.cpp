@@ -17,16 +17,16 @@
 #include "MaxMatrix.h"
 #undef private
 
-static const byte DataInPin = 11;
-static const byte ChipSelectPin = 10;
-static const byte ClockPin = 13;
+static byte const DataInPin = 11;
+static byte const ChipSelectPin = 10;
+static byte const ClockPin = 13;
 
 /* every error by name, in the order of the enum */
-static const char* const ErrorNames[] = {
+static char const* const ErrorNames[] = {
     "MAXMATRIX_E_OK", "MAXMATRIX_E_OUT_OF_RANGE", "MAXMATRIX_E_UNKNOWN_CHAR", "MAXMATRIX_E_NO_TEXT", "MAXMATRIX_E_NOT_A_NUMBER",
     "MAXMATRIX_E_UNKNOWN_COMMAND", "MAXMATRIX_E_LINE_TOO_LONG"
 };
-static const uint8_t NumberOfErrors = sizeof(ErrorNames) / sizeof(ErrorNames[0]);
+static uint8_t const NumberOfErrors = sizeof(ErrorNames) / sizeof(ErrorNames[0]);
 
 /* GoogleTest would print an error as its number */
 static void PrintTo(MaxMatrixErrorType Error, std::ostream* Out)
@@ -36,25 +36,25 @@ static void PrintTo(MaxMatrixErrorType Error, std::ostream* Out)
 }
 
 /* what feed() returns, compared with a state as with an error: a line is done only if it did not fail as well */
-static bool operator==(const MaxMatrixResult<MaxMatrixCommandStateType>& Result, MaxMatrixCommandStateType State)
+static bool operator==(MaxMatrixResult<MaxMatrixCommandStateType> const& Result, MaxMatrixCommandStateType State)
 {
     return Result.isOk() && Result.getValue() == State;
 }
 
-static void PrintTo(const MaxMatrixResult<MaxMatrixCommandStateType>& Result, std::ostream* Out)
+static void PrintTo(MaxMatrixResult<MaxMatrixCommandStateType> const& Result, std::ostream* Out)
 {
     if(!Result.isOk()) PrintTo(Result.getError(), Out);
     else *Out << (Result.getValue() == MAXMATRIX_COMMAND_DONE ? "MAXMATRIX_COMMAND_DONE" : "MAXMATRIX_COMMAND_PENDING");
 }
 
 /* the text of F() and getErrorText(), which lies in RAM on the host */
-static std::string text(const __FlashStringHelper* Text)
+static std::string text(__FlashStringHelper const* Text)
 {
-    return reinterpret_cast<const char*>(Text);
+    return reinterpret_cast<char const*>(Text);
 }
 
 /* a whole line to a command of its own, and why it failed */
-static MaxMatrixErrorType feedText(MaxMatrix& Matrix, const std::string& Text)
+static MaxMatrixErrorType feedText(MaxMatrix& Matrix, std::string const& Text)
 {
     MaxMatrixCommand Command;
     MaxMatrixResult<MaxMatrixCommandStateType> Result = MAXMATRIX_COMMAND_PENDING;
@@ -66,24 +66,24 @@ static MaxMatrixErrorType feedText(MaxMatrix& Matrix, const std::string& Text)
 /* What the library reported, with MAXMATRIX_DEV_ERROR_DETECT on: the definition here wins over the weak one of the
  * library, which prints. With it off the list stays empty, so that a test can expect a report in every variant. */
 typedef std::pair<std::string, MaxMatrixErrorType> ReportType;
-static const bool DevErrorDetect = (MAXMATRIX_DEV_ERROR_DETECT == STD_ON);
+static bool const DevErrorDetect = (MAXMATRIX_DEV_ERROR_DETECT == STD_ON);
 static std::vector<ReportType> Reports;
 
 #if(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
-void maxMatrixReportError(const __FlashStringHelper* Api, MaxMatrixErrorType Error)
+void maxMatrixReportError(__FlashStringHelper const* Api, MaxMatrixErrorType Error)
 {
     Reports.push_back(ReportType(text(Api), Error));
 }
 #endif
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only says that something differs */
-static std::vector<byte> bytes(const byte* Data, size_t Size)
+static std::vector<byte> bytes(byte const* Data, size_t Size)
 {
     return std::vector<byte>(Data, Data + Size);
 }
 
 /* the library sends the pair of module 0 first, so it ends up in the chip at the far end of the chain */
-static const Max7219& chipOfModule(byte Module)
+static Max7219 const& chipOfModule(byte Module)
 {
     return Mock::Chain.Chips[MAXMATRIX_NUMBER_OF_MODULES - 1 - Module];
 }
@@ -134,11 +134,11 @@ class MaxMatrixTest : public ::testing::Test {
     }
 };
 
-static const MaxMatrixMatrixOrientationType MatrixOrientations[] = {
+static MaxMatrixMatrixOrientationType const MatrixOrientations[] = {
     MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MATRIX_ORIENTATION_180
 };
 
-static const MaxMatrixModuleOrientationType ModuleOrientations[] = {
+static MaxMatrixModuleOrientationType const ModuleOrientations[] = {
     MAXMATRIX_MODULE_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_90,
     MAXMATRIX_MODULE_ORIENTATION_180, MAXMATRIX_MODULE_ORIENTATION_270
 };
@@ -157,9 +157,9 @@ class MaxMatrixOrientationTest : public MaxMatrixTest, public ::testing::WithPar
     }
 };
 
-static std::string orientationName(const ::testing::TestParamInfo<OrientationType>& Info)
+static std::string orientationName(::testing::TestParamInfo<OrientationType> const& Info)
 {
-    static const char* const Names[] = { "0", "90", "180", "270" };
+    static char const* const Names[] = { "0", "90", "180", "270" };
     return std::string("matrix") + (std::get<0>(Info.param) == MAXMATRIX_MATRIX_ORIENTATION_180 ? "180" : "0") +
            "_module" + Names[std::get<1>(Info.param)];
 }
@@ -198,10 +198,10 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
  * frame of its own: setText("Hi!") in module orientation 270 sent 64, and each step of a shifting text nine. */
 TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
 {
-    const struct {
-        const char* Name;
+    struct {
+        char const* Name;
         void (*Draw)(MaxMatrix&);
-    } Calls[] = {
+    } const Calls[] = {
         { "setText", [](MaxMatrix& M) { M.setText("Hi!"); } },
         { "setChar off the top row", [](MaxMatrix& M) { M.setChar(9, 1, 'A'); } },
         { "setRow", [](MaxMatrix& M) { rowType Row = { 0xFF, 0x0F, 0xF0, 0x3C }; M.setRow(5, Row); } },
@@ -211,7 +211,7 @@ TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
     };
     char Text[] = "Hi \xC4!";
 
-    for(const auto& Call : Calls) {
+    for(auto const& Call : Calls) {
         int32_t FramesBefore = Mock::Frames;
         Call.Draw(Matrix);
         EXPECT_LE(Mock::Frames - FramesBefore, MAXMATRIX_COLUMN_NUMBER_OF_MODULE) << Call.Name;
@@ -280,12 +280,12 @@ TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
 /* every shift moves the whole picture by one dot as the viewer sees it, across the modules */
 TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
 {
-    const struct {
-        const char* Name;
+    struct {
+        char const* Name;
         void (*Shift)(MaxMatrix&);
         int16_t SourceX, SourceY;
         bool Rotate;
-    } Cases[] = {
+    } const Cases[] = {
         { "shiftLeft", [](MaxMatrix& M) { M.shiftLeft(false, true); }, 1, 0, false },
         { "shiftLeft rotating", [](MaxMatrix& M) { M.shiftLeft(true, false); }, 1, 0, true },
         { "shiftRight", [](MaxMatrix& M) { M.shiftRight(false, true); }, -1, 0, false },
@@ -295,9 +295,9 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
         { "shiftDown", [](MaxMatrix& M) { M.shiftDown(false); }, 0, -1, false },
         { "shiftDown rotating", [](MaxMatrix& M) { M.shiftDown(true); }, 0, -1, true },
     };
-    const int16_t Width = MAXMATRIX_NUMBER_OF_COLUMNS, Height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
+    int16_t const Width = MAXMATRIX_NUMBER_OF_COLUMNS, Height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
 
-    for(const auto& Case : Cases) {
+    for(auto const& Case : Cases) {
         Matrix.clear();
         drawPattern(Matrix);
         Case.Shift(Matrix);
@@ -345,14 +345,14 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
  * wiring, the matrix orientation from whether the board is mounted upside down. PAROLA and the other three wirings
  * are mirror images, which no orientation gives (OIL item 9). */
 struct ModuleType {
-    const char* Name;
-    const Max7219WiringType* Wiring;
+    char const* Name;
+    Max7219WiringType const* Wiring;
     bool UpsideDown;
     MaxMatrixMatrixOrientationType MatrixOrientation;
     MaxMatrixModuleOrientationType ModuleOrientation;
 };
 
-static const ModuleType Modules[] = {
+static ModuleType const Modules[] = {
     { "DR0CR0RR1", &Max7219Wirings[1], false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_0 },
     { "ICSTATION", &MAX7219_WIRING_ICSTATION, false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_90 },
     { "GENERIC", &MAX7219_WIRING_GENERIC, false, MAXMATRIX_MATRIX_ORIENTATION_0, MAXMATRIX_MODULE_ORIENTATION_180 },
@@ -365,7 +365,7 @@ static const ModuleType Modules[] = {
 
 class MaxMatrixModuleTest : public MaxMatrixTest, public ::testing::WithParamInterface<ModuleType> {};
 
-static std::string moduleName(const ::testing::TestParamInfo<ModuleType>& Info)
+static std::string moduleName(::testing::TestParamInfo<ModuleType> const& Info)
 {
     return Info.param.Name;
 }
@@ -375,7 +375,7 @@ INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest, ::testing::ValuesIn(Modul
 /* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a wrong mapping could hide behind */
 TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
 {
-    const ModuleType& Module = GetParam();
+    ModuleType const& Module = GetParam();
     auto Pattern = [](uint16_t X, uint8_t Y) { return (X * X + 3 * Y + X * Y) % 3 == 0; };
 
     Matrix.setMatrixOrientation(Module.MatrixOrientation);
@@ -394,7 +394,7 @@ TEST_F(MaxMatrixTest, InitConfiguresEveryChip)
 {
     for(byte Module = 0; Module < MAXMATRIX_NUMBER_OF_MODULES; Module++) {
         SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(Module));
-        const Max7219& Chip = chipOfModule(Module);
+        Max7219 const& Chip = chipOfModule(Module);
         EXPECT_EQ(Chip.Shutdown, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
         EXPECT_EQ(Chip.DisplayTest, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
         EXPECT_EQ(Chip.ScanLimit, MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);
@@ -429,12 +429,12 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing)
  * line that fails in a function of MaxMatrix, text= with a char the font lacks, is reported by that function. */
 TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
 {
-    const struct {
-        const char* Name;
+    struct {
+        char const* Name;
         MaxMatrixErrorType (*Call)(MaxMatrix&);
         MaxMatrixErrorType Expected;
-        const char* Api;
-    } Cases[] = {
+        char const* Api;
+    } const Cases[] = {
         { "getColumn left", [](MaxMatrix& M) { return M.getColumn(-1).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
         { "getColumn right", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_COLUMNS).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
         { "getColumn no module", [](MaxMatrix& M) { return M.getColumn(MAXMATRIX_NUMBER_OF_MODULES, 0).getError(); }, MAXMATRIX_E_OUT_OF_RANGE, "getColumn" },
@@ -462,7 +462,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         { "line too long", [](MaxMatrix& M) { return feedText(M, "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n"); }, MAXMATRIX_E_LINE_TOO_LONG, NULL },
     };
 
-    for(const auto& Case : Cases) {
+    for(auto const& Case : Cases) {
         Matrix.clear();
         int32_t FramesBefore = Mock::Frames;
         byte IntensityBefore = chipOfModule(0).Intensity;
@@ -482,7 +482,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
  * lie in a table of their own, so one moved by a place would give every error after it the text of the next */
 TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
 {
-    const char* const Texts[] = {
+    char const* const Texts[] = {
         "ok", "out of range", "unknown char", "no text", "not a number", "unknown command", "line too long"
     };
     ASSERT_EQ(sizeof(Texts) / sizeof(Texts[0]), NumberOfErrors);
@@ -510,25 +510,25 @@ TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError)
 TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
 {
     rowType Row = { 0xFF, 0xFF, 0xFF, 0xFF };
-    const struct {
-        const char* Name;
-        void (*Draw)(MaxMatrix&, const rowType);
-    } Cases[] = {
-        { "setDot left", [](MaxMatrix& M, const rowType) { M.setDot(-1, 0, true); } },
-        { "setDot right", [](MaxMatrix& M, const rowType) { M.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true); } },
-        { "setDot above", [](MaxMatrix& M, const rowType) { M.setDot(0, -1, true); } },
-        { "setDot below", [](MaxMatrix& M, const rowType) { M.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true); } },
-        { "setColumn left", [](MaxMatrix& M, const rowType) { M.setColumn(-1, 0xFF); } },
-        { "setColumn right", [](MaxMatrix& M, const rowType) { M.setColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF); } },
-        { "setColumn no module", [](MaxMatrix& M, const rowType) { M.setColumn(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
-        { "setColumn off its module", [](MaxMatrix& M, const rowType) { M.setColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF); } },
-        { "setRow above", [](MaxMatrix& M, const rowType R) { M.setRow(-1, R); } },
-        { "setRow below", [](MaxMatrix& M, const rowType R) { M.setRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, R); } },
-        { "setRow no module", [](MaxMatrix& M, const rowType) { M.setRow(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
-        { "setRow off its module", [](MaxMatrix& M, const rowType) { M.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF); } },
+    struct {
+        char const* Name;
+        void (*Draw)(MaxMatrix&, rowType const);
+    } const Cases[] = {
+        { "setDot left", [](MaxMatrix& M, rowType const) { M.setDot(-1, 0, true); } },
+        { "setDot right", [](MaxMatrix& M, rowType const) { M.setDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0, true); } },
+        { "setDot above", [](MaxMatrix& M, rowType const) { M.setDot(0, -1, true); } },
+        { "setDot below", [](MaxMatrix& M, rowType const) { M.setDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true); } },
+        { "setColumn left", [](MaxMatrix& M, rowType const) { M.setColumn(-1, 0xFF); } },
+        { "setColumn right", [](MaxMatrix& M, rowType const) { M.setColumn(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF); } },
+        { "setColumn no module", [](MaxMatrix& M, rowType const) { M.setColumn(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "setColumn off its module", [](MaxMatrix& M, rowType const) { M.setColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF); } },
+        { "setRow above", [](MaxMatrix& M, rowType const R) { M.setRow(-1, R); } },
+        { "setRow below", [](MaxMatrix& M, rowType const R) { M.setRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, R); } },
+        { "setRow no module", [](MaxMatrix& M, rowType const) { M.setRow(MAXMATRIX_NUMBER_OF_MODULES, 0, 0xFF); } },
+        { "setRow off its module", [](MaxMatrix& M, rowType const) { M.setRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF); } },
     };
 
-    for(const auto& Case : Cases) {
+    for(auto const& Case : Cases) {
         Matrix.clear();
         int32_t FramesBefore = Mock::Frames;
         Case.Draw(Matrix, Row);
@@ -544,12 +544,12 @@ TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 {
     spriteType Sprite;
     ASSERT_EQ(MaxMatrixFont::getCharSprite('A', &Sprite).getError(), MAXMATRIX_E_OK);
-    const int16_t Width = Sprite[ASCII_TABLE_SPRITE_WIDTH], Height = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
-    const struct {
+    int16_t const Width = Sprite[ASCII_TABLE_SPRITE_WIDTH], Height = Sprite[ASCII_TABLE_SPRITE_HEIGHT];
+    struct {
         int16_t X, Y;
-    } Places[] = { { -2, 0 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 0 }, { -2, -3 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 5 } };
+    } const Places[] = { { -2, 0 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 0 }, { -2, -3 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 5 } };
 
-    for(const auto& Place : Places) {
+    for(auto const& Place : Places) {
         Matrix.clear();
         ASSERT_EQ(Matrix.setChar(Place.X, Place.Y, 'A').getError(), MAXMATRIX_E_OK);
         EXPECT_EQ(shownPicture(Matrix), picture([&Sprite, &Place, Width, Height](int16_t X, int16_t Y) {
@@ -563,7 +563,7 @@ TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 /* a changed column of a module goes out in one frame with the same column of every other module */
 TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule)
 {
-    const byte Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
+    byte const Module = MAXMATRIX_NUMBER_OF_MODULES - 2;
     int32_t FramesBefore = Mock::Frames;
 
     Matrix.Panel.Wired.storeBit(Module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3, 1, true);
@@ -695,7 +695,7 @@ TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval)
     Mock::setMillis(1000);
     Matrix.setShiftInterval(50);
     ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
-    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+    int16_t const Start = Matrix.Text.SpriteShiftCounter;
 
     Matrix.shiftTask();
     EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1) << "no first step at once";
@@ -713,7 +713,7 @@ TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp)
     Mock::setMillis(1000);
     Matrix.setShiftInterval(50);
     ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
-    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+    int16_t const Start = Matrix.Text.SpriteShiftCounter;
 
     Matrix.shiftTask();
     Mock::setMillis(1180);
@@ -733,7 +733,7 @@ TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall)
     Mock::setMillis(1000);
     Matrix.setShiftInterval(0);
     ASSERT_EQ(Matrix.setCharWithShift('#').getError(), MAXMATRIX_E_OK);
-    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+    int16_t const Start = Matrix.Text.SpriteShiftCounter;
 
     for(uint8_t Call = 0; Call < 3; Call++) Matrix.shiftTask();
     EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 3);
@@ -749,7 +749,7 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce)
 
     Mock::setMillis(1010);
     ASSERT_EQ(Matrix.setCharWithShift('+').getError(), MAXMATRIX_E_OK);
-    const int16_t Start = Matrix.Text.SpriteShiftCounter;
+    int16_t const Start = Matrix.Text.SpriteShiftCounter;
     Matrix.shiftTask();
     EXPECT_EQ(Matrix.Text.SpriteShiftCounter, Start + 1);
 }
@@ -804,7 +804,7 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match)
 
 TEST_F(MaxMatrixTest, EveryUmlautHasItsOwnSprite)
 {
-    const char* Umlauts[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü" };
+    char const* Umlauts[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü" };
     char Char;
 
     for(byte i = 0; i < 6; i++) {
@@ -863,7 +863,7 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
     MaxMatrixCommand Command;
 
     /* feeds a line char by char, as Serial would; every char but the last has to leave the line pending */
-    MaxMatrixResult<MaxMatrixCommandStateType> feedLine(const std::string& Text)
+    MaxMatrixResult<MaxMatrixCommandStateType> feedLine(std::string const& Text)
     {
         for(size_t i = 0; i + 1 < Text.size(); i++) {
             EXPECT_EQ(Command.feed(Matrix, Text[i]), MAXMATRIX_COMMAND_PENDING) << "char " << i << " of " << Text;
@@ -887,7 +887,7 @@ TEST_F(MaxMatrixCommandTest, TextShowsWhatSetTextShows)
 {
     Matrix.setText("xx");
     ASSERT_EQ(feedLine("text=Hi!\n"), MAXMATRIX_COMMAND_DONE);
-    const std::vector<byte> Shown = display();
+    std::vector<byte> const Shown = display();
 
     Matrix.clear();
     Matrix.setText("Hi!");
@@ -923,7 +923,7 @@ TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow)
 
     ASSERT_EQ(feedLine("textShift=AB\n"), MAXMATRIX_COMMAND_DONE);
     ASSERT_EQ(feedLine("intensity=3\n"), MAXMATRIX_COMMAND_DONE);
-    const std::vector<std::vector<byte>> Commanded = shiftSteps();
+    std::vector<std::vector<byte>> const Commanded = shiftSteps();
 
     Matrix.clear();
     ASSERT_EQ(Matrix.setTextWithShift(Text).getError(), MAXMATRIX_E_OK);
@@ -932,10 +932,10 @@ TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow)
 
 TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused)
 {
-    const struct {
-        const char* Line;
+    struct {
+        char const* Line;
         MaxMatrixErrorType Error;
-    } Cases[] = {
+    } const Cases[] = {
         { "blink\n", MAXMATRIX_E_UNKNOWN_COMMAND },
         { "clear=1\n", MAXMATRIX_E_UNKNOWN_COMMAND },
         { "intensity=16\n", MAXMATRIX_E_OUT_OF_RANGE },
@@ -954,7 +954,7 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused)
         { "text=a\x01\n", MAXMATRIX_E_UNKNOWN_CHAR },
     };
 
-    for(const auto& Case : Cases) EXPECT_EQ(feedLine(Case.Line), Case.Error) << Case.Line;
+    for(auto const& Case : Cases) EXPECT_EQ(feedLine(Case.Line), Case.Error) << Case.Line;
     EXPECT_EQ(Matrix.getShiftInterval(), 0) << "changed by a refused speed=";
 }
 
@@ -969,7 +969,7 @@ TEST_F(MaxMatrixCommandTest, LineEndsInNewlineOrCarriageReturnNewline)
 /* a line cut short would carry out a different command, so a line too long is dropped whole; the next one is read */
 TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
 {
-    const std::string Long = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
+    std::string const Long = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
 
     EXPECT_EQ(feedLine(Long), MAXMATRIX_E_LINE_TOO_LONG);
     EXPECT_EQ(display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0));
@@ -979,7 +979,7 @@ TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
 
 TEST_F(MaxMatrixCommandTest, LineOfFullLengthIsTaken)
 {
-    const std::string Text = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n";
+    std::string const Text = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n";
 
     EXPECT_EQ(feedLine(Text), MAXMATRIX_COMMAND_DONE);
 }

@@ -15,7 +15,7 @@
 #include <vector>
 #include "SimulatorWebHost.h"
 
-static const uint16_t Port = 18081;
+static uint16_t const Port = 18081;
 
 /* a connection that is opened and sends nothing is what a browser does when it opens a socket ahead of a request it
  * may never make; task() used to wait for it in recv() until the other end closed it, and the sketch waited with it.
@@ -28,7 +28,7 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
     sockaddr_in Address = sockaddr_in();
 
     ASSERT_TRUE(Host.begin(Port, "/dev/null"));
-    const int Idle = socket(AF_INET, SOCK_STREAM, 0);
+    int const Idle = socket(AF_INET, SOCK_STREAM, 0);
     ASSERT_GE(Idle, 0);
     Address.sin_family = AF_INET;
     Address.sin_port = htons(Port);
@@ -41,9 +41,9 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing)
         if(Done.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) shutdown(Idle, SHUT_RDWR);
     });
 
-    const auto Start = std::chrono::steady_clock::now();
+    auto const Start = std::chrono::steady_clock::now();
     Host.task(&Messages);
-    const auto Elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - Start);
+    auto const Elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - Start);
 
     TaskDone.set_value();
     Closer.join();

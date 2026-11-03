@@ -13,7 +13,7 @@ typedef std::pair<uint8_t, uint8_t> PairType;
 /* one frame: every pair shifted in, address first, then the rising edge of chip select */
 static void sendFrame(Max7219Chain& Chain, std::initializer_list<PairType> Pairs)
 {
-    for(const PairType& Pair : Pairs) {
+    for(PairType const& Pair : Pairs) {
         Chain.shift(Pair.first);
         Chain.shift(Pair.second);
     }
@@ -77,7 +77,7 @@ TEST(Max7219Test, PowerUpIsShutDownWithOneDigitAndMinimumIntensity)
 {
     Max7219Chain Chain;
     Chain.reset(1);
-    const Max7219& Chip = Chain.Chips[0];
+    Max7219 const& Chip = Chain.Chips[0];
 
     EXPECT_EQ(Chip.Shutdown, 0);
     EXPECT_EQ(Chip.ScanLimit, 0);
@@ -152,7 +152,7 @@ static Max7219Chain chainWithOneSegment(uint8_t NumberOfChips, uint8_t Chip, uin
 /* an LED as the viewer sees it, column X and row Y */
 typedef std::pair<uint16_t, uint16_t> LedType;
 
-static std::vector<LedType> litLeds(const Max7219Chain& Chain, const Max7219WiringType& Wiring,
+static std::vector<LedType> litLeds(Max7219Chain const& Chain, Max7219WiringType const& Wiring,
                                    bool UpsideDown = false)
 {
     std::vector<LedType> Leds;
@@ -167,7 +167,7 @@ static std::vector<LedType> litLeds(const Max7219Chain& Chain, const Max7219Wiri
 /* every digit and segment drives one LED of its own, in every wiring */
 TEST(Max7219Test, EveryWiringLightsEveryLedOnce)
 {
-    for(const Max7219WiringType& Wiring : Max7219Wirings) {
+    for(Max7219WiringType const& Wiring : Max7219Wirings) {
         SCOPED_TRACE(Wiring.Name);
         std::vector<LedType> Seen;
         for(uint8_t Digit = 0; Digit < Max7219::NumberOfDigits; Digit++) {
@@ -185,14 +185,14 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce)
 /* digit 0, segment bit 0 - where MD_MAX72XX's setPoint() puts it, with its column 0 on the right */
 TEST(Max7219Test, NamedWiringsMatchMdMax72xx)
 {
-    const std::pair<const Max7219WiringType*, LedType> Expected[] = {
+    std::pair<Max7219WiringType const*, LedType> const Expected[] = {
         { &MAX7219_WIRING_FC16, LedType(7, 0) },
         { &MAX7219_WIRING_GENERIC, LedType(7, 7) },
         { &MAX7219_WIRING_PAROLA, LedType(0, 0) },
         { &MAX7219_WIRING_ICSTATION, LedType(0, 7) },
     };
 
-    for(const auto& Case : Expected) {
+    for(auto const& Case : Expected) {
         SCOPED_TRACE(Case.first->Name);
         std::vector<LedType> Leds = litLeds(chainWithOneSegment(1, 0, 0, 0), *Case.first);
         ASSERT_EQ(Leds.size(), 1u);
