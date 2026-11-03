@@ -24,7 +24,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
-| 15 | Font format | 13 | open | |
+| 15 | Font format | 13 | in progress | #42 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
@@ -257,6 +257,12 @@ both), and what that costs on the Uno against today's fixed array.
 `SpriteTable` is one built-in font. Open: variable-width characters, a font the sketch
 supplies, a second smaller one - and whether to adopt MD_MAX72XX's font format and its
 tooling rather than invent one. Whatever comes keeps the latin-1 lookup behind `decodeChar`.
+
+The font now has the ß and the degree sign as well, `0xDF` and `0xB0` in latin-1. Without them
+`setText("Grüße")` failed and a shifting "Grüße" or "21 °C" lost the char without a word, as
+`Messages` showed when it was written. They cost 30 to 38 bytes of flash in the examples that
+draw text, none of RAM. The € was left out: it is not in latin-1, and `decodeChar()` reads two
+bytes of UTF-8, not the three it takes. The rest of the item is open.
 
 ### 16 Static analysis in CI
 
