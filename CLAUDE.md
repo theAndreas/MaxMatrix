@@ -45,7 +45,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   on an item updates its row.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
   the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
-- `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`.
+- `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`,
+  and `tools/east-const.py`, which finds a `const` left of what it qualifies.
 - `.github/workflows/static-analysis.yml` — clang-tidy over the host build and the Uno's, and
   cppcheck; `.clang-tidy` says which checks and why the rest are off, and
   `tools/cross-clang-tidy.py` lets clang read what `avr-gcc` was told.
@@ -153,6 +154,18 @@ the Arduino core declares them (a value from `millis()` is kept in a `uint32_t`,
 it is on the Uno); the result of `strtoul()` until its range is checked; POSIX file descriptors
 and `setsockopt()` options (`int`); and `size_t` for sizes of containers.
 
+### const
+
+`const` stands right of what it qualifies, in every file alike: `char const* Text`,
+`MaxMatrixBatch const&`, `std::string const Name`, `static char const ErrorTextOk[] PROGMEM`,
+`struct { … } const Names[]`. Read from right to left, the declaration then says what it is,
+and `char const* const` needs no second rule. The Arduino core writes `const` on the left; the
+mock, which stands in for it, and the examples follow this repository all the same.
+
+No compiler and no check of `.clang-tidy` notices a `const` on the left, so
+`tools/east-const.py` does, as a job of `ci.yml`. clang-format could move it with
+`QualifierAlignment: Right`, but only while formatting the whole file.
+
 ### Constants and configuration
 
 Constants are `#define`s in the header, grouped under a comment. Configuration switches are
@@ -232,12 +245,13 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 
 ## Build and check
 
-In the dev container, the same three things CI runs:
+In the dev container, the same four things CI runs:
 
 ```bash
 cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
+tools/east-const.py
 ```
 
 and what `static-analysis.yml` reads the code with, each of which fails on any finding:
@@ -289,7 +303,7 @@ fit which module; the README's table says the same and changes with it.
 The mock has a `Serial` that reads `Mock::SerialInput` and appends what the sketch prints to
 `Mock::SerialOutput`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()`,
 `strcmp_P()` and `pgm_read_ptr()` take strings in RAM there, as the host has no separate flash, but
-`F()` keeps the type `const __FlashStringHelper*` of the core.
+`F()` keeps the type `__FlashStringHelper const*` of the core.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `Mock::setMillis()`
 instead, until the next `Mock::reset()`; `delay()` then moves it on without waiting. The library
