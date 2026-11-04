@@ -25,7 +25,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
   `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
   change that moves a dot. `ErrorHandling.md` records what was weighed, and measured, for the
-  errors of OIL item 27.
+  errors of OIL item 27. `Documentation.md` says how the code is documented.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
   `--web` on `localhost:8080`. One class per job, as in `src/`:
@@ -241,20 +241,15 @@ simulator is built as `gnu++11` with the library.
 
 ### Layout of a source file
 
-Every file starts with the copyright and `\file` header. Sections are separated by the wide
-banner comments (`INCLUDES`, `GLOBAL CONSTANT MACROS`, `P U B L I C   F U N C T I O N S`, …).
-Every function has a banner with its name, a Doxygen block (`\brief`, `\details`,
-`\param[in]` / `\param[out]`, `\return`, `\pre` where it applies) and ends with
-`} /* functionName */`. A function that returns nothing has no `\return`: Doxygen warns of one.
-Indentation is four spaces.
+Every file of `src/`, `simulator/` and `docu/` starts with the copyright, the SPDX line and a
+`\file` block, as the files of Utl do; then come the includes and the code, with no banners
+between them and no name after a closing brace. Indentation is four spaces.
 
-What a sketch reads is in the reference, so it is documented whole: in `src/MaxMatrix.h`,
-`MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixStandardTypes.h` and `Command/`, every class,
-member, type, enum value and macro has a `/*! */` block or a `/*!< */` beside it, and the types
-the facade takes from the parts, such as `MaxMatrixSprite` and the orientations, as well. A one-line
-function in a header gets a one-line `\brief`; one that only passes a call on takes the block of
-the function it calls with `\copydoc`, rather than a second text that would drift from it.
-`tools/docs.py` fails on a gap there; below the facade a member may go without.
+How the code is documented is in [docu/Documentation.md](docu/Documentation.md), the style of
+Utl: a Doxygen block at each declaration, in the header, for the one who uses it; a comment on the
+implementation, `//` for one or two lines and `/* ... */` from three, where the code it explains
+is; what a sketch reads documented whole, and how `tools/docs.py` and clang's `-Wdocumentation`
+check it.
 
 An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
 header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
@@ -263,8 +258,9 @@ include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`.
 ### Comments
 
 Comments say *why*, not what — the reasoning that is not recoverable from the code, such as
-which alternative was rejected and what went wrong with it. Keep a comment attached to the
-function whose behaviour it explains.
+which alternative was rejected and what went wrong with it. Keep a comment where the code it
+explains is, as `docu/Documentation.md` says: in the body, at the private member, or at the
+definition in the `.cpp`, never between a Doxygen block and its declaration.
 
 ## Encoding and umlauts
 

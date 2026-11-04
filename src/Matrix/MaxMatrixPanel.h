@@ -1,35 +1,22 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The matrix as the viewer sees it.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrixPanel.h
- *      \brief      The matrix as the viewer sees it
- *
- *      \details    Columns, rows and dots in the viewer's coordinates, on top of the matrix as it is wired. Drawing only
- *                  changes the buffer; MaxMatrix decides when it is sent.
- *
- *****************************************************************************************************************************************************/
+ * Columns, rows and dots in the viewer's coordinates, on top of the matrix as it is wired. Drawing
+ * only changes the buffer; MaxMatrix decides when it is sent.
+ */
+
 #ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
 #define MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixWired.h"
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL DATA TYPES AND STRUCTURES
- *****************************************************************************************************************************************************/
 /*! how the whole matrix is turned, 180 for a board mounted upside down */
 enum class MaxMatrixMatrixOrientation : uint8_t {
     k0,         /*!< the board as it is meant to be mounted */
@@ -47,10 +34,6 @@ enum class MaxMatrixModuleOrientation : uint8_t {
 /*! a row of the whole matrix, one byte per module from the left, bit 7 of each the leftmost column of its module */
 typedef byte MaxMatrixRow[MAXMATRIX_NUMBER_OF_MODULES];
 
-
-/******************************************************************************************************************************************************
- *  CLASS  MaxMatrixPanel
- *****************************************************************************************************************************************************/
 class MaxMatrixPanel
 {
   private:
@@ -98,7 +81,3 @@ class MaxMatrixPanel
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

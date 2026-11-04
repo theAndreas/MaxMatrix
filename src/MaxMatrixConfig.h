@@ -1,31 +1,18 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief Configuration of the MaxMatrix library.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrixConfig.h
- *      \brief      Configuration of the MaxMatrix library
- *
- *      \details    The parameters every part of the library builds on: the size of the chain and how it is driven.
- *
- *****************************************************************************************************************************************************/
+ * The parameters every part of the library builds on: the size of the chain and how it is driven.
+ */
+
 #ifndef MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 #define MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include "MaxMatrixStandardTypes.h"
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* MaxMatrix Configuration Parameter
  * Each one can be given on the compiler command line instead, which is how the tests build both the bit banging and the
  * SPI variant. The Arduino IDE does not pass a sketch's defines to a library, so for a sketch they are changed here. */
@@ -76,7 +63,3 @@
 static_assert(MAXMATRIX_NUMBER_OF_COLUMNS <= 255, "at most 31 modules: their columns have to be counted in a byte");
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

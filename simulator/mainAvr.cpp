@@ -1,32 +1,23 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief Runs an example as the Uno runs it, in simavr, and draws the LED panel.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       mainAvr.cpp
- *      \brief      Runs an example as the Uno runs it, in simavr, and draws the LED panel
+ * Build/SimulatorAvr --elf FILE [--wiring FC16] [--upside-down] [--serial LINE]... [--web [--port
+ * PORT]] [--for SECONDS [--expect FILE]].
  *
- *      \details    build/SimulatorAvr --elf FILE [--wiring FC16] [--upside-down] [--serial LINE]...
- *                                     [--web [--port PORT]] [--for SECONDS [--expect FILE]]
+ * The .elf arduino-cli made of an example runs on a simulated ATmega328P, SimulatorAvr, and drives
+ * the MAX7219 model through the pins and the SPI output, rather than through the Arduino stand-in.
+ * The rest is the simulator of main.cpp: the same options, panel, terminal and page.
  *
- *                  The .elf arduino-cli made of an example runs on a simulated ATmega328P, SimulatorAvr, and drives the
- *                  MAX7219 model through the pins and the SPI output, rather than through the Arduino stand-in. The rest
- *                  is the simulator of main.cpp: the same options, panel, terminal and page.
- *
- *                  With --web, or without --for, the simulated time keeps to the host's clock, so that the panel moves
- *                  as it would on the board and the page talks to it in real time. Otherwise it runs as fast as simavr
- *                  can, and as the time is simulated, a run of the same .elf ends with the same panel every time, also
- *                  of an example that moves.
- *
- *****************************************************************************************************************************************************/
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
+ * With --web, or without --for, the simulated time keeps to the host's clock, so that the panel
+ * moves as it would on the board and the page talks to it in real time. Otherwise it runs as fast
+ * as simavr can, and as the time is simulated, a run of the same .elf ends with the same panel
+ * every time, also of an example that moves.
+ */
+
 #include <stdio.h>
 #include <chrono>
 #include <thread>
@@ -37,10 +28,6 @@
 #include "SimulatorTerminal.h"
 #include "SimulatorWeb.h"
 
-
-/******************************************************************************************************************************************************
- *  LOCAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* the examples put chip select on pin 10 */
 #define SIMULATOR_CHIP_SELECT_PIN                                   10u
 
@@ -49,29 +36,17 @@
 #define SIMULATOR_EXIT_FAILED                                       1
 #define SIMULATOR_EXIT_USAGE                                        2
 
-
-/******************************************************************************************************************************************************
- *  LOCAL DATA
- *****************************************************************************************************************************************************/
 static SimulatorOptions options;
 static SimulatorPanel panel;
 static SimulatorWeb web;
 static SimulatorAvr avr;
 
-
-/******************************************************************************************************************************************************
- * L O C A L   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  Begin()
-******************************************************************************************************************************************************/
 /*! \brief          prepares the output
  *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
  *
  *  \return         true
  *                  false           the port is taken
- *****************************************************************************************************************************************************/
+ */
 static bool Begin()
 {
     if(options.IsWeb()) {
@@ -85,17 +60,13 @@ static bool Begin()
         SimulatorTerminal::Clear();
     }
     return true;
-} /* Begin */
+}
 
-
-/******************************************************************************************************************************************************
-  Follow()
-******************************************************************************************************************************************************/
 /*! \brief          follows the AVR, once per simulated millisecond
  *  \details        this function serves the page and draws the panel when it is due, as Tick() of main.cpp does
  *
  *  \param[in]      now             the simulated time
- *****************************************************************************************************************************************************/
+ */
 static void Follow(uint32_t now)
 {
     if(options.IsWeb()) web.Task(panel);
@@ -104,16 +75,8 @@ static void Follow(uint32_t now)
         else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
         panel.SetDrawn(now);
     }
-} /* Follow */
+}
 
-
-/******************************************************************************************************************************************************
- * P U B L I C   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  main()
-******************************************************************************************************************************************************/
 /*! \brief          runs the example
  *  \details        this function runs the AVR one simulated millisecond at a time until the run ends
  *
@@ -123,7 +86,7 @@ static void Follow(uint32_t now)
  *                  SIMULATOR_EXIT_FAILED       the .elf cannot be read, the port is taken, the AVR stopped, or the run
  *                                              with --for ended with another panel or a transfer error
  *                  SIMULATOR_EXIT_USAGE        the command line is wrong
- *****************************************************************************************************************************************************/
+ */
 int main(int argc, char** argv)
 {
     if(!options.Parse(argc, argv) || options.GetElfFile() == nullptr || !panel.SetWiring(options.GetWiringName())) {
@@ -153,9 +116,4 @@ int main(int argc, char** argv)
     }
     bool const passed = SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) && mock::errors == 0;
     return passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED;
-} /* main */
-
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/
+}

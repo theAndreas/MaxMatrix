@@ -1,41 +1,24 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief A small HTTP and WebSocket server for the simulator, on loopback only.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorWebHost.h
- *      \brief      A small HTTP and WebSocket server for the simulator, on loopback only
- *
- *      \details    Serves the page and keeps the WebSockets open to it. Ported from Wordclock's
- *                  platform/simulator/src/WebHost.cpp, without what only the clock needs (the firmware update route, the
- *                  JSON documents, Windows).
- *
- *****************************************************************************************************************************************************/
+ * Serves the page and keeps the WebSockets open to it. Ported from Wordclock's
+ * platform/simulator/src/WebHost.cpp, without what only the clock needs (the firmware update route,
+ * the JSON documents, Windows).
+ */
+
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include <string>
 #include <vector>
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* SimulatorWebHost Parameter */
 #define SIMULATOR_WEB_HOST_MAX_CLIENTS                              4u
 
-
-/******************************************************************************************************************************************************
- *  CLASS  SimulatorWebHost
- *****************************************************************************************************************************************************/
 /* Polled from the simulator's tick rather than run in a thread, so nothing here needs a lock: every call happens between
  * two steps of the sketch. */
 class SimulatorWebHost
@@ -70,7 +53,3 @@ class SimulatorWebHost
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

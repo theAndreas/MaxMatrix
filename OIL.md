@@ -39,6 +39,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
+| 30 | Documentation in the style of Utl | 17 | in progress | #47 |
 
 ### 1 Build with CMake
 
@@ -567,6 +568,19 @@ them. CMake builds every example with `arduino-cli`, with bit banging and with S
 `avr/` compare each panel at a simulated time with `simulator/EXAMPLE.txt`: both transfer paths
 light the same, and the panels are the ones the examples are meant to show. Bit banging with the
 low bit first fails all six of its tests. The CI job "Examples in simavr" runs them.
+
+### 30 Documentation in the style of Utl
+
+The comments followed a style of their own: banners around every section and function, a name
+after every closing brace, and the Doxygen blocks of a function at its definition in the `.cpp`,
+where a sketch's author does not look, in columns and in lower case. Utl has a style written
+down in its `docs/Documentation.md`; MaxMatrix takes it, so that every project documents alike.
+
+In steps, each its own pull request: the banners go and the header of a file becomes the one of
+Utl, and the rules move into `docu/Documentation.md`, with clang's `-Wdocumentation` reading
+every block; then the blocks of the facade, of `Command/`, of the errors and the configuration
+move into the headers and are written anew; then those of the parts below; then those of the
+simulator.
 
 
 Why it is planned this way rather than the obvious alternative.

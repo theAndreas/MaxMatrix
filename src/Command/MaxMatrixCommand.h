@@ -1,35 +1,22 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief Commands for the matrix, one per line of text.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrixCommand.h
- *      \brief      Commands for the matrix, one per line of text
- *
- *      \details    The lines a control page or program sends to a board over Serial, read char by char and carried out
- *                  on a MaxMatrix. Knows nothing of where the chars come from.
- *
- *****************************************************************************************************************************************************/
+ * The lines a control page or program sends to a board over Serial, read char by char and carried
+ * out on a MaxMatrix. Knows nothing of where the chars come from.
+ */
+
 #ifndef MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
 #define MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixStandardTypes.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixConfig.h"
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL DATA TYPES AND STRUCTURES
- *****************************************************************************************************************************************************/
 /*! what Feed() says about the char it was given, when the line did not fail; why it failed is the error beside it */
 enum class MaxMatrixCommandState : uint8_t {
     kPending,              /*!< the line goes on, or was empty */
@@ -38,10 +25,6 @@ enum class MaxMatrixCommandState : uint8_t {
 
 class MaxMatrix;
 
-
-/******************************************************************************************************************************************************
- *  CLASS  MaxMatrixCommand
- *****************************************************************************************************************************************************/
 /*! The commands of the Windows tool in AndreasBur/Led-Matrix, one per line: text=, textShift=, intensity=, speed=,
  * space=, setDot=column,row,value and clear. The text of textShift= is kept in a buffer of its own, because
  * SetTextWithShift() only keeps a pointer and the next line overwrites the line buffer. As MaxMatrixText is, the class
@@ -70,7 +53,3 @@ class MaxMatrixCommand
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

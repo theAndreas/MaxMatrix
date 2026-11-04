@@ -1,6 +1,12 @@
 # clangd reads build/compile_commands.json and .clang-tidy on its own; this
-# file only quiets what CI does not report.
+# file adds what .clang-tidy passes as ExtraArgs, which clangd does not read,
+# and quiets what CI does not report.
 #
+# Everywhere, the checks of the Doxygen blocks that .clang-tidy passes, see
+# docu/Documentation.md.
+CompileFlags:
+  Add: [-Wdocumentation, -Wdocumentation-unknown-command]
+---
 # In test/, clang-tidy: static-analysis.yml reads src/ and simulator/ only,
 # and the tests keep a lighter style.
 #

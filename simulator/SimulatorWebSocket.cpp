@@ -1,30 +1,18 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The WebSocket protocol of the simulator's web page.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorWebSocket.cpp
- *      \brief      The WebSocket protocol of the simulator's web page
- *
- *      \details    Ported from Wordclock's platform/simulator/src/WebHost.cpp. SHA-1 and base64 are written out rather than
- *                  pulled in as a dependency, as there: a checksum a browser demands, not a security measure.
- *
- *****************************************************************************************************************************************************/
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
+ * Ported from Wordclock's platform/simulator/src/WebHost.cpp. SHA-1 and base64 are written out
+ * rather than pulled in as a dependency, as there: a checksum a browser demands, not a security
+ * measure.
+ */
+
 #include <ctype.h>
 #include "SimulatorWebSocket.h"
 
-
-/******************************************************************************************************************************************************
- *  LOCAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* handshake, RFC 6455 section 1.3: the server hashes the client's key with this fixed string */
 #define SIMULATOR_WEB_SOCKET_GUID                                   "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define SIMULATOR_WEB_SOCKET_KEY_HEADER                             "sec-websocket-key:"
@@ -47,14 +35,6 @@
 #define SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK                   16u
 #define SIMULATOR_WEB_SOCKET_SHA1_ROUNDS                            80u
 
-
-/******************************************************************************************************************************************************
- * P U B L I C   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  GetHandshakeAnswer()
-******************************************************************************************************************************************************/
 /*! \brief          answers a browser's request to open a WebSocket
  *  \details        this function builds the 101 response with the accept key the browser checks
  *
@@ -62,7 +42,7 @@
  *  \param[out]     answer          the response to send back
  *  \return         true
  *                  false           the request has no Sec-WebSocket-Key
- *****************************************************************************************************************************************************/
+ */
 bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request, std::string* answer)
 {
     std::string key;
@@ -72,19 +52,15 @@ bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request, std::str
                   "Sec-WebSocket-Accept: " + ConvertKeyToAcceptKey(key) + "\r\n\r\n";
         return true;
     } else return false;
-} /* GetHandshakeAnswer */
+}
 
-
-/******************************************************************************************************************************************************
-  EncodeFrame()
-******************************************************************************************************************************************************/
 /*! \brief          wraps a text into a frame
  *  \details        this function returns a final, unmasked text frame, as a server sends it. A panel update is a few
  *                  hundred bytes, so the 64 bit length is never needed.
  *
  *  \param[in]      payload         the text to send
  *  \return         the frame, header and payload
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWebSocket::EncodeFrame(std::string const& payload)
 {
     std::string frame;
@@ -98,12 +74,8 @@ std::string SimulatorWebSocket::EncodeFrame(std::string const& payload)
         frame += static_cast<char>(payload.size() & 0xFF);
     }
     return frame + payload;
-} /* EncodeFrame */
+}
 
-
-/******************************************************************************************************************************************************
-  DecodeFrame()
-******************************************************************************************************************************************************/
 /*! \brief          takes the first frame out of what has arrived
  *  \details        this function unmasks the payload, as a browser always masks it, and removes the frame from the
  *                  buffer. A frame that has not fully arrived stays in the buffer for the next call.
@@ -113,7 +85,7 @@ std::string SimulatorWebSocket::EncodeFrame(std::string const& payload)
  *  \param[out]     payload         the payload of the frame, unmasked
  *  \return         true
  *                  false           no complete frame in the buffer
- *****************************************************************************************************************************************************/
+ */
 bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode, std::string* payload)
 {
     std::string const& frame = *buffer;
@@ -143,36 +115,28 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode, std::
     *opcode = static_cast<uint8_t>(frame[0]) & SIMULATOR_WEB_SOCKET_OPCODE_MASK;
     buffer->erase(0, offset + mask_length + length);
     return true;
-} /* DecodeFrame */
+}
 
-
-/******************************************************************************************************************************************************
-  ConvertKeyToAcceptKey()
-******************************************************************************************************************************************************/
 /*! \brief          converts the browser's key into the key it expects back
  *  \details        this function returns the base64 of the SHA-1 of the key and the fixed GUID of RFC 6455
  *
- *  \param[in]      Key             the value of Sec-WebSocket-Key
+ *  \param[in]      key             the value of Sec-WebSocket-Key
  *  \return         the value of Sec-WebSocket-Accept
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWebSocket::ConvertKeyToAcceptKey(std::string const& key)
 {
     uint8_t digest[SIMULATOR_WEB_SOCKET_SHA1_LENGTH];
 
     CalculateSha1(key + SIMULATOR_WEB_SOCKET_GUID, digest);
     return ConvertToBase64(digest, sizeof(digest));
-} /* ConvertKeyToAcceptKey */
+}
 
-
-/******************************************************************************************************************************************************
-  CalculateSha1()
-******************************************************************************************************************************************************/
 /*! \brief          calculates the SHA-1 of a message
  *  \details        this function pads the message and processes it block by block, as FIPS 180-4 describes
  *
  *  \param[in]      message         the bytes to hash
  *  \param[out]     digest          the hash, SIMULATOR_WEB_SOCKET_SHA1_LENGTH bytes
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWebSocket::CalculateSha1(std::string const& message, uint8_t* digest)
 {
     uint32_t state[SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH] = { 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u };
@@ -184,19 +148,15 @@ void SimulatorWebSocket::CalculateSha1(std::string const& message, uint8_t* dige
     for(uint8_t word = 0; word < SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH; word++) {
         for(uint8_t part = 0; part < 4; part++) digest[word * 4 + part] = static_cast<uint8_t>(state[word] >> (24 - 8 * part));
     }
-} /* CalculateSha1 */
+}
 
-
-/******************************************************************************************************************************************************
-  ConvertToBase64()
-******************************************************************************************************************************************************/
 /*! \brief          converts bytes to base64
  *  \details        this function encodes every three bytes as four chars and pads the last group with '='
  *
  *  \param[in]      bytes           the bytes to convert
  *  \param[in]      length          the number of bytes
  *  \return         the base64 text
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes, size_t length)
 {
     static char const kAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -214,25 +174,17 @@ std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes, size_t len
         encoded += remaining > 2 ? kAlphabet[group & 0x3F] : '=';
     }
     return encoded;
-} /* ConvertToBase64 */
+}
 
-
-/******************************************************************************************************************************************************
- * P R I V A T E   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  GetKey()
-******************************************************************************************************************************************************/
 /*! \brief          finds the browser's key in a request
  *  \details        this function searches a lowered copy of the request, because header names are case-insensitive,
  *                  and returns the value from the request itself
  *
  *  \param[in]      request         the whole HTTP request, headers included
- *  \param[out]     Key             the value of Sec-WebSocket-Key
+ *  \param[out]     key             the value of Sec-WebSocket-Key
  *  \return         true
  *                  false           the request has no such header
- *****************************************************************************************************************************************************/
+ */
 bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key)
 {
     std::string lowered(request);
@@ -248,19 +200,15 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key)
 
     *key = request.substr(start, end - start);
     return true;
-} /* GetKey */
+}
 
-
-/******************************************************************************************************************************************************
-  PadSha1Message()
-******************************************************************************************************************************************************/
 /*! \brief          pads a message to whole blocks
  *  \details        this function appends a 1 bit, zeros up to eight bytes short of a block, and the length of the
  *                  message in bits, big endian
  *
  *  \param[in]      message         the bytes to hash
  *  \return         the padded message, a multiple of SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH long
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWebSocket::PadSha1Message(std::string const& message)
 {
     uint64_t const bits = static_cast<uint64_t>(message.size()) * 8;
@@ -270,18 +218,14 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message)
     while(padded.size() % SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH != SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION) padded.push_back('\0');
     for(int8_t shift = 56; shift >= 0; shift -= 8) padded.push_back(static_cast<char>((bits >> shift) & 0xFF));
     return padded;
-} /* PadSha1Message */
+}
 
-
-/******************************************************************************************************************************************************
-  ProcessSha1Block()
-******************************************************************************************************************************************************/
 /*! \brief          mixes one block into the state
  *  \details        this function expands the block into the message schedule of 80 words and runs the 80 rounds
  *
  *  \param[in]      block           SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH bytes of the padded message
  *  \param[in,out]  state           the five words of the hash so far
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block, uint32_t* state)
 {
     uint32_t word[SIMULATOR_WEB_SOCKET_SHA1_ROUNDS];
@@ -307,12 +251,8 @@ void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block, uint32_t* state)
     state[2] += c;
     state[3] += d;
     state[4] += e;
-} /* ProcessSha1Block */
+}
 
-
-/******************************************************************************************************************************************************
-  MixSha1()
-******************************************************************************************************************************************************/
 /*! \brief          the function and the constant of a round
  *  \details        this function returns the round's function of B, C and D plus its constant, which change every
  *                  20 rounds
@@ -322,32 +262,23 @@ void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block, uint32_t* state)
  *  \param[in]      c               the third word of the working state
  *  \param[in]      d               the fourth word of the working state
  *  \return         function and constant, added
- *****************************************************************************************************************************************************/
+ */
 uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c, uint32_t d)
 {
     if(round < 20) return ((b & c) | (~b & d)) + 0x5A827999u;
     else if(round < 40) return (b ^ c ^ d) + 0x6ED9EBA1u;
     else if(round < 60) return ((b & c) | (b & d) | (c & d)) + 0x8F1BBCDCu;
     else return (b ^ c ^ d) + 0xCA62C1D6u;
-} /* MixSha1 */
+}
 
-
-/******************************************************************************************************************************************************
-  RotateLeft()
-******************************************************************************************************************************************************/
 /*! \brief          rotates a word to the left
  *  \details        this function shifts the bits out on the left back in on the right
  *
  *  \param[in]      value           the word to rotate
  *  \param[in]      bits            how far, 1 to 31
  *  \return         the rotated word
- *****************************************************************************************************************************************************/
+ */
 uint32_t SimulatorWebSocket::RotateLeft(uint32_t value, uint8_t bits)
 {
     return (value << bits) | (value >> (32 - bits));
-} /* RotateLeft */
-
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/
+}
