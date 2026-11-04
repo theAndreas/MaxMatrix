@@ -88,7 +88,6 @@ void MaxMatrix::SetAutoUpdate(bool auto_update)
 }
 
 /*! \brief          set led intensity of matrix module
- *  \details        
  *                  
  *  \param[in]      intensity       intensity value from 0 to 15
  *  \return         MaxMatrixError::kOk

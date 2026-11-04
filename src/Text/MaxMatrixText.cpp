@@ -22,7 +22,6 @@ MaxMatrixText::MaxMatrixText()
 }
 
 /*! \brief          prints a char on the matrix
- *  \details        
  *                  
  *  \param[in]      panel       the matrix the text is drawn on
  *  \param[in]      x           x coordinate
@@ -57,7 +56,6 @@ MaxMatrixStatus MaxMatrixText::SetCharWithShift(char c)
 }
 
 /*! \brief          prints a string on the matrix
- *  \details        
  *                  
  *  \param[in]      panel       the matrix the text is drawn on
  *  \param[in]      string        string to print on matrix

@@ -120,7 +120,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode, std::
 /*! \brief          converts the browser's key into the key it expects back
  *  \details        this function returns the base64 of the SHA-1 of the key and the fixed GUID of RFC 6455
  *
- *  \param[in]      Key             the value of Sec-WebSocket-Key
+ *  \param[in]      key             the value of Sec-WebSocket-Key
  *  \return         the value of Sec-WebSocket-Accept
  */
 std::string SimulatorWebSocket::ConvertKeyToAcceptKey(std::string const& key)
@@ -181,7 +181,7 @@ std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes, size_t len
  *                  and returns the value from the request itself
  *
  *  \param[in]      request         the whole HTTP request, headers included
- *  \param[out]     Key             the value of Sec-WebSocket-Key
+ *  \param[out]     key             the value of Sec-WebSocket-Key
  *  \return         true
  *                  false           the request has no such header
  */

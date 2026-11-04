@@ -10,6 +10,7 @@
                 "ms-vscode.cpptools",
                 "EditorConfig.EditorConfig",
                 "eamodio.gitlens",
+                "cschlosser.doxdocgen",
                 "openai.chatgpt"
             ],
             // clangd for IntelliSense, from build/compile_commands.json, which it finds
@@ -17,11 +18,24 @@
             // two do not answer twice. No header insertion: an include in src/ names
             // its header by the path from src/, which the editor would not know. An
             // .ino is C++, and the simulator compiles each into the database.
+            // doxdocgen writes the skeleton of a Doxygen block, see the settings below.
             "settings": {
                 "C_Cpp.intelliSenseEngine": "disabled",
                 "clangd.path": "/usr/bin/clangd",
                 "clangd.arguments": ["--header-insertion=never"],
-                "files.associations": { "*.ino": "cpp" }
+                "files.associations": { "*.ino": "cpp" },
+                // The skeleton of a Doxygen block in the style of docu/Documentation.md:
+                // /*! and Enter above a declaration.
+                "doxdocgen.c.triggerSequence": "/*!",
+                "doxdocgen.c.firstLine": "/*!",
+                "doxdocgen.c.commentPrefix": " * ",
+                "doxdocgen.c.lastLine": " */",
+                "doxdocgen.generic.briefTemplate": "\\brief {text}",
+                "doxdocgen.generic.paramTemplate": "\\param[in] {param} ",
+                "doxdocgen.cpp.tparamTemplate": "\\tparam {param} ",
+                "doxdocgen.generic.returnTemplate": "\\return ",
+                "doxdocgen.generic.includeTypeAtReturn": false,
+                "doxdocgen.generic.order": ["brief", "empty", "tparam", "param", "return"]
             }
         }
     },

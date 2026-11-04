@@ -75,7 +75,7 @@ void SimulatorWeb::Send(SimulatorPanel const& panel)
 }
 
 /*! \brief          converts text into the inside of a JSON string
- *  \details        this function escapes quotes and backslashes and writes every byte outside printable ASCII as \u00XX.
+ *  \details        this function escapes quotes and backslashes and writes every byte outside printable ASCII as \\u00XX.
  *                  A sketch may print anything, latin-1 included, and a WebSocket text frame that is not valid UTF-8 makes
  *                  the browser close the connection; read as latin-1, every byte is a valid char.
  *

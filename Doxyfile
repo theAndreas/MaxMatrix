@@ -9,7 +9,7 @@ OUTPUT_DIRECTORY       = build/docu
 
 # docu/README.md becomes the page of docu/, with the pictures of the wirings. The examples are
 # not read: they are sketches, not reference, and the README links them on GitHub.
-INPUT                  = README.md docu/README.md src
+INPUT                  = README.md docu/README.md docu/Documentation.md src
 RECURSIVE              = YES
 FILE_PATTERNS          = *.h *.cpp *.md
 USE_MDFILE_AS_MAINPAGE = README.md

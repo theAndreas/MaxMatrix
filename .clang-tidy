@@ -25,6 +25,7 @@
 #
 Checks: >
   -*,
+  clang-diagnostic-documentation*,
   bugprone-*,
   cert-*,
   clang-analyzer-*,
@@ -68,6 +69,14 @@ Checks: >
 # slash keeps a directory that merely ends in src from matching.
 HeaderFilterRegex: '/(src|simulator)/'
 WarningsAsErrors: '*'
+# The Doxygen blocks, checked against the declaration they stand at: a \param whose name the
+# function does not have, a \return on a function that returns nothing, an empty \details, an
+# unknown command. See docu/Documentation.md; .clangd adds the same flags, so the editor shows
+# them as well. Checks names clang-diagnostic-documentation*, as the -* it starts with leaves
+# out every warning of the compiler, and these with them.
+ExtraArgs:
+  - -Wdocumentation
+  - -Wdocumentation-unknown-command
 CheckOptions:
   # Google's names. Exceptions: setup() and loop(), which Arduino calls by them, and the
   # stand-ins of test/mock/ for the Arduino core, which carry a NOLINT; an include guard ends
