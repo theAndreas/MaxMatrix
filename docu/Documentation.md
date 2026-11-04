@@ -63,8 +63,7 @@ the line it is for.
   ```
 
   `tools/doc-indent.py --fix` indents it so; without `--fix`, it fails where a line is not indented
-  so, as a job of `ci.yml`. It reads `src/` for now; the simulator and `docu/` follow once their
-  blocks are in this style.
+  so, as a job of `ci.yml`. It reads `src/`, `simulator/` and `docu/`.
 
 ### The parts, in this order
 

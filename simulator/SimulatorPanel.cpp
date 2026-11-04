@@ -22,9 +22,6 @@ static struct {
     { "ICSTATION", &kMaX7219WiringIcstation },
 };
 
-/*! \brief          SimulatorPanel constructor
- *  \details        Instantiation of a panel of the default wiring, mounted upright, that has never been drawn
- */
 SimulatorPanel::SimulatorPanel()
 {
     wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
@@ -35,14 +32,6 @@ SimulatorPanel::SimulatorPanel()
     draw_requested_ = true;
 }
 
-/*! \brief          the panel as text
- *  \details        this function writes the LEDs row after row, as the chosen module lights them
- *
- *  \param[in]      lit             what stands for a lit LED
- *  \param[in]      dark            what stands for a dark LED
- *  \param[in]      end_of_row      what follows every row
- *  \return         the panel
- */
 std::string SimulatorPanel::GetText(char const* lit, char const* dark, char const* end_of_row) const
 {
     std::string text;
@@ -54,24 +43,11 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark, char cons
     return text;
 }
 
-/*! \brief          the brightness of a module
- *  \details        this function asks the chip that lights the module at this place, which depends on the mounting
- *
- *  \param[in]      module          the module's place, counted from the left as the viewer sees the panel
- *  \return         the intensity register of its chip
- */
 uint8_t SimulatorPanel::GetIntensity(uint8_t module) const
 {
     return mock::chain.ChipAt(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, upside_down_).intensity;
 }
 
-/*! \brief          chooses the wiring of the modules
- *  \details        this function accepts the four names MD_MAX72XX has and DR0CR0RR0 ... DR1CR1RR1
- *
- *  \param[in]      name            the wiring's name
- *  \return         true
- *                  false           no wiring has this name; the panel keeps the one it has
- */
 bool SimulatorPanel::SetWiring(std::string const& name)
 {
     Max7219Wiring const* found = FindWiring(name);
@@ -84,24 +60,12 @@ bool SimulatorPanel::SetWiring(std::string const& name)
     } else return false;
 }
 
-/*! \brief          chooses how the board is mounted
- *  \details        this function turns the panel, so that the next draw shows it as a board mounted this way lights it
- *
- *  \param[in]      upside_down     true if the board is mounted upside down
- */
 void SimulatorPanel::SetUpsideDown(bool upside_down)
 {
     upside_down_ = upside_down;
     draw_requested_ = true;
 }
 
-/*! \brief          says whether the panel has to be drawn
- *  \details        this function says so when a frame arrived or a draw was requested since the last draw, but no more
- *                  often than every SIMULATOR_PANEL_REDRAW_INTERVAL
- *
- *  \param[in]      now             millis()
- *  \return         true if it is time to draw
- */
 bool SimulatorPanel::IsDrawDue(uint32_t now) const
 {
     bool const changed = mock::frames != drawn_frames_ || draw_requested_;
@@ -109,11 +73,6 @@ bool SimulatorPanel::IsDrawDue(uint32_t now) const
     return changed && now - last_draw_ >= SIMULATOR_PANEL_REDRAW_INTERVAL;
 }
 
-/*! \brief          notes that the panel was drawn
- *  \details        this function remembers the frame count and the time, so that IsDrawDue() waits for the next change
- *
- *  \param[in]      now             millis()
- */
 void SimulatorPanel::SetDrawn(uint32_t now)
 {
     drawn_frames_ = mock::frames;
@@ -121,12 +80,8 @@ void SimulatorPanel::SetDrawn(uint32_t now)
     draw_requested_ = false;
 }
 
-/*! \brief          finds a wiring by its name
- *  \details        this function looks at the names MD_MAX72XX has first, then at DR0CR0RR0 ... DR1CR1RR1
- *
- *  \param[in]      name            the wiring's name
- *  \return         the wiring, or nullptr if no wiring has this name
- */
+// Finds a wiring by its name: among the names MD_MAX72XX has first, then among DR0CR0RR0 ...
+// DR1CR1RR1. Returns nullptr if no wiring has this name.
 Max7219Wiring const* SimulatorPanel::FindWiring(std::string const& name)
 {
     for(auto const& named : kNamedWirings) {

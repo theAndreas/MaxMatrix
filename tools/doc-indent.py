@@ -12,11 +12,10 @@ backticks is kept whole, and \\code ... \\endcode and the lines of a list are le
 Without it, the files are only read, and a file in which a line is not so fails. The tool from
 Utl, tools/doc_indent.pl, does the same there after clang-format.
 
-The files of src/ are read: the simulator and docu/ follow once their blocks are in the style of
-docu/Documentation.md, OIL item 30.
+The headers and sources of src/, simulator/ and docu/ are read; the tests keep their // comments.
 
 Usage:
-    tools/doc-indent.py [--fix]              every header and source of src/ git knows of
+    tools/doc-indent.py [--fix]              every header and source of these git knows of
     tools/doc-indent.py [--fix] FILE ...     these files
 """
 
@@ -25,6 +24,7 @@ import subprocess
 import sys
 
 WIDTH = 100
+FOLDERS = ('src', 'simulator', 'docu')
 COMMAND = re.compile(r'^(\s*)\* (\\(?:param(?:\[[a-z,]+\])? +\S+|tparam +\S+|retval +\S+'
                      r'|return|pre|post|note|warning|see|brief)) +(\S.*)$')
 CONTINUED = re.compile(r'^\s*\* +(\S.*)$')
@@ -93,8 +93,9 @@ def main():
     fix = '--fix' in arguments
     files = [argument for argument in arguments if argument != '--fix']
     if not files:
-        files = subprocess.run(['git', 'ls-files', 'src/*.h', 'src/*.cpp'], capture_output=True,
-                               text=True, check=True).stdout.split()
+        patterns = [f'{folder}/*.{suffix}' for folder in FOLDERS for suffix in ('h', 'cpp')]
+        files = subprocess.run(['git', 'ls-files', *patterns], capture_output=True, text=True,
+                               check=True).stdout.split()
     failed = False
     for path in files:
         with open(path, encoding='utf-8') as source:

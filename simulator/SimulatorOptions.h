@@ -5,8 +5,8 @@
  * \file
  * \brief The command line of the simulator.
  *
- * [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]] [--for
- * SECONDS [--expect FILE]].
+ * [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]
+ * [--for SECONDS [--expect FILE]].
  */
 
 #ifndef MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_
@@ -20,8 +20,13 @@
 #define SIMULATOR_OPTIONS_MAX_PORT                                  65535u
 #define SIMULATOR_OPTIONS_MAX_RUN_FOR                               UINT32_MAX /* milliseconds */
 
-/* Only reads the command line; whether the wiring exists is the panel's to say, which knows the names, and whether a
- * simulator takes an .elf is its own: SimulatorAvr needs one, the simulator a sketch is built into refuses it. */
+/*!
+ * \brief The command line of the simulator.
+ *
+ * It only reads the command line. Whether the wiring exists is for SimulatorPanel to say, which
+ * knows the names; whether a simulator takes an `.elf` is for the simulator itself: SimulatorAvr
+ * needs one, the simulator a sketch is built into refuses it.
+ */
 class SimulatorOptions
 {
   private:
@@ -34,27 +39,64 @@ class SimulatorOptions
     char const* elf_file_;
     std::string serial_input_;
 
-    bool ParseOption(int, char**, int*);
-    static bool ConvertToPort(char const*, uint16_t*);
-    static bool ConvertToRunFor(char const*, uint32_t*);
+    bool ParseOption(int argc, char** argv, int* index);
+    static bool ConvertToPort(char const* text, uint16_t* port);
+    static bool ConvertToRunFor(char const* text, uint32_t* run_for);
 
   public:
+    /*!
+     * \brief Makes the options a simulator has without any on its command line.
+     *
+     * They are the default wiring, mounted upright, in the terminal, until Ctrl+C.
+     */
     SimulatorOptions();
 
-    // get methods
+    /*! \brief Returns the name of `--wiring`, or `SIMULATOR_PANEL_DEFAULT_WIRING` without it. */
     std::string const& GetWiringName() const { return wiring_name_; }
+
+    /*! \brief Returns whether `--upside-down` was given. */
     bool IsUpsideDown() const { return upside_down_; }
+
+    /*! \brief Returns whether `--web` was given. */
     bool IsWeb() const { return web_; }
+
+    /*! \brief Returns the port of `--port`, or `SIMULATOR_OPTIONS_DEFAULT_PORT` without it. */
     uint16_t GetPort() const { return port_; }
+
+    /*! \brief Returns the milliseconds of `--for`, or 0 without it, to run until Ctrl+C. */
     uint32_t GetRunFor() const { return run_for_; }
+
+    /*! \brief Returns the file of `--expect`, or nullptr without it. */
     char const* GetExpectFile() const { return expect_file_; }
+
+    /*! \brief Returns the file of `--elf`, or nullptr without it. */
     char const* GetElfFile() const { return elf_file_; }
-    /* the lines of every --serial, each ended with a line feed, for the sketch's Serial to read */
+
+    /*!
+     * \brief Returns the lines of every `--serial`, each ended with a line feed, for the sketch's
+     *        `Serial` to read.
+     */
     std::string const& GetSerialInput() const { return serial_input_; }
 
-    // methods
-    bool Parse(int, char**);
-    static void PrintUsage(char const*);
+    /*!
+     * \brief Reads the command line, one option after the other.
+     *
+     * `--expect` only makes sense with `--for`, which ends the run at a time the expected panel
+     * was taken at; without it the command line is wrong.
+     *
+     * \param[in] argc The number of arguments, the program's name included.
+     * \param[in] argv The arguments.
+     * \return True once every option is read, or false if the command line is wrong; PrintUsage()
+     *         says how it should be.
+     */
+    bool Parse(int argc, char** argv);
+
+    /*!
+     * \brief Says how the command line should be, on stderr, beside whatever went wrong.
+     *
+     * \param[in] program The program's name, `argv[0]`.
+     */
+    static void PrintUsage(char const* program);
 };
 
 #endif

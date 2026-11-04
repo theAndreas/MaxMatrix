@@ -41,11 +41,12 @@ static SimulatorPanel panel;
 static SimulatorWeb web;
 static SimulatorAvr avr;
 
-/*! \brief          prepares the output
- *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
+/*!
+ * \brief Prepares the output.
  *
- *  \return         true
- *                  false           the port is taken
+ * It opens the port for the page, or clears the terminal for a run that draws in it.
+ *
+ * \return True once the output is prepared, or false if the port is taken.
  */
 static bool Begin()
 {
@@ -62,10 +63,12 @@ static bool Begin()
     return true;
 }
 
-/*! \brief          follows the AVR, once per simulated millisecond
- *  \details        this function serves the page and draws the panel when it is due, as Tick() of main.cpp does
+/*!
+ * \brief Follows the AVR, once per simulated millisecond.
  *
- *  \param[in]      now             the simulated time
+ * It serves the page and draws the panel when it is due, as Tick() of main.cpp does.
+ *
+ * \param[in] now The simulated time.
  */
 static void Follow(uint32_t now)
 {
@@ -77,15 +80,17 @@ static void Follow(uint32_t now)
     }
 }
 
-/*! \brief          runs the example
- *  \details        this function runs the AVR one simulated millisecond at a time until the run ends
+/*!
+ * \brief Runs the example.
  *
- *  \param[in]      argc            the number of arguments, the program's name included
- *  \param[in]      argv            the arguments
- *  \return         SIMULATOR_EXIT_OK           the run with --for ended with the panel expected and no transfer error
- *                  SIMULATOR_EXIT_FAILED       the .elf cannot be read, the port is taken, the AVR stopped, or the run
- *                                              with --for ended with another panel or a transfer error
- *                  SIMULATOR_EXIT_USAGE        the command line is wrong
+ * It runs the AVR one simulated millisecond at a time until the run ends.
+ *
+ * \param[in] argc The number of arguments, the program's name included.
+ * \param[in] argv The arguments.
+ * \return `SIMULATOR_EXIT_OK` if the run with `--for` ended with the panel expected and no transfer
+ *         error; `SIMULATOR_EXIT_FAILED` if the .elf cannot be read, the port is taken, the AVR
+ *         stopped, or the run with `--for` ended with another panel or a transfer error; or
+ *         `SIMULATOR_EXIT_USAGE` if the command line is wrong.
  */
 int main(int argc, char** argv)
 {
@@ -111,7 +116,8 @@ int main(int argc, char** argv)
             return SIMULATOR_EXIT_FAILED;
         }
         Follow(now);
-        /* simavr runs faster than the Uno, so in real time it waits for the host's clock to catch up */
+        // simavr runs faster than the Uno, so in real time it waits for the host's clock to catch
+        // up.
         if(real_time) std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
     }
     bool const passed = SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) && mock::errors == 0;
