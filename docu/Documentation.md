@@ -42,7 +42,7 @@ the line it is for.
      * Dots that lie off the panel are left out, as a sprite that moves in does.
      *
      * \param[in] column The column, from the left, as the viewer sees it.
-     * \param[in] value  One bit per row.
+     * \param[in] value One bit per row.
      */
     void SetColumn(int16_t column, byte value);
 ```
@@ -53,12 +53,18 @@ the line it is for.
   brief is all it needs and fits on the line. If it does not, a one-line block
   `/*! \brief ... */` stands above it.
 - Commands start with a backslash, `\brief`, never with `@`.
+- One space between a command, its direction and its name, `\param[in] column`; nothing is aligned
+  in columns.
 - A line that continues a command starts where the text after the command starts:
 
   ```cpp
    * \return The column, one bit per row, or MaxMatrixError::kOutOfRange if `column`
    *         lies off the panel.
   ```
+
+  `tools/doc-indent.py --fix` indents it so; without `--fix`, it fails where a line is not indented
+  so, as a job of `ci.yml`. It reads `src/` for now; the simulator and `docu/` follow once their
+  blocks are in this style.
 
 ### The parts, in this order
 
@@ -140,6 +146,9 @@ The year is the one of the file's first commit.
   does not have, a `\return` on a function that returns nothing, an empty `\details`, an unknown
   command. clangd shows these in the editor as you type. A backslash meant as a char is written
   `\\`, as in `\\u00XX`, or clang takes it for a command.
+
+- **`tools/doc-indent.py`** checks that the lines continuing a command are indented under its
+  text.
 
 CI runs `tools/docs.py` on every pull request and publishes the reference from `main`.
 

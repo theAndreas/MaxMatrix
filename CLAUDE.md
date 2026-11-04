@@ -53,7 +53,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
   the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
 - `.github/workflows/ci.yml` — host tests, the examples on `arduino:avr:uno`, `arduino-lint`,
-  and `tools/east-const.py`, which finds a `const` left of what it qualifies.
+  `tools/east-const.py`, which finds a `const` left of what it qualifies, and
+  `tools/doc-indent.py`, which finds a line of a Doxygen block not indented under its command.
 - `.github/workflows/docs.yml` — the reference from the Doxygen blocks, checked on every pull
   request by `tools/docs.py` and published on GitHub Pages from `main`; `Doxyfile` says what
   Doxygen reads.
@@ -276,13 +277,14 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 
 ## Build and check
 
-In the dev container, the same four things CI runs:
+In the dev container, the same five things CI runs:
 
 ```bash
 cmake --workflow --preset default
 arduino-cli compile --fqbn arduino:avr:uno --library . --warnings all examples/ScrollText
 arduino-lint --library-manager submit
 tools/east-const.py
+tools/doc-indent.py
 ```
 
 the reference that `docs.yml` builds, into `build/docu/html`, failing on any warning that counts:

@@ -151,3 +151,15 @@ jobs:
       # The runner's python3; the tool needs nothing else.
       - name: Check
         run: python3 tools/east-const.py
+
+  doc-indent:
+    name: Doxygen blocks indented
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runner's python3; the tool needs nothing else. It fails where a line that continues a
+      # command of a Doxygen block is not indented under its text, docu/Documentation.md.
+      - name: Check
+        run: python3 tools/doc-indent.py

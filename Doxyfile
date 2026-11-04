@@ -32,4 +32,9 @@ GENERATE_LATEX         = NO
 
 QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = YES
+# A parameter without its \param fails, even the only one; docs.py lets a missing \return pass,
+# which a one-line block whose brief says what comes back needs not have. See
+# docu/Documentation.md.
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = YES
 WARN_LOGFILE           = build/docu/warnings.log

@@ -19,13 +19,6 @@
     #include "digitalWriteFast.h"
 #endif
 
-/*! \brief          MaxMatrixChain constructor
- *  \details        Instantiation of the transfer to the chain
- *
- *  \param[in]      data_in_pin        number of the Data Input Pin
- *  \param[in]      chip_select_pin    number of the Chip Select (CS) Pin
- *  \param[in]      clock_pin          number of the Clock Pin
- */
 MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin)
 {
     data_in_pin_ = data_in_pin;
@@ -33,10 +26,6 @@ MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte cloc
     clock_pin_ = clock_pin;
 }
 
-/*! \brief          initialization of the pins and the MAX7219
- *  \details        this function initializes the IO hardware and sets every MAX7219 up to drive an 8x8 matrix:
- *                  all eight digits, no decoding, normal operation
- */
 void MaxMatrixChain::Init()
 {
     pinMode(chip_select_pin_, OUTPUT);
@@ -64,12 +53,6 @@ void MaxMatrixChain::Init()
     WriteRegisterAll(MAX7219_REG_DISPLAY_TEST_ADDRESS, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);     // no display test
 }
 
-/*! \brief          write the same register of every MAX7219
- *  \details        this function sends one frame with the same address and value for every module
- *
- *  \param[in]      register_address    address of the MAX7219 register
- *  \param[in]      register_value      register value
- */
 void MaxMatrixChain::WriteRegisterAll(byte register_address, byte register_value)
 {
     StartTransmission();
@@ -77,12 +60,6 @@ void MaxMatrixChain::WriteRegisterAll(byte register_address, byte register_value
     StopTransmission();
 }
 
-/*! \brief          write the same register of every MAX7219, each with its own value
- *  \details        this function sends one frame with the same address and one value per module
- *
- *  \param[in]      register_address    address of the MAX7219 register
- *  \param[in]      register_values     one value per module, module 0 first
- */
 void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* register_values)
 {
     StartTransmission();
@@ -90,11 +67,8 @@ void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* regist
     StopTransmission();
 }
 
-/*! \brief          start transmission to MAX7219
- *  \details        this function pulls chip select low, in SPI mode the SPI bus will be reserved too
- *
- *  \post           StopTransmission() has to be called after data was transferred
- */
+// Starts a frame: pulls chip select low, and in SPI mode reserves the bus. StopTransmission()
+// has to follow once the frame is transferred.
 void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-function-const) */
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -107,11 +81,9 @@ void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-funct
 #endif
 }
 
-/*! \brief          stop transmission to MAX7219
- *  \details        this function pulls chip select high, so the MAX7219 latches the transferred data.
- *                  In SPI mode the SPI bus will be released for other devices.
- *
- *  \pre            StartTransmission() has to be called first
+/*
+ * Ends a frame: pulls chip select high, so that every MAX7219 latches what it was sent, and in SPI
+ * mode releases the bus for other devices. StartTransmission() has to come first.
  */
 void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-function-const) */
 {
@@ -125,13 +97,7 @@ void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-functi
 #endif
 }
 
-/*! \brief          send one address/value pair
- *  \details        this function sends the pair for one module of a frame
- *
- *  \param[in]      register_address    address of the MAX7219 register
- *  \param[in]      register_value      register value
- *  \pre            StartTransmission() has to be called first
- */
+// Sends the address and value of one module within a frame; StartTransmission() has to come first.
 /* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */
 void MaxMatrixChain::Transfer(byte register_address, byte register_value)
 {

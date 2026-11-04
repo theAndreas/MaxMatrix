@@ -59,6 +59,12 @@
 #define MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION                   0x00
 #define MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE                  0x01
 
+/*!
+ * \brief The chain of MAX7219s: the pins, and the frames sent to them.
+ *
+ * A frame carries one address and value per module. Only this class touches the pins; bit banging
+ * or SPI is chosen with `MAXMATRIX_USE_SPI`.
+ */
 class MaxMatrixChain
 {
   private:
@@ -66,31 +72,82 @@ class MaxMatrixChain
     byte chip_select_pin_;
     byte clock_pin_;
 
-    // functions
-    /* not const, though they change no member: they change the chain this object stands for, and a const MaxMatrixChain
-     * that still sends would be a lie. transfer() is not static either, though with SPI it uses no member: bit banging
-     * needs the pins. clang-tidy reports all three, and each definition answers it with a NOLINT. */
+    /*
+     * Not const, though they change no member: they change the chain this object stands for, and a
+     * const MaxMatrixChain that still sends would be a lie. transfer() is not static either, though
+     * with SPI it uses no member: bit banging needs the pins. clang-tidy reports all three, and
+     * each definition answers it with a NOLINT.
+     */
     void StartTransmission();
     void StopTransmission();
-    void Transfer(byte, byte);
+    void Transfer(byte register_address, byte register_value);
 
   public:
-    MaxMatrixChain(byte, byte, byte);
+    /*!
+     * \brief Makes the chain at these pins; nothing is sent until Init().
+     *
+     * \param[in] data_in_pin The pin DIN of the chain is connected to.
+     * \param[in] chip_select_pin The pin CS of the chain is connected to.
+     * \param[in] clock_pin The pin CLK of the chain is connected to.
+     */
+    MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin);
 
-    // get methods
+    /*! \brief Returns the pin DIN of the chain is connected to. */
     byte GetDataInPin() const { return data_in_pin_; }
+
+    /*! \brief Returns the pin CS of the chain is connected to. */
     byte GetChipSelectPin() const { return chip_select_pin_; }
+
+    /*! \brief Returns the pin CLK of the chain is connected to. */
     byte GetClockPin() const { return clock_pin_; }
 
-    // set methods
+    /*!
+     * \brief Sets the pin DIN of the chain is connected to.
+     *
+     * \param[in] data_in_pin The pin; Init() makes it an output.
+     */
     void SetDataInPin(byte data_in_pin) { data_in_pin_ = data_in_pin; }
+
+    /*!
+     * \brief Sets the pin CS of the chain is connected to.
+     *
+     * \param[in] chip_select_pin The pin; Init() makes it an output.
+     */
     void SetChipSelectPin(byte chip_select_pin) { chip_select_pin_ = chip_select_pin; }
+
+    /*!
+     * \brief Sets the pin CLK of the chain is connected to.
+     *
+     * \param[in] clock_pin The pin; Init() makes it an output.
+     */
     void SetClockPin(byte clock_pin) { clock_pin_ = clock_pin; }
 
-    // methods
+    /*!
+     * \brief Sets the pins up, and every MAX7219 to drive an 8x8 matrix.
+     *
+     * All eight digits, no decoding, normal operation, no display test.
+     */
     void Init();
-    void WriteRegisterAll(byte, byte);
-    void WriteRegisterEach(byte, byte const*);
+
+    /*!
+     * \brief Writes the same register of every MAX7219, with the same value.
+     *
+     * One frame, with the same address and value for every module.
+     *
+     * \param[in] register_address The address of the register, one of `MAX7219_REG_..._ADDRESS`.
+     * \param[in] register_value The value.
+     */
+    void WriteRegisterAll(byte register_address, byte register_value);
+
+    /*!
+     * \brief Writes the same register of every MAX7219, each with its own value.
+     *
+     * One frame, with the same address and one value per module.
+     *
+     * \param[in] register_address The address of the register, one of `MAX7219_REG_..._ADDRESS`.
+     * \param[in] register_values One value per module, module 0 first.
+     */
+    void WriteRegisterEach(byte register_address, byte const* register_values);
 };
 
 #endif
