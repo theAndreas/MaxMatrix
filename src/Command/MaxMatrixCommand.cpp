@@ -1,30 +1,17 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief Commands for the matrix, one per line of text.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrixCommand.cpp
- *      \brief      Commands for the matrix, one per line of text
- *
- *      \details    The names are compared with strcmp_P against strings in flash: in RAM, on the Uno, they would take
- *                  their length again for nothing.
- *
- *****************************************************************************************************************************************************/
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
+ * The names are compared with strcmp_P against strings in flash: in RAM, on the Uno, they would
+ * take their length again for nothing.
+ */
+
 #include "MaxMatrixCommand.h"
 #include "MaxMatrix.h"
 
-
-/******************************************************************************************************************************************************
- *  LOCAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* MaxMatrixCommand Parameter */
 #define MAXMATRIX_COMMAND_LINE_END                                  '\n'
 #define MAXMATRIX_COMMAND_CARRIAGE_RETURN                           '\r'
@@ -35,29 +22,17 @@
 #define MAXMATRIX_COMMAND_MAX_BYTE                                  0xFFu
 #define MAXMATRIX_COMMAND_MAX_INTERVAL                              0xFFFFu
 
-
-/******************************************************************************************************************************************************
- * P U B L I C   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  CONSTRUCTOR OF MaxMatrixCommand
-******************************************************************************************************************************************************/
 /*! \brief          MaxMatrixCommand constructor
  *  \details        Instantiation of a reader at the start of an empty line
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixCommand::MaxMatrixCommand()
 {
     line_[0] = STD_NULL_CHARACTER;
     shift_text_[0] = STD_NULL_CHARACTER;
     line_length_ = 0;
     line_too_long_ = false;
-} /* MaxMatrixCommand */
+}
 
-
-/******************************************************************************************************************************************************
-  Feed()
-******************************************************************************************************************************************************/
 /*! \brief          takes the next char of a command line
  *  \details        this function collects the chars up to a line feed and then carries the line out. A carriage return
  *                  is skipped, so that lines may end in \\r\\n as well; an empty line is no command. A line too long for
@@ -69,7 +44,7 @@ MaxMatrixCommand::MaxMatrixCommand()
  *                  MaxMatrixCommandState::kDone      the line was carried out
  *                  MaxMatrixError::kLineTooLong   the line did not fit and is dropped
  *                  or why the command failed, as Execute() returns it
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix, char c)
 {
     if(c == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return MaxMatrixCommandState::kPending;
@@ -90,16 +65,8 @@ MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix,
     MaxMatrixStatus status = Execute(matrix, line_);
     if(!status.IsOk()) return status.GetError();
     return MaxMatrixCommandState::kDone;
-} /* Feed */
+}
 
-
-/******************************************************************************************************************************************************
- * P R I V A T E   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  Execute()
-******************************************************************************************************************************************************/
 /*! \brief          carries out a whole line
  *  \details        this function splits the line at its first '=' into name and value and passes it on by name
  *
@@ -108,7 +75,7 @@ MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix,
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kUnknownCommand     no command has this name
  *                  or why the command failed
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
 {
     char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
@@ -123,12 +90,8 @@ MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
     if(0 == strcmp_P(text, PSTR("textShift"))) return ExecuteTextShift(matrix, value);
     if(0 == strcmp_P(text, PSTR("setDot"))) return ExecuteDot(matrix, value);
     return ExecuteSetting(matrix, text, value);
-} /* Execute */
+}
 
-
-/******************************************************************************************************************************************************
-  ExecuteTextShift()
-******************************************************************************************************************************************************/
 /*! \brief          textShift=TEXT shifts a text in from the right
  *  \details        this function copies the text out of the line buffer first: the shift reads it for as long as it
  *                  runs, and the next line would overwrite it there
@@ -137,7 +100,7 @@ MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
  *  \param[in]      value       the text, UTF-8 or latin-1
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kNoText     the text is empty
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const* value)
 {
     /* the text is part of Line, so it fits into shift_text_ as long as that is no shorter; strlcpy() would check the
@@ -147,12 +110,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const
     if(*value == STD_NULL_CHARACTER) return MaxMatrixError::kNoText;
     strcpy(shift_text_, value); /* NOLINT(clang-analyzer-security.insecureAPI.strcpy) */
     return matrix.SetTextWithShift(shift_text_);
-} /* ExecuteTextShift */
+}
 
-
-/******************************************************************************************************************************************************
-  ExecuteText()
-******************************************************************************************************************************************************/
 /*! \brief          text=TEXT shows a text from the left edge
  *  \details        this function clears the matrix first and sends clear and text as one picture; an empty text only
  *                  clears it
@@ -161,19 +120,15 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const
  *  \param[in]      value       the text, UTF-8 or latin-1
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kUnknownChar    a char of the text is not in the font; the chars before it are shown
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix, char const* value)
 {
     MaxMatrixBatch batch(matrix);
 
     matrix.Clear();
     return matrix.SetText(value);
-} /* ExecuteText */
+}
 
-
-/******************************************************************************************************************************************************
-  ExecuteDot()
-******************************************************************************************************************************************************/
 /*! \brief          setDot=COLUMN,ROW,VALUE sets one dot
  *  \details        this function reads three numbers separated by commas; the value is 0 or 1. The dot is checked
  *                  against the panel here, because SetDot() leaves a dot off the panel out without a word, and
@@ -184,7 +139,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix, char const* val
  *  \return         MaxMatrixError::kOk
  *                  MaxMatrixError::kNotANumber    a number is missing, empty or holds anything but digits
  *                  MaxMatrixError::kOutOfRange    the dot is not on the matrix, or the value is neither 0 nor 1
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
 {
     char* row_text = strchr(value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
@@ -201,12 +156,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
     if(!lit.IsOk()) return lit.GetError();
     matrix.SetDot(static_cast<int16_t>(column.GetValue()), static_cast<int16_t>(row.GetValue()), lit.GetValue() == 1);
     return MaxMatrixError::kOk;
-} /* ExecuteDot */
+}
 
-
-/******************************************************************************************************************************************************
-  ExecuteSetting()
-******************************************************************************************************************************************************/
 /*! \brief          the commands that set a number
  *  \details        intensity=0..15 sets the brightness, speed=MILLISECONDS the shift interval per column and
  *                  space=COLUMNS the columns between the chars of a text
@@ -218,7 +169,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
  *                  MaxMatrixError::kUnknownCommand     no command has this name
  *                  MaxMatrixError::kNotANumber        the value is empty or holds anything but digits
  *                  MaxMatrixError::kOutOfRange        the number is too large for the setting
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* name, char const* value)
 {
     if(0 == strcmp_P(name, PSTR("intensity"))) {
@@ -235,12 +186,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
         matrix.SetSpaceBetweenChars(number.GetValue());
     } else return MaxMatrixError::kUnknownCommand;
     return MaxMatrixError::kOk;
-} /* ExecuteSetting */
+}
 
-
-/******************************************************************************************************************************************************
-  ConvertToNumber()
-******************************************************************************************************************************************************/
 /*! \brief          converts a decimal number
  *  \details        this function takes digits only, at least one, and stops counting as soon as the number is past
  *                  Maximum, so that a long run of digits cannot overflow into a small number. It reads on to the
@@ -251,7 +198,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
  *  \return         the number
  *                  MaxMatrixError::kNotANumber    the text is empty or holds anything but digits
  *                  MaxMatrixError::kOutOfRange    the number is larger than Maximum
- *****************************************************************************************************************************************************/
+ */
 MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text, uint16_t maximum)
 {
     uint32_t value = 0;
@@ -263,9 +210,4 @@ MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text, ui
     }
     if(value > maximum) return MaxMatrixError::kOutOfRange;
     return static_cast<uint16_t>(value);
-} /* ConvertToNumber */
-
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/
+}

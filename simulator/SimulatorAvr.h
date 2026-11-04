@@ -1,44 +1,28 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief An example as the Uno runs it, in simavr, wired to the MAX7219 model.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorAvr.h
- *      \brief      An example as the Uno runs it, in simavr, wired to the MAX7219 model
- *
- *      \details    The .elf avr-gcc made runs on a simulated ATmega328P at 16 MHz. Pins 10, 11 and 13 - CS, DIN and CLK,
- *                  which are SS, MOSI and SCK as well - and the SPI output drive mock::chain, and the UART reads
- *                  mock::serial_input and writes mock::serial_output: the variables the Arduino stand-in drives for the
- *                  simulator a sketch is built into, so that the panel, the terminal and the page work on either.
- *
- *****************************************************************************************************************************************************/
+ * The .elf avr-gcc made runs on a simulated ATmega328P at 16 MHz. Pins 10, 11 and 13 - CS, DIN and
+ * CLK, which are SS, MOSI and SCK as well - and the SPI output drive mock::chain, and the UART
+ * reads mock::serial_input and writes mock::serial_output: the variables the Arduino stand-in
+ * drives for the simulator a sketch is built into, so that the panel, the terminal and the page
+ * work on either.
+ */
+
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include <stdint.h>
 #include <sim_avr.h>
 #include <sim_elf.h>
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* SimulatorAvr Parameter */
 #define SIMULATOR_AVR_MCU                                           "atmega328p"
 #define SIMULATOR_AVR_FREQUENCY                                     16000000u
 
-
-/******************************************************************************************************************************************************
- *  CLASS  SimulatorAvr
- *****************************************************************************************************************************************************/
 /* simavr reports a pin or a byte through a C function and a pointer it was given, so each of those is a static function
  * that is handed the object. The pins are followed rather than the port registers: digitalWrite() and shiftOut() write
  * the port bit by bit, and only a change is a step on the wire. */
@@ -83,7 +67,3 @@ class SimulatorAvr
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

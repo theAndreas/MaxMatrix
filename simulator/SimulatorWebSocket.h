@@ -1,34 +1,21 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The WebSocket protocol of the simulator's web page.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorWebSocket.h
- *      \brief      The WebSocket protocol of the simulator's web page
- *
- *      \details    The handshake and the frames of RFC 6455, as far as the page needs them. On strings only, with no socket
- *                  in here, so that the tests can check every byte without a network.
- *
- *****************************************************************************************************************************************************/
+ * The handshake and the frames of RFC 6455, as far as the page needs them. On strings only, with no
+ * socket in here, so that the tests can check every byte without a network.
+ */
+
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* SimulatorWebSocket opcodes, RFC 6455 section 5.2 */
 #define SIMULATOR_WEB_SOCKET_OPCODE_TEXT                            0x1u
 #define SIMULATOR_WEB_SOCKET_OPCODE_CLOSE                           0x8u
@@ -36,10 +23,6 @@
 /* SimulatorWebSocket Parameter */
 #define SIMULATOR_WEB_SOCKET_SHA1_LENGTH                            20u
 
-
-/******************************************************************************************************************************************************
- *  CLASS  SimulatorWebSocket
- *****************************************************************************************************************************************************/
 /* no state of its own, so every function is static, as in MaxMatrixFont */
 class SimulatorWebSocket
 {
@@ -63,7 +46,3 @@ class SimulatorWebSocket
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

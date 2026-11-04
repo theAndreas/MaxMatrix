@@ -1,43 +1,27 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The simulator's panel in a browser.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorWeb.h
- *      \brief      The simulator's panel in a browser
- *
- *      \details    What the page in simulator/index.html is sent - the panel, the brightness of every module, the frames on
- *                  the wire - and what it sends back: the wiring and the mounting to choose while the sketch runs.
- *
- *****************************************************************************************************************************************************/
+ * What the page in simulator/index.html is sent - the panel, the brightness of every module, the
+ * frames on the wire - and what it sends back: the wiring and the mounting to choose while the
+ * sketch runs.
+ */
+
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include <string>
 #include <vector>
 #include "SimulatorPanel.h"
 #include "SimulatorWebHost.h"
 
-
-/******************************************************************************************************************************************************
- *  GLOBAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* SimulatorWeb Parameter */
 /* the most frames the page is sent at once; more would scroll past before anyone read them */
 #define SIMULATOR_WEB_FRAME_LOG_LENGTH                              16u
 
-
-/******************************************************************************************************************************************************
- *  CLASS  SimulatorWeb
- *****************************************************************************************************************************************************/
 /* Every function that needs the panel is handed it, as MaxMatrixText is, rather than the class keeping a reference: the
  * panel belongs to the simulator, and the terminal is handed the same one. */
 class SimulatorWeb
@@ -65,7 +49,3 @@ class SimulatorWeb
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/

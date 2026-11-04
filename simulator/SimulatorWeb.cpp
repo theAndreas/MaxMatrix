@@ -1,31 +1,18 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The simulator's panel in a browser.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       SimulatorWeb.cpp
- *      \brief      The simulator's panel in a browser
- *
- *      \details    The page is sent JSON; it sends back "wiring NAME", "upside-down 0|1", "serial LINE", which reaches the
- *                  sketch's Serial as a line, and "hello" when it opens, which asks for the panel.
- *
- *****************************************************************************************************************************************************/
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
+ * The page is sent JSON; it sends back "wiring NAME", "upside-down 0|1", "serial LINE", which
+ * reaches the sketch's Serial as a line, and "hello" when it opens, which asks for the panel.
+ */
+
 #include <stdio.h>
 #include <sstream>
 #include "SimulatorWeb.h"
 
-
-/******************************************************************************************************************************************************
- *  LOCAL CONSTANT MACROS
- *****************************************************************************************************************************************************/
 /* commands of the page */
 #define SIMULATOR_WEB_COMMAND_WIRING                                "wiring "
 #define SIMULATOR_WEB_COMMAND_UPRIGHT                               "upside-down 0"
@@ -36,26 +23,14 @@
 #define SIMULATOR_WEB_JSON_FIRST_PLAIN                              0x20u
 #define SIMULATOR_WEB_JSON_LAST_PLAIN                               0x7Eu
 
-
-/******************************************************************************************************************************************************
- * P U B L I C   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  CONSTRUCTOR OF SimulatorWeb
-******************************************************************************************************************************************************/
 /*! \brief          SimulatorWeb constructor
  *  \details        Instantiation of a web view that has logged no frame yet
- *****************************************************************************************************************************************************/
+ */
 SimulatorWeb::SimulatorWeb()
 {
     logged_frames_ = 0;
-} /* SimulatorWeb */
+}
 
-
-/******************************************************************************************************************************************************
-  Begin()
-******************************************************************************************************************************************************/
 /*! \brief          serves the page
  *  \details        this function opens the port on localhost
  *
@@ -63,23 +38,19 @@ SimulatorWeb::SimulatorWeb()
  *  \param[in]      page_path       the page to serve
  *  \return         true
  *                  false           the port is taken
- *****************************************************************************************************************************************************/
+ */
 bool SimulatorWeb::Begin(uint16_t port, char const* page_path)
 {
     return host_.Begin(port, page_path);
-} /* Begin */
+}
 
-
-/******************************************************************************************************************************************************
-  Task()
-******************************************************************************************************************************************************/
 /*! \brief          follows the sketch and the page
  *  \details        this function logs a new frame and carries out what the page has sent. It is called after every
  *                  frame, so each one gets logged and the page shows them as they pass. What the sketch has printed asks
  *                  for the panel too: an answer such as "ok" changes no LED, and would otherwise wait for the next frame.
  *
  *  \param[in,out]  panel           the panel the page's commands change
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWeb::Task(SimulatorPanel& panel)
 {
     std::vector<std::string> messages;
@@ -88,29 +59,21 @@ void SimulatorWeb::Task(SimulatorPanel& panel)
     host_.Task(&messages);
     for(std::string const& message : messages) Command(panel, message);
     if(!mock::serial_output.empty()) panel.RequestDraw();
-} /* Task */
+}
 
-
-/******************************************************************************************************************************************************
-  Send()
-******************************************************************************************************************************************************/
 /*! \brief          sends the panel to the page
  *  \details        this function sends the panel with the frames logged and what the sketch printed since the last time,
  *                  and starts over with both
  *
  *  \param[in]      panel           the panel to send
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWeb::Send(SimulatorPanel const& panel)
 {
     host_.Broadcast(GetMessage(panel));
     frame_log_.clear();
     mock::serial_output.clear();
-} /* Send */
+}
 
-
-/******************************************************************************************************************************************************
-  ConvertToJsonString()
-******************************************************************************************************************************************************/
 /*! \brief          converts text into the inside of a JSON string
  *  \details        this function escapes quotes and backslashes and writes every byte outside printable ASCII as \u00XX.
  *                  A sketch may print anything, latin-1 included, and a WebSocket text frame that is not valid UTF-8 makes
@@ -118,7 +81,7 @@ void SimulatorWeb::Send(SimulatorPanel const& panel)
  *
  *  \param[in]      text            the bytes, as the sketch printed them
  *  \return         the text for between the quotes of a JSON string
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWeb::ConvertToJsonString(std::string const& text)
 {
     std::string json;
@@ -137,20 +100,12 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text)
         }
     }
     return json;
-} /* ConvertToJsonString */
+}
 
-
-/******************************************************************************************************************************************************
- * P R I V A T E   F U N C T I O N S
- *****************************************************************************************************************************************************/
-
-/******************************************************************************************************************************************************
-  LogFrame()
-******************************************************************************************************************************************************/
 /*! \brief          logs the last frame
  *  \details        this function writes the frame as address/value pairs, one pair per module, and keeps no more than
  *                  SIMULATOR_WEB_FRAME_LOG_LENGTH frames
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWeb::LogFrame()
 {
     std::string line = "#" + std::to_string(mock::frames) + ":";
@@ -164,12 +119,8 @@ void SimulatorWeb::LogFrame()
     frame_log_.push_back(line);
     if(frame_log_.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH) frame_log_.erase(frame_log_.begin());
     logged_frames_ = mock::frames;
-} /* LogFrame */
+}
 
-
-/******************************************************************************************************************************************************
-  Command()
-******************************************************************************************************************************************************/
 /*! \brief          carries out a command of the page
  *  \details        this function changes the wiring or the mounting, or hands a line to the sketch's Serial, as a
  *                  control program would send it to a board. Every message asks for the panel, also one that changes
@@ -177,7 +128,7 @@ void SimulatorWeb::LogFrame()
  *
  *  \param[in,out]  panel           the panel to change
  *  \param[in]      message         the command
- *****************************************************************************************************************************************************/
+ */
 void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message)
 {
     std::string const wiring_command = SIMULATOR_WEB_COMMAND_WIRING;
@@ -188,12 +139,8 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message)
     else if(message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) panel.SetUpsideDown(true);
     else if(message == SIMULATOR_WEB_COMMAND_UPRIGHT) panel.SetUpsideDown(false);
     panel.RequestDraw();
-} /* Command */
+}
 
-
-/******************************************************************************************************************************************************
-  GetMessage()
-******************************************************************************************************************************************************/
 /*! \brief          the message for the page
  *  \details        this function writes the panel as JSON: the wiring and the mounting, the size, the dots row after row
  *                  as '1' and '0', the brightness of each module from the left, the frame count, the transfer errors,
@@ -201,7 +148,7 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message)
  *
  *  \param[in]      panel           the panel to send
  *  \return         the JSON text
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const
 {
     std::ostringstream json;
@@ -214,35 +161,27 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const
          << ",\"log\":[" << GetLog() << "]"
          << ",\"serial\":\"" << ConvertToJsonString(mock::serial_output) << "\"}";
     return json.str();
-} /* GetMessage */
+}
 
-
-/******************************************************************************************************************************************************
-  GetLog()
-******************************************************************************************************************************************************/
 /*! \brief          the logged frames for the message
  *  \details        this function quotes every logged frame; the frames hold nothing a JSON string would have to escape
  *
  *  \return         the frames as JSON strings, separated by commas
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWeb::GetLog() const
 {
     std::string log;
 
     for(size_t i = 0; i < frame_log_.size(); i++) log += (i > 0 ? ",\"" : "\"") + frame_log_[i] + "\"";
     return log;
-} /* GetLog */
+}
 
-
-/******************************************************************************************************************************************************
-  GetIntensities()
-******************************************************************************************************************************************************/
 /*! \brief          the brightness of every module for the message
  *  \details        this function counts the modules as the viewer sees them, from the left, whatever the mounting
  *
  *  \param[in]      panel           the panel
  *  \return         the intensities from the left, separated by commas
- *****************************************************************************************************************************************************/
+ */
 std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel)
 {
     std::string intensities;
@@ -251,9 +190,4 @@ std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel)
         intensities += (module > 0 ? "," : "") + std::to_string(panel.GetIntensity(module));
     }
     return intensities;
-} /* GetIntensities */
-
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/
+}

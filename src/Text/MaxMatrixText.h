@@ -1,34 +1,22 @@
-/******************************************************************************************************************************************************
- *  COPYRIGHT
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  \verbatim
- *  Copyright (c) Andreas Burnickl                                                                                                 All rights reserved.
+// Copyright 2020 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief Text on the matrix.
  *
- *  \endverbatim
- *  ---------------------------------------------------------------------------------------------------------------------------------------------------
- *  FILE DESCRIPTION
- *  -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/**     \file       MaxMatrixText.h
- *      \brief      Text on the matrix
- *
- *      \details    Chars and strings in the font, drawn on the matrix as the viewer sees it, standing or shifting in.
- *
- *****************************************************************************************************************************************************/
+ * Chars and strings in the font, drawn on the matrix as the viewer sees it, standing or shifting
+ * in.
+ */
+
 #ifndef MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
 #define MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
 
-/******************************************************************************************************************************************************
- * INCLUDES
- *****************************************************************************************************************************************************/
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
 #include "Font/MaxMatrixFont.h"
 #include "Matrix/MaxMatrixPanel.h"
 
-
-/******************************************************************************************************************************************************
- *  CLASS  MaxMatrixText
- *****************************************************************************************************************************************************/
 /* Every function that draws is given the panel rather than the class keeping a reference to it. A reference costs two
  * bytes of RAM, and avr-gcc no longer sees through it that the panel is the one inside the global MaxMatrix of the
  * sketch: ScrollText was 86 bytes of flash larger with it. */
@@ -65,7 +53,3 @@ class MaxMatrixText
 };
 
 #endif
-
-/******************************************************************************************************************************************************
- *  E N D   O F   F I L E
- *****************************************************************************************************************************************************/
