@@ -23,31 +23,80 @@
 #define MAXMATRIX_ASCII_CHAR_MAX                                    126
 #define MAXMATRIX_ASCII_CHAR_MAX_WIDTH                              5
 
-/*! the index of a sprite in the font, the char's code minus 32 for ASCII */
+/*! \brief The index of a sprite in the font: the char's code minus 32 for ASCII. */
 typedef byte MaxMatrixSpriteIndex;
 
-/*! a sprite: its width, its height and up to five columns, bit 0 the top row, as the bytes are named below */
+/*!
+ * \brief A sprite: its width, its height and up to five columns, bit 0 the top row.
+ *
+ * MaxMatrixSpriteByte names its bytes.
+ */
 typedef byte MaxMatrixSprite[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
 
-/*! the bytes of a MaxMatrixSprite */
+/*! \brief The bytes of a MaxMatrixSprite. */
 enum MaxMatrixSpriteByte : uint8_t {
-    kSpriteWidth,               /*!< the columns it takes, 1 to 5 */
-    kSpriteHeight,              /*!< the rows it takes, 1 to 8 */
-    kSpriteColumn1,             /*!< its leftmost column */
-    kSpriteColumn2,             /*!< its second column */
-    kSpriteColumn3,             /*!< its third column */
-    kSpriteColumn4,             /*!< its fourth column */
-    kSpriteColumn5              /*!< its fifth column */
+    kSpriteWidth,   /*!< The columns it takes, 1 to 5. */
+    kSpriteHeight,  /*!< The rows it takes, 1 to 8. */
+    kSpriteColumn1, /*!< Its leftmost column. */
+    kSpriteColumn2, /*!< Its second column. */
+    kSpriteColumn3, /*!< Its third column. */
+    kSpriteColumn4, /*!< Its fourth column. */
+    kSpriteColumn5  /*!< Its fifth column. */
 };
 
-/* no state of its own, so every function is static: there is one font, and an instance would be an empty object */
+/*!
+ * \brief The font: a sprite per char, and the way from a char of a string to its sprite.
+ *
+ * It has no state of its own, so every function is static: there is one font, and an instance
+ * would be an empty object. The sprites lie in flash.
+ */
 class MaxMatrixFont
 {
   public:
-    static MaxMatrixStatus GetSprite(MaxMatrixSpriteIndex, MaxMatrixSprite*);
-    static MaxMatrixStatus GetCharSprite(char, MaxMatrixSprite*);
-    static MaxMatrixResult<MaxMatrixSpriteIndex> ConvertCharToSprite(char);
-    static byte DecodeChar(char const*, char*);
+    /*!
+     * \brief Copies the sprite at `sprite_index` from the font.
+     *
+     * \param[in] sprite_index The index of the sprite.
+     * \param[out] sprite The sprite: width, height and up to five columns; left as it was on an
+     *                    error.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the font has no sprite at the
+     *         index.
+     */
+    static MaxMatrixStatus GetSprite(MaxMatrixSpriteIndex sprite_index, MaxMatrixSprite* sprite);
+
+    /*!
+     * \brief Copies the sprite of a char from the font.
+     *
+     * What every function of MaxMatrixText that draws a char needs.
+     *
+     * \param[in] c The char, latin-1, as DecodeChar() gives it.
+     * \param[out] sprite The sprite: width, height and up to five columns; left as it was on an
+     *                    error.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font has no sprite for
+     *         the char.
+     */
+    static MaxMatrixStatus GetCharSprite(char c, MaxMatrixSprite* sprite);
+
+    /*!
+     * \brief Returns the index of the sprite of a char.
+     *
+     * \param[in] c The char, latin-1.
+     * \return The index in the font, or MaxMatrixError::kUnknownChar if the font has no sprite for
+     *         the char.
+     */
+    static MaxMatrixResult<MaxMatrixSpriteIndex> ConvertCharToSprite(char c);
+
+    /*!
+     * \brief Decodes the next char of a string.
+     *
+     * A UTF-8 sequence of a latin-1 char, such as an umlaut, becomes that one latin-1 char; every
+     * other byte comes back as it is.
+     *
+     * \param[in] string The string at the char to decode; not at its terminating null character.
+     * \param[out] c The decoded char.
+     * \return The number of bytes the char took in `string`.
+     */
+    static byte DecodeChar(char const* string, char* c);
 };
 
 #endif

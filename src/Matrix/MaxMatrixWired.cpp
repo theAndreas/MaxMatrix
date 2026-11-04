@@ -12,28 +12,12 @@
 
 #include "MaxMatrixWired.h"
 
-/*! \brief          MaxMatrixWired constructor
- *  \details        Instantiation of the matrix as it is wired, with an empty buffer
- *
- *  \param[in]      data_in_pin        number of the Data Input Pin
- *  \param[in]      chip_select_pin    number of the Chip Select (CS) Pin
- *  \param[in]      clock_pin          number of the Clock Pin
- */
 MaxMatrixWired::MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin) : chain_(data_in_pin, chip_select_pin, clock_pin)
 {
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) matrix_buffer_[i] = 0;
     changed_columns_ = 0;
 }
 
-/*! \brief          set one bit of the buffer
- *  \details        this function changes the buffer alone; Send() brings the change to the chain. The column is marked
- *                  as changed only when its value changes, so that drawing what is already shown sends nothing.
- *
- *  \param[in]      column      column in the buffer
- *  \param[in]      bit         bit in the column, the row as wired
- *  \param[in]      value       true for a lit LED
- *  \pre            Column is within the buffer and Bit within a byte: MaxMatrixPanel has checked and mapped them
- */
 void MaxMatrixWired::StoreBit(byte column, byte bit, bool value)
 {
     byte column_value = matrix_buffer_[column];
@@ -45,20 +29,12 @@ void MaxMatrixWired::StoreBit(byte column, byte bit, bool value)
     }
 }
 
-/*! \brief          turns every LED off
- *  \details        this function empties the buffer and marks every column as changed, even one that was empty
- *                  already: after power-up the registers of the MAX7219 hold anything, and Init() clears them this way
- */
 void MaxMatrixWired::Clear()
 {
     for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) matrix_buffer_[i] = 0;
     changed_columns_ = 0xFF;
 }
 
-/*! \brief          sends what has changed
- *  \details        this function sends every changed column of a module in one frame for all modules, and nothing
- *                  when nothing has changed
- */
 void MaxMatrixWired::Send()
 {
     byte values[MAXMATRIX_NUMBER_OF_MODULES];

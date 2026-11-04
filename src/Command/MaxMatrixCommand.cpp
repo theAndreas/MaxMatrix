@@ -22,9 +22,6 @@
 #define MAXMATRIX_COMMAND_MAX_BYTE                                  0xFFu
 #define MAXMATRIX_COMMAND_MAX_INTERVAL                              0xFFFFu
 
-/*! \brief          MaxMatrixCommand constructor
- *  \details        Instantiation of a reader at the start of an empty line
- */
 MaxMatrixCommand::MaxMatrixCommand()
 {
     line_[0] = STD_NULL_CHARACTER;
@@ -33,18 +30,6 @@ MaxMatrixCommand::MaxMatrixCommand()
     line_too_long_ = false;
 }
 
-/*! \brief          takes the next char of a command line
- *  \details        this function collects the chars up to a line feed and then carries the line out. A carriage return
- *                  is skipped, so that lines may end in \\r\\n as well; an empty line is no command. A line too long for
- *                  the buffer is dropped whole, rather than carried out cut short.
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in]      c        the next char, as Serial.read() returns it
- *  \return         MaxMatrixCommandState::kPending while the line goes on or after an empty line
- *                  MaxMatrixCommandState::kDone      the line was carried out
- *                  MaxMatrixError::kLineTooLong   the line did not fit and is dropped
- *                  or why the command failed, as Execute() returns it
- */
 MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix, char c)
 {
     if(c == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return MaxMatrixCommandState::kPending;
@@ -67,15 +52,8 @@ MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix,
     return MaxMatrixCommandState::kDone;
 }
 
-/*! \brief          carries out a whole line
- *  \details        this function splits the line at its first '=' into name and value and passes it on by name
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in,out]  text        the line, without its line end; the '=' is overwritten with the end of the name
- *  \return         MaxMatrixError::kOk
- *                  MaxMatrixError::kUnknownCommand     no command has this name
- *                  or why the command failed
- */
+// Splits the line at its first '=' into name and value, overwriting the '=' with the end of the
+// name, and passes it on by name.
 MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
 {
     char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
@@ -92,19 +70,14 @@ MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
     return ExecuteSetting(matrix, text, value);
 }
 
-/*! \brief          textShift=TEXT shifts a text in from the right
- *  \details        this function copies the text out of the line buffer first: the shift reads it for as long as it
- *                  runs, and the next line would overwrite it there
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in]      value       the text, UTF-8 or latin-1
- *  \return         MaxMatrixError::kOk
- *                  MaxMatrixError::kNoText     the text is empty
- */
+// textShift=TEXT copies the text out of the line buffer first: the shift reads it for as long as
+// it runs, and the next line would overwrite it there.
 MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const* value)
 {
-    /* the text is part of Line, so it fits into shift_text_ as long as that is no shorter; strlcpy() would check the
-       same at run time, for 30 bytes of flash in SerialControl */
+    /*
+     * The text is part of Line, so it fits into shift_text_ as long as that is no shorter;
+     * strlcpy() would check the same at run time, for 30 bytes of flash in SerialControl
+     */
     static_assert(sizeof(shift_text_) >= sizeof(line_), "ShiftText has to hold any text of a line");
 
     if(*value == STD_NULL_CHARACTER) return MaxMatrixError::kNoText;
@@ -112,15 +85,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const
     return matrix.SetTextWithShift(shift_text_);
 }
 
-/*! \brief          text=TEXT shows a text from the left edge
- *  \details        this function clears the matrix first and sends clear and text as one picture; an empty text only
- *                  clears it
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in]      value       the text, UTF-8 or latin-1
- *  \return         MaxMatrixError::kOk
- *                  MaxMatrixError::kUnknownChar    a char of the text is not in the font; the chars before it are shown
- */
+// text=TEXT clears the matrix first and sends clear and text as one picture; an empty text only
+// clears it.
 MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix, char const* value)
 {
     MaxMatrixBatch batch(matrix);
@@ -129,16 +95,11 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix, char const* val
     return matrix.SetText(value);
 }
 
-/*! \brief          setDot=COLUMN,ROW,VALUE sets one dot
- *  \details        this function reads three numbers separated by commas; the value is 0 or 1. The dot is checked
- *                  against the panel here, because SetDot() leaves a dot off the panel out without a word, and
- *                  whoever typed the line should learn that it did nothing.
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in,out]  value       the three numbers; the commas are overwritten with ends of text
- *  \return         MaxMatrixError::kOk
- *                  MaxMatrixError::kNotANumber    a number is missing, empty or holds anything but digits
- *                  MaxMatrixError::kOutOfRange    the dot is not on the matrix, or the value is neither 0 nor 1
+/*
+ * setDot=COLUMN,ROW,VALUE reads three numbers separated by commas, overwriting the commas with
+ * ends of text; the value is 0 or 1. The dot is checked against the panel here, because SetDot()
+ * leaves a dot off the panel out without a word, and whoever typed the line should learn that it
+ * did nothing.
  */
 MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
 {
@@ -158,18 +119,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
     return MaxMatrixError::kOk;
 }
 
-/*! \brief          the commands that set a number
- *  \details        intensity=0..15 sets the brightness, speed=MILLISECONDS the shift interval per column and
- *                  space=COLUMNS the columns between the chars of a text
- *
- *  \param[in,out]  matrix      the matrix the command acts on
- *  \param[in]      name        the name of the command
- *  \param[in]      value       the number
- *  \return         MaxMatrixError::kOk
- *                  MaxMatrixError::kUnknownCommand     no command has this name
- *                  MaxMatrixError::kNotANumber        the value is empty or holds anything but digits
- *                  MaxMatrixError::kOutOfRange        the number is too large for the setting
- */
+// The commands that set a number: intensity=0..15, speed=MILLISECONDS and space=COLUMNS.
 MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* name, char const* value)
 {
     if(0 == strcmp_P(name, PSTR("intensity"))) {
@@ -188,16 +138,10 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
     return MaxMatrixError::kOk;
 }
 
-/*! \brief          converts a decimal number
- *  \details        this function takes digits only, at least one, and stops counting as soon as the number is past
- *                  Maximum, so that a long run of digits cannot overflow into a small number. It reads on to the
- *                  end all the same, so that "999x" is no number rather than too large.
- *
- *  \param[in]      text        the digits
- *  \param[in]      maximum     the largest number taken
- *  \return         the number
- *                  MaxMatrixError::kNotANumber    the text is empty or holds anything but digits
- *                  MaxMatrixError::kOutOfRange    the number is larger than Maximum
+/*
+ * Converts a decimal number of digits only, at least one, up to `maximum`. It stops counting as
+ * soon as the number is past `maximum`, so that a long run of digits cannot overflow into a small
+ * number, but reads on to the end all the same, so that "999x" is no number rather than too large.
  */
 MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text, uint16_t maximum)
 {
