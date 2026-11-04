@@ -44,14 +44,17 @@
 void setup();
 void loop();
 
-/* mock::tick is a plain function pointer, so what Tick() works on has to be reachable without an object. */
+// mock::tick is a plain function pointer, so what Tick() works on has to be reachable without an
+// object.
 static SimulatorOptions options;
 static SimulatorPanel panel;
 static SimulatorWeb web;
 
-/*! \brief          ends a run with --for
- *  \details        this function prints the panel and exits, from within the sketch's loop() or delay(), which never
- *                  return on their own
+/*!
+ * \brief Ends a run with `--for`.
+ *
+ * It prints the panel and exits, from within the sketch's loop() or delay(), which never return on
+ * their own.
  */
 static void Finish()
 {
@@ -60,9 +63,11 @@ static void Finish()
     exit(passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED);
 }
 
-/*! \brief          follows the sketch
- *  \details        this function is called after every frame and every millisecond of delay(), so that the panel is
- *                  drawn while a sketch blocks. In a run with --for the terminal draws only at the end.
+/*!
+ * \brief Follows the sketch.
+ *
+ * It is called after every frame and every millisecond of delay(), so that the panel is drawn
+ * while a sketch blocks. In a run with `--for` the terminal draws only at the end.
  */
 static void Tick()
 {
@@ -78,11 +83,12 @@ static void Tick()
     }
 }
 
-/*! \brief          prepares the output
- *  \details        this function opens the port for the page, or clears the terminal for a run that draws in it
+/*!
+ * \brief Prepares the output.
  *
- *  \return         true
- *                  false           the port is taken
+ * It opens the port for the page, or clears the terminal for a run that draws in it.
+ *
+ * \return True once the output is prepared, or false if the port is taken.
  */
 static bool Begin()
 {
@@ -99,13 +105,17 @@ static bool Begin()
     return true;
 }
 
-/*! \brief          runs the sketch
- *  \details        this function runs setup() once and loop() until the run ends
+/*!
+ * \brief Runs the sketch.
  *
- *  \param[in]      argc            the number of arguments, the program's name included
- *  \param[in]      argv            the arguments
- *  \return         SIMULATOR_EXIT_FAILED       the port is taken
- *                  SIMULATOR_EXIT_USAGE        the command line is wrong
+ * It runs setup() once and loop() until the run ends.
+ *
+ * \param[in] argc The number of arguments, the program's name included.
+ * \param[in] argv The arguments.
+ * \return `SIMULATOR_EXIT_FAILED` if the port is taken, or `SIMULATOR_EXIT_USAGE` if the command
+ *         line is wrong.
+ * \note It returns only on these errors: a run with `--for` exits from Finish(), and one without
+ *       runs until Ctrl+C.
  */
 int main(int argc, char** argv)
 {

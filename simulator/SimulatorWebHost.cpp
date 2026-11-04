@@ -29,9 +29,6 @@
 #define SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS                       100u
 #define SIMULATOR_WEB_HOST_WEB_SOCKET_PATH                          "/ws"
 
-/*! \brief          SimulatorWebHost constructor
- *  \details        Instantiation of a host that listens nowhere until Begin()
- */
 SimulatorWebHost::SimulatorWebHost()
 {
     listener_ = SIMULATOR_WEB_HOST_NO_SOCKET;
@@ -39,15 +36,6 @@ SimulatorWebHost::SimulatorWebHost()
     for(uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) clients_[slot] = SIMULATOR_WEB_HOST_NO_SOCKET;
 }
 
-/*! \brief          opens the port on localhost
- *  \details        this function starts listening; the page is read from its path on every request, so that a change to
- *                  it needs a reload in the browser, not a rebuild
- *
- *  \param[in]      port            the port to listen on
- *  \param[in]      page_path       the page to serve on /
- *  \return         true
- *                  false           the port is taken, so that the caller can say so
- */
 bool SimulatorWebHost::Begin(uint16_t port, char const* page_path)
 {
     page_path_ = page_path;
@@ -55,11 +43,6 @@ bool SimulatorWebHost::Begin(uint16_t port, char const* page_path)
     return listener_ != SIMULATOR_WEB_HOST_NO_SOCKET;
 }
 
-/*! \brief          answers whatever has arrived
- *  \details        this function accepts and answers new connections and reads the frames of the open WebSockets
- *
- *  \param[out]     messages        every text message a page has sent since the last call is appended
- */
 void SimulatorWebHost::Task(std::vector<std::string>* messages)
 {
     if(listener_ == SIMULATOR_WEB_HOST_NO_SOCKET) return;
@@ -70,11 +53,6 @@ void SimulatorWebHost::Task(std::vector<std::string>* messages)
     }
 }
 
-/*! \brief          sends a text to every open WebSocket
- *  \details        this function drops a client it cannot send to
- *
- *  \param[in]      text            the message
- */
 void SimulatorWebHost::Broadcast(std::string const& text)
 {
     std::string const frame = SimulatorWebSocket::EncodeFrame(text);
@@ -84,10 +62,8 @@ void SimulatorWebHost::Broadcast(std::string const& text)
     }
 }
 
-/*! \brief          answers every new connection
- *  \details        this function keeps a connection that became a WebSocket, as long as there is a free slot for it,
- *                  and closes every other one
- */
+// Answers every new connection: keeps one that became a WebSocket, as long as there is a free slot
+// for it, and closes every other one.
 void SimulatorWebHost::AcceptClients()
 {
     int accepted;
@@ -103,12 +79,10 @@ void SimulatorWebHost::AcceptClients()
     }
 }
 
-/*! \brief          reads what a WebSocket has sent
- *  \details        this function collects the bytes until a frame is complete; a closed connection or a close frame
- *                  drops the client
- *
- *  \param[in]      slot            the client's slot
- *  \param[out]     messages        every complete text message is appended
+/*
+ * Reads what the WebSocket in `slot` has sent and appends every complete text message to
+ * `messages`. The bytes are collected until a frame is complete; a closed connection or a close
+ * frame drops the client.
  */
 void SimulatorWebHost::ReadClient(uint8_t slot, std::vector<std::string>* messages)
 {
@@ -132,13 +106,10 @@ void SimulatorWebHost::ReadClient(uint8_t slot, std::vector<std::string>* messag
     }
 }
 
-/*! \brief          answers an HTTP request
- *  \details        this function serves the page on / and opens a WebSocket on /ws; every other path gets a 404
- *
- *  \param[in]      socket          the connection
- *  \param[in]      request         the whole request, headers included
- *  \return         true            the connection stays, which only a WebSocket does
- *                  false           the connection is done
+/*
+ * Answers `request`, the whole HTTP request with its headers, on the connection `socket`: serves
+ * the page on `/` and opens a WebSocket on `/ws`; every other path gets a 404. Returns true if the
+ * connection stays, which only a WebSocket does, and false once the connection is done.
  */
 bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request)
 {
@@ -155,11 +126,8 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request)
     return false;
 }
 
-/*! \brief          sends the page
- *  \details        this function reads the page from its path, so that the browser always gets the current one
- *
- *  \param[in]      socket          the connection
- */
+// Sends the page on the connection `socket`, read from its path every time, so that the browser
+// always gets the current one.
 void SimulatorWebHost::SendPage(int socket)
 {
     std::ifstream file(page_path_);
@@ -170,11 +138,8 @@ void SimulatorWebHost::SendPage(int socket)
     else SendResponse(socket, "500 Internal Server Error", "text/plain", std::string("cannot read ") + page_path_ + "\n");
 }
 
-/*! \brief          finds a slot for a new WebSocket
- *  \details        this function returns the first slot without a client
- *
- *  \return         the first free slot, or SIMULATOR_WEB_HOST_MAX_CLIENTS when all are taken
- */
+// Finds a slot for a new WebSocket: returns the first slot without a client, or
+// SIMULATOR_WEB_HOST_MAX_CLIENTS when all are taken.
 uint8_t SimulatorWebHost::FindFreeSlot() const
 {
     uint8_t slot = 0;
@@ -183,11 +148,8 @@ uint8_t SimulatorWebHost::FindFreeSlot() const
     return slot;
 }
 
-/*! \brief          closes a WebSocket
- *  \details        this function frees the slot and forgets what the client sent that was not yet a whole frame
- *
- *  \param[in]      slot            the client's slot
- */
+// Closes the WebSocket in `slot`, frees the slot and forgets what the client sent that was not yet
+// a whole frame.
 void SimulatorWebHost::DropClient(uint8_t slot)
 {
     close(clients_[slot]);
@@ -195,12 +157,10 @@ void SimulatorWebHost::DropClient(uint8_t slot)
     pending_[slot].clear();
 }
 
-/*! \brief          opens a listening socket on loopback
- *  \details        this function binds to loopback only: VS Code forwards the port out of the dev container, and
- *                  nothing else should reach it
- *
- *  \param[in]      port            the port to listen on
- *  \return         the socket, or SIMULATOR_WEB_HOST_NO_SOCKET when the port is taken
+/*
+ * Opens a socket that listens on `port`, bound to loopback only: VS Code forwards the port out of
+ * the dev container, and nothing else should reach it. Returns the socket, or
+ * SIMULATOR_WEB_HOST_NO_SOCKET when the port is taken.
  */
 int SimulatorWebHost::OpenListener(uint16_t port)
 {
@@ -224,16 +184,16 @@ int SimulatorWebHost::OpenListener(uint16_t port)
     return listening;
 }
 
-/*! \brief          reads an HTTP request
- *  \details        this function reads up to the blank line after the headers. A request is one packet on loopback,
- *                  so it is read here and now rather than collected over several calls - but never waited for without
- *                  end. A connection that is opened and says nothing is what a browser does when it opens a socket
- *                  ahead of a request it may never make, and every recv() here blocks the sketch, so such a socket used
- *                  to stop the simulator until the browser closed it. A receive timeout rather than a select() before
- *                  every recv(): the loop already ends on a recv() that returns nothing.
+/*
+ * Reads an HTTP request from the new connection `socket`, up to the blank line after the headers.
+ * Returns the request, or what arrived of it before the connection closed or went quiet.
  *
- *  \param[in]      socket          the new connection
- *  \return         the request, or what arrived of it before the connection closed or went quiet
+ * A request is one packet on loopback, so it is read here and now rather than collected over
+ * several calls - but never waited for without end. A connection that is opened and says nothing
+ * is what a browser does when it opens a socket ahead of a request it may never make, and every
+ * recv() here blocks the sketch, so such a socket used to stop the simulator until the browser
+ * closed it. A receive timeout rather than a select() before every recv(): the loop already ends
+ * on a recv() that returns nothing.
  */
 std::string SimulatorWebHost::ReadRequest(int socket)
 {
@@ -250,14 +210,8 @@ std::string SimulatorWebHost::ReadRequest(int socket)
     return request;
 }
 
-/*! \brief          finds the path in an HTTP request
- *  \details        this function returns what stands between the first two spaces of the request line
- *
- *  \param[in]      request         the whole request
- *  \param[out]     path            the path
- *  \return         true
- *                  false           the request line has no path
- */
+// Finds the path in `request`, what stands between the first two spaces of the request line, and
+// gives it in `path`. Returns false if the request line has no path.
 bool SimulatorWebHost::GetPath(std::string const& request, std::string* path)
 {
     size_t const start = request.find(' ');
@@ -268,22 +222,15 @@ bool SimulatorWebHost::GetPath(std::string const& request, std::string* path)
     return true;
 }
 
-/*! \brief          lets a socket return at once
- *  \details        this function sets O_NONBLOCK, so that polling a socket from the tick never stops the sketch
- *
- *  \param[in]      socket          the socket
- */
+// Lets `socket` return at once: sets O_NONBLOCK, so that polling it from the tick never stops the
+// sketch.
 void SimulatorWebHost::SetNonBlocking(int socket)
 {
     fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
 }
 
-/*! \brief          lets recv() on a blocking socket give up after a while
- *  \details        this function sets SO_RCVTIMEO; a recv() that has waited that long returns -1 with EAGAIN
- *
- *  \param[in]      socket          the socket
- *  \param[in]      milliseconds    how long one recv() may wait for the next bytes
- */
+// Lets recv() on the blocking `socket` give up after a while: sets SO_RCVTIMEO, so that a recv()
+// that has waited `milliseconds` for the next bytes returns -1 with EAGAIN.
 void SimulatorWebHost::SetReceiveTimeout(int socket, uint32_t milliseconds)
 {
     timeval timeout = timeval();
@@ -293,14 +240,10 @@ void SimulatorWebHost::SetReceiveTimeout(int socket, uint32_t milliseconds)
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 }
 
-/*! \brief          sends all of a text
- *  \details        this function sends everything or reports failure: half a frame is a broken connection rather than a
- *                  short one
- *
- *  \param[in]      socket          the connection
- *  \param[in]      data            the bytes to send
- *  \return         true            all was sent
- *                  false           the connection is broken
+/*
+ * Sends all of `data` on the connection `socket`. Returns true once all was sent, or false if the
+ * connection is broken: it sends everything or reports failure, as half a frame is a broken
+ * connection rather than a short one.
  */
 bool SimulatorWebHost::SendAll(int socket, std::string const& data)
 {
@@ -315,14 +258,10 @@ bool SimulatorWebHost::SendAll(int socket, std::string const& data)
     return true;
 }
 
-/*! \brief          sends an HTTP response that closes the connection
- *  \details        this function says Connection: close, because the host closes every connection but a WebSocket's
- *                  after the answer
- *
- *  \param[in]      socket          the connection
- *  \param[in]      status          the status line's code and text, e.g. "200 OK"
- *  \param[in]      content_type    the type of the body
- *  \param[in]      body            the body
+/*
+ * Sends an HTTP response that closes the connection `socket`: `status` is the status line's code
+ * and text, such as "200 OK", `content_type` the type of `body`. It says `Connection: close`, as
+ * the host closes every connection but a WebSocket's after the answer.
  */
 void SimulatorWebHost::SendResponse(int socket, char const* status, char const* content_type, std::string const& body)
 {

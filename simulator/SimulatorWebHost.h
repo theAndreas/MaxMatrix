@@ -19,8 +19,12 @@
 /* SimulatorWebHost Parameter */
 #define SIMULATOR_WEB_HOST_MAX_CLIENTS                              4u
 
-/* Polled from the simulator's tick rather than run in a thread, so nothing here needs a lock: every call happens between
- * two steps of the sketch. */
+/*!
+ * \brief A small HTTP and WebSocket server for the simulator, on loopback only.
+ *
+ * It is polled from the simulator's tick rather than run in a thread, so nothing in it needs a
+ * lock: every call happens between two steps of the sketch.
+ */
 class SimulatorWebHost
 {
   private:
@@ -30,26 +34,55 @@ class SimulatorWebHost
     char const* page_path_;
 
     void AcceptClients();
-    void ReadClient(uint8_t, std::vector<std::string>*);
-    bool AnswerRequest(int, std::string const&);
-    void SendPage(int);
+    void ReadClient(uint8_t slot, std::vector<std::string>* messages);
+    bool AnswerRequest(int socket, std::string const& request);
+    void SendPage(int socket);
     uint8_t FindFreeSlot() const;
-    void DropClient(uint8_t);
-    static int OpenListener(uint16_t);
-    static std::string ReadRequest(int);
-    static bool GetPath(std::string const&, std::string*);
-    static void SetNonBlocking(int);
-    static void SetReceiveTimeout(int, uint32_t);
-    static bool SendAll(int, std::string const&);
-    static void SendResponse(int, char const*, char const*, std::string const&);
+    void DropClient(uint8_t slot);
+    static int OpenListener(uint16_t port);
+    static std::string ReadRequest(int socket);
+    static bool GetPath(std::string const& request, std::string* path);
+    static void SetNonBlocking(int socket);
+    static void SetReceiveTimeout(int socket, uint32_t milliseconds);
+    static bool SendAll(int socket, std::string const& data);
+    static void SendResponse(int socket, char const* status, char const* content_type, std::string const& body);
 
   public:
+    /*! \brief Makes a host that listens nowhere until Begin(). */
     SimulatorWebHost();
 
-    // methods
-    bool Begin(uint16_t, char const*);
-    void Task(std::vector<std::string>*);
-    void Broadcast(std::string const&);
+    /*!
+     * \brief Opens the port on localhost and starts listening.
+     *
+     * The page is read from its path on every request, so that a change to it needs a reload in
+     * the browser, not a rebuild.
+     *
+     * \param[in] port The port to listen on.
+     * \param[in] page_path The page to serve on `/`. The host keeps the pointer, so it has to live
+     *                      as long as the host.
+     * \return True once the host listens, or false if the port is taken, so that the caller can say
+     *         so.
+     */
+    bool Begin(uint16_t port, char const* page_path);
+
+    /*!
+     * \brief Answers whatever has arrived.
+     *
+     * It accepts and answers new connections and reads the frames of the open WebSockets. Until
+     * Begin() has opened the port, it does nothing.
+     *
+     * \param[in,out] messages Every text message a page has sent since the last call is appended.
+     */
+    void Task(std::vector<std::string>* messages);
+
+    /*!
+     * \brief Sends a text to every open WebSocket.
+     *
+     * A client it cannot send to is dropped.
+     *
+     * \param[in] text The message.
+     */
+    void Broadcast(std::string const& text);
 };
 
 #endif

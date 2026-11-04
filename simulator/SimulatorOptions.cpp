@@ -13,10 +13,6 @@
 #include <stdlib.h>
 #include "SimulatorOptions.h"
 
-/*! \brief          SimulatorOptions constructor
- *  \details        Instantiation of the options a simulator has without any on its command line: the default wiring,
- *                  mounted upright, in the terminal, until Ctrl+C
- */
 SimulatorOptions::SimulatorOptions()
 {
     wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
@@ -28,15 +24,6 @@ SimulatorOptions::SimulatorOptions()
     elf_file_ = nullptr;
 }
 
-/*! \brief          reads the command line
- *  \details        this function reads one option after the other; --expect only makes sense with --for, which ends the
- *                  run at a time the expected panel was taken at
- *
- *  \param[in]      argc            the number of arguments, the program's name included
- *  \param[in]      argv            the arguments
- *  \return         true
- *                  false           the command line is wrong; PrintUsage() says how it should be
- */
 bool SimulatorOptions::Parse(int argc, char** argv)
 {
     for(int i = 1; i < argc; i++) {
@@ -45,11 +32,6 @@ bool SimulatorOptions::Parse(int argc, char** argv)
     return expect_file_ == nullptr || run_for_ != 0;
 }
 
-/*! \brief          says how the command line should be
- *  \details        this function writes to stderr, beside whatever went wrong
- *
- *  \param[in]      program         the program's name, argv[0]
- */
 void SimulatorOptions::PrintUsage(char const* program)
 {
     fprintf(stderr, "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]\n", program);
@@ -58,14 +40,9 @@ void SimulatorOptions::PrintUsage(char const* program)
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
 }
 
-/*! \brief          reads one option
- *  \details        this function also reads the option's value, if it has one, and moves the index past it
- *
- *  \param[in]      argc            the number of arguments
- *  \param[in]      argv            the arguments
- *  \param[in,out]  index           the option's index; on return the index of its value, if it has one
- *  \return         true
- *                  false           the option is unknown, lacks its value or has a value it cannot take
+/*
+ * Reads the option at `*index`, and its value if it has one: `*index` is then moved on to the
+ * value. Returns false if the option is unknown, lacks its value or has a value it cannot take.
  */
 bool SimulatorOptions::ParseOption(int argc, char** argv, int* index)
 {
@@ -92,15 +69,12 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index)
     return true;
 }
 
-/*! \brief          converts the value of --port
- *  \details        this function takes a decimal number from 1 to 65535 and nothing else. atoi() and a cast, as before,
- *                  turned 70000 into port 4464 and "80x" into port 80, so the simulator listened somewhere else than
- *                  asked without a word.
+/*
+ * Converts the value of --port into `*port`: a decimal number from 1 to 65535 and nothing else.
+ * Returns false if the value is no number, or out of range; `*port` is then left as it was.
  *
- *  \param[in]      text            the value as given on the command line
- *  \param[out]     port            the port
- *  \return         true
- *                  false           the value is no number, or out of range; the port is left as it was
+ * atoi() and a cast, as before, turned 70000 into port 4464 and "80x" into port 80, so the
+ * simulator listened somewhere else than asked without a word.
  */
 bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port)
 {
@@ -113,16 +87,13 @@ bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port)
     return true;
 }
 
-/*! \brief          converts the value of --for
- *  \details        this function takes the seconds as a decimal number, fractions included, and nothing else. atof(), as
- *                  before, took "2x" as two seconds, and a negative or a huge number reached a cast to uint32_t that is
- *                  undefined for it.
+/*
+ * Converts the value of --for, the seconds as a decimal number, fractions included, and nothing
+ * else, into the milliseconds `*run_for`. Returns false if the value is no number, or not a single
+ * millisecond, or more than the milliseconds fit; `*run_for` is then left as it was.
  *
- *  \param[in]      text            the value as given on the command line
- *  \param[out]     run_for         the milliseconds
- *  \return         true
- *                  false           the value is no number, or not a single millisecond, or more than the milliseconds fit;
- *                                  the time is left as it was
+ * atof(), as before, took "2x" as two seconds, and a negative or a huge number reached a cast to
+ * uint32_t that is undefined for it.
  */
 bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for)
 {

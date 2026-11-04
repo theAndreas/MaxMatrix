@@ -5,8 +5,8 @@
  * \file
  * \brief Draws the pictures in docu/ from what the library does.
  *
- * Build/DocuPictures --write docu writes them build/DocuPictures --check docu fails if one in docu/
- * is not what it would write.
+ * `build/DocuPictures --write docu` writes them; `build/DocuPictures --check docu` fails if one in
+ * docu/ is not what it would write.
  *
  * Nothing in the pictures is drawn by hand. Every LED is placed by calling the library, with
  * SetDot(), SetColumn() or SetRow(), and reading back which register bit of which MAX7219 the model
@@ -66,7 +66,10 @@
 #define DOCU_EXAMPLE_ROW_MODULE                                     2
 #define DOCU_EXAMPLE_ROW                                            2
 
-/* where the LED of one dot is driven: the chip in the chain, 0 at DIN, its digit register and the bit in it */
+/*!
+ * \brief Where the LED of one dot is driven: the chip in the chain, 0 at DIN, its digit register
+ *        and the bit in it.
+ */
 typedef struct {
     byte chip;
     byte digit;
@@ -96,12 +99,11 @@ static struct {
     { &kMaX7219WiringIcstation, "ICStation" },
 };
 
-/*! \brief          finds the one LED the model has lit
- *  \details        this function reads the digit registers of every chip in the model
+/*!
+ * \brief Finds the one LED the model has lit, in the digit registers of every chip.
  *
- *  \param[out]     led             the chip, digit and bit of the lit LED
- *  \return         true
- *                  false           no LED or more than one is lit
+ * \param[out] led The chip, digit and bit of the lit LED.
+ * \return True if exactly one LED is lit, or false if none or more than one is.
  */
 static bool FindLed(DocuLed* led)
 {
@@ -122,14 +124,15 @@ static bool FindLed(DocuLed* led)
     return lit == 1;
 }
 
-/*! \brief          finds the LED that drives a dot as the viewer sees it
- *  \details        this function clears the matrix, sets the one dot with SetDot() and asks the model which LED it lit
+/*!
+ * \brief Finds the LED that drives a dot as the viewer sees it.
  *
- *  \param[in]      x               column as the viewer sees it
- *  \param[in]      y               row as the viewer sees it
- *  \param[out]     led             the chip, digit and bit
- *  \return         true
- *                  false           the dot did not light exactly one LED
+ * It clears the matrix, sets the one dot with SetDot() and asks the model which LED it lit.
+ *
+ * \param[in] x The column, as the viewer sees it.
+ * \param[in] y The row, as the viewer sees it.
+ * \param[out] led The chip, digit and bit.
+ * \return True if the dot lit exactly one LED, or false if it did not.
  */
 static bool FindLedOfDot(byte x, byte y, DocuLed* led)
 {
@@ -138,12 +141,14 @@ static bool FindLedOfDot(byte x, byte y, DocuLed* led)
     return FindLed(led);
 }
 
-/*! \brief          says whether a module of a wiring shows the panel upright
- *  \details        this function sets a pattern without symmetry dot by dot and compares it with what the model lights
- *                  for that wiring, as MaxMatrixModuleTest does
+/*!
+ * \brief Returns whether a module of a wiring shows the panel upright.
  *
- *  \param[in]      wiring          the wiring of the modules
- *  \return         true if every dot is lit where it was set
+ * It sets a pattern without symmetry dot by dot and compares it with what the model lights for
+ * that wiring, as MaxMatrixModuleTest does.
+ *
+ * \param[in] wiring The wiring of the modules.
+ * \return True if every dot is lit where it was set.
  */
 static bool IsUpright(Max7219Wiring const& wiring)
 {
@@ -161,11 +166,13 @@ static bool IsUpright(Max7219Wiring const& wiring)
     return upright;
 }
 
-/*! \brief          the modules the current orientation fits
- *  \details        this function names every wiring of the model on which the panel is upright, with the name
- *                  MD_MAX72XX gives it where there is one
+/*!
+ * \brief Returns the modules the current orientation fits.
  *
- *  \return         the names, separated by commas, or "no module"
+ * It names every wiring of the model on which the panel is upright, with the name MD_MAX72XX
+ * gives it where there is one.
+ *
+ * \return The names, separated by commas, or `"no module"`.
  */
 static std::string GetModules()
 {
@@ -183,11 +190,11 @@ static std::string GetModules()
     return modules.empty() ? "no module" : modules;
 }
 
-/*! \brief          the left edge of the cell of a column
- *  \details        this function leaves a gap between the modules
+/*!
+ * \brief Returns the left edge of the cell of a column, with a gap between the modules.
  *
- *  \param[in]      x               column as the viewer sees it
- *  \return         pixels from the left
+ * \param[in] x The column, as the viewer sees it.
+ * \return The pixels from the left.
  */
 static int16_t GetCellX(byte x)
 {
@@ -195,45 +202,50 @@ static int16_t GetCellX(byte x)
            + (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL;
 }
 
-/*! \brief          the top edge of the cell of a row
- *  \details        this function counts the rows from the top of the panel
+/*!
+ * \brief Returns the top edge of the cell of a row, the rows counted from the top of the panel.
  *
- *  \param[in]      y               row as the viewer sees it
- *  \return         pixels from the top
+ * \param[in] y The row, as the viewer sees it.
+ * \return The pixels from the top.
  */
 static int16_t GetCellY(byte y)
 {
     return DOCU_TOP + y * DOCU_CELL;
 }
 
-/*! \brief          the width of a picture of the whole panel
- *  \details        this function leaves room on the right for the arrow into the module DIN reaches first
+/*!
+ * \brief Returns the width of a picture of the whole panel.
  *
- *  \return         pixels
+ * It leaves room on the right for the arrow into the module DIN reaches first.
+ *
+ * \return The width in pixels.
  */
 static uint16_t GetPictureWidth()
 {
     return GetCellX(MAXMATRIX_NUMBER_OF_COLUMNS - 1) + DOCU_CELL + DOCU_RIGHT;
 }
 
-/*! \brief          the height of a picture of the whole panel
- *  \details        this function leaves room below the panel for the coordinates and two lines of legend
+/*!
+ * \brief Returns the height of a picture of the whole panel.
  *
- *  \return         pixels
+ * It leaves room below the panel for the coordinates and two lines of legend.
+ *
+ * \return The height in pixels.
  */
 static uint16_t GetPictureHeight()
 {
     return GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + DOCU_BOTTOM;
 }
 
-/*! \brief          draws the LED of a dot, with a label
- *  \details        this function draws a rounded square in the middle of the cell, with the label in white on it
+/*!
+ * \brief Draws the LED of a dot: a rounded square in the middle of its cell, with the label in
+ *        white on it.
  *
- *  \param[out]     svg             the picture
- *  \param[in]      x               column as the viewer sees it
- *  \param[in]      y               row as the viewer sees it
- *  \param[in]      colour          fill colour
- *  \param[in]      label           text in the LED, or empty
+ * \param[in,out] svg The picture.
+ * \param[in] x The column, as the viewer sees it.
+ * \param[in] y The row, as the viewer sees it.
+ * \param[in] colour The fill colour.
+ * \param[in] label The text in the LED, or empty.
  */
 static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour, std::string const& label)
 {
@@ -243,12 +255,14 @@ static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour, std::strin
     if(!label.empty()) svg->AddText(GetCellX(x) + DOCU_CELL / 2, GetCellY(y) + DOCU_CELL / 2 + 4, label, DOCU_FONT_LED, "#ffffff", "middle", true);
 }
 
-/*! \brief          draws what both pictures share
- *  \details        this function draws the title, a frame and a label per module, the coordinates along both edges
- *                  and an arrow into the module that DIN reaches first, which it finds by asking the model
+/*!
+ * \brief Draws what both pictures share.
  *
- *  \param[out]     svg             the picture
- *  \param[in]      title           the line above the panel, or empty for none
+ * It draws the title, a frame and a label per module, the coordinates along both edges, and an
+ * arrow into the module that DIN reaches first, which it finds by asking the model.
+ *
+ * \param[in,out] svg The picture.
+ * \param[in] title The line above the panel, or empty for none.
  */
 static void DrawPanel(DocuSvg* svg, std::string const& title)
 {
@@ -280,13 +294,15 @@ static void DrawPanel(DocuSvg* svg, std::string const& title)
     svg->AddText(DOCU_LEFT - 14, DOCU_TOP + module_height + 22, "X", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT, "end", true);
 }
 
-/*! \brief          the picture of how the bytes lie on the modules in one module orientation
- *  \details        this function labels every LED with the digit register and the bit that drive it, and joins the LEDs
- *                  of one register in a band: a register is one byte of matrix_buffer_
+/*!
+ * \brief Draws the picture of how the bytes lie on the modules in one module orientation.
  *
- *  \param[in]      orientation     the module orientation
- *  \param[in]      degrees         the same in degrees, for the title
- *  \return         the SVG text
+ * It labels every LED with the digit register and the bit that drive it, and joins the LEDs of
+ * one register in a band: a register is one byte of `matrix_buffer_`.
+ *
+ * \param[in] orientation The module orientation.
+ * \param[in] degrees The same in degrees, for the title.
+ * \return The SVG text, or an empty text if a dot did not light exactly one LED.
  */
 static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t degrees)
 {
@@ -328,13 +344,14 @@ static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t d
     return svg.GetDocument();
 }
 
-/*! \brief          the picture of the coordinates a sketch uses
- *  \details        this function marks which dot each bit of SetColumn() and SetRow() sets, as GetDot() reports it,
- *                  and names the function under what it set. The coordinates are the same in every orientation once it
- *                  fits the module, so the picture is drawn in the one of FC-16 boards. It has no title and no legend:
- *                  the README explains it right below, so the picture shows the panel only.
+/*!
+ * \brief Draws the picture of the coordinates a sketch uses.
  *
- *  \return         the SVG text
+ * It marks which dot each bit of SetColumn() and SetRow() sets, as GetDot() reports it, and names
+ * the function under what it set. It has no title and no legend: the README explains it right
+ * below, so the picture shows the panel only.
+ *
+ * \return The SVG text.
  */
 static std::string DrawCoordinates()
 {
@@ -343,6 +360,8 @@ static std::string DrawCoordinates()
     std::string column_labels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     std::string row_labels[MAXMATRIX_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
 
+    // The coordinates are the same in every orientation once it fits the module, so the picture is
+    // drawn in the one of FC-16 boards.
     matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);
     for(byte bit = 0; bit < 8; bit++) {
         matrix.Clear();
@@ -379,11 +398,11 @@ static std::string DrawCoordinates()
     return svg.GetDocument();
 }
 
-/*! \brief          reads a whole file
- *  \details        this function returns an empty text for a missing file, which no picture equals
+/*!
+ * \brief Reads a whole file.
  *
- *  \param[in]      path            the file
- *  \return         what it holds, or an empty text if it cannot be read
+ * \param[in] path The file.
+ * \return What it holds, or an empty text if it cannot be read, which no picture equals.
  */
 static std::string ReadFile(std::string const& path)
 {
@@ -394,13 +413,15 @@ static std::string ReadFile(std::string const& path)
     return content.str();
 }
 
-/*! \brief          writes or checks the pictures
- *  \details        this function draws every picture, then writes each one or compares it with the file of that name
+/*!
+ * \brief Writes or checks the pictures.
  *
- *  \param[in]      argc            the number of arguments, the program's name included
- *  \param[in]      argv            --write or --check, and the folder of the pictures
- *  \return         0 when all is written or up to date, 1 when a picture differs or cannot be drawn, 2 on a wrong
- *                  command line
+ * It draws every picture, then writes each one or compares it with the file of that name.
+ *
+ * \param[in] argc The number of arguments, the program's name included.
+ * \param[in] argv `--write` or `--check`, and the folder of the pictures.
+ * \return 0 when all is written or up to date, 1 when a picture differs or cannot be drawn, 2 on a
+ *         wrong command line.
  */
 int main(int argc, char** argv)
 {
