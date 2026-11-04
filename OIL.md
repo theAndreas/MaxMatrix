@@ -39,7 +39,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
-| 30 | Documentation in the style of Utl | 17 | in progress | #47 |
+| 30 | Documentation in the style of Utl | 17 | in progress | #47, #48 |
 
 ### 1 Build with CMake
 
@@ -581,6 +581,10 @@ Utl, and the rules move into `docu/Documentation.md`, with clang's `-Wdocumentat
 every block; then the blocks of the facade, of `Command/`, of the errors and the configuration
 move into the headers and are written anew; then those of the parts below; then those of the
 simulator.
+
+The facade and the parts below went in one step, #48, not two: the facade takes most of its texts
+from MaxMatrixPanel and MaxMatrixFont with `\copydoc`, and would have shown their old texts until
+the next one.
 
 
 Why it is planned this way rather than the obvious alternative.
