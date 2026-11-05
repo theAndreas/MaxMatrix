@@ -1,0 +1,9 @@
+# The checks of the root's .clang-tidy, less one that argues with wxWidgets.
+#
+# bugprone-suspicious-enum-usage
+#   Reports every flag combination of a sizer, wxEXPAND | wxALL: wxWidgets declares the
+#   stretch, the border and the alignment as enums of their own and has them or-ed into one
+#   int, on purpose. A NOLINT on every Add() would hide a real finding among them.
+InheritParentConfig: true
+Checks: >
+  -bugprone-suspicious-enum-usage

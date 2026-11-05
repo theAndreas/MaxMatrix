@@ -12,13 +12,15 @@ FROM ${BASE_IMAGE}
 # IntelliSense, from the compilation database CMake writes into build/. clang-tidy, cppcheck and
 # python3 (for tools/cross-clang-tidy.py) run what .github/workflows/static-analysis.yml runs,
 # Doxygen what docs.yml runs. simavr, as a library, runs the examples' .elf for the tests avr/.
+# wxWidgets builds the control program in control/; its window needs a display, which WSLg gives
+# the wsl2 variant.
 # From apt rather than
 # pinned like the tools below: the distribution's versions are what CI installs as well, and
 # none of them has a bug that forces a newer release.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         cmake ninja-build libgtest-dev clangd clang-tidy cppcheck python3 doxygen \
-        libsimavr-dev libelf-dev pkg-config && \
+        libsimavr-dev libelf-dev pkg-config libwxgtk3.2-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which

@@ -1,0 +1,45 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/*!
+ * \file
+ * \brief The command lines of SerialControl, as the control program sends them.
+ */
+
+#include "ControlCommand.h"
+#include "MaxMatrixConfig.h"
+
+std::string ControlCommand::MakeText(std::string const& text, bool shift)
+{
+    return (shift ? "textShift=" : "text=") + text;
+}
+
+std::string ControlCommand::MakeIntensity(uint8_t intensity)
+{
+    return "intensity=" + std::to_string(intensity);
+}
+
+std::string ControlCommand::MakeSpeed(uint16_t milliseconds)
+{
+    return "speed=" + std::to_string(milliseconds);
+}
+
+std::string ControlCommand::MakeSpace(uint8_t columns)
+{
+    return "space=" + std::to_string(columns);
+}
+
+std::string ControlCommand::MakeDot(uint8_t column, uint8_t row, bool lit)
+{
+    return "setDot=" + std::to_string(column) + "," + std::to_string(row) + "," + (lit ? "1" : "0");
+}
+
+std::string ControlCommand::MakeClear()
+{
+    return "clear";
+}
+
+bool ControlCommand::Fits(std::string const& line)
+{
+    return line.size() <= MAXMATRIX_COMMAND_LINE_LENGTH && line.find_first_of("\r\n") == std::string::npos;
+}

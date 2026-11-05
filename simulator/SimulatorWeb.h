@@ -62,8 +62,8 @@ class SimulatorWeb
      * wait for the next frame.
      *
      * \param[in,out] panel The panel the page's commands change.
-     * \param[in] printed What the sketch has printed since the last call; it goes to the page
-     *                    with the next panel.
+     * \param[in] printed What the sketch has printed since the last call; it goes to the page with
+     *                    the next panel.
      */
     void Task(SimulatorPanel& panel, std::string const& printed);
 

@@ -35,7 +35,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
-| 26 | Control program for Linux and Windows | 20 | open | |
+| 26 | Control program for Linux and Windows | 20 | in progress | |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
@@ -458,6 +458,16 @@ so that to the program both ends look alike, and to the sketch the program and t
   forward.
 
 How it is shipped, a Windows `.exe` and an AppImage, is decided with 18.
+
+As built, the window follows the old tool's layout, in English as the rest of the repository: a tab
+for the text with the intensity and speed sliders, one with every LED of the panel to click on
+rather than one module at a time, and on the right the board, the simulator and a log. Like the page,
+it sends every command to both ends, whichever is connected, and nothing to a board until
+SerialControl has said `ready`; the simulator's sketch said so before the program connected, so
+there it is not waited for. The simulator's TCP port is `--tcp PORT`, in both simulators, with one
+client at a time. Opened on Linux against the simulator, under Xvfb: text, LEDs and a simulator that
+stops. Not yet on Windows, where only the serial port and socket code are compiled, with MinGW, and
+not yet with a board.
 
 *Done when* the program drives a board running `SerialControl` and the simulator, built from
 the same CMake on Linux and Windows, its classes without a window have tests, and the PR says

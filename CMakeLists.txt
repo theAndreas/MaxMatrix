@@ -59,6 +59,16 @@ set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
 gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
 
+# The control program, and its classes without a window once: they know neither the library nor the sketch. Its ports
+# are tested against a pseudo terminal and against the simulator's serial host, on a port of its own.
+add_subdirectory(control)
+foreach(Test ControlCommandTest ControlLinkTest ControlPortTest)
+    add_executable(${Test} test/${Test}.cpp)
+    set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
+    target_link_libraries(${Test} PRIVATE Control SimulatorHosts GTest::gtest_main)
+    gtest_discover_tests(${Test} TEST_PREFIX "control/" PROPERTIES RESOURCE_LOCK ${Test})
+endforeach()
+
 # The script of the simulator's page, against stand-ins for the DOM, the WebSocket and a board on Web Serial. Node is no
 # part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
 find_program(NodeExecutable node)

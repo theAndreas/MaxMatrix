@@ -36,11 +36,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # GoogleTest because CMake does not configure without it, though nothing is built.
+      # GoogleTest because CMake does not configure without it, though nothing is built;
+      # wxWidgets for the headers of the control program's window.
       - name: Install the tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev clang-tidy
+          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev libwxgtk3.2-dev \
+                                                          clang-tidy
 
       # Configured, not built: clang-tidy compiles each translation unit itself and needs
       # nothing from the build but compile_commands.json, which holds the library three times
@@ -50,7 +52,7 @@ jobs:
 
       # WarningsAsErrors is set in .clang-tidy, so a finding fails this job.
       - name: Analyse
-        run: run-clang-tidy -p build -quiet -j "$(nproc)" "$PWD/(src|simulator)/"
+        run: run-clang-tidy -p build -quiet -j "$(nproc)" "$PWD/(src|simulator|control)/"
 
       # The names of the tests, the pictures' program and the examples as well, and only
       # those: in the tests `#define private public` shows every member of the library as
@@ -130,4 +132,5 @@ jobs:
             $INCLUDES \
             -Itest/mock \
             -Isimulator \
-            src simulator
+            -Icontrol \
+            src simulator control

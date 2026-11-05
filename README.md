@@ -20,6 +20,7 @@ Features:
 - module orientation of 0, 90, 180 and 270 degrees, and a board mounted upside down
 - bit banging (any pins) or hardware SPI
 - a simulator that runs the examples on the PC, in the terminal or in a browser
+- a control program for Linux and Windows that drives a board or the simulator over SerialControl
 
 ## Installation
 Download the repository as ZIP and add it in the Arduino IDE with *Sketch > Include Library > Add .ZIP Library...*,
@@ -236,6 +237,25 @@ build/Simulator-SerialControl-bitbang --web
 
 Opening the port resets an Uno; the page sends the board nothing until SerialControl has said `ready`.
 
+### The control program
+`control/` holds the same controls as a program of its own, for a browser without Web Serial and for whoever wants a
+window rather than a page, laid out as the Windows tool of [Led-Matrix](https://github.com/AndreasBur/Led-Matrix) was:
+the text, *Shift in*, the space and the intensity and speed sliders on one tab, every LED of the panel to click on the
+other, and on the right the board's serial port, the simulator and a log of every line and answer. Every command goes
+to the board and to the simulator, whichever is connected.
+
+It is built with the rest when CMake finds wxWidgets 3.2 (`apt install libwxgtk3.2-dev`, in the dev container
+already), and runs the simulator over a TCP port that `--tcp` opens beside the page:
+
+```sh
+build/Simulator-SerialControl-bitbang --tcp 8081 &
+build/control/MaxMatrixControl
+```
+
+On Windows, `cmake -S control -B build-control` is meant to build the program alone, against a wxWidgets found by CMake;
+its serial port and socket code compile with MinGW, but the program has not been built or run on Windows yet. The board's ports are listed as `COM` ports there and as `/dev/ttyACM*` and `/dev/ttyUSB*` on Linux; another name can
+be typed into the box. As on the page, nothing goes to a board until SerialControl has said `ready`.
+
 ## Module orientation
 Two settings make the text upright:
 
@@ -285,7 +305,7 @@ build/Simulator-ScrollText-bitbang --wiring FC16
 
 `--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
 
-With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it.
+With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it. `--tcp PORT` opens the sketch's `Serial` as a TCP port on `localhost`, for [the control program](#the-control-program): what it sends, the sketch reads, and what the sketch prints, it gets back.
 
 `build/SimulatorAvr` runs the same, but with the binary avr-gcc made for the Uno rather than with the sketch built for
 the PC: [simavr](https://github.com/buserror/simavr) simulates the ATmega328P, and its pins and SPI drive the MAX7219

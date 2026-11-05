@@ -3,8 +3,8 @@
 How the code of MaxMatrix is documented: which comments are Doxygen blocks, what each block says,
 and how the style is checked. The style is the one of Utl, so that every project documents alike;
 the reference built from the blocks of `src/` is published on GitHub Pages. It holds for `src/`,
-`simulator/` and `docu/`; the tests in `test/` keep their lighter style, a comment at the top and
-one above each test.
+`simulator/`, `control/` and `docu/`; the tests in `test/` keep their lighter style, a comment at
+the top and one above each test.
 
 ## Two kinds of comment
 
@@ -63,7 +63,7 @@ the line it is for.
   ```
 
   `tools/doc-indent.py --fix` indents it so; without `--fix`, it fails where a line is not indented
-  so, as a job of `ci.yml`. It reads `src/`, `simulator/` and `docu/`.
+  so, as a job of `ci.yml`. It reads `src/`, `simulator/`, `control/` and `docu/`.
 
 ### The parts, in this order
 
@@ -111,14 +111,14 @@ the paragraphs after the brief.
 - **A function that only passes a call on** takes the block of the function it calls with
   `\copydoc`, rather than a second text that would drift from it. **Overloads** that differ
   only in their parameters share one text the same way.
-- **The simulator and `docu/`** are documented as `src/` is, at their declarations, though not
-  in the reference: they are read beside the library.
+- **The simulator, the control program and `docu/`** are documented as `src/` is, at their
+  declarations, though not in the reference: they are read beside the library.
 - **Tests and examples** keep `//` comments.
 
 ### A file
 
-Every file of `src/`, `simulator/` and `docu/` starts with the licence, as `//` lines that tools
-such as REUSE read, and then a block for the file:
+Every file of `src/`, `simulator/`, `control/` and `docu/` starts with the licence, as `//` lines
+that tools such as REUSE read, and then a block for the file:
 
 ```cpp
 // Copyright 2020 Andreas Burnickl
