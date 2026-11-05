@@ -19,6 +19,7 @@ SimulatorOptions::SimulatorOptions()
     upside_down_ = false;
     web_ = false;
     port_ = SIMULATOR_OPTIONS_DEFAULT_PORT;
+    tcp_port_ = 0;
     run_for_ = 0;
     expect_file_ = nullptr;
     elf_file_ = nullptr;
@@ -35,7 +36,7 @@ bool SimulatorOptions::Parse(int argc, char** argv)
 void SimulatorOptions::PrintUsage(char const* program)
 {
     fprintf(stderr, "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial LINE]... [--web [--port PORT]]\n", program);
-    fprintf(stderr, "         [--for SECONDS [--expect FILE]]\n");
+    fprintf(stderr, "         [--tcp PORT] [--for SECONDS [--expect FILE]]\n");
     fprintf(stderr, "  FILE of --elf: the example built for the Uno; SimulatorAvr only, which needs it\n");
     fprintf(stderr, "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... DR1CR1RR1\n");
 }
@@ -57,6 +58,8 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index)
         wiring_name_ = argv[++*index];
     } else if(option == "--port" && has_value) {
         if(!ConvertToPort(argv[++*index], &port_)) return false;
+    } else if(option == "--tcp" && has_value) {
+        if(!ConvertToPort(argv[++*index], &tcp_port_)) return false;
     } else if(option == "--for" && has_value) {
         if(!ConvertToRunFor(argv[++*index], &run_for_)) return false;
     } else if(option == "--expect" && has_value) {
@@ -70,7 +73,7 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index)
 }
 
 /*
- * Converts the value of --port into `*port`: a decimal number from 1 to 65535 and nothing else.
+ * Converts the value of --port or --tcp into `*port`: a decimal number from 1 to 65535 and nothing else.
  * Returns false if the value is no number, or out of range; `*port` is then left as it was.
  *
  * atoi() and a cast, as before, turned 70000 into port 4464 and "80x" into port 80, so the

@@ -33,21 +33,22 @@ bool SimulatorWeb::Begin(uint16_t port, char const* page_path)
     return host_.Begin(port, page_path);
 }
 
-void SimulatorWeb::Task(SimulatorPanel& panel)
+void SimulatorWeb::Task(SimulatorPanel& panel, std::string const& printed)
 {
     std::vector<std::string> messages;
 
     if(mock::frames != logged_frames_) LogFrame();
     host_.Task(&messages);
     for(std::string const& message : messages) Command(panel, message);
-    if(!mock::serial_output.empty()) panel.RequestDraw();
+    serial_output_ += printed;
+    if(!printed.empty()) panel.RequestDraw();
 }
 
 void SimulatorWeb::Send(SimulatorPanel const& panel)
 {
     host_.Broadcast(GetMessage(panel));
     frame_log_.clear();
-    mock::serial_output.clear();
+    serial_output_.clear();
 }
 
 /*
@@ -126,7 +127,7 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const
          << ",\"intensity\":[" << GetIntensities(panel) << "]"
          << ",\"frames\":" << mock::frames << ",\"errors\":" << mock::errors
          << ",\"log\":[" << GetLog() << "]"
-         << ",\"serial\":\"" << ConvertToJsonString(mock::serial_output) << "\"}";
+         << ",\"serial\":\"" << ConvertToJsonString(serial_output_) << "\"}";
     return json.str();
 }
 
