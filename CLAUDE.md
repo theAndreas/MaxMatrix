@@ -141,7 +141,7 @@ that does not use it pays nothing, because the linker drops what no one calls; `
 
 ### Two coordinate systems
 
-- **`MaxMatrixPanel`** (`SetColumn`, `SetRow`, `SetDot`, `ShiftLeft`, …) takes coordinates as
+- **`MaxMatrixPanel`** (`SetColumn`, `SetRow`, `SetDot`, `ShiftLeft`, `DrawLine`, …) takes coordinates as
   the viewer sees them.
 - **`MaxMatrixWired`** works on the buffer and the hardware as wired and knows nothing about
   orientation. Its functions have the same names; the object says which system is meant.
@@ -153,6 +153,12 @@ MD_MAX72XX names its hardware types by (DR, CR, RR), one bit each of `MaxMatrixM
 maps one dot as the viewer sees it to a buffer column and bit. Lines go through
 `GetLine()`/`SetLine()`; shifting and changing the mapping work on the picture in viewer
 coordinates, a column of it at a time.
+
+The shapes, `DrawLine()`, `DrawRect()`, `FillRect()` and `DrawCircle()`, are drawn dot by dot
+through `SetDot()`; a column of a bitmap, a glyph or a sprite goes through `DrawColumn()`, which
+the text uses as well. Their sums are kept from overflowing an `int`, which is 16 bits on the
+Uno: the shapes add up in `int32_t`, which only a sketch that draws them pays for, and a column
+returns early where the sum could overflow, as the text should not pay for the shapes.
 
 A new feature that works on coordinates builds on these and never branches on an orientation
 or a module type itself. When every function handled the orientations on its own, rows, shifts and dots

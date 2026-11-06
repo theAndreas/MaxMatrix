@@ -99,6 +99,127 @@ void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value)
 }
 
 /*
+ * Bresenham's line, in all eight directions: `error` says how far the dot drawn is off the true
+ * line, and each step goes along x, along y or both, whichever keeps it small. The sums are
+ * int32_t, as the ends may lie further apart than an int16_t holds, and an int is 16 bits on the
+ * Uno.
+ */
+void MaxMatrixPanel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value)
+{
+    int32_t const width = x1 > x0 ? static_cast<int32_t>(x1) - x0 : static_cast<int32_t>(x0) - x1;
+    int32_t const height = y1 > y0 ? static_cast<int32_t>(y0) - y1 : static_cast<int32_t>(y1) - y0;
+    int8_t const step_x = x0 < x1 ? 1 : -1;
+    int8_t const step_y = y0 < y1 ? 1 : -1;
+    int32_t x = x0;
+    int32_t y = y0;
+    int32_t error = width + height;
+
+    for(;;) {
+        SetFarDot(x, y, value);
+        if(x == x1 && y == y1) break;
+        int32_t const twice = 2 * error;
+        if(twice >= height) {
+            error += height;
+            x += step_x;
+        }
+        if(twice <= width) {
+            error += width;
+            y += step_y;
+        }
+    }
+}
+
+void MaxMatrixPanel::DrawRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value)
+{
+    if(width <= 0 || height <= 0) return;
+    int32_t const right = static_cast<int32_t>(x) + width - 1;
+    int32_t const bottom = static_cast<int32_t>(y) + height - 1;
+
+    FillArea(x, y, right, y, value);
+    FillArea(x, bottom, right, bottom, value);
+    FillArea(x, y, x, bottom, value);
+    FillArea(right, y, right, bottom, value);
+}
+
+void MaxMatrixPanel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value)
+{
+    if(width <= 0 || height <= 0) return;
+    FillArea(x, y, static_cast<int32_t>(x) + width - 1, static_cast<int32_t>(y) + height - 1, value);
+}
+
+/*
+ * The midpoint circle: one eighth of the outline is walked from the top down to the diagonal, and
+ * every dot of it is mirrored into the other seven. `error` says whether the next dot lies inside
+ * the true circle, and so whether the step goes inwards as well.
+ */
+void MaxMatrixPanel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value)
+{
+    if(radius < 0) return;
+    int32_t outer = radius;
+    int32_t inner = 0;
+    int32_t error = 1 - outer;
+
+    while(outer >= inner) {
+        SetFarDot(x + outer, y + inner, value);
+        SetFarDot(x - outer, y + inner, value);
+        SetFarDot(x + outer, y - inner, value);
+        SetFarDot(x - outer, y - inner, value);
+        SetFarDot(x + inner, y + outer, value);
+        SetFarDot(x - inner, y + outer, value);
+        SetFarDot(x + inner, y - outer, value);
+        SetFarDot(x - inner, y - outer, value);
+        inner++;
+        if(error < 0) {
+            error += 2 * inner + 1;
+        } else {
+            outer--;
+            error += 2 * (inner - outer) + 1;
+        }
+    }
+}
+
+// Right of the panel nothing is drawn, and left of its right edge x plus a column cannot overflow.
+void MaxMatrixPanel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width, byte height)
+{
+    if(x >= GetNumberOfColumns()) return;
+    for(byte column = 0; column < width; column++) DrawColumn(static_cast<int16_t>(x + column), y, height, pgm_read_byte(bitmap + column));
+}
+
+/*
+ * A whole column at once if it fills one, otherwise dot by dot, as the rows outside it are not its
+ * own. A column that starts eight rows or more off the panel draws nothing, and one that starts
+ * nearer cannot overflow y plus a row.
+ */
+void MaxMatrixPanel::DrawColumn(int16_t x, int16_t y, byte height, byte value)
+{
+    if(height == MAXMATRIX_ROW_NUMBER_OF_MODULE && y == 0) {
+        SetColumn(x, value);
+    } else if(y > -MAXMATRIX_ROW_NUMBER_OF_MODULE && y < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        for(byte row = 0; row < height; row++) SetDot(x, static_cast<int16_t>(y + row), bitRead(value, row));
+    }
+}
+
+// SetDot() for a dot whose coordinates were added up past what an int16_t holds.
+void MaxMatrixPanel::SetFarDot(int32_t column, int32_t row, bool value)
+{
+    if(column >= 0 && column < GetNumberOfColumns() && row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+        SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
+    }
+}
+
+// Sets every dot from `left`, `top` to `right`, `bottom`, both included, that lies on the panel.
+void MaxMatrixPanel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom, bool value)
+{
+    if(left < 0) left = 0;
+    if(top < 0) top = 0;
+    if(right >= GetNumberOfColumns()) right = GetNumberOfColumns() - 1;
+    if(bottom >= MAXMATRIX_ROW_NUMBER_OF_MODULE) bottom = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1;
+    for(int32_t column = left; column <= right; column++) {
+        for(int32_t row = top; row <= bottom; row++) SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
+    }
+}
+
+/*
  * The shifts work on the picture as the viewer sees it, a column at a time, so that they are the
  * same for every module type and orientation; in place, as a copy of the whole picture would need
  * its length at compile time.

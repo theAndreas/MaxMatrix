@@ -19,7 +19,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 7  | Simulator in CI | 6 | done | #11 |
 | 8  | Batched updates in the library | 13 | done | #20 |
 | 9  | Mirrored modules in the library | 25 | in progress | #61 |
-| 10 | Adafruit GFX as an option | 8 | open | |
+| 10 | Adafruit GFX as an option | 8 | done | |
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
@@ -160,6 +160,21 @@ module.
 Lines, circles, bitmaps and fonts through Adafruit GFX, switched by a
 `MAXMATRIX_USE_ADAFRUIT_GFX` `STD_ON`/`STD_OFF`, as LEDMatrixDriver does with
 `USE_ADAFRUIT_GFX`. Decide after measuring what it costs in flash on the Uno.
+
+Measured on the Uno: a sketch that draws a line, a circle and a filled rectangle through a class
+on top of `Adafruit_GFX` took 7522 bytes of flash and 261 of RAM, against 1564 and 75 for the same
+sketch setting two dots; the same three shapes written on `SetDot()` took 1822 and 75. GFX costs
+about 6 KB of flash and 186 bytes of RAM: the vtable of `Adafruit_GFX` links every one of its
+virtual functions, called or not, and avr-gcc keeps a vtable in RAM beside the object. A switch
+would not have helped: the Arduino IDE passes a sketch's defines to no library.
+
+As built, without GFX: `DrawLine()`, `DrawRect()`, `FillRect()`, `DrawCircle()` and
+`DrawBitmap()` in `MaxMatrixPanel`, through the facade, in the viewer's coordinates and leaving
+out what lies off the panel, as `SetDot()` does. A bitmap is a column per byte in `PROGMEM`, as a
+glyph is, and the text draws its glyphs and sprites through the same `DrawColumn()`. The fonts of
+GFX are not missed on a panel eight dots high, which has `SetFont()`. The new example `Shapes`
+shows all of it, 4136 bytes of flash; examples that draw no shapes grew by 18 to 38 bytes, for the
+check that keeps a sprite at the right edge from overflowing an `int`.
 
 ### 11 Wokwi as a complement
 

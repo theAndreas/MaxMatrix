@@ -54,7 +54,6 @@ class MaxMatrixText
     byte space_between_chars_;
     char* string_;
 
-    static void SetSpriteColumn(MaxMatrixPanel& panel, int16_t x, int16_t y, byte height, byte column);
     MaxMatrixStatus FindGlyph(char c, MaxMatrixGlyph* glyph) const;
 
   public:

@@ -281,6 +281,25 @@ class MaxMatrix
     /*! \copydoc MaxMatrixPanel::SetDot(int16_t, int16_t, bool) */
     void SetDot(int16_t column, int16_t row, bool value) { panel_.SetDot(column, row, value); UpdateIfAuto(); }
 
+    /*! \copydoc MaxMatrixPanel::DrawLine(int16_t, int16_t, int16_t, int16_t, bool) */
+    void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value) { panel_.DrawLine(x0, y0, x1, y1, value); UpdateIfAuto(); }
+
+    /*! \copydoc MaxMatrixPanel::DrawRect(int16_t, int16_t, int16_t, int16_t, bool) */
+    void DrawRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value) { panel_.DrawRect(x, y, width, height, value); UpdateIfAuto(); }
+
+    /*! \copydoc MaxMatrixPanel::FillRect(int16_t, int16_t, int16_t, int16_t, bool) */
+    void FillRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value) { panel_.FillRect(x, y, width, height, value); UpdateIfAuto(); }
+
+    /*! \copydoc MaxMatrixPanel::DrawCircle(int16_t, int16_t, int16_t, bool) */
+    void DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) { panel_.DrawCircle(x, y, radius, value); UpdateIfAuto(); }
+
+    /*! \copydoc MaxMatrixPanel::DrawBitmap(int16_t, int16_t, byte const*, byte, byte) */
+    void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width, byte height = MAXMATRIX_ROW_NUMBER_OF_MODULE)
+    {
+        panel_.DrawBitmap(x, y, bitmap, width, height);
+        UpdateIfAuto();
+    }
+
     /*!
      * \brief Draws a char with its top left corner at `x`, `y`.
      *

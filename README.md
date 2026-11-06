@@ -13,6 +13,7 @@ The reference of every class and function is on [GitHub Pages](https://theandrea
 Features:
 
 - set and get single dots, rows and columns, in the same coordinates on every type of module
+- draw lines, rectangles, circles and pictures from flash
 - print chars and text (ASCII 32 to 126, the German umlauts, ß and °, variable char width)
 - shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps
 - shift the matrix content left, right, up and down, with or without rotation
@@ -98,6 +99,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 | [Messages](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Messages/Messages.ino) | several texts in turn, each at its own speed, with umlauts |
 | [Animation](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Animation/Animation.ino) | a ball bouncing off the edges, one picture per step |
 | [Sprites](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
+| [Shapes](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Shapes/Shapes.ino) | a frame, lines, circles and a picture from flash, one after the other |
 | [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
 
 ## Coordinates
@@ -126,6 +128,10 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetRow(row, values)`, `SetRow(module, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
 | `SetChar(x, y, c)`, `SetText(text)` | a char at x, y, or a text from the left edge |
 | `SetSprite(x, y, sprite)` | a sprite of your own, up to 5 columns wide |
+| `DrawLine(x0, y0, x1, y1, value)` | a straight line, both ends included |
+| `DrawRect(x, y, width, height, value)`, `FillRect(…)` | the outline of a rectangle, or the rectangle with its inside |
+| `DrawCircle(x, y, radius, value)` | the outline of a circle; radius 3 fills the height |
+| `DrawBitmap(x, y, bitmap, width)` | a picture in `PROGMEM`, a column per byte, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
 | `SetCharWithShift(c)`, `SetTextWithShift(text)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
@@ -140,7 +146,8 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `MaxMatrixCommand`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
-in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative.
+in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative,
+and so may the ends of a line or the centre of a circle. `value` false turns the dots off rather than on.
 A function that can fail says why, and changes nothing when it does. A getter returns the value together with the
 error, so ask `IsOk()` before you use `GetValue()`:
 
