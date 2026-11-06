@@ -106,6 +106,15 @@ class ControlCommand
      * \return True if it fits into the board's line buffer and holds no line break.
      */
     static bool Fits(std::string const& line);
+
+    /*!
+     * \brief Returns how many bytes `line` may still grow by before SerialControl drops it.
+     *
+     * \param[in] line The line, without its line feed.
+     * \return The bytes left in the board's line buffer, negative by as many bytes as the line is
+     *         too long.
+     */
+    static int32_t GetBytesLeft(std::string const& line);
 };
 
 #endif

@@ -466,7 +466,9 @@ tool only sent; the panel here shows what the board shows, as SerialControl answ
 to twenty times a second, and a SerialControl that starts takes the window's settings, so that the
 window and the matrix agree. For that `MaxMatrixCommand` answers every line itself, on a `Print`,
 rather than leaving `ok` and `error:` to the sketch, which would have had to know that `picture`
-answers in their place; SerialControl grew by 152 bytes of flash and no RAM. Like the page,
+answers in their place; SerialControl grew by 152 bytes of flash and no RAM. Then a stroke with the
+button held paints every LED it passes, and the field counts the bytes the text may still take, so
+that a line too long is not sent. Like the page,
 it sends every command to both ends, whichever is connected, and nothing to a board until
 SerialControl has said `ready`; the simulator's sketch said so before the program connected, so
 there it is not waited for. The simulator's TCP port is `--tcp PORT`, in both simulators, with one

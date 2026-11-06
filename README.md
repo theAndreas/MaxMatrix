@@ -241,7 +241,9 @@ to the board and to the simulator, whichever is connected.
 
 The panel shows what the board shows, or the simulator while no board is ready: the program asks SerialControl for
 its `picture` up to twenty times a second, so a text that shifts in moves there as well, and a click switches the LED
-that is lit or dark on the matrix. When SerialControl starts, or the simulator is connected, the program sends it the
+that is lit or dark on the matrix; moved with the button held, the mouse paints every LED it passes the way the first
+one went. Beside the text the window counts the bytes it may still take in SerialControl's line, an umlaut two, and
+sends no line that would be dropped. When SerialControl starts, or the simulator is connected, the program sends it the
 intensity, speed and space the window shows.
 
 It is built with the rest when CMake finds wxWidgets 3.2 (`apt install libwxgtk3.2-dev`, in the dev container

@@ -56,6 +56,8 @@ class ControlWindow : public wxFrame
 
     wxWindow* controls_;
     wxTextCtrl* text_;
+    wxStaticText* bytes_left_;
+    wxButton* send_;
     wxCheckBox* shift_;
     wxSpinCtrl* space_;
     wxSlider* intensity_;
@@ -91,6 +93,7 @@ class ControlWindow : public wxFrame
     void Follow(ControlLink& link, char const* name);
     ControlLink* GetShownLink();
     void ShowState();
+    void ShowBytesLeft();
     void Log(wxString const& text);
     static wxString ConvertToText(std::string const& line);
 

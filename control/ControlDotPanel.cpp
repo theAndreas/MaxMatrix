@@ -9,6 +9,9 @@
  * what SerialControl drives unless its sketch was built for another chain.
  */
 
+#include <math.h>
+#include <stdlib.h>
+#include <algorithm>
 #include <wx/dcbuffer.h>
 #include "ControlDotPanel.h"
 #include "MaxMatrixConfig.h"
@@ -28,6 +31,11 @@
 ControlDotPanel::ControlDotPanel(wxWindow* parent, std::function<void(uint8_t, uint8_t, bool)> on_switch)
     : wxPanel(parent), columns_(static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS), 0x00), on_switch_(std::move(on_switch))
 {
+    painting_ = false;
+    paint_lit_ = false;
+    on_dot_ = false;
+    last_column_ = 0;
+    last_row_ = 0;
     wxCoord const width = MAXMATRIX_NUMBER_OF_COLUMNS * CONTROL_DOT_PANEL_CELL + (MAXMATRIX_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
                       2 * CONTROL_DOT_PANEL_MARGIN;
     wxCoord const height = MAXMATRIX_ROW_NUMBER_OF_MODULE * CONTROL_DOT_PANEL_CELL + 2 * CONTROL_DOT_PANEL_MARGIN;
@@ -36,7 +44,10 @@ ControlDotPanel::ControlDotPanel(wxWindow* parent, std::function<void(uint8_t, u
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(FromDIP(wxSize(width, height)));
     Bind(wxEVT_PAINT, &ControlDotPanel::OnPaint, this);
-    Bind(wxEVT_LEFT_DOWN, &ControlDotPanel::OnClick, this);
+    Bind(wxEVT_LEFT_DOWN, &ControlDotPanel::OnLeftDown, this);
+    Bind(wxEVT_MOTION, &ControlDotPanel::OnMotion, this);
+    Bind(wxEVT_LEFT_UP, &ControlDotPanel::OnLeftUp, this);
+    Bind(wxEVT_MOUSE_CAPTURE_LOST, &ControlDotPanel::OnCaptureLost, this);
 }
 
 void ControlDotPanel::SetPicture(std::vector<uint8_t> const& columns)
@@ -67,7 +78,7 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */)
     dc.SetPen(*wxTRANSPARENT_PEN);
     for(uint8_t row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
         for(uint8_t column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
-            bool const lit = ((columns_[column] >> row) & 0x01) != 0;
+            bool const lit = IsLit(column, row);
             wxCoord const x = margin + column * cell + (column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * gap + (cell - led) / 2;
             wxCoord const y = margin + row * cell + (cell - led) / 2;
             if(!IsEnabled()) dc.SetBrush(wxBrush(CONTROL_DOT_PANEL_DISABLED));
@@ -77,16 +88,80 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */)
     }
 }
 
-// Switches the LED under the click and says so; a click into a gap or the margin does nothing.
-void ControlDotPanel::OnClick(wxMouseEvent& event)
+/*
+ * Switches the LED under the click and starts a stroke that gives every LED it passes the same
+ * state; a click into a gap or the margin does nothing. The mouse is captured, so that the stroke
+ * ends where the button is let go, even outside the panel.
+ */
+void ControlDotPanel::OnLeftDown(wxMouseEvent& event)
 {
     uint8_t column;
     uint8_t row;
 
     if(!GetDotAt(event.GetPosition(), &column, &row)) return;
+    painting_ = true;
+    paint_lit_ = !IsLit(column, row);
+    on_dot_ = true;
+    last_column_ = column;
+    last_row_ = row;
+    if(!HasCapture()) CaptureMouse();
+    PaintDot(column, row);
+}
+
+/*
+ * Paints every LED on the way from the last one to the one under the mouse: motion events come
+ * every few pixels, and a quick stroke would leave gaps otherwise. Off the LEDs, in a gap or
+ * outside the panel, the stroke pauses and starts again at the next LED without a line to it.
+ */
+void ControlDotPanel::OnMotion(wxMouseEvent& event)
+{
+    uint8_t column;
+    uint8_t row;
+
+    if(!painting_ || !event.LeftIsDown()) return;
+    if(!GetDotAt(event.GetPosition(), &column, &row)) {
+        on_dot_ = false;
+        return;
+    }
+    if(on_dot_) {
+        int16_t const delta_column = static_cast<int16_t>(column - last_column_);
+        int16_t const delta_row = static_cast<int16_t>(row - last_row_);
+        int16_t const steps = static_cast<int16_t>(std::max(abs(delta_column), abs(delta_row)));
+        for(int16_t step = 1; step < steps; step++) {
+            PaintDot(static_cast<uint8_t>(last_column_ + lround(static_cast<double>(delta_column) * step / steps)),
+                     static_cast<uint8_t>(last_row_ + lround(static_cast<double>(delta_row) * step / steps)));
+        }
+    }
+    PaintDot(column, row);
+    on_dot_ = true;
+    last_column_ = column;
+    last_row_ = row;
+}
+
+void ControlDotPanel::OnLeftUp(wxMouseEvent& /* event */)
+{
+    painting_ = false;
+    if(HasCapture()) ReleaseMouse();
+}
+
+// Another window took the mouse, a dialog say; the stroke ends there.
+void ControlDotPanel::OnCaptureLost(wxMouseCaptureLostEvent& /* event */)
+{
+    painting_ = false;
+}
+
+// Gives the LED the stroke's state, and says so, unless it has it already.
+void ControlDotPanel::PaintDot(uint8_t column, uint8_t row)
+{
+    if(IsLit(column, row) == paint_lit_) return;
     columns_[column] ^= static_cast<uint8_t>(1u << row);
     Refresh();
-    on_switch_(column, row, ((columns_[column] >> row) & 0x01) != 0);
+    on_switch_(column, row, paint_lit_);
+}
+
+bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const
+{
+    return ((columns_[column] >> row) & 0x01) != 0;
 }
 
 /*
