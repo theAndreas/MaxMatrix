@@ -12,8 +12,8 @@
  * work on either.
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORAVR_H_
+#ifndef MAXMATRIX_SIMULATOR_AVR_SIMULATORAVR_H_
+#define MAXMATRIX_SIMULATOR_AVR_SIMULATORAVR_H_
 
 #include <stdint.h>
 #include <sim_avr.h>

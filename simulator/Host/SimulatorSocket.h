@@ -8,8 +8,8 @@
  * Shared by the web host and the serial host, which both are polled from the simulator's tick.
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORSOCKET_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORSOCKET_H_
+#ifndef MAXMATRIX_SIMULATOR_HOST_SIMULATORSOCKET_H_
+#define MAXMATRIX_SIMULATOR_HOST_SIMULATORSOCKET_H_
 
 #include <stdint.h>
 #include <string>

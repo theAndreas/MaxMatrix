@@ -2,7 +2,7 @@
 # Starts a simulator with --web and checks what a browser gets from it: the page, a 404 for any other path, and over
 # the WebSocket the handshake and the panel. CI has no browser; this is the half of one the simulator talks to.
 #
-#   simulator/WebTest.sh SIMULATOR PORT
+#   simulator/Test/WebTest.sh SIMULATOR PORT
 set -eu
 source "$(dirname "$0")/WebTestLib.sh"
 

@@ -35,8 +35,8 @@ gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
 # The simulator's hosts once as well, the web host and the serial port on TCP: they know neither the library nor the
 # sketch, and the WebSocket half is tested on its own, without a network.
-add_library(SimulatorHosts STATIC simulator/SimulatorSocket.cpp simulator/SimulatorWebHost.cpp
-                                  simulator/SimulatorWebSocket.cpp simulator/SimulatorSerialHost.cpp)
+add_library(SimulatorHosts STATIC simulator/Host/SimulatorSocket.cpp simulator/Host/SimulatorWebHost.cpp
+                                  simulator/Host/SimulatorWebSocket.cpp simulator/Host/SimulatorSerialHost.cpp)
 target_include_directories(SimulatorHosts PUBLIC simulator)
 foreach(Test SimulatorWebSocketTest SimulatorWebHostTest SimulatorSerialHostTest)
     add_executable(${Test} test/${Test}.cpp)
@@ -49,11 +49,11 @@ endforeach()
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
 # difference to it, and its tests need no sketch.
 add_library(Simulator STATIC simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp simulator/SimulatorTerminal.cpp
-                             simulator/SimulatorWeb.cpp simulator/SimulatorFrontEnd.cpp)
+                             simulator/Web/SimulatorWeb.cpp simulator/SimulatorFrontEnd.cpp)
 target_include_directories(Simulator PUBLIC src)
 target_link_libraries(Simulator PUBLIC SimulatorHosts ArduinoMock)
 # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
-target_compile_definitions(Simulator PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
+target_compile_definitions(Simulator PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/Web/index.html")
 add_executable(SimulatorTest test/SimulatorTest.cpp)
 set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
@@ -73,8 +73,8 @@ endforeach()
 # part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
 find_program(NodeExecutable node)
 if(NodeExecutable)
-    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/PageTest.js
-                                         ${PROJECT_SOURCE_DIR}/simulator/index.html)
+    add_test(NAME simulator/page COMMAND ${NodeExecutable} ${PROJECT_SOURCE_DIR}/simulator/Test/PageTest.js
+                                         ${PROJECT_SOURCE_DIR}/simulator/Web/index.html)
 else()
     message(STATUS "node not found: the test simulator/page is left out")
 endif()
@@ -109,18 +109,18 @@ function(add_simulator_variant Variant)
 
     # Basics shows "Hi!" for its first two seconds; one second in, the panel of an FC-16 board has to read it.
     add_test(NAME ${Variant}/simulator/Basics
-             COMMAND Simulator-Basics-${Variant} --for 1 --expect ${PROJECT_SOURCE_DIR}/simulator/Basics.txt)
+             COMMAND Simulator-Basics-${Variant} --for 1 --expect ${PROJECT_SOURCE_DIR}/simulator/Expected/Basics.txt)
     # Off 8080, where a developer's own simulator runs, and one variant at a time, since both need the port.
     add_test(NAME ${Variant}/simulator/web
-             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/Test/WebTest.sh $<TARGET_FILE:Simulator-Basics-${Variant}> 18080)
     set_tests_properties(${Variant}/simulator/web PROPERTIES RESOURCE_LOCK SimulatorWebPort)
     # SerialControl controlled the way the control page does it, on a port of its own.
     add_test(NAME ${Variant}/simulator/control
-             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/Test/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
     set_tests_properties(${Variant}/simulator/control PROPERTIES RESOURCE_LOCK SimulatorControlPort)
     # SerialControl controlled the way the control program does it, over its Serial on a TCP port.
     add_test(NAME ${Variant}/simulator/tcp
-             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/TcpTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18084)
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/Test/TcpTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18084)
     set_tests_properties(${Variant}/simulator/tcp PROPERTIES RESOURCE_LOCK SimulatorTcpPort)
 endfunction()
 
@@ -153,11 +153,11 @@ if(PkgConfig_FOUND)
     pkg_check_modules(Simavr IMPORTED_TARGET simavr)
 endif()
 if(ArduinoCli AND Simavr_FOUND)
-    add_executable(SimulatorAvr simulator/mainAvr.cpp simulator/SimulatorAvr.cpp)
+    add_executable(SimulatorAvr simulator/Avr/mainAvr.cpp simulator/Avr/SimulatorAvr.cpp)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
 
     # an example, the simulated seconds it runs for, and the --serial lines it is sent; its expectation is
-    # simulator/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one
+    # simulator/Expected/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one
     set(AvrRuns "Basics|1|" "ScrollText|2|" "Messages|3|" "Animation|1|" "Sprites|1.5|" "SerialControl|1|text=AVR")
     file(GLOB_RECURSE LibraryHeaders CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.h)
     set(AvrElfs)
@@ -186,16 +186,16 @@ if(ArduinoCli AND Simavr_FOUND)
             endif()
             add_test(NAME avr/${Transfer}/${Example}
                      COMMAND SimulatorAvr --elf ${Directory}/${Example}.ino.elf ${SerialArguments} --for ${Seconds}
-                             --expect ${PROJECT_SOURCE_DIR}/simulator/${Example}.txt)
+                             --expect ${PROJECT_SOURCE_DIR}/simulator/Expected/${Example}.txt)
         endforeach()
         # SerialControl controlled as the page does, through the UART of the AVR; on a port of its own, one transfer
         # path at a time.
         add_test(NAME avr/${Transfer}/control
-                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:SimulatorAvr> 18083
+                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/Test/ControlTest.sh $<TARGET_FILE:SimulatorAvr> 18083
                          --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
         set_tests_properties(avr/${Transfer}/control PROPERTIES RESOURCE_LOCK SimulatorAvrControlPort)
         add_test(NAME avr/${Transfer}/tcp
-                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/TcpTest.sh $<TARGET_FILE:SimulatorAvr> 18085
+                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/Test/TcpTest.sh $<TARGET_FILE:SimulatorAvr> 18085
                          --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
         set_tests_properties(avr/${Transfer}/tcp PROPERTIES RESOURCE_LOCK SimulatorAvrTcpPort)
     endforeach()

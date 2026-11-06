@@ -8,7 +8,7 @@
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
-#include "SimulatorWeb.h"
+#include "Web/SimulatorWeb.h"
 
 static bool Parse(SimulatorOptions& options, std::vector<std::string> arguments)
 {

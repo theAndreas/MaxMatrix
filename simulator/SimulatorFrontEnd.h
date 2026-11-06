@@ -13,10 +13,10 @@
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORFRONTEND_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORFRONTEND_H_
 
+#include "Host/SimulatorSerialHost.h"
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
-#include "SimulatorSerialHost.h"
-#include "SimulatorWeb.h"
+#include "Web/SimulatorWeb.h"
 
 /*!
  * \brief Where the simulator meets a person or a program: the terminal, the page and the serial

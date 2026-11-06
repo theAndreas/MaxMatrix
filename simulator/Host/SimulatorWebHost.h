@@ -10,9 +10,10 @@
  * the JSON documents, Windows).
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORWEBHOST_H_
+#ifndef MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBHOST_H_
+#define MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBHOST_H_
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 

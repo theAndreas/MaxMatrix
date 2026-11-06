@@ -2,7 +2,7 @@
 # Runs SerialControl with --tcp and controls it as the control program does: each line sent to the TCP port reaches the
 # sketch's Serial, and what the sketch answers comes back on the same connection, as from a board's serial port.
 #
-#   simulator/TcpTest.sh SIMULATOR PORT [ARGUMENT...]
+#   simulator/Test/TcpTest.sh SIMULATOR PORT [ARGUMENT...]
 #
 # The arguments go to the simulator: --elf FILE, for SimulatorAvr.
 set -eu

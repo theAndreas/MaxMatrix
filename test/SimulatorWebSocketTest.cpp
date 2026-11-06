@@ -1,11 +1,11 @@
 /* Tests of the simulator's WebSocket protocol, against the RFCs rather than against a browser.
  *
- * simulator/WebTest.sh talks to a running simulator over a real socket, but only with short commands and one key. What
+ * simulator/Test/WebTest.sh talks to a running simulator over a real socket, but only with short commands and one key. What
  * a browser could send beyond that - another key, a long message, a frame split across reads - is checked here. */
 #include <gtest/gtest.h>
 #include <stdio.h>
 #include <string>
-#include "SimulatorWebSocket.h"
+#include "Host/SimulatorWebSocket.h"
 
 static std::string Sha1Hex(std::string const& message)
 {

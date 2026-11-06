@@ -28,31 +28,36 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   errors of OIL item 27. `Documentation.md` says how the code is documented.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
-  `--web` on `localhost:8080`. One class per job, as in `src/`:
+  `--web` on `localhost:8080`. One class per job, as in `src/`, and a folder per CMake target
+  where the folder's classes are one:
   - `main.cpp` — `setup()` once, `loop()` over and over, and `Tick()`, which `mock::tick` calls.
   - `SimulatorOptions` — the command line.
   - `SimulatorFrontEnd` — the ends both simulators share: the terminal or the page, and the
     serial host; it takes what the sketch printed from the mock once per tick, for all of them.
   - `SimulatorPanel` — the model's LEDs for a wiring and mounting, and whether to draw again.
   - `SimulatorTerminal` — the panel redrawn in place, or printed once at the end of `--for`.
-  - `SimulatorWeb` — the JSON for `index.html` (read at run time) and its commands; `serial LINE`
-    from the page reaches the sketch's `Serial`, and what the sketch prints goes back in the JSON.
-  - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
-    ported from Wordclock; the protocol works on strings only, so it is tested without a network.
-  - `SimulatorSerialHost` — `--tcp PORT`: the sketch's `Serial` as a plain TCP port on loopback,
-    one client at a time, for the control program, which has no WebSocket.
-  - `SimulatorSocket` — what both hosts do with a socket: listen on loopback, never wait, send
-    all.
-  - `mainAvr.cpp` / `SimulatorAvr` — the same simulator for the `.elf` `avr-gcc` makes of an
-    example (`--elf`): simavr runs it on an ATmega328P, its pins 10, 11 and 13 and its SPI output
-    drive the model, its UART is `Serial`. It writes the `mock::` variables the Arduino stand-in
-    writes, so panel, terminal and page work unchanged.
-  `EXAMPLE.txt` is the panel a test expects of an example at a time CMake names, `Basics.txt`
-  one second into `Basics` on an FC-16 board;
-  `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the commands of
-  the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`), `TcpTest.sh` the
-  same commands over `--tcp`, and `PageTest.js` the page's own script, against stand-ins for the
-  DOM, the WebSocket and a board on Web Serial.
+  - `Web/` — `SimulatorWeb`, the JSON for `index.html` beside it (read at run time) and its
+    commands; `serial LINE` from the page reaches the sketch's `Serial`, and what the sketch
+    prints goes back in the JSON.
+  - `Host/` — the library `SimulatorHosts`, the network alone, which the control program's tests
+    use as well:
+    - `SimulatorWebHost` / `SimulatorWebSocket` — HTTP on loopback and the WebSocket protocol,
+      ported from Wordclock; the protocol works on strings only, so it is tested without a
+      network.
+    - `SimulatorSerialHost` — `--tcp PORT`: the sketch's `Serial` as a plain TCP port on
+      loopback, one client at a time, for the control program, which has no WebSocket.
+    - `SimulatorSocket` — what both hosts do with a socket: listen on loopback, never wait, send
+      all.
+  - `Avr/` — `mainAvr.cpp` and `SimulatorAvr`, the executable `SimulatorAvr`: the same simulator
+    for the `.elf` `avr-gcc` makes of an example (`--elf`). simavr runs it on an ATmega328P, its
+    pins 10, 11 and 13 and its SPI output drive the model, its UART is `Serial`. It writes the
+    `mock::` variables the Arduino stand-in writes, so panel, terminal and page work unchanged.
+  - `Expected/` — `EXAMPLE.txt`, the panel a test expects of an example at a time CMake names,
+    `Basics.txt` one second into `Basics` on an FC-16 board.
+  - `Test/` — `WebTest.sh` checks what a browser would get from `--web`, `ControlTest.sh` the
+    commands of the page with `SerialControl` (both with the WebSocket of `WebTestLib.sh`),
+    `TcpTest.sh` the same commands over `--tcp`, and `PageTest.js` the page's own script, against
+    stand-ins for the DOM, the WebSocket and a board on Web Serial.
 - `control/` — the control program of OIL item 26, `MaxMatrixControl`: SerialControl on a board
   over its serial port, or in the simulator over `--tcp`, from a wxWidgets window laid out as the
   old Windows tool of `AndreasBur/Led-Matrix`. A CMake project of its own as well, for Windows.
@@ -181,7 +186,7 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
 - Files are named after their class, in `PascalCase`, as Arduino names its own (`Arduino.h`,
-  `HardwareSerial.h`, `Servo.h`): `Matrix/MaxMatrixPanel.h`, `simulator/SimulatorWebHost.cpp`.
+  `HardwareSerial.h`, `Servo.h`): `Matrix/MaxMatrixPanel.h`, `simulator/Host/SimulatorWebHost.cpp`.
   `src/MaxMatrix.h` has to keep that form, as a sketch includes it by the library's name. Google's
   `snake_case` for files was tried and dropped (#45); Utl keeps it, as it stands in for the STL.
 
@@ -274,7 +279,10 @@ check it.
 
 An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
 header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
-include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`.
+include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`. The simulator
+does the same from `simulator/` (`"Host/SimulatorSerialHost.h"`), in its own files and in the
+tests. A header includes what it uses itself, rather than relying on a header included before
+it.
 
 ### Comments
 
@@ -374,7 +382,7 @@ the timing on its own. `mock::tick`, called after every frame and every millisec
 `simulator/run/<example>` run every example for two seconds, which fails if a frame reaches the
 chain broken; what they draw depends on the host's clock, so it is not compared. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with
-`simulator/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test
+`simulator/Expected/Basics.txt`: the whole way from a sketch to the LEDs of an FC-16 board. The test
 `simulator/web` runs it with `--web` on port 18080 and stands in for the browser with `curl` and
 a WebSocket over bash's `/dev/tcp`: the page, the handshake, the panel after `hello`, and a
 change of wiring. It connects while `Basics` shows "Hi!" and sends nothing, so that only an answer
@@ -403,7 +411,7 @@ test of it as a process of its own. The window is checked by hand: under Xvfb wi
 
 The tests under `avr/` run what the Uno runs: CMake builds every example with `arduino-cli`, with
 bit banging and with SPI, into `build/avr/`, and `SimulatorAvr` runs each `.elf` for a simulated
-time and compares the panel with `simulator/EXAMPLE.txt`, the same file for both transfer paths.
+time and compares the panel with `simulator/Expected/EXAMPLE.txt`, the same file for both transfer paths.
 The time is simulated, so a moving example ends with the same panel every run, which the
 simulator on the host clock cannot promise. `avr/*/control` is `simulator/control` against the
 `.elf` of `SerialControl`, on port 18083, and `avr/*/tcp` is `simulator/tcp`, on port 18085; with

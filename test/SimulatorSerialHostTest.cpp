@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string>
-#include "SimulatorSerialHost.h"
+#include "Host/SimulatorSerialHost.h"
 
 static uint16_t const kPort = 18087;
 

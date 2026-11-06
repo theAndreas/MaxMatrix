@@ -18,7 +18,7 @@
  * --serial hands the sketch's Serial a line to read, as if it was typed; each one given is read in
  * turn.
  *
- * --web draws in a browser instead, on http://localhost:8080/ (simulator/index.html). --port picks
+ * --web draws in a browser instead, on http://localhost:8080/ (simulator/Web/index.html). --port picks
  * another port, so that two simulators, or a simulator and the tests, can run side by side.
  *
  * --tcp opens the sketch's Serial as a TCP port on localhost, for the control program in control/:
