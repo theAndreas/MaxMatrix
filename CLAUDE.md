@@ -228,8 +228,8 @@ A function of the library that can fail says why, in `MaxMatrixError`
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
 reference, `GetSprite()`). A new reason gets its own value in the enum, a text in `kErrorTexts`
 (`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
-call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` passes the reason of a failed
-line on, so that `SerialControl` answers with `GetErrorText()`.
+call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` answers a failed line with
+`GetErrorText()` on the `Print` it is given, and returns the reason as well.
 
 The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
 returns a constant per case into a table in `.rodata`, which the Uno copies into RAM, as it does

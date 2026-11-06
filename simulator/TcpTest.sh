@@ -35,6 +35,8 @@ IFS= read -r -t 5 Opened <&4 || true
 exec 3<>"/dev/tcp/127.0.0.1/$Port"
 
 expect "text=Hi" "ok"
+# "Hi" from the left edge, two hex digits per column, and the 24 empty columns after it
+expect "picture" "picture=7F08087F00447D40$(printf '00%.0s' {1..24})"
 expect "text=Grüße" "ok"
 expect "blink" "error: unknown command"
 expect "intensity=16" "error: out of range"

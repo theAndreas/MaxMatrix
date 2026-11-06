@@ -95,26 +95,43 @@ int HardwareSerial::read()
     return received;
 }
 
-size_t HardwareSerial::print(char const* text)
+size_t HardwareSerial::write(uint8_t c)
 {
-    mock::serial_output += text;
-    return strlen(text);
+    mock::serial_output += static_cast<char>(c);
+    return 1;
 }
 
-/* a line ends in \r\n, as the Arduino core prints it */
-size_t HardwareSerial::println(char const* text)
+size_t Print::write(char const* text)
 {
-    return print(text) + print("\r\n");
+    size_t written = 0;
+
+    while(*text != '\0') written += write(static_cast<uint8_t>(*text++));
+    return written;
 }
 
-size_t HardwareSerial::print(__FlashStringHelper const* text)
+size_t Print::print(char const* text)
+{
+    return write(text);
+}
+
+size_t Print::println(char const* text)
+{
+    return print(text) + println();
+}
+
+size_t Print::print(__FlashStringHelper const* text)
 {
     return print(reinterpret_cast<char const*>(text));
 }
 
-size_t HardwareSerial::println(__FlashStringHelper const* text)
+size_t Print::println(__FlashStringHelper const* text)
 {
     return println(reinterpret_cast<char const*>(text));
+}
+
+size_t Print::println()
+{
+    return write("\r\n");
 }
 
 SPIClass SPI;

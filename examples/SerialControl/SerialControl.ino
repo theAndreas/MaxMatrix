@@ -2,7 +2,7 @@
  * SerialControl
  *
  * Takes commands over Serial, one per line, and answers each with "ok", or with "error: " and the reason, such as
- * "error: out of range" for intensity=16:
+ * "error: out of range" for intensity=16; picture is answered with "picture=" and the columns instead:
  *
  *   text=Hello            shows a text from the left edge
  *   textShift=Hello       shifts a text in from the right
@@ -11,6 +11,7 @@
  *   space=1               empty columns between chars
  *   setDot=5,3,1          column, row, 1 for on and 0 for off
  *   clear                 turns every LED off
+ *   picture               answers with what the matrix shows, two hex digits per column
  *
  * The serial monitor of the Arduino IDE sends them at 115200 baud with "Newline" as line ending; so do the control
  * page and the control program of MaxMatrix.
@@ -39,14 +40,6 @@ void setup()
 
 void loop()
 {
-    while(Serial.available() > 0) {
-        MaxMatrixResult<MaxMatrixCommandState> line = command.Feed(matrix, Serial.read());
-        if(!line.IsOk()) {
-            Serial.print(F("error: "));
-            Serial.println(line.GetErrorText());
-        } else if(line.GetValue() == MaxMatrixCommandState::kDone) {
-            Serial.println(F("ok"));
-        }
-    }
+    while(Serial.available() > 0) command.Feed(matrix, Serial.read(), Serial);
     matrix.ShiftTask();
 }

@@ -57,17 +57,27 @@ unsigned long millis();
 unsigned long micros();
 void delay(unsigned long milliseconds);
 
-/* Serial as far as the examples use it, declared with the types of the Arduino core: it reads what a test or the
- * simulator has put into mock::serial_input and appends what the sketch prints to mock::serial_output */
-class HardwareSerial {
+/* Print as far as the library and the examples use it: what prints a char is the class below, the rest is built on
+ * it, as in the Arduino core; a line ends in \r\n, as the core prints it */
+class Print {
   public:
-    void begin(unsigned long baud);
-    int available();
-    int read();
+    virtual size_t write(uint8_t c) = 0;
+    size_t write(char const* text);
     size_t print(char const* text);
     size_t println(char const* text);
     size_t print(__FlashStringHelper const* text);
     size_t println(__FlashStringHelper const* text);
+    size_t println();
+};
+
+/* Serial as far as the examples use it, declared with the types of the Arduino core: it reads what a test or the
+ * simulator has put into mock::serial_input and appends what the sketch prints to mock::serial_output */
+class HardwareSerial : public Print {
+  public:
+    void begin(unsigned long baud);
+    int available();
+    int read();
+    size_t write(uint8_t c) override;
 };
 
 extern HardwareSerial Serial;

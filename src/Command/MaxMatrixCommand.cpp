@@ -30,7 +30,11 @@ MaxMatrixCommand::MaxMatrixCommand()
     line_too_long_ = false;
 }
 
-MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix, char c)
+/*
+ * Every line but an empty one gets one line back, so that a program can tell which answer is
+ * whose by counting; the answer to `picture` stands in for its `ok`.
+ */
+MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix, char c, Print& answer)
 {
     if(c == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return MaxMatrixCommandState::kPending;
     if(c != MAXMATRIX_COMMAND_LINE_END) {
@@ -45,29 +49,41 @@ MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix,
     line_[line_length_] = STD_NULL_CHARACTER;
     line_length_ = 0;
     line_too_long_ = false;
-    if(too_long) return MaxMatrixError::kLineTooLong;
     if(empty) return MaxMatrixCommandState::kPending;
-    MaxMatrixStatus status = Execute(matrix, line_);
-    if(!status.IsOk()) return status.GetError();
-    return MaxMatrixCommandState::kDone;
+    MaxMatrixResult<MaxMatrixCommandState> result = MaxMatrixError::kLineTooLong;
+    if(!too_long) result = Execute(matrix, line_, answer);
+    if(!result.IsOk()) {
+        answer.print(F("error: "));
+        answer.println(result.GetErrorText());
+    } else if(result.GetValue() == MaxMatrixCommandState::kDone) {
+        answer.println(F("ok"));
+    }
+    return result;
 }
 
 // Splits the line at its first '=' into name and value, overwriting the '=' with the end of the
 // name, and passes it on by name.
-MaxMatrixStatus MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text)
+MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text, Print& answer)
 {
     char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
+    MaxMatrixStatus status = MaxMatrixError::kOk;
 
     if(value == NULL) {
+        if(0 == strcmp_P(text, PSTR("picture"))) {
+            AnswerPicture(matrix, answer);
+            return MaxMatrixCommandState::kAnswered;
+        }
         if(0 != strcmp_P(text, PSTR("clear"))) return MaxMatrixError::kUnknownCommand;
         matrix.Clear();
-        return MaxMatrixError::kOk;
+    } else {
+        *value++ = STD_NULL_CHARACTER;
+        if(0 == strcmp_P(text, PSTR("text"))) status = ExecuteText(matrix, value);
+        else if(0 == strcmp_P(text, PSTR("textShift"))) status = ExecuteTextShift(matrix, value);
+        else if(0 == strcmp_P(text, PSTR("setDot"))) status = ExecuteDot(matrix, value);
+        else status = ExecuteSetting(matrix, text, value);
     }
-    *value++ = STD_NULL_CHARACTER;
-    if(0 == strcmp_P(text, PSTR("text"))) return ExecuteText(matrix, value);
-    if(0 == strcmp_P(text, PSTR("textShift"))) return ExecuteTextShift(matrix, value);
-    if(0 == strcmp_P(text, PSTR("setDot"))) return ExecuteDot(matrix, value);
-    return ExecuteSetting(matrix, text, value);
+    if(!status.IsOk()) return status.GetError();
+    return MaxMatrixCommandState::kDone;
 }
 
 // textShift=TEXT copies the text out of the line buffer first: the shift reads it for as long as
@@ -139,6 +155,22 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
 }
 
 /*
+ * `picture` is answered with the panel as the viewer sees it, rather than the buffer as wired, so
+ * that the answer does not depend on the modules and their orientation. The column is on the
+ * panel, so GetColumn() cannot fail.
+ */
+void MaxMatrixCommand::AnswerPicture(MaxMatrix& matrix, Print& answer)
+{
+    answer.print(F("picture="));
+    for(int16_t column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        byte const value = matrix.GetColumn(column).GetValue();
+        answer.write(static_cast<uint8_t>(ConvertToHexDigit(value >> 4)));
+        answer.write(static_cast<uint8_t>(ConvertToHexDigit(value & 0x0F)));
+    }
+    answer.println();
+}
+
+/*
  * Converts a decimal number of digits only, at least one, up to `maximum`. It stops counting as
  * soon as the number is past `maximum`, so that a long run of digits cannot overflow into a small
  * number, but reads on to the end all the same, so that "999x" is no number rather than too large.
@@ -154,4 +186,10 @@ MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text, ui
     }
     if(value > maximum) return MaxMatrixError::kOutOfRange;
     return static_cast<uint16_t>(value);
+}
+
+// Computed rather than looked up: a table of the digits would lie in RAM on the Uno.
+char MaxMatrixCommand::ConvertToHexDigit(byte value)
+{
+    return static_cast<char>(value < 10 ? '0' + value : 'A' + value - 10);
 }
