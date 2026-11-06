@@ -156,7 +156,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
 
 /*
  * `picture` is answered with the panel as the viewer sees it, rather than the buffer as wired, so
- * that the answer does not depend on the modules and their orientation. The column is on the
+ * that the answer does not depend on the modules, their type and orientation. The column is on the
  * panel, so GetColumn() cannot fail.
  */
 void MaxMatrixCommand::AnswerPicture(MaxMatrix& matrix, Print& answer)

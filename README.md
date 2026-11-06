@@ -17,7 +17,7 @@ Features:
 - shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps
 - shift the matrix content left, right, up and down, with or without rotation
 - send a picture drawn with many calls at once, in at most eight frames
-- module orientation of 0, 90, 180 and 270 degrees, and a board mounted upside down
+- all eight ways a module can be wired, mirrored ones included, and a board mounted upside down
 - bit banging (any pins) or hardware SPI
 - a simulator that runs the examples on the PC, in the terminal or in a browser
 - a control program for Linux and Windows that drives a board or the simulator over SerialControl
@@ -71,7 +71,7 @@ char text[] = "Hello World!   ";
 void setup()
 {
     matrix.Init();
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see "Module orientation"
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see "Module type"
     matrix.SetTextWithShift(text);
 }
 
@@ -106,7 +106,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 
 `SetDot(x, y)` counts x from the left and y from the top, across all modules: x from 0 to
 `GetNumberOfColumns() - 1`, eight columns per module, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
-This holds for every type of module once the orientation fits it, see [Module orientation](#module-orientation).
+This holds for every type of module once the module type is set, see [Module type](#module-type).
 
 The two functions that set eight LEDs at once read their byte in different directions:
 
@@ -135,7 +135,7 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetShutdown(on)` | turns the LEDs off without losing the picture, which still takes what is drawn |
 | `SetDisplayTest(on)` | lights every LED at full brightness, to check the modules, and shows the picture again |
 | `MaxMatrixBatch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
-| `SetModuleOrientation(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
+| `SetModuleType(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-type) |
 | `RegisterWrite(address, value)` | writes a register of every MAX7219, past the picture |
 | `MaxMatrixCommand`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
@@ -269,24 +269,23 @@ On Windows, `cmake -S control -B build-control` is meant to build the program al
 its serial port and socket code compile with MinGW, but the program has not been built or run on Windows yet. The board's ports are listed as `COM` ports there and as `/dev/ttyACM*` and `/dev/ttyUSB*` on Linux; another name can
 be typed into the box. As on the page, nothing goes to a board until SerialControl has said `ready`.
 
-## Module orientation
+## Module type
 Two settings make the text upright:
 
-- `SetModuleOrientation()` turns every module in its place by 0, 90, 180 or 270 degrees. Depending on how the LED matrix is mounted on the module, the columns of the MAX7219 are horizontal or vertical, and this setting follows from the type of module.
+- `SetModuleType()` says how the LEDs of a module are wired to its MAX7219. The types are named as the hardware types of [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), so a module that works there with `FC16_HW` takes `MaxMatrixModuleType::kFc16` here.
 - `SetMatrixOrientation()` turns the whole display by 0 or 180 degrees, for a board mounted upside down, with the input (DIN) on the left.
 
-Modules are named here as in [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), whose hardware types describe the same wiring:
+| Module | Module type |
+|--------|-------------|
+| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MaxMatrixModuleType::kFc16` (checked on hardware) |
+| Parola (`PAROLA_HW`) | `MaxMatrixModuleType::kParola` |
+| ICStation (`ICSTATION_HW`) | `MaxMatrixModuleType::kIcstation` |
+| Generic (`GENERIC_HW`) | `MaxMatrixModuleType::kGeneric` |
+| `DR0CR0RR0_HW` to `DR1CR1RR1_HW` | `MaxMatrixModuleType::kDr0Cr0Rr0` to `kDr1Cr1Rr1` |
 
-| Module | Module orientation |
-|--------|--------------------|
-| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MaxMatrixModuleOrientation::k270` (checked on hardware) |
-| ICStation (`ICSTATION_HW`) | `MaxMatrixModuleOrientation::k90` |
-| Generic (`GENERIC_HW`) | `MaxMatrixModuleOrientation::k180` |
-| `DR0CR0RR1_HW` | `MaxMatrixModuleOrientation::k0` |
+For a module of unknown type, try the four named ones first; if none of them shows the text upright, one of the four others does. With the input on the right, the matrix orientation stays at `MaxMatrixMatrixOrientation::k0`; mounted upside down, it is `MaxMatrixMatrixOrientation::k180` with the same module type.
 
-With the input on the right, the matrix orientation stays at `MaxMatrixMatrixOrientation::k0`; mounted upside down, it is `MaxMatrixMatrixOrientation::k180` with the same module orientation. Parola modules (`PAROLA_HW`) are a mirror image of these and cannot be shown upright yet.
-
-How the bytes of the MAX7219 lie on the LEDs in each module orientation is drawn in [docu/](docu/README.md); a sketch
+How the bytes of the MAX7219 lie on the LEDs of each module type is drawn in [docu/](docu/README.md); a sketch
 does not need it, only work on the library does.
 
 ## Umlauts
@@ -339,7 +338,7 @@ Every example also builds into a simulator, which runs the sketch unchanged on t
 build/Simulator-ScrollText-bitbang --wiring FC16
 ```
 
-`--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong orientation for the module shows the text turned or mirrored, as the hardware would.
+`--wiring` takes `FC16` (the default), `GENERIC`, `PAROLA`, `ICSTATION` or `DR0CR0RR0` to `DR1CR1RR1`, and `--upside-down` turns the board around. A sketch with the wrong module type shows the text turned or mirrored, as the hardware would.
 
 With `--web` it draws in a browser instead, on <http://localhost:8080/>, which VS Code forwards out of the dev container: the panel with the brightness of every module, the frames on the wire, the module type and mounting to switch while the sketch runs, and the controls of [Control over Serial](#control-over-serial). `--port` picks another port, for a second simulator beside it. `--tcp PORT` opens the sketch's `Serial` as a TCP port on `localhost`, for [the control program](#the-control-program): what it sends, the sketch reads, and what the sketch prints, it gets back.
 

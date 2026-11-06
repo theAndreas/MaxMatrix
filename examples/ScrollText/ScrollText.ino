@@ -23,8 +23,8 @@ char text[] = "Hello World!   ";
 void setup()
 {
     matrix.Init();
-    /* 270 for the common 4-in-1 FC-16 boards; the README lists the other modules */
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);
+    /* the common 4-in-1 FC-16 boards; the README lists the other modules */
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);
     matrix.SetIntensity(2);
     matrix.SetShiftInterval(kShiftIntervalMs);
     matrix.SetTextWithShift(text);

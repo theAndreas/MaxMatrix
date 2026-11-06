@@ -28,7 +28,7 @@ MaxMatrixOf<4> matrix(11, 10, 13);
 void setup()
 {
     matrix.Init();
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see the README for other modules
 }
 
 void loop()

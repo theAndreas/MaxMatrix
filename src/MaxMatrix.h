@@ -133,8 +133,8 @@ class MaxMatrix
     /*! \brief Returns the pin CLK of the chain is connected to. */
     byte GetClockPin() const { return panel_.GetWired().GetChain().GetClockPin(); }
 
-    /*! \brief Returns how every module is turned in its place; see SetModuleOrientation(). */
-    MaxMatrixModuleOrientation GetModuleOrientation() const { return panel_.GetModuleOrientation(); }
+    /*! \brief Returns how the LEDs of every module are wired; see SetModuleType(). */
+    MaxMatrixModuleType GetModuleType() const { return panel_.GetModuleType(); }
 
     /*! \brief Returns how the whole matrix is turned; see SetMatrixOrientation(). */
     MaxMatrixMatrixOrientation GetMatrixOrientation() const { return panel_.GetMatrixOrientation(); }
@@ -366,8 +366,8 @@ class MaxMatrix
      */
     void SetSprite(int16_t x, int16_t y, MaxMatrixSprite const sprite) { text_.SetSprite(panel_, x, y, sprite); UpdateIfAuto(); }
 
-    /*! \copydoc MaxMatrixPanel::SetModuleOrientation(MaxMatrixModuleOrientation) */
-    void SetModuleOrientation(MaxMatrixModuleOrientation module_orientation) { panel_.SetModuleOrientation(module_orientation); UpdateIfAuto(); }
+    /*! \copydoc MaxMatrixPanel::SetModuleType(MaxMatrixModuleType) */
+    void SetModuleType(MaxMatrixModuleType module_type) { panel_.SetModuleType(module_type); UpdateIfAuto(); }
 
     /*! \copydoc MaxMatrixPanel::SetMatrixOrientation(MaxMatrixMatrixOrientation) */
     void SetMatrixOrientation(MaxMatrixMatrixOrientation matrix_orientation) { panel_.SetMatrixOrientation(matrix_orientation); UpdateIfAuto(); }

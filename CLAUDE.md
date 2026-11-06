@@ -23,7 +23,7 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
-  bytes of `matrix_buffer_` lie on a module in each module orientation (`Wiring_*.svg`). None is
+  bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
   drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
   `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
   change that moves a dot. `ErrorHandling.md` records what was weighed, and measured, for the
@@ -100,8 +100,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 ### The matrix buffer
 
 `matrix_buffer_` mirrors what is on the LEDs: **one byte per column, one bit per row**
-(bit 0 is row 0), columns of all modules in a row, module 0 first — as wired, which in
-module orientation 0 is also how the viewer sees it; `docu/Wiring_*.svg` show the other three.
+(bit 0 is row 0), columns of all modules in a row, module 0 first — as wired, which for
+the module type `kDr0Cr0Rr1` is also how the viewer sees it; `docu/Wiring_*.svg` show all eight.
 The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
 The buffer is the sketch's, and so is the length of the chain: `MaxMatrixOf<N>` brings a buffer
@@ -146,14 +146,16 @@ that does not use it pays nothing, because the linker drops what no one calls; `
 - **`MaxMatrixWired`** works on the buffer and the hardware as wired and knows nothing about
   orientation. Its functions have the same names; the object says which system is meant.
 
-Between them, `ConvertDotToBuffer()` is the only function that knows the two orientations: the
-matrix orientation (0, 180) turns the whole panel, the module orientation (0, 90, 180, 270) then
-every module in its place. It maps one dot as the viewer sees it to a buffer column and bit.
-Lines go through `GetLine()`/`SetLine()`; shifting and changing an orientation work on the
-picture in viewer coordinates, a column of it at a time.
+Between them, `ConvertDotToBuffer()` is the only function that knows the matrix orientation
+and the module type: the matrix orientation (0, 180) turns the whole panel, the module type then
+says which digit register and bit drive a dot within its module, by the three properties
+MD_MAX72XX names its hardware types by (DR, CR, RR), one bit each of `MaxMatrixModuleType`. It
+maps one dot as the viewer sees it to a buffer column and bit. Lines go through
+`GetLine()`/`SetLine()`; shifting and changing the mapping work on the picture in viewer
+coordinates, a column of it at a time.
 
 A new feature that works on coordinates builds on these and never branches on an orientation
-itself. When every function handled the orientations on its own, rows, shifts and dots
+or a module type itself. When every function handled the orientations on its own, rows, shifts and dots
 disagreed in all but orientation 0.
 
 ### Hardware access
@@ -187,8 +189,8 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 - Types, functions and methods `PascalCase`: `MaxMatrixPanel`, `SetText()`, `GetState()`;
   `Get`/`Set` for accessors, `Convert…`/`Decode…` for conversions.
 - Variables and parameters `snake_case`; private and protected members end in `_`
-  (`module_orientation_`), so that a setter's parameter takes the plain name
-  (`SetModuleOrientation(MaxMatrixModuleOrientation module_orientation)`). Members of a
+  (`module_type_`), so that a setter's parameter takes the plain name
+  (`SetModuleType(MaxMatrixModuleType module_type)`). Members of a
   struct whose members are all public have no `_`.
 - Constants, `constexpr` and `const` with static storage, start with `k`: `kErrorTexts`,
   `kDataInPin` in a sketch.
@@ -373,8 +375,8 @@ with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on ea
 `ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
 first two only. In `det/`, the test file defines `MaxMatrixReportError()` itself and records into
 `Reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
-only the tests are C++17, which GoogleTest needs. A test that loops over the four orientations
-is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
+only the tests are C++17, which GoogleTest needs. A test that loops over the orientations and
+module types is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
 a falling chip select starts a frame, a rising clock takes the level of data in as a bit, and a
 rising chip select latches the frame, as SimulatorAvr does for the real binary. It records every
 frame in `mock::last_frame` and counts in `mock::errors` a bit or an SPI byte outside a frame or
@@ -390,8 +392,9 @@ model has its own tests against the datasheet, run once under the `model/` prefi
 
 `mock::chain.IsLit()` goes one step further, to the LEDs as the viewer sees them: given one of
 the eight module wirings MD_MAX72XX names (`DR0CR0RR0` to `DR1CR1RR1`, `FC16`, `GENERIC`, …)
-and whether the board is mounted upside down. `MaxMatrixModuleTest` pins which orientations
-fit which module; the README's table says the same and changes with it.
+and whether the board is mounted upside down. `MaxMatrixModuleTest` pins that every module
+type shows the picture upright on the wiring of its name, and the named four on the wirings
+MD_MAX72XX gives those names; the README's table says the same and changes with it.
 
 The mock has a `Serial` that reads `mock::serial_input` and appends what the sketch prints to
 `mock::serial_output`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()`,

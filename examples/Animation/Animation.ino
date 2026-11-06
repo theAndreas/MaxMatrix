@@ -22,7 +22,7 @@ uint32_t last_step = 0;
 void setup()
 {
     matrix.Init();
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see the README for other modules
     matrix.SetDot(ball_x, ball_y, true);
 }
 
