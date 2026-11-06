@@ -3,7 +3,8 @@
 
 /*!
  * \file
- * \brief The command lines of SerialControl, as the control program sends them.
+ * \brief The command lines of SerialControl, as the control program sends them, and the answer to
+ *        `picture`.
  *
  * The other half of MaxMatrixCommand, which reads them on the board.
  */
@@ -13,9 +14,11 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 /*!
- * \brief The command lines of SerialControl, as the control program sends them.
+ * \brief The command lines of SerialControl, as the control program sends them, and the answer to
+ *        `picture`.
  *
  * Each function makes one line, without its line feed. A text is UTF-8, which MaxMatrix decodes
  * into latin-1 on the board; the old Windows tool sent the code page of Windows instead.
@@ -74,6 +77,24 @@ class ControlCommand
      * \return The line.
      */
     static std::string MakeClear();
+
+    /*!
+     * \brief Makes the line that asks what the matrix shows.
+     *
+     * \return The line.
+     */
+    static std::string MakePicture();
+
+    /*!
+     * \brief Decodes the answer to `picture` into the columns of the panel.
+     *
+     * \param[in] line A line SerialControl answered with, without its line end.
+     * \param[out] columns One byte per column as the viewer sees it, from the left, bit 0 the top
+     *                     row; empty if the picture is not one of `MAXMATRIX_NUMBER_OF_COLUMNS`
+     *                     columns in hex, as from a sketch built for another chain.
+     * \return True if `line` answers `picture`, false for any other line.
+     */
+    static bool DecodePicture(std::string const& line, std::vector<uint8_t>* columns);
 
     /*!
      * \brief Returns whether SerialControl takes `line` whole.

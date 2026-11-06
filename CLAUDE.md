@@ -59,9 +59,12 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   Classes start with `Control`; everything but the window is the library `Control`, tested
   without wxWidgets:
   - `ControlPort` — one end: `ControlSerialPort` (`termios` / Win32) or `ControlTcpPort`.
-  - `ControlLink` — the lines over a port, and waiting for `ready` on a board.
-  - `ControlCommand` — the lines `MaxMatrixCommand` reads, and whether one fits its buffer.
-  - `ControlWindow`, `ControlDotPanel` — the window and the LEDs to click on, checked by hand;
+  - `ControlLink` — the lines over a port, waiting for `ready` on a board, and asking for the
+    `picture` the window shows.
+  - `ControlCommand` — the lines `MaxMatrixCommand` reads, whether one fits its buffer, and the
+    answer to `picture`.
+  - `ControlWindow`, `ControlDotPanel` — the window and the matrix as SerialControl answers
+    `picture`, to click on, checked by hand;
     `.clang-tidy` there switches off the check that argues with wxWidgets' flag enums.
 - `diagram.json`, `wokwi.toml` — a Uno with four FC-16 modules for Wokwi, which runs the real
   AVR binary that `tools/wokwi.py EXAMPLE` builds; to look at, not tested in CI.
@@ -228,8 +231,8 @@ A function of the library that can fail says why, in `MaxMatrixError`
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
 reference, `GetSprite()`). A new reason gets its own value in the enum, a text in `kErrorTexts`
 (`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
-call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` passes the reason of a failed
-line on, so that `SerialControl` answers with `GetErrorText()`.
+call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` answers a failed line with
+`GetErrorText()` on the `Print` it is given, and returns the reason as well.
 
 The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
 returns a constant per case into a table in `.rodata`, which the Uno copies into RAM, as it does

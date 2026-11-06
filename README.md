@@ -126,7 +126,7 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `MaxMatrixBatch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
 | `SetModuleOrientation(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
 | `RegisterWrite(address, value)` | writes a register of every MAX7219, past the picture |
-| `MaxMatrixCommand`, `Feed(matrix, c)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
+| `MaxMatrixCommand`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
 in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative.
@@ -198,9 +198,11 @@ off with `SetAutoUpdate(false)` and send with `Update()` whenever the picture is
 | `space=1` | empty columns between chars |
 | `setDot=5,3,1` | column, row, `1` for on and `0` for off |
 | `clear` | turns every LED off |
+| `picture` | answers with what the matrix shows |
 
-A line ends in `\n` or `\r\n`. The [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) example reads them from
-`Serial` at 115200 baud and answers each with `ok`, or with `error: ` and the reason; the serial monitor of the
+A line ends in `\n` or `\r\n`. `Feed()` answers each line on the `Print` it is given, as a rule `Serial`, with one line:
+`ok`, or `error: ` and the reason, or for `picture` with `picture=` and two hex digits per column, from the left as the
+viewer sees it, bit 0 the top row. The [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) example reads the lines from `Serial` at 115200 baud; the serial monitor of the
 Arduino IDE sends them with "Newline" as line ending:
 
 ```cpp
@@ -208,20 +210,13 @@ MaxMatrixCommand command;
 
 void loop()
 {
-    while(Serial.available() > 0) {
-        MaxMatrixResult<MaxMatrixCommandState> line = command.Feed(matrix, Serial.read());
-        if(!line.IsOk()) {
-            Serial.print(F("error: "));
-            Serial.println(line.GetErrorText());
-        } else if(line.GetValue() == MaxMatrixCommandState::kDone) {
-            Serial.println(F("ok"));
-        }
-    }
+    while(Serial.available() > 0) command.Feed(matrix, Serial.read(), Serial);
     matrix.ShiftTask();
 }
 ```
 
-`Feed()` returns `MaxMatrixCommandState::kPending` while a line goes on, `MaxMatrixCommandState::kDone` when it is carried out, and
+`Feed()` also returns what became of the line: `MaxMatrixCommandState::kPending` while it goes on,
+`MaxMatrixCommandState::kDone` when it is carried out, `MaxMatrixCommandState::kAnswered` after `picture`, and
 why it failed otherwise: `intensity=16` is `MaxMatrixError::kOutOfRange`, `intensity=x` `MaxMatrixError::kNotANumber`. A line
 longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The class keeps the
 line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it pays nothing.
@@ -239,10 +234,15 @@ Opening the port resets an Uno; the page sends the board nothing until SerialCon
 
 ### The control program
 `control/` holds the same controls as a program of its own, for a browser without Web Serial and for whoever wants a
-window rather than a page, laid out as the Windows tool of [Led-Matrix](https://github.com/AndreasBur/Led-Matrix) was:
-the text, *Shift in*, the space and the intensity and speed sliders on one tab, every LED of the panel to click on the
-other, and on the right the board's serial port, the simulator and a log of every line and answer. Every command goes
+window rather than a page, laid out as the Windows tool of [Led-Matrix](https://github.com/AndreasBur/Led-Matrix) was,
+but for its tabs: the whole panel on top, below it the text, *Shift in*, the space and the intensity and speed
+sliders, and on the right the board's serial port, the simulator and a log of every line and answer. Every command goes
 to the board and to the simulator, whichever is connected.
+
+The panel shows what the board shows, or the simulator while no board is ready: the program asks SerialControl for
+its `picture` up to twenty times a second, so a text that shifts in moves there as well, and a click switches the LED
+that is lit or dark on the matrix. When SerialControl starts, or the simulator is connected, the program sends it the
+intensity, speed and space the window shows.
 
 It is built with the rest when CMake finds wxWidgets 3.2 (`apt install libwxgtk3.2-dev`, in the dev container
 already), and runs the simulator over a TCP port that `--tcp` opens beside the page:

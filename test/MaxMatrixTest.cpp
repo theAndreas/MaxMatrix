@@ -45,8 +45,22 @@ static bool operator==(MaxMatrixResult<MaxMatrixCommandState> const& result, Max
 static void PrintTo(MaxMatrixResult<MaxMatrixCommandState> const& result, std::ostream* out)
 {
     if(!result.IsOk()) PrintTo(result.GetError(), out);
-    else *out << (result.GetValue() == MaxMatrixCommandState::kDone ? "MaxMatrixCommandState::kDone" : "MaxMatrixCommandState::kPending");
+    else if(result.GetValue() == MaxMatrixCommandState::kDone) *out << "MaxMatrixCommandState::kDone";
+    else if(result.GetValue() == MaxMatrixCommandState::kAnswered) *out << "MaxMatrixCommandState::kAnswered";
+    else *out << "MaxMatrixCommandState::kPending";
 }
+
+/* where MaxMatrixCommand answers in a test: a Print that keeps what it is given */
+class TextPrint : public Print {
+  public:
+    std::string text;
+
+    size_t write(uint8_t c) override
+    {
+        text += static_cast<char>(c);
+        return 1;
+    }
+};
 
 /* the text of F() and GetErrorText(), which lies in RAM on the host */
 static std::string Text(__FlashStringHelper const* text)
@@ -58,9 +72,10 @@ static std::string Text(__FlashStringHelper const* text)
 static MaxMatrixError FeedText(MaxMatrix& matrix, std::string const& text)
 {
     MaxMatrixCommand command;
+    TextPrint answer;
     MaxMatrixResult<MaxMatrixCommandState> result = MaxMatrixCommandState::kPending;
 
-    for(char c : text) result = command.Feed(matrix, c);
+    for(char c : text) result = command.Feed(matrix, c, answer);
     return result.GetError();
 }
 
@@ -877,14 +892,18 @@ TEST_F(MaxMatrixTest, UnknownChars)
 class MaxMatrixCommandTest : public MaxMatrixTest {
   protected:
     MaxMatrixCommand command_;
+    TextPrint answer_;
 
-    /* feeds a line char by char, as Serial would; every char but the last has to leave the line pending */
+    /* feeds a line char by char, as Serial would; every char but the last has to leave the line pending, and answer
+     * nothing */
     MaxMatrixResult<MaxMatrixCommandState> FeedLine(std::string const& text)
     {
+        answer_.text.clear();
         for(size_t i = 0; i + 1 < text.size(); i++) {
-            EXPECT_EQ(command_.Feed(matrix_, text[i]), MaxMatrixCommandState::kPending) << "char " << i << " of " << text;
+            EXPECT_EQ(command_.Feed(matrix_, text[i], answer_), MaxMatrixCommandState::kPending) << "char " << i << " of " << text;
         }
-        return command_.Feed(matrix_, text.back());
+        EXPECT_EQ(answer_.text, "") << "answered before the end of " << text;
+        return command_.Feed(matrix_, text.back(), answer_);
     }
 
     /* the display after every step of the shift running now, until it is done */
@@ -993,9 +1012,65 @@ TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole)
     EXPECT_EQ(ChipOfModule(0).intensity, 2);
 }
 
+/* a program pairs every line it sent with one line back, so each line is answered once, an empty line not at all */
+TEST_F(MaxMatrixCommandTest, EveryLineIsAnsweredOnce)
+{
+    struct {
+        char const* line;
+        char const* answer;
+    } const cases[] = {
+        { "intensity=8\n", "ok\r\n" },
+        { "clear\r\n", "ok\r\n" },
+        { "intensity=16\n", "error: out of range\r\n" },
+        { "blink\n", "error: unknown command\r\n" },
+        { "\n", "" },
+        { "\r\n", "" },
+    };
+
+    for(auto const& test_case : cases) {
+        FeedLine(test_case.line);
+        EXPECT_EQ(answer_.text, test_case.answer) << test_case.line;
+    }
+    FeedLine("text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
+    EXPECT_EQ(answer_.text, "error: line too long\r\n");
+}
+
+/* picture answers in place of ok, and changes nothing */
+TEST_F(MaxMatrixCommandTest, PictureIsAnsweredWithTheColumns)
+{
+    matrix_.SetText("Hi");
+    std::vector<byte> const shown = Display();
+
+    EXPECT_EQ(FeedLine("picture\n"), MaxMatrixCommandState::kAnswered);
+    ASSERT_EQ(answer_.text.size(), 8 + 2 * MAXMATRIX_NUMBER_OF_COLUMNS + 2);
+    EXPECT_EQ(answer_.text.substr(0, 8), "picture=");
+    EXPECT_EQ(answer_.text.substr(answer_.text.size() - 2), "\r\n");
+    EXPECT_EQ(Display(), shown);
+    EXPECT_EQ(FeedLine("picture=1\n"), MaxMatrixError::kUnknownCommand);
+}
+
 TEST_F(MaxMatrixCommandTest, LineOfFullLengthIsTaken)
 {
     std::string const text = "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n";
 
     EXPECT_EQ(FeedLine(text), MaxMatrixCommandState::kDone);
+}
+
+/* picture answers with the panel as the viewer sees it, so that a program draws it without knowing the orientations;
+ * one dot in a column of every module, each in another row */
+TEST_P(MaxMatrixOrientationTest, PictureAnswerIsWhatTheViewerSees)
+{
+    MaxMatrixCommand command;
+    TextPrint answer;
+    std::string expected = "picture=";
+
+    matrix_.SetDot(0, 0, true);
+    matrix_.SetDot(9, 1, true);
+    matrix_.SetDot(16, 4, true);
+    matrix_.SetDot(31, 7, true);
+    for(char c : std::string("picture\n")) command.Feed(matrix_, c, answer);
+    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        expected += column == 0 ? "01" : column == 9 ? "02" : column == 16 ? "10" : column == 31 ? "80" : "00";
+    }
+    EXPECT_EQ(answer.text, expected + "\r\n");
 }
