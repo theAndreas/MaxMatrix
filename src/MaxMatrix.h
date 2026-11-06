@@ -30,7 +30,7 @@
 enum class MaxMatrixState : uint8_t {
     kNone,        /*!< Constructed; MaxMatrix::Init() not called yet. */
     kInit,        /*!< MaxMatrix::Init() is running. */
-    kReady,       /*!< Nothing to shift: a text or a char shifted in is complete. */
+    kReady,       /*!< Nothing to shift: a text or a char shifted in is complete, or stopped. */
     kStringShift, /*!< A text of MaxMatrix::SetTextWithShift() is being shifted in. */
     kCharShift    /*!< A char of MaxMatrix::SetCharWithShift() is being shifted in. */
 };
@@ -336,16 +336,27 @@ class MaxMatrix
 
     /*!
      * \brief Starts shifting a text in from the right, until its last char stands at the right
-     *        edge.
+     *        edge, or over and over.
      *
      * ShiftTask() takes the steps; GetState() is MaxMatrixState::kStringShift until the text
-     * stands.
+     * stands. A text that repeats goes on with its first char right after its last, so a few
+     * spaces at its end keep the two apart; it shifts until StopShift() or the next shift starts.
      *
-     * \param[in] string The text, UTF-8 or latin-1. It has to live until the text stands.
+     * \param[in] string The text, UTF-8 or latin-1. It has to live until the text stands, or as
+     *                   long as it repeats.
+     * \param[in] repeat True to start over after the last char, without end.
      * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `string` is null; nothing starts
      *         then.
      */
-    MaxMatrixStatus SetTextWithShift(char* string);
+    MaxMatrixStatus SetTextWithShift(char* string, bool repeat = false);
+
+    /*!
+     * \brief Stops a shifting text or char where it is.
+     *
+     * The picture stays as it is, and GetState() is MaxMatrixState::kReady; ShiftTask() takes no
+     * step until the next shift starts. Without a shift, it does nothing.
+     */
+    void StopShift();
 
     /*!
      * \brief Sets the empty columns between two chars of a text.

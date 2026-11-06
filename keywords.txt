@@ -14,6 +14,7 @@ MaxMatrixGlyph	KEYWORD1
 Init	KEYWORD2
 Clear	KEYWORD2
 ShiftTask	KEYWORD2
+StopShift	KEYWORD2
 SetShiftInterval	KEYWORD2
 GetShiftInterval	KEYWORD2
 Update	KEYWORD2
