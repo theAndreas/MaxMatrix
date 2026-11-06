@@ -36,11 +36,26 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
+      # back. Saved after the install under a new key every run, even when the install failed: what
+      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: apt-${{ github.job }}-${{ strategy.job-index }}-
+
       # GoogleTest because CMake does not configure without it, though nothing is built;
       # wxWidgets for the headers of the control program's window.
       - name: Install the tools
         run: |
-          tools/apt-install.sh libgtest-dev libwxgtk3.2-dev clang-tidy
+          tools/apt-install.sh --cache ~/apt-archives libgtest-dev libwxgtk3.2-dev clang-tidy
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Configured, not built: clang-tidy compiles each translation unit itself and needs
       # nothing from the build but compile_commands.json, which holds the library three times
@@ -74,6 +89,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
+      # back. Saved after the install under a new key every run, even when the install failed: what
+      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: apt-${{ github.job }}-${{ strategy.job-index }}-
+
       - uses: arduino/setup-arduino-cli@v2
         with:
           version: 1.5.1
@@ -84,7 +108,13 @@ jobs:
         run: |
           arduino-cli core update-index
           arduino-cli core install arduino:avr
-          tools/apt-install.sh clang-tidy python3
+          tools/apt-install.sh --cache ~/apt-archives clang-tidy python3
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # SerialControl, because it is the example that uses every part, MaxMatrixCommand too;
       # arduino-cli lists the whole library either way.
@@ -104,9 +134,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
+      # back. Saved after the install under a new key every run, even when the install failed: what
+      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: apt-${{ github.job }}-${{ strategy.job-index }}-
+
       - name: Install cppcheck
         run: |
-          tools/apt-install.sh cppcheck
+          tools/apt-install.sh --cache ~/apt-archives cppcheck
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # No compile database: cppcheck is given the include directories and works out the
       # configurations itself, the mock of the Arduino core standing in for the real one.
