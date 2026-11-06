@@ -110,7 +110,9 @@ void MaxMatrixText::SetSpaceBetweenChars(byte space_between_chars)
 
 bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
 {
-    panel.ShiftLeft(false, true);
+    // An empty column comes in, by the column rather than MaxMatrixShiftFill, so that a sketch that
+    // only shifts text does not link the other fills.
+    panel.ShiftLeft(static_cast<byte>(0));
     sprite_shift_counter_++;
 
     /* if sprite is completed set only spaces */
@@ -159,7 +161,7 @@ bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
         if(sprite_shift_counter_ == kShiftStart) {
             CharShiftTask(panel);
         } else { /* end of string reached, task has finished */
-            panel.ShiftLeft(false, true);
+            panel.ShiftLeft(static_cast<byte>(0));
             return false;
         }
     } else {

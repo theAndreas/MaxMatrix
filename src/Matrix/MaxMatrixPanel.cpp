@@ -224,49 +224,76 @@ void MaxMatrixPanel::FillArea(int32_t left, int32_t top, int32_t right, int32_t 
  * same for every module type and orientation; in place, as a copy of the whole picture would need
  * its length at compile time.
  */
-void MaxMatrixPanel::ShiftLeft(bool rotate, bool fill_with_zero)
+void MaxMatrixPanel::ShiftLeft(MaxMatrixShiftFill fill)
+{
+    ShiftLeft(GetFill(fill, 0, static_cast<byte>(GetNumberOfColumns() - 1)));
+}
+
+byte MaxMatrixPanel::ShiftLeft(byte column)
 {
     byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
-    byte const column_left = GetLine(0, 0, true);
+    byte const shifted_out = GetLine(0, 0, true);
 
-    for(byte column = 0; column < last; column++) SetLine(column, 0, true, GetLine(column + 1, 0, true));
-    if(rotate) SetLine(last, 0, true, column_left);
-    else if(fill_with_zero) SetLine(last, 0, true, 0);
+    for(byte panel_column = 0; panel_column < last; panel_column++) SetLine(panel_column, 0, true, GetLine(panel_column + 1, 0, true));
+    SetLine(last, 0, true, column);
+    return shifted_out;
 }
 
-void MaxMatrixPanel::ShiftRight(bool rotate, bool fill_with_zero)
+void MaxMatrixPanel::ShiftRight(MaxMatrixShiftFill fill)
+{
+    ShiftRight(GetFill(fill, static_cast<byte>(GetNumberOfColumns() - 1), 0));
+}
+
+byte MaxMatrixPanel::ShiftRight(byte column)
 {
     byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
-    byte const column_right = GetLine(last, 0, true);
+    byte const shifted_out = GetLine(last, 0, true);
 
-    for(byte column = last; column > 0; column--) SetLine(column, 0, true, GetLine(column - 1, 0, true));
-    if(rotate) SetLine(0, 0, true, column_right);
-    else if(fill_with_zero) SetLine(0, 0, true, 0);
+    for(byte panel_column = last; panel_column > 0; panel_column--) SetLine(panel_column, 0, true, GetLine(panel_column - 1, 0, true));
+    SetLine(0, 0, true, column);
+    return shifted_out;
 }
 
-void MaxMatrixPanel::ShiftUp(bool rotate)
+void MaxMatrixPanel::ShiftUp(MaxMatrixShiftFill fill)
 {
-    byte const columns = GetNumberOfColumns();
-
-    for(byte column = 0; column < columns; column++) {
-        byte value = GetLine(column, 0, true);
-        bool const top_dot = bitRead(value, 0);
-        value >>= 1;
-        if(rotate) bitWrite(value, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, top_dot);
-        SetLine(column, 0, true, value);
-    }
+    ShiftRows(true, fill);
 }
 
-void MaxMatrixPanel::ShiftDown(bool rotate)
+void MaxMatrixPanel::ShiftDown(MaxMatrixShiftFill fill)
+{
+    ShiftRows(false, fill);
+}
+
+/*
+ * The column a shift to the left or right takes in for `fill`: none lit, the column at the edge
+ * it leaves, which falls out, or the one at the edge it comes in at, as it is.
+ */
+byte MaxMatrixPanel::GetFill(MaxMatrixShiftFill fill, byte rotated_column, byte kept_column)
+{
+    if(fill == MaxMatrixShiftFill::kRotate) return GetLine(rotated_column, 0, true);
+    if(fill == MaxMatrixShiftFill::kKeep) return GetLine(kept_column, 0, true);
+    return 0;
+}
+
+/*
+ * Shifts every column by a bit, up or down: the row that falls out at one edge comes in at the
+ * other for kRotate, and the row at the edge that is left keeps its dot for kKeep.
+ */
+void MaxMatrixPanel::ShiftRows(bool up, MaxMatrixShiftFill fill)
 {
     byte const columns = GetNumberOfColumns();
+    byte const top = 0;
+    byte const bottom = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1;
 
     for(byte column = 0; column < columns; column++) {
-        byte value = GetLine(column, 0, true);
-        bool const bottom_dot = bitRead(value, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
-        value <<= 1;
-        if(rotate) bitWrite(value, 0, bottom_dot);
-        SetLine(column, 0, true, value);
+        byte const value = GetLine(column, 0, true);
+        byte const fill_row = up ? bottom : top;
+        bool const fill_dot = fill == MaxMatrixShiftFill::kRotate ? bitRead(value, up ? top : bottom)
+                              : fill == MaxMatrixShiftFill::kKeep ? bitRead(value, fill_row)
+                                                                  : false;
+        byte shifted = up ? static_cast<byte>(value >> 1) : static_cast<byte>(value << 1);
+        bitWrite(shifted, fill_row, fill_dot);
+        SetLine(column, 0, true, shifted);
     }
 }
 

@@ -102,6 +102,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 | [Sprites](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
 | [Shapes](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Shapes/Shapes.ino) | a frame, lines, circles and a picture from flash, one after the other |
 | [Shutdown](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Shutdown/Shutdown.ino) | the LEDs off while drawing goes on, and the display test |
+| [Band](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Band/Band.ino) | a heartbeat without end, a column from flash coming in at every step |
 | [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
 
 ## Coordinates
@@ -138,7 +139,8 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
 | `StopShift()` | stops a shifting char or text where it stands |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
-| `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
+| `ShiftLeft(fill)`, `ShiftRight(fill)`, `ShiftUp(fill)`, `ShiftDown(fill)` | moves the whole picture by one dot; what comes in is empty, what fell out at the other edge, or kept: `MaxMatrixShiftFill::kZero`, `kRotate`, `kKeep` |
+| `ShiftLeft(column)`, `ShiftRight(column)` | moves the picture by one column and brings `column` in, bit 0 at the top; returns the column that fell out |
 | `GetNumberOfModules()`, `GetNumberOfColumns()` | the length of the chain, eight columns per module |
 | `SetIntensity(intensity)` | brightness of every module, 0 to 15 |
 | `SetShutdown(on)` | turns the LEDs off without losing the picture, which still takes what is drawn |
