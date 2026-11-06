@@ -27,7 +27,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   drawn by hand: `DocuPictures.cpp` draws them from the library and the model, and the test
   `docu/pictures` fails until `build/DocuPictures --write docu` has drawn them again after a
   change that moves a dot. `ErrorHandling.md` records what was weighed, and measured, for the
-  errors of OIL item 27. `Documentation.md` says how the code is documented.
+  errors of OIL item 27. `Documentation.md` says how the code is documented. `HardwareCheck.md`
+  is what to run on a real matrix before a release or after a change to the transfer code.
 - `simulator/` — runs an example sketch unchanged on the host, against the mock and the model,
   and draws the panel as a module of the chosen wiring would light it: in the terminal, or with
   `--web` on `localhost:8080`. One class per job, as in `src/`, and a folder per CMake target
@@ -469,7 +470,7 @@ The define comes after the GoogleTest and standard headers, which it would rewri
 Nothing here reaches real hardware. The tests under `avr/` run the transfer code as the Uno
 runs it, but against the model, not against a MAX7219 and its timing on a real wire. A change
 to the transfer code (chip select, SPI, bit banging) is untested until it has run on a matrix,
-and the pull request says so.
+and the pull request says so; `docu/HardwareCheck.md` lists what to run there.
 
 ## Delivering a change
 

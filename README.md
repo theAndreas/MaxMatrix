@@ -101,6 +101,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 | [Animation](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Animation/Animation.ino) | a ball bouncing off the edges, one picture per step |
 | [Sprites](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Sprites/Sprites.ino) | a sprite of its own walking across, with two frames |
 | [Shapes](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Shapes/Shapes.ino) | a frame, lines, circles and a picture from flash, one after the other |
+| [Shutdown](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Shutdown/Shutdown.ino) | the LEDs off while drawing goes on, and the display test |
 | [SerialControl](https://github.com/theAndreas/MaxMatrix/blob/main/examples/SerialControl/SerialControl.ino) | the matrix controlled by lines of text over `Serial` |
 
 ## Coordinates

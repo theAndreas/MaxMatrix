@@ -383,6 +383,9 @@ Version tags, a changelog, and the submission to the Arduino Library Manager -
 `arduino-lint --library-manager submit` already passes. After 13, so the first published
 version has the API that is meant to stay.
 
+A version is tagged only once `docu/HardwareCheck.md` has passed on a matrix, and the release says on
+which board.
+
 ### 19 More of the MAX7219 in the public API
 
 Shutdown and display test as public functions, and the decode mode for 7-segment displays,
