@@ -16,11 +16,12 @@
     #include "SPI.h"
 #endif
 
-MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin)
+MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte number_of_modules)
 {
     data_in_pin_ = data_in_pin;
     chip_select_pin_ = chip_select_pin;
     clock_pin_ = clock_pin;
+    number_of_modules_ = number_of_modules;
     chip_select_port_ = 0;
     chip_select_mask_ = 0;
 #if(MAXMATRIX_USE_SPI == STD_OFF)
@@ -59,14 +60,14 @@ void MaxMatrixChain::Init()
 void MaxMatrixChain::WriteRegisterAll(byte register_address, byte register_value)
 {
     StartTransmission();
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_value);
+    for(byte module = 0; module < number_of_modules_; module++) Transfer(register_address, register_value);
     StopTransmission();
 }
 
-void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* register_values)
+void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* register_values, byte stride)
 {
     StartTransmission();
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_MODULES; i++) Transfer(register_address, register_values[i]);
+    for(byte module = 0; module < number_of_modules_; module++, register_values += stride) Transfer(register_address, *register_values);
     StopTransmission();
 }
 

@@ -5,14 +5,15 @@
  * \file
  * \brief The LEDs of the whole panel, as the matrix shows them, to switch one by a click.
  *
- * As many modules as the library is built for by default, `MAXMATRIX_NUMBER_OF_MODULES`, which is
- * what SerialControl drives unless its sketch was built for another chain.
+ * As many modules as `CONTROL_NUMBER_OF_MODULES`, the chain SerialControl drives; the picture of
+ * a sketch built for another chain is not drawn.
  */
 
 #include <math.h>
 #include <stdlib.h>
 #include <algorithm>
 #include <wx/dcbuffer.h>
+#include "ControlCommand.h"
 #include "ControlDotPanel.h"
 #include "MaxMatrixConfig.h"
 
@@ -29,14 +30,14 @@
 #define CONTROL_DOT_PANEL_DISABLED                                  wxColour(0x40, 0x40, 0x40)
 
 ControlDotPanel::ControlDotPanel(wxWindow* parent, std::function<void(uint8_t, uint8_t, bool)> on_switch)
-    : wxPanel(parent), columns_(static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS), 0x00), on_switch_(std::move(on_switch))
+    : wxPanel(parent), columns_(static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS), 0x00), on_switch_(std::move(on_switch))
 {
     painting_ = false;
     paint_lit_ = false;
     on_dot_ = false;
     last_column_ = 0;
     last_row_ = 0;
-    wxCoord const width = MAXMATRIX_NUMBER_OF_COLUMNS * CONTROL_DOT_PANEL_CELL + (MAXMATRIX_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
+    wxCoord const width = CONTROL_NUMBER_OF_COLUMNS * CONTROL_DOT_PANEL_CELL + (CONTROL_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
                       2 * CONTROL_DOT_PANEL_MARGIN;
     wxCoord const height = MAXMATRIX_ROW_NUMBER_OF_MODULE * CONTROL_DOT_PANEL_CELL + 2 * CONTROL_DOT_PANEL_MARGIN;
 
@@ -77,7 +78,7 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */)
     dc.Clear();
     dc.SetPen(*wxTRANSPARENT_PEN);
     for(uint8_t row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
-        for(uint8_t column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        for(uint8_t column = 0; column < CONTROL_NUMBER_OF_COLUMNS; column++) {
             bool const lit = IsLit(column, row);
             wxCoord const x = margin + column * cell + (column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * gap + (cell - led) / 2;
             wxCoord const y = margin + row * cell + (cell - led) / 2;
@@ -179,7 +180,7 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column, uint8_t* r
     if(x < 0 || y < 0 || in_module >= MAXMATRIX_COLUMN_NUMBER_OF_MODULE * cell) return false;
     wxCoord const found_column = x / module_width * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + in_module / cell;
     wxCoord const found_row = y / cell;
-    if(found_column >= MAXMATRIX_NUMBER_OF_COLUMNS || found_row >= MAXMATRIX_ROW_NUMBER_OF_MODULE) return false;
+    if(found_column >= CONTROL_NUMBER_OF_COLUMNS || found_row >= MAXMATRIX_ROW_NUMBER_OF_MODULE) return false;
     *column = static_cast<uint8_t>(found_column);
     *row = static_cast<uint8_t>(found_row);
     return true;

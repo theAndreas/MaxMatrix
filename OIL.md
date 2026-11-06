@@ -23,7 +23,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
-| 14 | Chain length at run time | 13 | open | |
+| 14 | Chain length at run time | 13 | in progress | #60 |
 | 15 | Font format | 13 | in progress | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
@@ -252,6 +252,29 @@ The number of modules is `MAXMATRIX_NUMBER_OF_MODULES` in the header, so a chain
 length means editing the library. MD_MAX72XX and LEDMatrixDriver take it in the constructor.
 Open: a buffer allocated at run time or one the sketch hands in (LEDMatrixDriver allows
 both), and what that costs on the Uno against today's fixed array.
+
+Decided on 2026-11-06: the sketch holds the buffer. Not one allocated at run time, which brings
+the heap of the Uno and a way to fail; not the whole library as a template, which would put every
+part into headers and compile it once per length.
+
+As built, `MaxMatrix` takes a buffer and the number of modules, and `MaxMatrixOf<N>` brings the
+buffer for N modules in a base class, made before the `MaxMatrix` it is handed to, and refuses a
+length outside 1 to 31 when the sketch is compiled; every example is a `MaxMatrixOf<4>` now, and
+`MAXMATRIX_NUMBER_OF_MODULES` is gone. No array of the library is sized by the chain any more: the
+shifts work a column at a time in place; an orientation changes a pair of modules at a time, m and
+n - 1 - m, which hold their own picture in every orientation, in 16 bytes on the stack for any
+chain; `Send()` hands the chain a column of every module straight from the buffer. A row of the
+whole panel is an array the sketch passes, whose length the template of `GetRow()` and `SetRow()`
+takes from its type, rather than `MaxMatrixRow`, a reference so that `GetRow(module, 0)` stays
+unambiguous. The simulator draws as many modules as its model has; the control program, the
+tests and `docu/` name their chain of four themselves. The tests run again over chains of 1, 3
+and 6 modules in all eight orientations.
+
+What it costs on the Uno, against main: RAM +3 bytes, the pointer to the buffer and the number of
+modules. Flash: Animation 2318 to 2426, Basics 3584 to 3730, Messages 3704 to 3726, ScrollText
+3638 to 3658, SerialControl 6124 to 6076, Sprites 2378 to 2444 bytes; the length in a local
+constant in each loop rather than read again after every store through the buffer, and memset()
+to empty it, took 80 to 110 bytes off what the first version cost.
 
 ### 15 Font format
 

@@ -19,11 +19,6 @@
  * sketch's defines to a library, so for a sketch they are changed here.
  */
 
-/*! \brief The modules in the chain, at most 31. */
-#ifndef MAXMATRIX_NUMBER_OF_MODULES
-#define MAXMATRIX_NUMBER_OF_MODULES                                 4
-#endif
-
 /*!
  * \brief `STD_ON` sends through the hardware SPI, whose pins are fixed; `STD_OFF` bit bangs on any
  *        three pins.
@@ -72,14 +67,13 @@
 /*! \brief The rows of one module, and of the matrix. */
 #define MAXMATRIX_ROW_NUMBER_OF_MODULE                              8
 
-/*! \brief The columns of the matrix. */
-#define MAXMATRIX_NUMBER_OF_COLUMNS                                 (MAXMATRIX_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
+/*!
+ * \brief The most modules a chain may have: a column is counted in a byte throughout, as an index
+ *        into the buffer and in every loop over the columns.
+ */
+#define MAXMATRIX_MAX_NUMBER_OF_MODULES                             31
 
-/*! \brief The bytes of the picture, one per column. */
-#define MAXMATRIX_BUFFER_SIZE                                       MAXMATRIX_NUMBER_OF_COLUMNS
-
-// A column is counted in a byte throughout, as an index into matrix_buffer_ and in every loop over
-// the columns.
-static_assert(MAXMATRIX_NUMBER_OF_COLUMNS <= 255, "at most 31 modules: their columns have to be counted in a byte");
+/*! \brief The bytes of the buffer of a chain of `modules` modules, one per column. */
+#define MAXMATRIX_BUFFER_SIZE(modules)                              ((modules) * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
 
 #endif

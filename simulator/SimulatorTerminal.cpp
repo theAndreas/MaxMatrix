@@ -35,11 +35,11 @@ std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel)
 {
     std::ostringstream line;
 
-    line << panel.GetWiringName() << ", " << MAXMATRIX_NUMBER_OF_MODULES << " modules" << (panel.IsUpsideDown() ? ", upside down" : "")
+    line << panel.GetWiringName() << ", " << static_cast<uint16_t>(panel.GetNumberOfModules()) << " modules" << (panel.IsUpsideDown() ? ", upside down" : "")
          << ", intensity";
     // The modules are counted from the left, as on the page: counting the chips along the chain, as
     // before, had them backwards on a board upside down.
-    for(uint8_t module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) line << ' ' << static_cast<uint16_t>(panel.GetIntensity(module));
+    for(uint8_t module = 0; module < panel.GetNumberOfModules(); module++) line << ' ' << static_cast<uint16_t>(panel.GetIntensity(module));
     line << ", " << mock::frames << " frames" << (mock::errors ? ", TRANSFER ERRORS" : "");
     return line.str();
 }

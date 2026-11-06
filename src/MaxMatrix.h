@@ -45,8 +45,10 @@ enum class MaxMatrixState : uint8_t {
  * The intensity and the other registers are sent at once either way: they are not part of the
  * picture.
  *
+ * A sketch makes it as a MaxMatrixOf, which brings the buffer for its chain:
+ *
  * \code{.cpp}
- * MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
  *
  * void setup() {
  *     matrix.Init();
@@ -77,18 +79,41 @@ class MaxMatrix
 
   public:
     /*!
-     * \brief Makes a matrix on the chain at these pins.
+     * \brief Makes a matrix on the chain at these pins, in the buffer given, and empties it.
      *
-     * Nothing is sent until Init().
+     * Nothing is sent until Init(). MaxMatrixOf brings the buffer itself and checks the number of
+     * modules when the sketch is compiled; this is for a chain whose length is known only at run
+     * time, or a buffer that lies elsewhere.
+     *
+     * \code{.cpp}
+     * byte buffer[MAXMATRIX_BUFFER_SIZE(4)];
+     * MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer, 4);
+     * \endcode
      *
      * \param[in] data_in_pin The pin DIN of the chain is connected to.
      * \param[in] chip_select_pin The pin CS of the chain is connected to.
      * \param[in] clock_pin The pin CLK of the chain is connected to.
+     * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)` bytes, which has to
+     *                    live as long as the matrix.
+     * \param[in] number_of_modules The modules in the chain, 1 to
+     *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
      */
-    MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin);
+    MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules);
 
     /*! \brief Leaves the LEDs as they are. */
     ~MaxMatrix();
+
+    /*! \brief Not copyable: the copy would draw into the same buffer. */
+    MaxMatrix(MaxMatrix const&) = delete;
+
+    /*! \brief Not assignable, as it is not copyable. */
+    MaxMatrix& operator=(MaxMatrix const&) = delete;
+
+    /*! \brief Returns the modules of the chain. */
+    byte GetNumberOfModules() const { return panel_.GetNumberOfModules(); }
+
+    /*! \brief Returns the columns of the matrix, eight per module. */
+    byte GetNumberOfColumns() const { return panel_.GetNumberOfColumns(); }
 
     /*! \brief Returns what the matrix is doing; MaxMatrixState::kReady once a shifted text is complete. */
     MaxMatrixState GetState() const { return state_; }
@@ -123,8 +148,26 @@ class MaxMatrix
     /*! \copydoc MaxMatrixPanel::GetColumn(byte, byte) */
     MaxMatrixResult<byte> GetColumn(byte module, byte column) { return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(module, column)); }
 
-    /*! \copydoc MaxMatrixPanel::GetRow(int16_t, MaxMatrixRow&) */
-    MaxMatrixStatus GetRow(int16_t row, MaxMatrixRow& value) { return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(row, value)); }
+    /*!
+     * \brief Gives a row of the matrix, one byte per module.
+     *
+     * \code{.cpp}
+     * byte row[4];
+     * matrix.GetRow(0, row);
+     * \endcode
+     *
+     * \tparam NumberOfValues The bytes of `values`, which the array says itself.
+     * \param[in] row The row, from 0 at the top.
+     * \param[out] values The row, bit 7 of each byte the leftmost column of its module; left as it
+     *                    was on an error.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the row lies off the panel or
+     *         `values` has fewer bytes than there are modules.
+     */
+    template<size_t NumberOfValues>
+    MaxMatrixStatus GetRow(int16_t row, byte (&values)[NumberOfValues])
+    {
+        return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(row, values, NumberOfValues > 0xFF ? 0xFF : NumberOfValues));
+    }
 
     /*! \copydoc MaxMatrixPanel::GetRow(byte, byte) */
     MaxMatrixResult<byte> GetRow(byte module, byte row) { return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row)); }
@@ -215,8 +258,22 @@ class MaxMatrix
     /*! \copydoc MaxMatrixPanel::SetColumn(byte, byte, byte) */
     void SetColumn(byte module, byte column, byte value) { panel_.SetColumn(module, column, value); UpdateIfAuto(); }
 
-    /*! \copydoc MaxMatrixPanel::SetRow(int16_t, MaxMatrixRow const) */
-    void SetRow(int16_t row, MaxMatrixRow const value) { panel_.SetRow(row, value); UpdateIfAuto(); }
+    /*!
+     * \brief Sets a row of the matrix, one byte per module.
+     *
+     * A row off the panel is left out, as for SetDot(), and so are the modules beyond the bytes
+     * given, or the bytes beyond the modules.
+     *
+     * \tparam NumberOfValues The bytes of `values`, which the array says itself.
+     * \param[in] row The row, from 0 at the top.
+     * \param[in] values The row, bit 7 of each byte the leftmost column of its module.
+     */
+    template<size_t NumberOfValues>
+    void SetRow(int16_t row, byte const (&values)[NumberOfValues])
+    {
+        panel_.SetRow(row, values, NumberOfValues > 0xFF ? 0xFF : NumberOfValues);
+        UpdateIfAuto();
+    }
 
     /*! \copydoc MaxMatrixPanel::SetRow(byte, byte, byte) */
     void SetRow(byte module, byte row, byte value) { panel_.SetRow(module, row, value); UpdateIfAuto(); }
@@ -414,6 +471,56 @@ class MaxMatrixBatch
 
     /*! \brief Not assignable, as it is not copyable. */
     MaxMatrixBatch& operator=(MaxMatrixBatch const&) = delete;
+};
+
+/*!
+ * \brief The buffer of a MaxMatrixOf.
+ *
+ * A base class of it rather than a member, as base classes are made first: the buffer then exists
+ * when the MaxMatrix it is handed to empties it.
+ *
+ * \tparam NumberOfModules The modules of the chain.
+ */
+template<byte NumberOfModules>
+class MaxMatrixBuffer
+{
+  protected:
+    /*! \brief One byte per column. */
+    byte buffer_[MAXMATRIX_BUFFER_SIZE(NumberOfModules)];
+};
+
+/*!
+ * \brief A MaxMatrix with the buffer for a chain of `NumberOfModules` modules.
+ *
+ * What a sketch makes: the length of the chain is part of the type, the buffer takes eight bytes
+ * per module, and a length the library cannot drive does not compile.
+ *
+ * \code{.cpp}
+ * MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * \endcode
+ *
+ * \tparam NumberOfModules The modules of the chain, 1 to `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+ */
+template<byte NumberOfModules>
+class MaxMatrixOf : private MaxMatrixBuffer<NumberOfModules>, public MaxMatrix
+{
+    static_assert(NumberOfModules >= 1 && NumberOfModules <= MAXMATRIX_MAX_NUMBER_OF_MODULES,
+                  "a chain has 1 to MAXMATRIX_MAX_NUMBER_OF_MODULES modules");
+
+  public:
+    /*!
+     * \brief Makes the matrix on the chain at these pins.
+     *
+     * Nothing is sent until Init().
+     *
+     * \param[in] data_in_pin The pin DIN of the chain is connected to.
+     * \param[in] chip_select_pin The pin CS of the chain is connected to.
+     * \param[in] clock_pin The pin CLK of the chain is connected to.
+     */
+    MaxMatrixOf(byte data_in_pin, byte chip_select_pin, byte clock_pin)
+        : MaxMatrixBuffer<NumberOfModules>(), MaxMatrix(data_in_pin, chip_select_pin, clock_pin, this->buffer_, NumberOfModules)
+    {
+    }
 };
 
 #endif

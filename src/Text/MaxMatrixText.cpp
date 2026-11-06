@@ -60,7 +60,7 @@ MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel, char const* string
         if(!status.IsOk()) return status;
         SetGlyph(panel, char_column, 0, glyph);
         char_column = static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
-        if(char_column > MAXMATRIX_NUMBER_OF_COLUMNS) break;
+        if(char_column > panel.GetNumberOfColumns()) break;
     }
     return MaxMatrixError::kOk;
 }
@@ -127,7 +127,7 @@ bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
 
     /* if sprite is completed set only spaces */
     if(sprite_shift_counter_ <= glyph_.width) {
-        SetGlyph(panel, MAXMATRIX_NUMBER_OF_COLUMNS - sprite_shift_counter_, 0, glyph_);
+        SetGlyph(panel, static_cast<int16_t>(panel.GetNumberOfColumns() - sprite_shift_counter_), 0, glyph_);
     }
     /* if sprite and spaces are completed task has finished */
     else if(sprite_shift_counter_ == static_cast<uint16_t>(glyph_.width + space_between_chars_ + 1)) {

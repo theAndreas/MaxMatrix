@@ -32,6 +32,8 @@
 #define SIMULATOR_DATA_IN_PIN                                       11u
 #define SIMULATOR_CHIP_SELECT_PIN                                   10u
 #define SIMULATOR_CLOCK_PIN                                         13u
+/* the chain every example has, MaxMatrixOf<4> */
+#define SIMULATOR_NUMBER_OF_MODULES                                 4u
 
 /* exit codes, as in main.cpp */
 #define SIMULATOR_EXIT_OK                                           0
@@ -62,7 +64,7 @@ int main(int argc, char** argv)
         return SIMULATOR_EXIT_USAGE;
     }
     panel.SetUpsideDown(options.IsUpsideDown());
-    mock::Reset(SIMULATOR_DATA_IN_PIN, SIMULATOR_CHIP_SELECT_PIN, SIMULATOR_CLOCK_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(SIMULATOR_DATA_IN_PIN, SIMULATOR_CHIP_SELECT_PIN, SIMULATOR_CLOCK_PIN, SIMULATOR_NUMBER_OF_MODULES);
     mock::serial_input = options.GetSerialInput();
     if(!avr.Load(options.GetElfFile())) {
         fprintf(stderr, "%s is no .elf for the %s\n", options.GetElfFile(), SIMULATOR_AVR_MCU);

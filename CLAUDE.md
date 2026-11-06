@@ -7,7 +7,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 - `src/` — the library, in the Arduino library format 1.5, one part per folder:
   - `MaxMatrix.h` / `MaxMatrix.cpp` — the `MaxMatrix` class, the facade a sketch includes:
     the public API, the state of the library and `Init()`; the rest it passes on.
-  - `MaxMatrixConfig.h` — the configuration macros and the size of the chain.
+  - `MaxMatrixConfig.h` — the configuration macros and the size of a module; the length of the
+    chain is the sketch's, `MaxMatrixOf<N>` or a buffer handed to `MaxMatrix`.
   - `Max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
   - `Matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
     coordinates as the viewer sees them.
@@ -103,6 +104,14 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
 module orientation 0 is also how the viewer sees it; `docu/Wiring_*.svg` show the other three.
 The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
+The buffer is the sketch's, and so is the length of the chain: `MaxMatrixOf<N>` brings a buffer
+of `MAXMATRIX_BUFFER_SIZE(N)` bytes in a base class, which is made before the `MaxMatrix` it is
+handed to, and `MaxMatrix` takes any buffer and length at run time, as the Arduino IDE passes a
+sketch's defines to no library. So nothing in the library may size an array by the chain: what
+needs the whole panel works in place, a column at a time, or on a pair of modules, as
+`MaxMatrixPanel::ChangeOrientation()` does, and `Send()` hands the chain a column of every
+module straight from the buffer, a module's columns apart.
+
 Drawing only changes the buffer. `MaxMatrixWired` keeps which columns of a module changed, one
 bit each in `changed_columns_`, and `Send()` sends each of them in one frame for all modules:
 eight frames at most for a whole picture. The facade decides when: with `auto_update_`, the
@@ -140,8 +149,8 @@ that does not use it pays nothing, because the linker drops what no one calls; `
 Between them, `ConvertDotToBuffer()` is the only function that knows the two orientations: the
 matrix orientation (0, 180) turns the whole panel, the module orientation (0, 90, 180, 270) then
 every module in its place. It maps one dot as the viewer sees it to a buffer column and bit.
-Lines go through `GetLine()`/`SetLine()`; shifting and changing an orientation work on the whole
-picture in viewer coordinates (`GetPicture()`/`SetPicture()`).
+Lines go through `GetLine()`/`SetLine()`; shifting and changing an orientation work on the
+picture in viewer coordinates, a column of it at a time.
 
 A new feature that works on coordinates builds on these and never branches on an orientation
 itself. When every function handled the orientations on its own, rows, shifts and dots
@@ -186,14 +195,14 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 - Enums are `enum class` with values in the same form: `MaxMatrixState::kReady`,
   `MaxMatrixError::kOutOfRange`. The indices of a sprite, `kSpriteWidth` and on, are a plain
   enum, as they index an array.
-- Macros upper case and prefixed with the module: `MAXMATRIX_NUMBER_OF_MODULES`,
+- Macros upper case and prefixed with the module: `MAXMATRIX_USE_SPI`,
   `MAX7219_REG_INTENSITY_ADDRESS`. An include guard names the path:
   `MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_`.
 - Classes start with `MaxMatrix`. A sketch links every library it includes into one namespace,
   and a class called `Font` or `Text` would collide with the next library that has one; the
   mock in `test/mock/` already has a `Max7219Chain`. The simulator is linked with the sketch
   too, so its classes start with `Simulator`. A type of the library does as well:
-  `MaxMatrixSprite`, `MaxMatrixRow`.
+  `MaxMatrixSprite`, `MaxMatrixOf`.
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
 - Files are named after their class, in `PascalCase`, as Arduino names its own (`Arduino.h`,

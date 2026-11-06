@@ -2,8 +2,8 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "ControlCommand.h"
 #include "ControlLink.h"
-#include "MaxMatrixConfig.h"
 
 // A port whose other end is the test: what the link writes collects in `written`, what the test puts into `incoming`
 // arrives at the next Read(), and `gone` ends the connection as a pulled cable would.
@@ -131,7 +131,7 @@ TEST(ControlLinkTest, BeginForgetsHalfALine)
 // The answer to picture with the first column `first` and the rest dark, as SerialControl prints it.
 static std::string Picture(char const* first)
 {
-    return std::string("picture=") + first + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS - 2, '0') + "\r\n";
+    return std::string("picture=") + first + std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 2, '0') + "\r\n";
 }
 
 // the picture is asked for once per interval, and its answer is kept rather than shown as a line
@@ -149,7 +149,7 @@ TEST(ControlLinkTest, AsksForThePictureOncePerInterval)
     port.incoming = Picture("81");
     link.Task(&lines);
     EXPECT_TRUE(lines.empty());
-    ASSERT_EQ(link.GetPicture().size(), static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS));
+    ASSERT_EQ(link.GetPicture().size(), static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS));
     EXPECT_EQ(link.GetPicture()[0], 0x81);
     link.AskForPicture(1000 + CONTROL_LINK_PICTURE_INTERVAL_MS - 1);
     EXPECT_EQ(port.written, "picture\n");

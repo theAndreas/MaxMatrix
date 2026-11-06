@@ -122,7 +122,7 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const
     std::ostringstream json;
 
     json << "{\"wiring\":\"" << panel.GetWiringName() << "\",\"upsideDown\":" << (panel.IsUpsideDown() ? "true" : "false")
-         << ",\"columns\":" << MAXMATRIX_NUMBER_OF_COLUMNS << ",\"rows\":" << MAXMATRIX_ROW_NUMBER_OF_MODULE
+         << ",\"columns\":" << static_cast<uint16_t>(panel.GetNumberOfColumns()) << ",\"rows\":" << MAXMATRIX_ROW_NUMBER_OF_MODULE
          << ",\"dots\":\"" << panel.GetText("1", "0", "") << "\""
          << ",\"intensity\":[" << GetIntensities(panel) << "]"
          << ",\"frames\":" << mock::frames << ",\"errors\":" << mock::errors
@@ -147,7 +147,7 @@ std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel)
 {
     std::string intensities;
 
-    for(uint8_t module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
+    for(uint8_t module = 0; module < panel.GetNumberOfModules(); module++) {
         intensities += (module > 0 ? "," : "") + std::to_string(panel.GetIntensity(module));
     }
     return intensities;

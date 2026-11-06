@@ -125,7 +125,7 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
     if(lit_text == NULL) return MaxMatrixError::kNotANumber;
     *row_text++ = STD_NULL_CHARACTER;
     *lit_text++ = STD_NULL_CHARACTER;
-    MaxMatrixResult<uint16_t> column = ConvertToNumber(value, MAXMATRIX_NUMBER_OF_COLUMNS - 1);
+    MaxMatrixResult<uint16_t> column = ConvertToNumber(value, matrix.GetNumberOfColumns() - 1);
     MaxMatrixResult<uint16_t> row = ConvertToNumber(row_text, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
     MaxMatrixResult<uint16_t> lit = ConvertToNumber(lit_text, 1);
     if(!column.IsOk()) return column.GetError();
@@ -161,8 +161,10 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* 
  */
 void MaxMatrixCommand::AnswerPicture(MaxMatrix& matrix, Print& answer)
 {
+    int16_t const columns = matrix.GetNumberOfColumns();
+
     answer.print(F("picture="));
-    for(int16_t column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+    for(int16_t column = 0; column < columns; column++) {
         byte const value = matrix.GetColumn(column).GetValue();
         answer.write(static_cast<uint8_t>(ConvertToHexDigit(value >> 4)));
         answer.write(static_cast<uint8_t>(ConvertToHexDigit(value & 0x0F)));
