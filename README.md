@@ -123,6 +123,8 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
 | `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
 | `SetIntensity(intensity)` | brightness of every module, 0 to 15 |
+| `SetShutdown(on)` | turns the LEDs off without losing the picture, which still takes what is drawn |
+| `SetDisplayTest(on)` | lights every LED at full brightness, to check the modules, and shows the picture again |
 | `MaxMatrixBatch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
 | `SetModuleOrientation(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-orientation) |
 | `RegisterWrite(address, value)` | writes a register of every MAX7219, past the picture |
