@@ -35,7 +35,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
-| 26 | Control program for Linux and Windows | 20 | in progress | #51 |
+| 26 | Control program for Linux and Windows | 20 | in progress | #51, #52 |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
