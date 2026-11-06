@@ -23,40 +23,60 @@ enum class MaxMatrixMatrixOrientation : uint8_t {
     k180  /*!< The board upside down: the module at the input on the left. */
 };
 
+/* the three properties of a MaxMatrixModuleType, one bit each of its value */
+#define MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS     0x04u
+#define MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS   0x02u
+#define MAXMATRIX_MODULE_TYPE_REVERSED_ROWS      0x01u
+
 /*!
- * \brief How every module is turned in its place, by how its LEDs are wired.
+ * \brief How the LEDs of a module are wired to its MAX7219, named as MD_MAX72XX names its hardware
+ *        types.
  *
- * The README says which orientation fits which module.
+ * Three properties tell the eight wirings apart, seen with the module's input on the right, its
+ * columns counted from the right and its rows from the top: DR1 if a digit register drives a row
+ * of LEDs and its bits the columns, DR0 if a digit drives a column; CR1 if the bits run the other
+ * way, bit 7 - n for n; RR1 if the digits do, digit 7 - n for n. Four of the eight have a name of
+ * their own. Four are mirror images of the others, Parola among them. The value holds the three
+ * properties as bits: DR in bit 2, CR in bit 1, RR in bit 0.
  */
-enum class MaxMatrixModuleOrientation : uint8_t {
-    k0,   /*!< As wired. */
-    k90,  /*!< Turned by 90 degrees. */
-    k180, /*!< Turned by 180 degrees. */
-    k270  /*!< Turned by 270 degrees, as on an FC-16 board. */
+enum class MaxMatrixModuleType : uint8_t {
+    kDr0Cr0Rr0 = 0, /*!< Digits as columns. */
+    kDr0Cr0Rr1 = 1, /*!< Digits as columns, in reverse; the buffer is the picture as the viewer sees it. */
+    kDr0Cr1Rr0 = 2, /*!< Digits as columns, their bits in reverse. */
+    kDr0Cr1Rr1 = 3, /*!< Digits as columns, both in reverse. */
+    kDr1Cr0Rr0 = 4, /*!< Digits as rows. */
+    kDr1Cr0Rr1 = 5, /*!< Digits as rows, in reverse. */
+    kDr1Cr1Rr0 = 6, /*!< Digits as rows, their bits in reverse. */
+    kDr1Cr1Rr1 = 7, /*!< Digits as rows, both in reverse. */
+    kGeneric = kDr0Cr1Rr0,  /*!< The generic modules, often with the MAX7219 in a DIP package (`GENERIC_HW`). */
+    kFc16 = kDr1Cr0Rr0,     /*!< FC-16, the common boards of four modules (`FC16_HW`). */
+    kParola = kDr1Cr1Rr0,   /*!< The Parola modules (`PAROLA_HW`). */
+    kIcstation = kDr1Cr1Rr1 /*!< The ICStation modules (`ICSTATION_HW`). */
 };
 
 /*!
  * \brief The matrix as the viewer sees it: columns, rows and dots in the viewer's coordinates.
  *
- * It turns every coordinate by the matrix and the module orientation into the buffer of
+ * It turns every coordinate by the matrix orientation and the module type into the buffer of
  * MaxMatrixWired. A sketch reaches it through MaxMatrix, which takes most of its functions over.
  */
 class MaxMatrixPanel
 {
   private:
     MaxMatrixWired wired_;
-    MaxMatrixModuleOrientation module_orientation_;
+    MaxMatrixModuleType module_type_;
     MaxMatrixMatrixOrientation matrix_orientation_;
 
     static byte ReverseByte(byte input);
     void ConvertDotToBuffer(byte column, byte row, byte* buffer_column, byte* buffer_bit);
     byte GetLine(byte column, byte row, bool vertical);
     void SetLine(byte column, byte row, bool vertical, byte value);
-    void ChangeOrientation(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleOrientation module_orientation);
+    void ChangeMapping(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleType module_type);
 
   public:
     /*!
-     * \brief Makes the panel of the chain at these pins, in orientation 0.
+     * \brief Makes the panel of the chain at these pins, of modules MaxMatrixModuleType::kDr0Cr0Rr1
+     *        in matrix orientation 0.
      *
      * \param[in] data_in_pin The pin DIN of the chain is connected to.
      * \param[in] chip_select_pin The pin CS of the chain is connected to.
@@ -80,8 +100,8 @@ class MaxMatrixPanel
     /*! \copydoc GetWired() */
     MaxMatrixWired const& GetWired() const { return wired_; }
 
-    /*! \brief Returns how every module is turned in its place. */
-    MaxMatrixModuleOrientation GetModuleOrientation() const { return module_orientation_; }
+    /*! \brief Returns how the LEDs of every module are wired. */
+    MaxMatrixModuleType GetModuleType() const { return module_type_; }
 
     /*! \brief Returns how the whole matrix is turned. */
     MaxMatrixMatrixOrientation GetMatrixOrientation() const { return matrix_orientation_; }
@@ -198,19 +218,19 @@ class MaxMatrixPanel
     void SetDot(int16_t column, int16_t row, bool value);
 
     /*!
-     * \brief Sets how every module is turned in its place.
+     * \brief Sets how the LEDs of every module are wired.
      *
-     * The picture stays as the viewer sees it; the buffer is turned along.
+     * The picture stays as the viewer sees it; the buffer is rewritten along.
      *
-     * \param[in] module_orientation 0, 90, 180 or 270 degrees, as the LEDs of a module are wired.
+     * \param[in] module_type The type of the modules, as MD_MAX72XX names it.
      */
-    void SetModuleOrientation(MaxMatrixModuleOrientation module_orientation);
+    void SetModuleType(MaxMatrixModuleType module_type);
 
     /*!
      * \brief Sets how the whole matrix is turned.
      *
      * By 180 degrees for a board mounted upside down, with the module at the input then on the
-     * left; in addition to the module orientation. The picture stays as the viewer sees it; the
+     * left; in addition to the module type. The picture stays as the viewer sees it; the
      * buffer is turned along.
      *
      * \param[in] matrix_orientation 0 or 180 degrees.

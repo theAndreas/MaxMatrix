@@ -181,38 +181,44 @@ static MaxMatrixMatrixOrientation const kMatrixOrientations[] = {
     MaxMatrixMatrixOrientation::k0, MaxMatrixMatrixOrientation::k180
 };
 
-static MaxMatrixModuleOrientation const kModuleOrientations[] = {
-    MaxMatrixModuleOrientation::k0, MaxMatrixModuleOrientation::k90,
-    MaxMatrixModuleOrientation::k180, MaxMatrixModuleOrientation::k270
+/* all eight, in the order of the model's kMax7219Wirings, which MaxMatrixModuleTest checks */
+static MaxMatrixModuleType const kModuleTypes[] = {
+    MaxMatrixModuleType::kDr0Cr0Rr0, MaxMatrixModuleType::kDr0Cr0Rr1, MaxMatrixModuleType::kDr0Cr1Rr0, MaxMatrixModuleType::kDr0Cr1Rr1,
+    MaxMatrixModuleType::kDr1Cr0Rr0, MaxMatrixModuleType::kDr1Cr0Rr1, MaxMatrixModuleType::kDr1Cr1Rr0, MaxMatrixModuleType::kDr1Cr1Rr1
 };
 
-typedef std::tuple<MaxMatrixMatrixOrientation, MaxMatrixModuleOrientation> OrientationPair;
+/* the name of a module type as the model names its wiring, DR0CR0RR0 to DR1CR1RR1 */
+static std::string ModuleTypeName(MaxMatrixModuleType module_type)
+{
+    return kMax7219Wirings[static_cast<uint8_t>(module_type)].name;
+}
 
-/* every test of this fixture runs in all eight combinations of matrix and module orientation */
-class MaxMatrixOrientationTest : public MaxMatrixTest, public ::testing::WithParamInterface<OrientationPair> {
+typedef std::tuple<MaxMatrixMatrixOrientation, MaxMatrixModuleType> MappingPair;
+
+/* every test of this fixture runs in all sixteen combinations of matrix orientation and module type */
+class MaxMatrixMappingTest : public MaxMatrixTest, public ::testing::WithParamInterface<MappingPair> {
   protected:
     void SetUp() override
     {
         MaxMatrixTest::SetUp();
         matrix_.Clear();
         matrix_.SetMatrixOrientation(std::get<0>(GetParam()));
-        matrix_.SetModuleOrientation(std::get<1>(GetParam()));
+        matrix_.SetModuleType(std::get<1>(GetParam()));
     }
 };
 
-static std::string OrientationName(::testing::TestParamInfo<OrientationPair> const& info)
+static std::string MappingName(::testing::TestParamInfo<MappingPair> const& info)
 {
-    static char const* const kNames[] = { "0", "90", "180", "270" };
     return std::string("matrix") + (std::get<0>(info.param) == MaxMatrixMatrixOrientation::k180 ? "180" : "0") +
-           "_module" + kNames[static_cast<uint8_t>(std::get<1>(info.param))];
+           "_" + ModuleTypeName(std::get<1>(info.param));
 }
 
-INSTANTIATE_TEST_SUITE_P(AllOrientations, MaxMatrixOrientationTest,
-    ::testing::Combine(::testing::ValuesIn(kMatrixOrientations), ::testing::ValuesIn(kModuleOrientations)),
-    OrientationName);
+INSTANTIATE_TEST_SUITE_P(AllMappings, MaxMatrixMappingTest,
+    ::testing::Combine(::testing::ValuesIn(kMatrixOrientations), ::testing::ValuesIn(kModuleTypes)),
+    MappingName);
 
 /* the bit position used to run on across modules, so only module 0 got its row */
-TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
+TEST_P(MaxMatrixMappingTest, RowRoundTrip)
 {
     PanelRow in, out;
     for(byte module = 0; module < kNumberOfModules; module++) in[module] = 0xA5 ^ (module * 0x3C);
@@ -226,7 +232,7 @@ TEST_P(MaxMatrixOrientationTest, RowRoundTrip)
 }
 
 /* the display has to follow the buffer during the shift too, not only once the text has left it */
-TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
+TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift)
 {
     char text[] = "Hi \xC4!";
 
@@ -238,8 +244,8 @@ TEST_P(MaxMatrixOrientationTest, DisplayFollowsTheShift)
 }
 
 /* Whatever a call draws, it sends one frame per changed column of a module at most. Every dot and column used to be a
- * frame of its own: SetText("Hi!") in module orientation 270 sent 64, and each step of a shifting text nine. */
-TEST_P(MaxMatrixOrientationTest, NoCallSendsMoreThanEightFrames)
+ * frame of its own: SetText("Hi!") on FC-16 modules sent 64, and each step of a shifting text nine. */
+TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames)
 {
     struct {
         char const* name;
@@ -300,7 +306,7 @@ static void DrawPattern(MaxMatrix& matrix)
 
 /* rows and columns are two views of one picture: in orientation 180 SetColumn turned the whole panel while SetRow
  * turned each module */
-TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
+TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree)
 {
     PanelRow row;
     for(byte module = 0; module < kNumberOfModules; module++) row[module] = 0x81 ^ (module * 0x16);
@@ -321,7 +327,7 @@ TEST_P(MaxMatrixOrientationTest, RowsAndColumnsAgree)
 }
 
 /* every shift moves the whole picture by one dot as the viewer sees it, across the modules */
-TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
+TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture)
 {
     struct {
         char const* name;
@@ -352,25 +358,25 @@ TEST_P(MaxMatrixOrientationTest, ShiftsMoveThePicture)
     }
 }
 
-/* changing an orientation turns the buffer along, so the viewer still sees the same picture; changing the module
- * orientation to or from 180 turned each module while SetColumn had turned the whole panel */
-TEST_P(MaxMatrixOrientationTest, PictureStaysWhenTheOrientationChanges)
+/* changing the orientation or the module type rewrites the buffer along, so the viewer still sees the same picture;
+ * changing the module orientation to or from 180 turned each module while SetColumn had turned the whole panel */
+TEST_P(MaxMatrixMappingTest, PictureStaysWhenTheMappingChanges)
 {
     for(MaxMatrixMatrixOrientation matrix_orientation : kMatrixOrientations) {
-        for(MaxMatrixModuleOrientation module_orientation : kModuleOrientations) {
+        for(MaxMatrixModuleType module_type : kModuleTypes) {
             matrix_.SetMatrixOrientation(std::get<0>(GetParam()));
-            matrix_.SetModuleOrientation(std::get<1>(GetParam()));
+            matrix_.SetModuleType(std::get<1>(GetParam()));
             matrix_.Clear();
             DrawPattern(matrix_);
             matrix_.SetMatrixOrientation(matrix_orientation);
-            matrix_.SetModuleOrientation(module_orientation);
+            matrix_.SetModuleType(module_type);
             EXPECT_EQ(ShownPicture(matrix_), Picture(Pattern))
-                << "to matrix " << static_cast<uint16_t>(matrix_orientation) << ", module " << static_cast<uint16_t>(module_orientation);
+                << "to matrix " << static_cast<uint16_t>(matrix_orientation) << ", " << ModuleTypeName(module_type);
         }
     }
 }
 
-TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
+TEST_P(MaxMatrixMappingTest, DotRoundTrip)
 {
     for(byte column = 0; column < kNumberOfColumns; column++) {
         for(byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
@@ -384,51 +390,46 @@ TEST_P(MaxMatrixOrientationTest, DotRoundTrip)
     }
 }
 
-/* Which orientations each module needs, as the README tells a user: the module orientation follows from the
- * wiring, the matrix orientation from whether the board is mounted upside down. PAROLA and the other three wirings
- * are mirror images, which no orientation gives (OIL item 9). */
-struct Module {
-    char const* name;
-    Max7219Wiring const* wiring;
-    bool upside_down;
-    MaxMatrixMatrixOrientation matrix_orientation;
-    MaxMatrixModuleOrientation module_orientation;
-};
-
-static Module const kModules[] = {
-    { "DR0CR0RR1", &kMax7219Wirings[1], false, MaxMatrixMatrixOrientation::k0, MaxMatrixModuleOrientation::k0 },
-    { "ICSTATION", &kMaX7219WiringIcstation, false, MaxMatrixMatrixOrientation::k0, MaxMatrixModuleOrientation::k90 },
-    { "GENERIC", &kMaX7219WiringGeneric, false, MaxMatrixMatrixOrientation::k0, MaxMatrixModuleOrientation::k180 },
-    { "FC16", &kMaX7219WiringFC16, false, MaxMatrixMatrixOrientation::k0, MaxMatrixModuleOrientation::k270 },
-    { "DR0CR0RR1_upside_down", &kMax7219Wirings[1], true, MaxMatrixMatrixOrientation::k180, MaxMatrixModuleOrientation::k0 },
-    { "ICSTATION_upside_down", &kMaX7219WiringIcstation, true, MaxMatrixMatrixOrientation::k180, MaxMatrixModuleOrientation::k90 },
-    { "GENERIC_upside_down", &kMaX7219WiringGeneric, true, MaxMatrixMatrixOrientation::k180, MaxMatrixModuleOrientation::k180 },
-    { "FC16_upside_down", &kMaX7219WiringFC16, true, MaxMatrixMatrixOrientation::k180, MaxMatrixModuleOrientation::k270 },
-};
+/* Every module type shows the picture upright on the wiring of the model it is named after, the matrix orientation
+ * 180 on a board mounted upside down, as the README tells a user. Four of the eight are mirror images of the
+ * others, which the module orientation of 0 to 270 degrees did not reach (OIL item 9); the named four have to be
+ * the wirings MD_MAX72XX gives those names. */
+typedef std::tuple<MaxMatrixModuleType, bool> Module;
 
 class MaxMatrixModuleTest : public MaxMatrixTest, public ::testing::WithParamInterface<Module> {};
 
 static std::string ModuleName(::testing::TestParamInfo<Module> const& info)
 {
-    return info.param.name;
+    return ModuleTypeName(std::get<0>(info.param)) + (std::get<1>(info.param) ? "_upside_down" : "");
 }
 
-INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest, ::testing::ValuesIn(kModules), ModuleName);
+INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest,
+    ::testing::Combine(::testing::ValuesIn(kModuleTypes), ::testing::Bool()), ModuleName);
+
+TEST_F(MaxMatrixTest, NamedModuleTypesAreTheirWirings)
+{
+    EXPECT_EQ(ModuleTypeName(MaxMatrixModuleType::kFc16), kMaX7219WiringFC16.name);
+    EXPECT_EQ(ModuleTypeName(MaxMatrixModuleType::kGeneric), kMaX7219WiringGeneric.name);
+    EXPECT_EQ(ModuleTypeName(MaxMatrixModuleType::kParola), kMaX7219WiringParola.name);
+    EXPECT_EQ(ModuleTypeName(MaxMatrixModuleType::kIcstation), kMaX7219WiringIcstation.name);
+}
 
 /* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a wrong mapping could hide behind */
 TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet)
 {
-    Module const& module = GetParam();
+    MaxMatrixModuleType const module_type = std::get<0>(GetParam());
+    bool const upside_down = std::get<1>(GetParam());
+    Max7219Wiring const& wiring = kMax7219Wirings[static_cast<uint8_t>(module_type)];
     auto pattern = [](uint16_t x, uint8_t y) { return (x * x + 3 * y + x * y) % 3 == 0; };
 
-    matrix_.SetMatrixOrientation(module.matrix_orientation);
-    matrix_.SetModuleOrientation(module.module_orientation);
+    matrix_.SetMatrixOrientation(upside_down ? MaxMatrixMatrixOrientation::k180 : MaxMatrixMatrixOrientation::k0);
+    matrix_.SetModuleType(module_type);
     for(byte x = 0; x < kNumberOfColumns; x++) {
         for(byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) matrix_.SetDot(x, y, pattern(x, y));
     }
     for(uint16_t x = 0; x < kNumberOfColumns; x++) {
         for(uint8_t y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
-            EXPECT_EQ(mock::chain.IsLit(*module.wiring, x, y, module.upside_down), pattern(x, y)) << "X " << x << ", Y " << y;
+            EXPECT_EQ(mock::chain.IsLit(wiring, x, y, upside_down), pattern(x, y)) << "X " << x << ", Y " << y;
         }
     }
 }
@@ -583,7 +584,7 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
 
 /* a char partly off the panel shows the part on it, through either path of SetSprite(): whole columns for a char
  * at the top, single dots for one moved down */
-TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
+TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt)
 {
     MaxMatrixResult<MaxMatrixGlyph> const glyph = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, 'A');
     ASSERT_EQ(glyph.GetError(), MaxMatrixError::kOk);
@@ -805,7 +806,7 @@ TEST_F(MaxMatrixTest, TransfersAreFramed)
 
     EXPECT_EQ(mock::pin_mode[kChipSelectPin], OUTPUT);
     matrix_.SetText("Hi!");
-    matrix_.SetModuleOrientation(MaxMatrixModuleOrientation::k90);
+    matrix_.SetModuleType(MaxMatrixModuleType::kIcstation);
     ShiftWholeText(text);
 
     EXPECT_GT(mock::frames, 0);
@@ -1124,7 +1125,7 @@ TEST_F(MaxMatrixCommandTest, LineOfFullLengthIsTaken)
 
 /* picture answers with the panel as the viewer sees it, so that a program draws it without knowing the orientations;
  * one dot in a column of every module, each in another row */
-TEST_P(MaxMatrixOrientationTest, PictureAnswerIsWhatTheViewerSees)
+TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees)
 {
     MaxMatrixCommand command;
     TextPrint answer;
@@ -1236,7 +1237,7 @@ TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting)
  * orientation changes, three, with one module in the middle, and six. The buffer is the test's, filled with a pattern
  * that the matrix has to empty. */
 static byte const kChainLengths[] = { 1, 3, 6 };
-typedef std::tuple<byte, MaxMatrixMatrixOrientation, MaxMatrixModuleOrientation> ChainParameter;
+typedef std::tuple<byte, MaxMatrixMatrixOrientation, MaxMatrixModuleType> ChainParameter;
 
 class MaxMatrixChainLengthTest : public ::testing::TestWithParam<ChainParameter> {
   protected:
@@ -1252,7 +1253,7 @@ class MaxMatrixChainLengthTest : public ::testing::TestWithParam<ChainParameter>
         matrix_.Init();
         matrix_.SetShiftInterval(0);
         matrix_.SetMatrixOrientation(std::get<1>(GetParam()));
-        matrix_.SetModuleOrientation(std::get<2>(GetParam()));
+        matrix_.SetModuleType(std::get<2>(GetParam()));
     }
 
     /* as in MaxMatrixTest: the LEDs show the buffer, and every bit went out within a frame */
@@ -1270,14 +1271,12 @@ class MaxMatrixChainLengthTest : public ::testing::TestWithParam<ChainParameter>
 
 static std::string ChainName(::testing::TestParamInfo<ChainParameter> const& info)
 {
-    static char const* const kNames[] = { "0", "90", "180", "270" };
     return std::to_string(std::get<0>(info.param)) + "modules_matrix" +
-           (std::get<1>(info.param) == MaxMatrixMatrixOrientation::k180 ? "180" : "0") + "_module" +
-           kNames[static_cast<uint8_t>(std::get<2>(info.param))];
+           (std::get<1>(info.param) == MaxMatrixMatrixOrientation::k180 ? "180" : "0") + "_" + ModuleTypeName(std::get<2>(info.param));
 }
 
 INSTANTIATE_TEST_SUITE_P(Lengths, MaxMatrixChainLengthTest,
-    ::testing::Combine(::testing::ValuesIn(kChainLengths), ::testing::ValuesIn(kMatrixOrientations), ::testing::ValuesIn(kModuleOrientations)),
+    ::testing::Combine(::testing::ValuesIn(kChainLengths), ::testing::ValuesIn(kMatrixOrientations), ::testing::ValuesIn(kModuleTypes)),
     ChainName);
 
 /* the matrix empties the buffer it is handed, and a frame carries an address and a value for every module */
@@ -1298,19 +1297,19 @@ TEST_P(MaxMatrixChainLengthTest, DotsRoundTrip)
     EXPECT_EQ(ShownPicture(matrix_), Pattern()) << "a dot right of the panel drawn";
 }
 
-/* the orientation changes a pair of modules at a time, m and n - 1 - m; the picture has to stay for every pair */
-TEST_P(MaxMatrixChainLengthTest, PictureStaysWhenTheOrientationChanges)
+/* the mapping changes a pair of modules at a time, m and n - 1 - m; the picture has to stay for every pair */
+TEST_P(MaxMatrixChainLengthTest, PictureStaysWhenTheMappingChanges)
 {
     for(MaxMatrixMatrixOrientation matrix_orientation : kMatrixOrientations) {
-        for(MaxMatrixModuleOrientation module_orientation : kModuleOrientations) {
+        for(MaxMatrixModuleType module_type : kModuleTypes) {
             matrix_.SetMatrixOrientation(std::get<1>(GetParam()));
-            matrix_.SetModuleOrientation(std::get<2>(GetParam()));
+            matrix_.SetModuleType(std::get<2>(GetParam()));
             matrix_.Clear();
             DrawPattern(matrix_);
             matrix_.SetMatrixOrientation(matrix_orientation);
-            matrix_.SetModuleOrientation(module_orientation);
+            matrix_.SetModuleType(module_type);
             EXPECT_EQ(ShownPicture(matrix_), Pattern())
-                << "to matrix " << static_cast<uint16_t>(matrix_orientation) << ", module " << static_cast<uint16_t>(module_orientation);
+                << "to matrix " << static_cast<uint16_t>(matrix_orientation) << ", " << ModuleTypeName(module_type);
         }
     }
 }

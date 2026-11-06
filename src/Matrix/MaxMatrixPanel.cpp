@@ -6,7 +6,7 @@
  * \brief The matrix as the viewer sees it.
  *
  * Columns, rows and dots in the viewer's coordinates, mapped onto the buffer as wired by the matrix
- * and the module orientation.
+ * orientation and the module type.
  */
 
 #include "MaxMatrixPanel.h"
@@ -14,7 +14,7 @@
 MaxMatrixPanel::MaxMatrixPanel(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules)
     : wired_(data_in_pin, chip_select_pin, clock_pin, buffer, number_of_modules)
 {
-    module_orientation_ = MaxMatrixModuleOrientation::k0;
+    module_type_ = MaxMatrixModuleType::kDr0Cr0Rr1;
     matrix_orientation_ = MaxMatrixMatrixOrientation::k0;
 }
 
@@ -100,8 +100,8 @@ void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value)
 
 /*
  * The shifts work on the picture as the viewer sees it, a column at a time, so that they are the
- * same in every orientation; in place, as a copy of the whole picture would need its length at
- * compile time.
+ * same for every module type and orientation; in place, as a copy of the whole picture would need
+ * its length at compile time.
  */
 void MaxMatrixPanel::ShiftLeft(bool rotate, bool fill_with_zero)
 {
@@ -149,28 +149,28 @@ void MaxMatrixPanel::ShiftDown(bool rotate)
     }
 }
 
-void MaxMatrixPanel::SetModuleOrientation(MaxMatrixModuleOrientation module_orientation)
+void MaxMatrixPanel::SetModuleType(MaxMatrixModuleType module_type)
 {
-    ChangeOrientation(matrix_orientation_, module_orientation);
+    ChangeMapping(matrix_orientation_, module_type);
 }
 
 void MaxMatrixPanel::SetMatrixOrientation(MaxMatrixMatrixOrientation matrix_orientation)
 {
-    ChangeOrientation(matrix_orientation, module_orientation_);
+    ChangeMapping(matrix_orientation, module_type_);
 }
 
 /*
- * Turns the panel to the new orientations so that the viewer sees the same picture, rewriting the
- * buffer a pair of modules at a time: the viewer's modules m and n - 1 - m lie in the buffer's
- * modules m and n - 1 - m whatever the orientations, as the matrix orientation only swaps them and
- * the module orientation turns each in its place. So the pair is read in the old orientations and
- * written in the new without touching any other module, and 16 bytes do for any chain, where a
- * copy of the whole picture would need its length at compile time.
+ * Maps the panel anew, to a matrix orientation and a module type, so that the viewer sees the same
+ * picture, rewriting the buffer a pair of modules at a time: the viewer's modules m and n - 1 - m
+ * lie in the buffer's modules m and n - 1 - m whatever the mapping, as the matrix orientation only
+ * swaps them and the module type rearranges each in its place. So the pair is read in the old
+ * mapping and written in the new without touching any other module, and 16 bytes do for any chain,
+ * where a copy of the whole picture would need its length at compile time.
  */
-void MaxMatrixPanel::ChangeOrientation(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleOrientation module_orientation)
+void MaxMatrixPanel::ChangeMapping(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleType module_type)
 {
     MaxMatrixMatrixOrientation const old_matrix_orientation = matrix_orientation_;
-    MaxMatrixModuleOrientation const old_module_orientation = module_orientation_;
+    MaxMatrixModuleType const old_module_type = module_type_;
 
     for(int16_t left = 0, right = static_cast<int16_t>(GetNumberOfModules() - 1); left <= right; left++, right--) {
         byte const left_column = static_cast<byte>(left * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
@@ -178,13 +178,13 @@ void MaxMatrixPanel::ChangeOrientation(MaxMatrixMatrixOrientation matrix_orienta
         byte pair[2 * MAXMATRIX_COLUMN_NUMBER_OF_MODULE];
 
         matrix_orientation_ = old_matrix_orientation;
-        module_orientation_ = old_module_orientation;
+        module_type_ = old_module_type;
         for(byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
             pair[column] = GetLine(left_column + column, 0, true);
             pair[MAXMATRIX_COLUMN_NUMBER_OF_MODULE + column] = GetLine(right_column + column, 0, true);
         }
         matrix_orientation_ = matrix_orientation;
-        module_orientation_ = module_orientation;
+        module_type_ = module_type;
         for(byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
             SetLine(left_column + column, 0, true, pair[column]);
             SetLine(right_column + column, 0, true, pair[MAXMATRIX_COLUMN_NUMBER_OF_MODULE + column]);
@@ -204,11 +204,15 @@ byte MaxMatrixPanel::ReverseByte(byte input)
 
 /*
  * Finds where a dot as the viewer sees it is kept: its column in the matrix buffer and its bit
- * there. The matrix orientation turns the whole panel first, the module orientation then every
- * module in its place. The dot has to lie within the matrix.
+ * there. The matrix orientation turns the whole panel first; then the module type says which digit
+ * register and which of its bits drive the dot within its module, as MD_MAX72XX describes a module
+ * from its input on the right. A buffer column is a digit register, its bit a segment. The dot has
+ * to lie within the matrix.
  *
- * It is the only function that knows the orientations. While every public function handled them
- * itself, rows, shifts and dots disagreed in 90, 180 and 270 degrees.
+ * It is the only function that knows the matrix orientation and the module type. While every
+ * public function handled the orientations itself, rows, shifts and dots disagreed in 90, 180 and
+ * 270 degrees. Three properties rather than a case for each of the eight types, so that a mirrored
+ * module costs no code of its own.
  */
 void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column, byte* buffer_bit)
 {
@@ -217,25 +221,17 @@ void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row, byte* buffer_colu
         row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
     }
 
-    byte module = column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-    byte module_column = column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-    byte wired_column, wired_row;
+    byte const module = column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
+    byte const column_from_right = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - (column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    byte const type = static_cast<byte>(module_type_);
+    bool const digits_as_rows = (type & MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS) != 0;
+    byte digit = digits_as_rows ? row : column_from_right;
+    byte segment = digits_as_rows ? column_from_right : row;
 
-    if(module_orientation_ == MaxMatrixModuleOrientation::k90) {
-        wired_column = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - row;
-        wired_row = module_column;
-    } else if(module_orientation_ == MaxMatrixModuleOrientation::k180) {
-        wired_column = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - module_column;
-        wired_row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
-    } else if(module_orientation_ == MaxMatrixModuleOrientation::k270) {
-        wired_column = row;
-        wired_row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - module_column;
-    } else {
-        wired_column = module_column;
-        wired_row = row;
-    }
-    *buffer_column = (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + wired_column;
-    *buffer_bit = wired_row;
+    if((type & MAXMATRIX_MODULE_TYPE_REVERSED_ROWS) != 0) digit = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - digit;
+    if((type & MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS) != 0) segment = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - segment;
+    *buffer_column = (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + digit;
+    *buffer_bit = segment;
 }
 
 /*

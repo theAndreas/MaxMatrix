@@ -41,7 +41,7 @@ void Show(Message const& message)
 void setup()
 {
     matrix.Init();
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);    // FC-16, see the README
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see the README for other modules
     matrix.SetIntensity(2);
     Show(kMessages[current]);
 }

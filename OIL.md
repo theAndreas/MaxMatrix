@@ -18,7 +18,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 6  | Web front end for the simulator | 5 | done | #10 |
 | 7  | Simulator in CI | 6 | done | #11 |
 | 8  | Batched updates in the library | 13 | done | #20 |
-| 9  | Mirrored modules in the library | 25 | open | |
+| 9  | Mirrored modules in the library | 25 | in progress | |
 | 10 | Adafruit GFX as an option | 8 | open | |
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
@@ -143,6 +143,17 @@ orientation and the three-bit wiring description from 4 in place of it.
 
 After 25, which gives the rotations their full set. Needs a mirrored module to try it on;
 the PR says whether it ran on hardware.
+
+As built, the three-bit description replaces the orientation: `SetModuleType()` takes a
+`MaxMatrixModuleType`, the eight wirings as MD_MAX72XX names them, `kDr0Cr0Rr0` to `kDr1Cr1Rr1`,
+with `kFc16`, `kGeneric`, `kParola` and `kIcstation` for the four that have a name. A mirror
+setting would have kept the README's table of which rotation fits which module, then with eight
+rows; a module type is what a sketch knows of its module, and what MD_MAX72XX already calls it.
+`ConvertDotToBuffer()` follows the three bits, as the model does, rather than a case per
+rotation, which made every example 12 bytes smaller. `MaxMatrixModuleTest` checks every type,
+upright and upside down, on the wiring of its name, and the four pictures of `docu/` became
+eight; the four that the rotations reached are the same LED for LED. Not tried on a mirrored
+module.
 
 ### 10 Adafruit GFX as an option
 

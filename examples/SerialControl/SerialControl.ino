@@ -33,8 +33,8 @@ void setup()
 {
     Serial.begin(kBaudRate);
     matrix.Init();
-    /* 270 for the common 4-in-1 FC-16 boards; the README lists the other modules */
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);
+    /* the common 4-in-1 FC-16 boards; the README lists the other modules */
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);
     Serial.println(F("ready"));
 }
 

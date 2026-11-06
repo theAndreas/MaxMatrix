@@ -11,7 +11,7 @@
  * Nothing in the pictures is drawn by hand. Every LED is placed by calling the library, with
  * SetDot(), SetColumn() or SetRow(), and reading back which register bit of which MAX7219 the model
  * in test/mock/ latched, or which dot GetDot() reports. The module types in the titles are the
- * wirings of the model on which a pattern set in that orientation appears upright. So a picture
+ * wirings of the model on which a pattern set with that module type appears upright. So a picture
  * cannot say something the library does not do, and the test docu/pictures fails when the library
  * changes and the pictures were not written again.
  */
@@ -80,16 +80,6 @@ typedef struct {
 } DocuLed;
 
 static MaxMatrixOf<DOCU_NUMBER_OF_MODULES> matrix(DOCU_DATA_IN_PIN, DOCU_CHIP_SELECT_PIN, DOCU_CLOCK_PIN);
-
-static struct {
-    MaxMatrixModuleOrientation orientation;
-    uint16_t degrees;
-} const kModuleOrientations[] = {
-    { MaxMatrixModuleOrientation::k0, 0 },
-    { MaxMatrixModuleOrientation::k90, 90 },
-    { MaxMatrixModuleOrientation::k180, 180 },
-    { MaxMatrixModuleOrientation::k270, 270 },
-};
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them */
 static struct {
@@ -170,7 +160,7 @@ static bool IsUpright(Max7219Wiring const& wiring)
 }
 
 /*!
- * \brief Returns the modules the current orientation fits.
+ * \brief Returns the modules the current module type fits.
  *
  * It names every wiring of the model on which the panel is upright, with the name MD_MAX72XX
  * gives it where there is one.
@@ -298,29 +288,28 @@ static void DrawPanel(DocuSvg* svg, std::string const& title)
 }
 
 /*!
- * \brief Draws the picture of how the bytes lie on the modules in one module orientation.
+ * \brief Draws the picture of how the bytes lie on the modules of one module type.
  *
  * It labels every LED with the digit register and the bit that drive it, and joins the LEDs of
  * one register in a band: a register is one byte of `matrix_buffer_`.
  *
- * \param[in] orientation The module orientation.
- * \param[in] degrees The same in degrees, for the title.
+ * \param[in] module_type The module type.
  * \return The SVG text, or an empty text if a dot did not light exactly one LED.
  */
-static std::string DrawWiring(MaxMatrixModuleOrientation orientation, uint16_t degrees)
+static std::string DrawWiring(MaxMatrixModuleType module_type)
 {
     DocuSvg svg(GetPictureWidth(), GetPictureHeight());
     DocuLed leds[DOCU_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     int16_t const inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
 
-    matrix.SetModuleOrientation(orientation);
+    matrix.SetModuleType(module_type);
     for(byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
         for(byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
             if(!FindLedOfDot(x, y, &leds[x][y])) return "";
         }
     }
 
-    DrawPanel(&svg, "Module orientation " + std::to_string(degrees) + ": " + GetModules());
+    DrawPanel(&svg, "Module type " + GetModules());
     for(byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
         for(byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
             /* a band from the LED to its neighbour of the same register, right or below */
@@ -363,9 +352,9 @@ static std::string DrawCoordinates()
     std::string column_labels[DOCU_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
     std::string row_labels[DOCU_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
 
-    // The coordinates are the same in every orientation once it fits the module, so the picture is
-    // drawn in the one of FC-16 boards.
-    matrix.SetModuleOrientation(MaxMatrixModuleOrientation::k270);
+    // The coordinates are the same for every module once the module type fits it, so the picture
+    // is drawn for FC-16 boards.
+    matrix.SetModuleType(MaxMatrixModuleType::kFc16);
     for(byte bit = 0; bit < 8; bit++) {
         matrix.Clear();
         matrix.SetColumn(DOCU_EXAMPLE_COLUMN, 1 << bit);
@@ -441,8 +430,10 @@ int main(int argc, char** argv)
 
     std::vector<std::pair<std::string, std::string>> pictures;
     pictures.push_back(std::make_pair("Coordinates.svg", DrawCoordinates()));
-    for(auto const& each : kModuleOrientations) {
-        pictures.push_back(std::make_pair("Wiring_" + std::to_string(each.degrees) + ".svg", DrawWiring(each.orientation, each.degrees)));
+    // The module types in the order of the model's wirings, whose names the files take.
+    for(byte type = 0; type < sizeof(kMax7219Wirings) / sizeof(kMax7219Wirings[0]); type++) {
+        pictures.push_back(std::make_pair(std::string("Wiring_") + kMax7219Wirings[type].name + ".svg",
+                                          DrawWiring(static_cast<MaxMatrixModuleType>(type))));
     }
 
     for(auto const& picture : pictures) {
