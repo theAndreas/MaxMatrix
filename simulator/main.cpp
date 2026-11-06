@@ -6,7 +6,7 @@
  * \brief Runs an example sketch from examples/ on the host and draws the LED panel.
  *
  * Build/Simulator-ScrollText-bitbang [--wiring FC16] [--upside-down] [--serial LINE]... [--web
- * [--port PORT]] [--for SECONDS [--expect FILE]].
+ * [--port PORT]] [--tcp PORT] [--for SECONDS [--expect FILE]].
  *
  * The sketch is compiled unchanged against the Arduino stand-in and the MAX7219 model in
  * test/mock/: setup() runs once, loop() over and over, millis() and delay() on the host clock.
@@ -20,6 +20,9 @@
  *
  * --web draws in a browser instead, on http://localhost:8080/ (simulator/index.html). --port picks
  * another port, so that two simulators, or a simulator and the tests, can run side by side.
+ *
+ * --tcp opens the sketch's Serial as a TCP port on localhost, for the control program in control/:
+ * what it sends, the sketch reads, and what the sketch prints, it gets back.
  */
 
 #include <stdio.h>
@@ -27,10 +30,10 @@
 #include <chrono>
 #include <thread>
 #include "Arduino.h"
+#include "SimulatorFrontEnd.h"
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
-#include "SimulatorWeb.h"
 
 /* the examples put chip select on pin 10 */
 #define SIMULATOR_CHIP_SELECT_PIN                                   10u
@@ -48,7 +51,7 @@ void loop();
 // object.
 static SimulatorOptions options;
 static SimulatorPanel panel;
-static SimulatorWeb web;
+static SimulatorFrontEnd front_end;
 
 /*!
  * \brief Ends a run with `--for`.
@@ -73,36 +76,8 @@ static void Tick()
 {
     uint32_t const now = millis();
 
-    if(options.IsWeb()) web.Task(panel);
+    front_end.Follow(panel, now);
     if(options.GetRunFor() != 0 && now >= options.GetRunFor()) Finish();
-
-    if(panel.IsDrawDue(now)) {
-        if(options.IsWeb()) web.Send(panel);
-        else if(options.GetRunFor() == 0) SimulatorTerminal::Draw(panel);
-        panel.SetDrawn(now);
-    }
-}
-
-/*!
- * \brief Prepares the output.
- *
- * It opens the port for the page, or clears the terminal for a run that draws in it.
- *
- * \return True once the output is prepared, or false if the port is taken.
- */
-static bool Begin()
-{
-    if(options.IsWeb()) {
-        if(!web.Begin(options.GetPort(), SIMULATOR_PAGE)) {
-            fprintf(stderr, "port %u is taken, maybe by another simulator\n", options.GetPort());
-            return false;
-        }
-        printf("http://localhost:%u/\n", options.GetPort());
-        fflush(stdout);
-    } else if(options.GetRunFor() == 0) {
-        SimulatorTerminal::Clear();
-    }
-    return true;
 }
 
 /*!
@@ -128,7 +103,7 @@ int main(int argc, char** argv)
     mock::Reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
     mock::serial_input = options.GetSerialInput();
     mock::tick = Tick;
-    if(!Begin()) return SIMULATOR_EXIT_FAILED;
+    if(!front_end.Begin(options)) return SIMULATOR_EXIT_FAILED;
 
     setup();
     for(;;) {

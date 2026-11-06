@@ -33,29 +33,41 @@ set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
 target_link_libraries(Max7219Test PRIVATE ArduinoMock GTest::gtest_main)
 gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
-# The simulator's web host once as well: it knows neither the library nor the sketch, and its WebSocket half is tested
-# on its own, without a network.
-add_library(SimulatorWebHost STATIC simulator/SimulatorWebHost.cpp simulator/SimulatorWebSocket.cpp)
-target_include_directories(SimulatorWebHost PUBLIC simulator)
-add_executable(SimulatorWebSocketTest test/SimulatorWebSocketTest.cpp)
-set_target_properties(SimulatorWebSocketTest PROPERTIES CXX_STANDARD 17)
-target_link_libraries(SimulatorWebSocketTest PRIVATE SimulatorWebHost GTest::gtest_main)
-gtest_discover_tests(SimulatorWebSocketTest TEST_PREFIX "simulator/")
-add_executable(SimulatorWebHostTest test/SimulatorWebHostTest.cpp)
-set_target_properties(SimulatorWebHostTest PROPERTIES CXX_STANDARD 17)
-target_link_libraries(SimulatorWebHostTest PRIVATE SimulatorWebHost GTest::gtest_main)
-gtest_discover_tests(SimulatorWebHostTest TEST_PREFIX "simulator/")
+# The simulator's hosts once as well, the web host and the serial port on TCP: they know neither the library nor the
+# sketch, and the WebSocket half is tested on its own, without a network.
+add_library(SimulatorHosts STATIC simulator/SimulatorSocket.cpp simulator/SimulatorWebHost.cpp
+                                  simulator/SimulatorWebSocket.cpp simulator/SimulatorSerialHost.cpp)
+target_include_directories(SimulatorHosts PUBLIC simulator)
+foreach(Test SimulatorWebSocketTest SimulatorWebHostTest SimulatorSerialHostTest)
+    add_executable(${Test} test/${Test}.cpp)
+    set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
+    target_link_libraries(${Test} PRIVATE SimulatorHosts GTest::gtest_main)
+    # one port per test binary, and ctest runs every test of it as a process of its own
+    gtest_discover_tests(${Test} TEST_PREFIX "simulator/" PROPERTIES RESOURCE_LOCK ${Test})
+endforeach()
 
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
 # difference to it, and its tests need no sketch.
 add_library(Simulator STATIC simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp simulator/SimulatorTerminal.cpp
-                             simulator/SimulatorWeb.cpp)
+                             simulator/SimulatorWeb.cpp simulator/SimulatorFrontEnd.cpp)
 target_include_directories(Simulator PUBLIC src)
-target_link_libraries(Simulator PUBLIC SimulatorWebHost ArduinoMock)
+target_link_libraries(Simulator PUBLIC SimulatorHosts ArduinoMock)
+# read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
+target_compile_definitions(Simulator PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
 add_executable(SimulatorTest test/SimulatorTest.cpp)
 set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
 gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
+
+# The control program, and its classes without a window once: they know neither the library nor the sketch. Its ports
+# are tested against a pseudo terminal and against the simulator's serial host, on a port of its own.
+add_subdirectory(control)
+foreach(Test ControlCommandTest ControlLinkTest ControlPortTest)
+    add_executable(${Test} test/${Test}.cpp)
+    set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
+    target_link_libraries(${Test} PRIVATE Control SimulatorHosts GTest::gtest_main)
+    gtest_discover_tests(${Test} TEST_PREFIX "control/" PROPERTIES RESOURCE_LOCK ${Test})
+endforeach()
 
 # The script of the simulator's page, against stand-ins for the DOM, the WebSocket and a board on Web Serial. Node is no
 # part of the dev container's Dockerfile, so the test is left out where there is none; the CI runners have it.
@@ -90,9 +102,6 @@ function(add_simulator_variant Variant)
         get_filename_component(Example ${Sketch} NAME_WE)
         add_executable(Simulator-${Example}-${Variant} simulator/main.cpp ${Sketch})
         target_link_libraries(Simulator-${Example}-${Variant} PRIVATE MaxMatrix-${Variant} Simulator)
-        # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild
-        target_compile_definitions(Simulator-${Example}-${Variant} PRIVATE
-                                   SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
         # Every example for two seconds: it builds against the mock, and every frame it sends reaches the chain whole.
         # What it draws depends on the host's clock, so only Basics, which stands still at first, is compared.
         add_test(NAME ${Variant}/simulator/run/${Example} COMMAND Simulator-${Example}-${Variant} --for 2)
@@ -109,6 +118,10 @@ function(add_simulator_variant Variant)
     add_test(NAME ${Variant}/simulator/control
              COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18082)
     set_tests_properties(${Variant}/simulator/control PROPERTIES RESOURCE_LOCK SimulatorControlPort)
+    # SerialControl controlled the way the control program does it, over its Serial on a TCP port.
+    add_test(NAME ${Variant}/simulator/tcp
+             COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/TcpTest.sh $<TARGET_FILE:Simulator-SerialControl-${Variant}> 18084)
+    set_tests_properties(${Variant}/simulator/tcp PROPERTIES RESOURCE_LOCK SimulatorTcpPort)
 endfunction()
 
 # The library as the Arduino IDE builds it: everything under src/, each part in a folder of its own.
@@ -142,7 +155,6 @@ endif()
 if(ArduinoCli AND Simavr_FOUND)
     add_executable(SimulatorAvr simulator/mainAvr.cpp simulator/SimulatorAvr.cpp)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
-    target_compile_definitions(SimulatorAvr PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DIR}/simulator/index.html")
 
     # an example, the simulated seconds it runs for, and the --serial lines it is sent; its expectation is
     # simulator/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one
@@ -182,6 +194,10 @@ if(ArduinoCli AND Simavr_FOUND)
                  COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/ControlTest.sh $<TARGET_FILE:SimulatorAvr> 18083
                          --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
         set_tests_properties(avr/${Transfer}/control PROPERTIES RESOURCE_LOCK SimulatorAvrControlPort)
+        add_test(NAME avr/${Transfer}/tcp
+                 COMMAND bash ${PROJECT_SOURCE_DIR}/simulator/TcpTest.sh $<TARGET_FILE:SimulatorAvr> 18085
+                         --elf ${CMAKE_BINARY_DIR}/avr/${Transfer}/SerialControl/SerialControl.ino.elf)
+        set_tests_properties(avr/${Transfer}/tcp PROPERTIES RESOURCE_LOCK SimulatorAvrTcpPort)
     endforeach()
     add_custom_target(AvrExamples ALL DEPENDS ${AvrElfs})
 else()

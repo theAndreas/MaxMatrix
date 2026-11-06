@@ -12,7 +12,7 @@ backticks is kept whole, and \\code ... \\endcode and the lines of a list are le
 Without it, the files are only read, and a file in which a line is not so fails. The tool from
 Utl, tools/doc_indent.pl, does the same there after clang-format.
 
-The headers and sources of src/, simulator/ and docu/ are read; the tests keep their // comments.
+The headers and sources of src/, simulator/, control/ and docu/ are read; the tests keep their // comments.
 
 Usage:
     tools/doc-indent.py [--fix]              every header and source of these git knows of
@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 WIDTH = 100
-FOLDERS = ('src', 'simulator', 'docu')
+FOLDERS = ('src', 'simulator', 'control', 'docu')
 COMMAND = re.compile(r'^(\s*)\* (\\(?:param(?:\[[a-z,]+\])? +\S+|tparam +\S+|retval +\S+'
                      r'|return|pre|post|note|warning|see|brief)) +(\S.*)$')
 CONTINUED = re.compile(r'^\s*\* +(\S.*)$')

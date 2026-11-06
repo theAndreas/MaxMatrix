@@ -34,6 +34,7 @@ class SimulatorOptions
     bool upside_down_;
     bool web_;
     uint16_t port_;
+    uint16_t tcp_port_;
     uint32_t run_for_;
     char const* expect_file_;
     char const* elf_file_;
@@ -62,6 +63,9 @@ class SimulatorOptions
 
     /*! \brief Returns the port of `--port`, or `SIMULATOR_OPTIONS_DEFAULT_PORT` without it. */
     uint16_t GetPort() const { return port_; }
+
+    /*! \brief Returns the port of `--tcp`, or 0 without it, for no serial port on TCP. */
+    uint16_t GetTcpPort() const { return tcp_port_; }
 
     /*! \brief Returns the milliseconds of `--for`, or 0 without it, to run until Ctrl+C. */
     uint32_t GetRunFor() const { return run_for_; }

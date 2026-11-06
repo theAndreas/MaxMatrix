@@ -39,12 +39,8 @@ class SimulatorWebHost
     void SendPage(int socket);
     uint8_t FindFreeSlot() const;
     void DropClient(uint8_t slot);
-    static int OpenListener(uint16_t port);
     static std::string ReadRequest(int socket);
     static bool GetPath(std::string const& request, std::string* path);
-    static void SetNonBlocking(int socket);
-    static void SetReceiveTimeout(int socket, uint32_t milliseconds);
-    static bool SendAll(int socket, std::string const& data);
     static void SendResponse(int socket, char const* status, char const* content_type, std::string const& body);
 
   public:
