@@ -24,7 +24,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
-| 15 | Font format | 13 | in progress | #42, |
+| 15 | Font format | 13 | in progress | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
