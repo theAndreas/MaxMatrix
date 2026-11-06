@@ -31,6 +31,17 @@ TEST(ControlCommandTest, FitsCountsTheBytesOfTheLine)
     EXPECT_TRUE(ControlCommand::Fits(ControlCommand::MakeText("Gr\xC3\xBC\xC3\x9F" "e", false)));
 }
 
+// what the field next to the text shows: the bytes the text may still take, counted as Fits() counts them
+TEST(ControlCommandTest, GetBytesLeftCountsTheBytesOfTheLine)
+{
+    std::string const longest(MAXMATRIX_COMMAND_LINE_LENGTH, 'x');
+
+    EXPECT_EQ(ControlCommand::GetBytesLeft(""), MAXMATRIX_COMMAND_LINE_LENGTH);
+    EXPECT_EQ(ControlCommand::GetBytesLeft(longest), 0);
+    EXPECT_EQ(ControlCommand::GetBytesLeft(longest + "xy"), -2);
+    EXPECT_EQ(ControlCommand::GetBytesLeft(ControlCommand::MakeText("\xC3\xA4", false)), MAXMATRIX_COMMAND_LINE_LENGTH - 7);
+}
+
 // a line break in a text would end the line early and send the rest as a command of its own
 TEST(ControlCommandTest, FitsRefusesALineBreak)
 {

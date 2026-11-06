@@ -8,6 +8,7 @@
  * The labels are English, as the rest of the repository is; the old tool's were German.
  */
 
+#include <inttypes.h>
 #include <chrono>
 #include <wx/aboutdlg.h>
 #include <wx/button.h>
@@ -44,6 +45,7 @@
 /* ControlWindow colours of a connection's state */
 #define CONTROL_WINDOW_READY                                        wxColour(0x00, 0x80, 0x00)
 #define CONTROL_WINDOW_WAITING                                      wxColour(0xC0, 0x60, 0x00)
+#define CONTROL_WINDOW_TOO_LONG                                     wxColour(0xC0, 0x00, 0x00)
 
 ControlWindow::ControlWindow()
     : wxFrame(nullptr, wxID_ANY, "MaxMatrix Control"), board_link_(serial_port_), simulator_link_(tcp_port_), timer_(this)
@@ -85,9 +87,9 @@ void ControlWindow::MakeMenu()
 }
 
 /*
- * The text and how it is shown: the field, the brightness and the speed as sliders, and beside
- * them whether it shifts, the space between the chars, Clear and Send. Enter in the field sends as
- * well.
+ * The text and how it is shown: the field with the bytes it may still take, the brightness and
+ * the speed as sliders, and beside them whether it shifts, the space between the chars, Clear and
+ * Send. Enter in the field sends as well.
  */
 wxWindow* ControlWindow::MakeText(wxWindow* parent)
 {
@@ -98,11 +100,15 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent)
     wxStaticBoxSizer* const speed_box = new wxStaticBoxSizer(wxVERTICAL, page, "Speed, ms per column");
     wxBoxSizer* const actions = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* const space_row = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* const text_row = new wxBoxSizer(wxHORIZONTAL);
     wxButton* const clear = new wxButton(page, wxID_ANY, "Clear");
-    wxButton* const send = new wxButton(page, wxID_ANY, "Send");
     wxCoord const border = FromDIP(CONTROL_WINDOW_BORDER);
 
+    send_ = new wxButton(page, wxID_ANY, "Send");
     text_ = new wxTextCtrl(page, wxID_ANY, "Hello", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    bytes_left_ = new wxStaticText(page, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE);
+    // as wide as the longest it says, so that the field does not change its width as one types
+    bytes_left_->SetMinSize(bytes_left_->GetTextExtent("000 bytes too long"));
     intensity_ = new wxSlider(intensity_box->GetStaticBox(), wxID_ANY, MAXMATRIX_INTENSITY_INIT_VALUE, 0, CONTROL_WINDOW_MAX_INTENSITY,
                               wxDefaultPosition, FromDIP(wxSize(-1, 140)), wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
     speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY, MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, CONTROL_WINDOW_MIN_SPEED,
@@ -119,16 +125,19 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent)
     actions->Add(space_row, 0, wxEXPAND | wxBOTTOM, border);
     actions->AddStretchSpacer();
     actions->Add(clear, 0, wxEXPAND | wxBOTTOM, border);
-    actions->Add(send, 0, wxEXPAND);
+    actions->Add(send_, 0, wxEXPAND);
     settings->Add(intensity_box, 0, wxEXPAND | wxRIGHT, border);
     settings->Add(speed_box, 0, wxEXPAND | wxRIGHT, border);
     settings->Add(actions, 1, wxEXPAND);
-    rows->Add(text_, 0, wxEXPAND | wxALL, border);
+    text_row->Add(text_, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
+    text_row->Add(bytes_left_, 0, wxALIGN_CENTER_VERTICAL);
+    rows->Add(text_row, 0, wxEXPAND | wxALL, border);
     rows->Add(settings, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, border);
     page->SetSizer(rows);
 
     text_->Bind(wxEVT_TEXT_ENTER, &ControlWindow::OnSend, this);
-    send->Bind(wxEVT_BUTTON, &ControlWindow::OnSend, this);
+    text_->Bind(wxEVT_TEXT, [this](wxCommandEvent& /* event */) { ShowState(); });
+    send_->Bind(wxEVT_BUTTON, &ControlWindow::OnSend, this);
     clear->Bind(wxEVT_BUTTON, &ControlWindow::OnClear, this);
     shift_->Bind(wxEVT_CHECKBOX, &ControlWindow::OnShift, this);
     intensity_->Bind(wxEVT_SLIDER, &ControlWindow::OnIntensity, this);
@@ -222,7 +231,8 @@ void ControlWindow::OnClear(wxCommandEvent& /* event */)
     dots_->Clear();
 }
 
-// The speed matters only to a text that shifts, as in the old tool.
+// The speed matters only to a text that shifts, as in the old tool; textShift= also takes five
+// bytes more of the line than text=.
 void ControlWindow::OnShift(wxCommandEvent& /* event */)
 {
     ShowState();
@@ -404,8 +414,25 @@ void ControlWindow::ShowState()
     simulator_status_->SetLabel(simulator_link_.IsReady() ? "ready" : "not connected");
     simulator_status_->SetForegroundColour(simulator_link_.IsReady() ? CONTROL_WINDOW_READY : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
     controls_->Enable(any_ready);
+    ShowBytesLeft();
     speed_->Enable(any_ready && shift_->GetValue());
     dots_->Refresh();
+}
+
+/*
+ * Shows beside the field how many bytes the text may still take before SerialControl drops the
+ * line, red once it is too long, and enables Send only for a line that fits: the bytes are those
+ * of the whole line in UTF-8, so an umlaut takes two, and Shift in five more.
+ */
+void ControlWindow::ShowBytesLeft()
+{
+    std::string const line = ControlCommand::MakeText(std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
+    int32_t const left = ControlCommand::GetBytesLeft(line);
+
+    if(left >= 0) bytes_left_->SetLabel(wxString::Format("%" PRId32 " bytes left", left));
+    else bytes_left_->SetLabel(wxString::Format("%" PRId32 " bytes too long", -left));
+    bytes_left_->SetForegroundColour(left >= 0 ? wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT) : CONTROL_WINDOW_TOO_LONG);
+    send_->Enable(ControlCommand::Fits(line));
 }
 
 void ControlWindow::Log(wxString const& text)

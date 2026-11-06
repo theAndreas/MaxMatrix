@@ -35,7 +35,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
-| 26 | Control program for Linux and Windows | 20 | in progress | #51, #52 |
+| 26 | Control program for Linux and Windows | 20 | in progress | #51, #52, #56 |
 | 27 | Errors that say what went wrong | 13 | done | #29, #30, #31, #32, #33 |
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
@@ -472,7 +472,9 @@ tool only sent; the panel here shows what the board shows, as SerialControl answ
 to twenty times a second, and a SerialControl that starts takes the window's settings, so that the
 window and the matrix agree. For that `MaxMatrixCommand` answers every line itself, on a `Print`,
 rather than leaving `ok` and `error:` to the sketch, which would have had to know that `picture`
-answers in their place; SerialControl grew by 152 bytes of flash and no RAM. Like the page,
+answers in their place; SerialControl grew by 152 bytes of flash and no RAM. Then a stroke with the
+button held paints every LED it passes, and the field counts the bytes the text may still take, so
+that a line too long is not sent. Like the page,
 it sends every command to both ends, whichever is connected, and nothing to a board until
 SerialControl has said `ready`; the simulator's sketch said so before the program connected, so
 there it is not waited for. The simulator's TCP port is `--tcp PORT`, in both simulators, with one
