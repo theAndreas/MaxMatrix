@@ -38,13 +38,24 @@ class MaxMatrixText
      * shifting, and kShiftStart when one begins. A count rather than a state, so the two values are
      * constants, not an enum.
      */
-    static constexpr byte kShiftIdle = 0;
-    static constexpr byte kShiftStart = 1;
+    static constexpr uint16_t kShiftIdle = 0;
+    static constexpr uint16_t kShiftStart = 1;
 
-    MaxMatrixSprite sprite_buffer_;
-    byte sprite_shift_counter_;
+    /*
+     * The font every char is drawn in, NULL for kMaxMatrixDefaultFont: only a function that draws a
+     * char names the default font then, and a sketch that draws none does not link its 614 bytes,
+     * as Animation and Sprites did with the default font set here. And the char that shifts in,
+     * which lies in the font.
+     */
+    uint8_t const* font_;
+    MaxMatrixGlyph glyph_;
+    /* 16 bits, as a char and its space take up to 255 + 255 columns */
+    uint16_t sprite_shift_counter_;
     byte space_between_chars_;
     char* string_;
+
+    static void SetSpriteColumn(MaxMatrixPanel& panel, int16_t x, int16_t y, byte height, byte column);
+    MaxMatrixStatus FindGlyph(char c, MaxMatrixGlyph* glyph) const;
 
   public:
     /*! \brief Makes a text with nothing to shift. */
@@ -52,6 +63,20 @@ class MaxMatrixText
 
     /*! \brief Returns the empty columns between two chars of a text. */
     byte GetSpaceBetweenChars() const { return space_between_chars_; }
+
+    /*! \brief Returns the font every char is drawn in. */
+    uint8_t const* GetFont() const { return font_ != NULL ? font_ : kMaxMatrixDefaultFont; }
+
+    /*!
+     * \brief Sets the font every char is drawn in from now on.
+     *
+     * A char that shifts in already goes on in the font it started in.
+     *
+     * \param[in] font The font, in flash, in the format MaxMatrixFont describes.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` does not start as a font
+     *         does; the font then stays as it was.
+     */
+    MaxMatrixStatus SetFont(uint8_t const* font);
 
     /*!
      * \brief Draws a char with its top left corner at `x`, `y`.
@@ -62,10 +87,10 @@ class MaxMatrixText
      * \param[in] x The column of the left edge; it may lie off the panel.
      * \param[in] y The row of the top edge; it may lie off the panel.
      * \param[in] c The char, latin-1.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font has no sprite for
-     *         the char; nothing is drawn then.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font has no char for it;
+     *         nothing is drawn then.
      */
-    static MaxMatrixStatus SetChar(MaxMatrixPanel& panel, int16_t x, int16_t y, char c);
+    MaxMatrixStatus SetChar(MaxMatrixPanel& panel, int16_t x, int16_t y, char c) const;
 
     /*!
      * \brief Starts shifting a char in from the right, until it stands at the right edge.
@@ -116,6 +141,18 @@ class MaxMatrixText
      * \param[in] sprite Its width, its height and up to five columns, bit 0 the top row.
      */
     static void SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixSprite const sprite);
+
+    /*!
+     * \brief Draws a glyph of a font with its top left corner at `x`, `y`.
+     *
+     * What lies off the panel is left out.
+     *
+     * \param[in,out] panel The panel to draw on.
+     * \param[in] x The column of the left edge; it may lie off the panel.
+     * \param[in] y The row of the top edge; it may lie off the panel.
+     * \param[in] glyph The glyph, its columns in flash.
+     */
+    static void SetGlyph(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixGlyph const& glyph);
 
     /*!
      * \brief Shifts the char one column further.

@@ -132,8 +132,8 @@ class MaxMatrix
     /*! \copydoc MaxMatrixPanel::GetDot(int16_t, int16_t) */
     MaxMatrixResult<bool> GetDot(int16_t column, int16_t row) { return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(column, row)); }
 
-    /*! \copydoc MaxMatrixFont::GetSprite(MaxMatrixSpriteIndex, MaxMatrixSprite*) */
-    static MaxMatrixStatus GetSprite(MaxMatrixSpriteIndex sprite_index, MaxMatrixSprite* sprite) { return MAXMATRIX_REPORT_ERROR("GetSprite", MaxMatrixFont::GetSprite(sprite_index, sprite)); }
+    /*! \copydoc MaxMatrixText::GetFont() */
+    uint8_t const* GetFont() const { return text_.GetFont(); }
 
     /*!
      * \brief Sets the pin DIN of the chain is connected to.
@@ -253,6 +253,26 @@ class MaxMatrix
      * \param[in] space_between_chars The number of empty columns.
      */
     void SetSpaceBetweenChars(byte space_between_chars) { text_.SetSpaceBetweenChars(space_between_chars); }
+
+    /*!
+     * \brief Sets the font every char is drawn in from now on.
+     *
+     * A font of MD_MAX72XX serves as it is, in its array in flash; MaxMatrixFont describes the
+     * format. Chars drawn already stay as they are, and a char that shifts in goes on in the font
+     * it started in. kMaxMatrixDefaultFont is the font MaxMatrix starts with.
+     *
+     * \code{.cpp}
+     * uint8_t const kBigFont[] PROGMEM = {'F', 1, ...};
+     *
+     * matrix.SetFont(kBigFont);
+     * \endcode
+     *
+     * \param[in] font The font, in flash; it has to live as long as it is set, as a `PROGMEM` array
+     *                 does.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is null or does not start
+     *         as a font does; the font then stays as it was.
+     */
+    MaxMatrixStatus SetFont(uint8_t const* font) { return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font)); }
 
     /*!
      * \brief Draws a sprite with its top left corner at `x`, `y`.

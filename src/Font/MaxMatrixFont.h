@@ -17,21 +17,14 @@
 #include "MaxMatrixError.h"
 
 /* MaxMatrixFont Parameter */
-#define MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS                    7
-#define MAXMATRIX_ASCII_TABLE_OFFSET                                (-32)
-#define MAXMATRIX_ASCII_CHAR_MIN                                    32
-#define MAXMATRIX_ASCII_CHAR_MAX                                    126
-#define MAXMATRIX_ASCII_CHAR_MAX_WIDTH                              5
-
-/*! \brief The index of a sprite in the font: the char's code minus 32 for ASCII. */
-typedef byte MaxMatrixSpriteIndex;
+#define MAXMATRIX_SPRITE_NUMBER_OF_BYTES                            7
 
 /*!
- * \brief A sprite: its width, its height and up to five columns, bit 0 the top row.
+ * \brief A sprite of your own: its width, its height and up to five columns, bit 0 the top row.
  *
- * MaxMatrixSpriteByte names its bytes.
+ * MaxMatrixSpriteByte names its bytes. A char of a font is a MaxMatrixGlyph instead.
  */
-typedef byte MaxMatrixSprite[MAXMATRIX_SPRITE_TABLE_NUMBER_OF_COLUMNS];
+typedef byte MaxMatrixSprite[MAXMATRIX_SPRITE_NUMBER_OF_BYTES];
 
 /*! \brief The bytes of a MaxMatrixSprite. */
 enum MaxMatrixSpriteByte : uint8_t {
@@ -44,47 +37,69 @@ enum MaxMatrixSpriteByte : uint8_t {
     kSpriteColumn5  /*!< Its fifth column. */
 };
 
+/*! \brief A char of a font, as it lies in flash: where its columns are, and how many. */
+struct MaxMatrixGlyph {
+    uint8_t const* columns; /*!< Its columns in flash, leftmost first, bit 0 the top row. */
+    byte width;             /*!< The columns it takes, 1 to 255. */
+    byte height;            /*!< The rows it takes, the height of its font, 1 to 8. */
+};
+
 /*!
- * \brief The font: a sprite per char, and the way from a char of a string to its sprite.
+ * \brief The font MaxMatrix starts with: ASCII from the space to the tilde, Ä, Ö, Ü, ä, ö, ü, ß and
+ *        the degree sign, 8 rows high and up to 5 columns wide.
  *
- * It has no state of its own, so every function is static: there is one font, and an instance
- * would be an empty object. The sprites lie in flash.
+ * In the format of MaxMatrixFont, which MaxMatrix::SetFont() takes. 614 bytes of flash.
+ */
+extern uint8_t const kMaxMatrixDefaultFont[] PROGMEM; /* NOLINT(bugprone-dynamic-static-initializers): declared here, constant data in the .cpp */
+
+/*!
+ * \brief The format of a font, and the way from a char of a string to its glyph.
+ *
+ * A font is the font format of the MD_MAX72XX library, so that its fonts and its font builder
+ * serve here as well: an array of bytes in flash, `PROGMEM`, that starts with `'F'`, the version,
+ * the code of the first char, that of the last, and the height in rows, and then holds every char
+ * from the first to the last as its width and that many columns, bit 0 the top row. A char of
+ * width 0 is not in the font. Version 1 gives each code in one byte; version 2, which lets a font
+ * go past 255, in two, high byte first.
+ *
+ * \code{.cpp}
+ * uint8_t const kDigits[] PROGMEM = {
+ *     'F', 1, '0', '1', 7, // version 1, the chars 0 to 1, 7 rows high
+ *     3, B00111110, B01000001, B00111110, // 0
+ *     2, B01000010, B01111111,            // 1
+ * };
+ * \endcode
+ *
+ * A char is found by walking from the first char to it, as MD_MAX72XX does: in the default
+ * font 34 us for an A and 211 us for an ü, 220 chars on, on the Uno (measured in simavr), against
+ * an index that would take two bytes of flash per char. A shifting text looks a char up once.
+ *
+ * It keeps no font of its own: every function is handed the font, and MaxMatrixText keeps which
+ * one is set.
  */
 class MaxMatrixFont
 {
   public:
     /*!
-     * \brief Copies the sprite at `sprite_index` from the font.
+     * \brief Returns whether `font` starts as a font does.
      *
-     * \param[in] sprite_index The index of the sprite.
-     * \param[out] sprite The sprite: width, height and up to five columns; left as it was on an
-     *                    error.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the font has no sprite at the
-     *         index.
+     * Only the start can be checked: a font has no length of its own.
+     *
+     * \param[in] font The font, in flash.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is null or does not start
+     *         with `'F'`, version 1 or 2, a first char no later than the last, and a height of 1 to
+     *         8.
      */
-    static MaxMatrixStatus GetSprite(MaxMatrixSpriteIndex sprite_index, MaxMatrixSprite* sprite);
+    static MaxMatrixStatus CheckFont(uint8_t const* font);
 
     /*!
-     * \brief Copies the sprite of a char from the font.
+     * \brief Finds the glyph of a char in a font.
      *
-     * What every function of MaxMatrixText that draws a char needs.
-     *
+     * \param[in] font The font, in flash, one that CheckFont() took.
      * \param[in] c The char, latin-1, as DecodeChar() gives it.
-     * \param[out] sprite The sprite: width, height and up to five columns; left as it was on an
-     *                    error.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font has no sprite for
-     *         the char.
+     * \return The glyph, or MaxMatrixError::kUnknownChar if the font has no char for it.
      */
-    static MaxMatrixStatus GetCharSprite(char c, MaxMatrixSprite* sprite);
-
-    /*!
-     * \brief Returns the index of the sprite of a char.
-     *
-     * \param[in] c The char, latin-1.
-     * \return The index in the font, or MaxMatrixError::kUnknownChar if the font has no sprite for
-     *         the char.
-     */
-    static MaxMatrixResult<MaxMatrixSpriteIndex> ConvertCharToSprite(char c);
+    static MaxMatrixResult<MaxMatrixGlyph> GetGlyph(uint8_t const* font, char c);
 
     /*!
      * \brief Decodes the next char of a string.
