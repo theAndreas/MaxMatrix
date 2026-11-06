@@ -6,6 +6,7 @@ MaxMatrixStatus	KEYWORD1
 MaxMatrixResult	KEYWORD1
 MaxMatrixState	KEYWORD1
 MaxMatrixModuleType	KEYWORD1
+MaxMatrixShiftFill	KEYWORD1
 MaxMatrixMatrixOrientation	KEYWORD1
 MaxMatrixError	KEYWORD1
 MaxMatrixCommandState	KEYWORD1
@@ -63,6 +64,9 @@ MaxMatrixPrintError	KEYWORD2
 kReady	LITERAL1
 k0	LITERAL1
 k180	LITERAL1
+kZero	LITERAL1
+kRotate	LITERAL1
+kKeep	LITERAL1
 kFc16	LITERAL1
 kParola	LITERAL1
 kIcstation	LITERAL1

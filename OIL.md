@@ -41,6 +41,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
 | 31 | A shifting text that starts over | 23 | done | #63 |
+| 32 | The column shifted in and out | 12 | done | |
 
 ### 1 Build with CMake
 
@@ -201,7 +202,7 @@ and fails when Wokwi draws its LEDs differently, is worse than the one in 29, wh
 Not planned yet, collected so they are not lost:
 
 - Callbacks for the column shifted in and out, as `setShiftDataInCallback` /
-  `setShiftDataOutCallback` in MD_MAX72XX.
+  `setShiftDataOutCallback` in MD_MAX72XX: became item 32, without callbacks.
 - More than one row of modules, as `setPosition` in Max72xxPanel.
 - Other architectures: an `SPIClass&` instead of the global `SPI`, and more than `avr` in
   `library.properties`.
@@ -707,6 +708,26 @@ sketch that shifts no text. `ScrollText` became 44 bytes smaller without its own
 `SerialControl` 42 larger, and `Messages` 124, of which 80 because avr-gcc now inlines
 `SetTextWithShift()` at both calls of `Show()`, as an attribute `noinline` showed; one was not
 added for a choice of the compiler's.
+
+### 32 The column shifted in and out
+
+MD_MAX72XX asks a callback for the column a shift brings in and tells another the one that falls
+out, so that a sketch can run a band of any length, from flash, a sensor or a calculation, and
+pass on what leaves the matrix. Taken out of 12.
+
+Decided on 2026-11-06: no callbacks. `ShiftLeft(column)` and `ShiftRight(column)` take the column
+that comes in and return the one that falls out. Two function pointers would have cost every
+sketch 4 bytes of RAM and an indirect call per column, for one use the column as an argument does
+not cover: reporting the columns the shifting text pushes out, to a second chain behind the first,
+which since 14 is one longer chain. Up and down take no row, as a row of the panel is wider than a
+byte.
+
+As built, the bools of the shifts, `rotate` and `fill_with_zero`, became `MaxMatrixShiftFill`:
+`kZero`, `kRotate` and `kKeep`, for all four directions. A literal such as `ShiftLeft(0x81)` was
+ambiguous between a `bool` and a `byte` and did not compile; an `enum class` takes no `int`. The
+two bools also had a combination without meaning, `fill_with_zero` with `rotate`, and up and down
+had no keep. The text shifts by the column as well, so that a sketch that only shifts text does
+not link the fills. The new example `Band` runs a heartbeat from flash.
 
 ## Decisions
 

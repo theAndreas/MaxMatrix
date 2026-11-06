@@ -441,17 +441,33 @@ class MaxMatrix
      */
     void RegisterWrite(byte register_address, byte register_value) { panel_.GetWired().GetChain().WriteRegisterAll(register_address, register_value); }
 
-    /*! \copydoc MaxMatrixPanel::ShiftLeft(bool, bool) */
-    void ShiftLeft(bool rotate = false, bool fill_with_zero = true) { panel_.ShiftLeft(rotate, fill_with_zero); UpdateIfAuto(); }
+    /*! \copydoc MaxMatrixPanel::ShiftLeft(MaxMatrixShiftFill) */
+    void ShiftLeft(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) { panel_.ShiftLeft(fill); UpdateIfAuto(); }
 
-    /*! \copydoc MaxMatrixPanel::ShiftRight(bool, bool) */
-    void ShiftRight(bool rotate = false, bool fill_with_zero = true) { panel_.ShiftRight(rotate, fill_with_zero); UpdateIfAuto(); }
+    /*! \copydoc MaxMatrixPanel::ShiftLeft(byte) */
+    byte ShiftLeft(byte column)
+    {
+        byte const shifted_out = panel_.ShiftLeft(column);
+        UpdateIfAuto();
+        return shifted_out;
+    }
 
-    /*! \copydoc MaxMatrixPanel::ShiftUp(bool) */
-    void ShiftUp(bool rotate = false) { panel_.ShiftUp(rotate); UpdateIfAuto(); }
+    /*! \copydoc MaxMatrixPanel::ShiftRight(MaxMatrixShiftFill) */
+    void ShiftRight(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) { panel_.ShiftRight(fill); UpdateIfAuto(); }
 
-    /*! \copydoc MaxMatrixPanel::ShiftDown(bool) */
-    void ShiftDown(bool rotate = false) { panel_.ShiftDown(rotate); UpdateIfAuto(); }
+    /*! \copydoc MaxMatrixPanel::ShiftRight(byte) */
+    byte ShiftRight(byte column)
+    {
+        byte const shifted_out = panel_.ShiftRight(column);
+        UpdateIfAuto();
+        return shifted_out;
+    }
+
+    /*! \copydoc MaxMatrixPanel::ShiftUp(MaxMatrixShiftFill) */
+    void ShiftUp(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) { panel_.ShiftUp(fill); UpdateIfAuto(); }
+
+    /*! \copydoc MaxMatrixPanel::ShiftDown(MaxMatrixShiftFill) */
+    void ShiftDown(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) { panel_.ShiftDown(fill); UpdateIfAuto(); }
 };
 
 /*!

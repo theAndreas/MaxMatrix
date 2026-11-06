@@ -54,6 +54,13 @@ enum class MaxMatrixModuleType : uint8_t {
     kIcstation = kDr1Cr1Rr1 /*!< The ICStation modules (`ICSTATION_HW`). */
 };
 
+/*! \brief What comes in at the edge a shift leaves empty. */
+enum class MaxMatrixShiftFill : uint8_t {
+    kZero,   /*!< Every LED of the new column or row off. */
+    kRotate, /*!< The column or row that falls out at the other edge. */
+    kKeep    /*!< The column or row keeps what it held. */
+};
+
 /*!
  * \brief The matrix as the viewer sees it: columns, rows and dots in the viewer's coordinates.
  *
@@ -74,6 +81,8 @@ class MaxMatrixPanel
     void SetFarDot(int32_t column, int32_t row, bool value);
     void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom, bool value);
     void ChangeMapping(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleType module_type);
+    byte GetFill(MaxMatrixShiftFill fill, byte rotated_column, byte kept_column);
+    void ShiftRows(bool up, MaxMatrixShiftFill fill);
 
   public:
     /*!
@@ -322,36 +331,55 @@ class MaxMatrixPanel
     /*!
      * \brief Shifts the whole picture one column to the left.
      *
-     * \param[in] rotate True to bring the leftmost column in again at the right.
-     * \param[in] fill_with_zero True to turn the new column at the right off; false keeps what it
-     *                           held. Without effect when `rotate` is true.
+     * \param[in] fill What comes in at the right: an empty column, the leftmost one, or the
+     *                 rightmost one as it was.
      */
-    void ShiftLeft(bool rotate = false, bool fill_with_zero = true);
+    void ShiftLeft(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+
+    /*!
+     * \brief Shifts the whole picture one column to the left, with a column of the sketch coming in
+     *        at the right.
+     *
+     * A sketch that feeds a column on every step gets a band of any length, from flash, a sensor
+     * or a calculation, and what falls out at the left, to keep or pass on.
+     *
+     * \param[in] column The column that comes in, bit 0 the top row.
+     * \return The column that fell out at the left, bit 0 the top row.
+     */
+    byte ShiftLeft(byte column);
 
     /*!
      * \brief Shifts the whole picture one column to the right.
      *
-     * \param[in] rotate True to bring the rightmost column in again at the left.
-     * \param[in] fill_with_zero True to turn the new column at the left off; false keeps what it
-     *                           held. Without effect when `rotate` is true.
+     * \param[in] fill What comes in at the left: an empty column, the rightmost one, or the
+     *                 leftmost one as it was.
      */
-    void ShiftRight(bool rotate = false, bool fill_with_zero = true);
+    void ShiftRight(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+
+    /*!
+     * \brief Shifts the whole picture one column to the right, with a column of the sketch coming
+     *        in at the left.
+     *
+     * \param[in] column The column that comes in, bit 0 the top row.
+     * \return The column that fell out at the right, bit 0 the top row.
+     */
+    byte ShiftRight(byte column);
 
     /*!
      * \brief Shifts the whole picture one row up.
      *
-     * \param[in] rotate True to bring the top row in again at the bottom; false turns the new row
-     *                   off.
+     * \param[in] fill What comes in at the bottom: an empty row, the top one, or the bottom one as
+     *                 it was.
      */
-    void ShiftUp(bool rotate = false);
+    void ShiftUp(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
 
     /*!
      * \brief Shifts the whole picture one row down.
      *
-     * \param[in] rotate True to bring the bottom row in again at the top; false turns the new row
-     *                   off.
+     * \param[in] fill What comes in at the top: an empty row, the bottom one, or the top one as it
+     *                 was.
      */
-    void ShiftDown(bool rotate = false);
+    void ShiftDown(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
 };
 
 #endif

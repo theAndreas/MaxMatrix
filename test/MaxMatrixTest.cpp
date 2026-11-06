@@ -259,7 +259,8 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames)
         { "SetChar off the top row", [](MaxMatrix& m) { m.SetChar(9, 1, 'A'); } },
         { "SetRow", [](MaxMatrix& m) { PanelRow row = { 0xFF, 0x0F, 0xF0, 0x3C }; m.SetRow(5, row); } },
         { "SetColumn", [](MaxMatrix& m) { m.SetColumn(17, 0x5A); } },
-        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(true); } },
+        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(MaxMatrixShiftFill::kRotate); } },
+        { "ShiftLeft a column", [](MaxMatrix& m) { m.ShiftLeft(0x3C); } },
         { "clear", [](MaxMatrix& m) { m.Clear(); } },
         { "DrawLine", [](MaxMatrix& m) { m.DrawLine(0, 7, 31, 0, true); } },
         { "FillRect", [](MaxMatrix& m) { m.FillRect(-1, -1, 34, 10, true); } },
@@ -334,23 +335,28 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree)
     }
 }
 
-/* every shift moves the whole picture by one dot as the viewer sees it, across the modules */
+/* every shift moves the whole picture by one dot as the viewer sees it, across the modules, and fills the edge it leaves
+ * as it is told: with nothing, with what fell out at the other edge, or with what the edge held */
 TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture)
 {
     struct {
         char const* name;
         void (*shift)(MaxMatrix&);
         int16_t source_x, source_y;
-        bool rotate;
+        MaxMatrixShiftFill fill;
     } const cases[] = {
-        { "ShiftLeft", [](MaxMatrix& m) { m.ShiftLeft(false, true); }, 1, 0, false },
-        { "ShiftLeft rotating", [](MaxMatrix& m) { m.ShiftLeft(true, false); }, 1, 0, true },
-        { "ShiftRight", [](MaxMatrix& m) { m.ShiftRight(false, true); }, -1, 0, false },
-        { "ShiftRight rotating", [](MaxMatrix& m) { m.ShiftRight(true, false); }, -1, 0, true },
-        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(false); }, 0, 1, false },
-        { "ShiftUp rotating", [](MaxMatrix& m) { m.ShiftUp(true); }, 0, 1, true },
-        { "ShiftDown", [](MaxMatrix& m) { m.ShiftDown(false); }, 0, -1, false },
-        { "ShiftDown rotating", [](MaxMatrix& m) { m.ShiftDown(true); }, 0, -1, true },
+        { "ShiftLeft", [](MaxMatrix& m) { m.ShiftLeft(); }, 1, 0, MaxMatrixShiftFill::kZero },
+        { "ShiftLeft rotating", [](MaxMatrix& m) { m.ShiftLeft(MaxMatrixShiftFill::kRotate); }, 1, 0, MaxMatrixShiftFill::kRotate },
+        { "ShiftLeft keeping", [](MaxMatrix& m) { m.ShiftLeft(MaxMatrixShiftFill::kKeep); }, 1, 0, MaxMatrixShiftFill::kKeep },
+        { "ShiftRight", [](MaxMatrix& m) { m.ShiftRight(); }, -1, 0, MaxMatrixShiftFill::kZero },
+        { "ShiftRight rotating", [](MaxMatrix& m) { m.ShiftRight(MaxMatrixShiftFill::kRotate); }, -1, 0, MaxMatrixShiftFill::kRotate },
+        { "ShiftRight keeping", [](MaxMatrix& m) { m.ShiftRight(MaxMatrixShiftFill::kKeep); }, -1, 0, MaxMatrixShiftFill::kKeep },
+        { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(); }, 0, 1, MaxMatrixShiftFill::kZero },
+        { "ShiftUp rotating", [](MaxMatrix& m) { m.ShiftUp(MaxMatrixShiftFill::kRotate); }, 0, 1, MaxMatrixShiftFill::kRotate },
+        { "ShiftUp keeping", [](MaxMatrix& m) { m.ShiftUp(MaxMatrixShiftFill::kKeep); }, 0, 1, MaxMatrixShiftFill::kKeep },
+        { "ShiftDown", [](MaxMatrix& m) { m.ShiftDown(); }, 0, -1, MaxMatrixShiftFill::kZero },
+        { "ShiftDown rotating", [](MaxMatrix& m) { m.ShiftDown(MaxMatrixShiftFill::kRotate); }, 0, -1, MaxMatrixShiftFill::kRotate },
+        { "ShiftDown keeping", [](MaxMatrix& m) { m.ShiftDown(MaxMatrixShiftFill::kKeep); }, 0, -1, MaxMatrixShiftFill::kKeep },
     };
     int16_t const width = kNumberOfColumns, height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
 
@@ -360,10 +366,47 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture)
         test_case.shift(matrix_);
         EXPECT_EQ(ShownPicture(matrix_), Picture([&test_case](int16_t x, int16_t y) {
             int16_t source_x = x + test_case.source_x, source_y = y + test_case.source_y;
-            if(test_case.rotate) return Pattern((source_x + width) % width, (source_y + height) % height);
-            return source_x >= 0 && source_x < width && source_y >= 0 && source_y < height && Pattern(source_x, source_y);
+            bool const inside = source_x >= 0 && source_x < width && source_y >= 0 && source_y < height;
+            if(inside) return Pattern(source_x, source_y);
+            if(test_case.fill == MaxMatrixShiftFill::kRotate) return Pattern((source_x + width) % width, (source_y + height) % height);
+            if(test_case.fill == MaxMatrixShiftFill::kKeep) return Pattern(x, y);
+            return false;
         })) << test_case.name;
     }
+}
+
+/* a column given to ShiftLeft() or ShiftRight() comes in at the edge the shift leaves, and the one that falls out at
+ * the other edge comes back, both bit 0 at the top; a literal is a column, not a fill */
+TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut)
+{
+    DrawPattern(matrix_);
+    std::vector<std::string> const before = ShownPicture(matrix_);
+    byte const leftmost = matrix_.GetColumn(0).GetValue();
+
+    EXPECT_EQ(matrix_.ShiftLeft(0xA5), leftmost);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
+        return x == kNumberOfColumns - 1 ? bitRead(0xA5, y) != 0 : Pattern(x + 1, y);
+    })) << "left";
+
+    EXPECT_EQ(matrix_.ShiftRight(leftmost), 0xA5);
+    EXPECT_EQ(ShownPicture(matrix_), before) << "right, back to where it was";
+}
+
+/* columns fed one by one make a band longer than the panel, and come out at the other edge in the order they went in:
+ * what a sketch passes on to a second matrix */
+TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand)
+{
+    std::vector<byte> band;
+    for(uint16_t index = 0; index < 3 * kNumberOfColumns; index++) band.push_back(static_cast<byte>(index * 37 + 11));
+    std::vector<byte> out;
+
+    for(byte column : band) out.push_back(matrix_.ShiftLeft(column));
+    for(byte column = 0; column < kNumberOfColumns; column++) {
+        EXPECT_EQ(matrix_.GetColumn(column).GetValue(), band[band.size() - kNumberOfColumns + column]) << "column " << static_cast<uint16_t>(column);
+    }
+    EXPECT_EQ(std::vector<byte>(out.begin(), out.begin() + kNumberOfColumns), std::vector<byte>(kNumberOfColumns, 0x00)) << "the empty panel first";
+    EXPECT_EQ(std::vector<byte>(out.begin() + kNumberOfColumns, out.end()), std::vector<byte>(band.begin(), band.end() - kNumberOfColumns))
+        << "then the band, in its order";
 }
 
 /* changing the orientation or the module type rewrites the buffer along, so the viewer still sees the same picture;
@@ -1539,15 +1582,17 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture)
     byte const columns = number_of_columns_;
 
     DrawPattern(matrix_);
-    matrix_.ShiftLeft(true);
+    matrix_.ShiftLeft(MaxMatrixShiftFill::kRotate);
     EXPECT_EQ(ShownPicture(matrix_), Picture([columns](int16_t x, int16_t y) { return ::Pattern((x + 1) % columns, y); }, columns));
-    matrix_.ShiftRight(true);
+    matrix_.ShiftRight(MaxMatrixShiftFill::kRotate);
     EXPECT_EQ(ShownPicture(matrix_), Pattern());
-    matrix_.ShiftUp(true);
-    matrix_.ShiftDown(true);
+    matrix_.ShiftUp(MaxMatrixShiftFill::kRotate);
+    matrix_.ShiftDown(MaxMatrixShiftFill::kRotate);
     EXPECT_EQ(ShownPicture(matrix_), Pattern());
-    matrix_.ShiftRight(false, true);
+    matrix_.ShiftRight();
     EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) { return x > 0 && ::Pattern(x - 1, y); }, columns));
+    EXPECT_EQ(matrix_.ShiftLeft(0x81), 0x00) << "the empty column the last shift brought";
+    EXPECT_EQ(matrix_.GetColumn(columns - 1).GetValue(), 0x81);
 }
 
 /* a row of the whole panel takes one byte per module: an array longer than the chain is taken up to the chain, one
