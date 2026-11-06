@@ -19,7 +19,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 7  | Simulator in CI | 6 | done | #11 |
 | 8  | Batched updates in the library | 13 | done | #20 |
 | 9  | Mirrored modules in the library | 25 | in progress | #61 |
-| 10 | Adafruit GFX as an option | 8 | done | |
+| 10 | Adafruit GFX as an option | 8 | done | #62 |
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
@@ -173,7 +173,7 @@ As built, without GFX: `DrawLine()`, `DrawRect()`, `FillRect()`, `DrawCircle()` 
 out what lies off the panel, as `SetDot()` does. A bitmap is a column per byte in `PROGMEM`, as a
 glyph is, and the text draws its glyphs and sprites through the same `DrawColumn()`. The fonts of
 GFX are not missed on a panel eight dots high, which has `SetFont()`. The new example `Shapes`
-shows all of it, 4136 bytes of flash; examples that draw no shapes grew by 18 to 38 bytes, for the
+shows all of it, 4124 bytes of flash; examples that draw no shapes grew by 18 to 38 bytes, for the
 check that keeps a sprite at the right edge from overflowing an `int`.
 
 ### 11 Wokwi as a complement
