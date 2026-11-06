@@ -40,7 +40,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
-| 31 | A shifting text that starts over | 23 | done | |
+| 31 | A shifting text that starts over | 23 | done | #63 |
 
 ### 1 Build with CMake
 
