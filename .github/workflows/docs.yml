@@ -25,9 +25,7 @@ jobs:
 
       # From apt, as in the Dockerfile, so that CI and the container warn alike.
       - name: Install Doxygen
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends doxygen
+        run: tools/apt-install.sh doxygen
 
       - name: Build and check
         run: python3 tools/docs.py
