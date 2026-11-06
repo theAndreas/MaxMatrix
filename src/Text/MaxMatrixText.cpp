@@ -13,6 +13,7 @@
 MaxMatrixText::MaxMatrixText()
 {
     string_ = NULL;
+    repeat_from_ = NULL;
     sprite_shift_counter_ = kShiftIdle;
     space_between_chars_ = MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE;
     font_ = NULL;
@@ -65,11 +66,12 @@ MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel, char const* string
     return MaxMatrixError::kOk;
 }
 
-MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* string)
+MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* string, bool repeat)
 {
     if(string == NULL) return MaxMatrixError::kNoText;
     sprite_shift_counter_ = kShiftIdle;
     string_ = string;
+    repeat_from_ = repeat ? string : NULL;
     return MaxMatrixError::kOk;
 }
 
@@ -123,22 +125,37 @@ bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel)
     return true;
 }
 
-bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
+/*
+ * Reads on to the next char of the text the font has, and starts shifting it in. Unknown chars are
+ * skipped within the call that reads them: a call spent on one sent nothing, and the text stood
+ * still for a step. At the end of a text that repeats it reads on from its start, in the same call,
+ * so that no column comes between its end and its start; but once only, so that a text without a
+ * char of the font ends rather than reading itself over and over. At the end of any other text
+ * nothing starts.
+ */
+void MaxMatrixText::ReadNextChar()
 {
+    char* start_over_at = repeat_from_;
     char c;
 
-    /* has char shift task finished shifting sprite or char */
-    if(sprite_shift_counter_ == kShiftIdle)
-    {
-        /*
-         * Unknown chars are skipped within this call: a call spent on one sent nothing, and the
-         * text stood still for a step. So read on to the next known char or to the end of the
-         * string.
-         */
-        while(*string_ != STD_NULL_CHARACTER && sprite_shift_counter_ == kShiftIdle) {
+    while(sprite_shift_counter_ == kShiftIdle) {
+        if(*string_ == STD_NULL_CHARACTER) {
+            if(start_over_at == NULL) return;
+            string_ = start_over_at;
+            start_over_at = NULL;
+        } else {
             string_ += MaxMatrixFont::DecodeChar(string_, &c);
             if(FindGlyph(c, &glyph_).IsOk()) sprite_shift_counter_ = kShiftStart;
         }
+    }
+}
+
+bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel)
+{
+    /* has char shift task finished shifting sprite or char */
+    if(sprite_shift_counter_ == kShiftIdle)
+    {
+        ReadNextChar();
         if(sprite_shift_counter_ == kShiftStart) {
             CharShiftTask(panel);
         } else { /* end of string reached, task has finished */

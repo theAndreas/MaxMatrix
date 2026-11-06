@@ -1,7 +1,8 @@
 /*
  * ScrollText
  *
- * Scrolls a text endlessly over the LED matrix without blocking loop().
+ * Scrolls a text endlessly over the LED matrix without blocking loop(): the library starts it over
+ * after its last char.
  *
  * Wiring (Arduino Uno / Nano):
  *   DIN -> 11, CS -> 10, CLK -> 13
@@ -17,7 +18,8 @@ uint16_t const kShiftIntervalMs = 50;
 
 MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
 
-/* Text must stay valid while it is shifted, so don't use a local variable */
+/* Text must stay valid while it is shifted, so don't use a local variable; the spaces at its end
+ * keep the end apart from the start */
 char text[] = "Hello World!   ";
 
 void setup()
@@ -27,15 +29,13 @@ void setup()
     matrix.SetModuleType(MaxMatrixModuleType::kFc16);
     matrix.SetIntensity(2);
     matrix.SetShiftInterval(kShiftIntervalMs);
-    matrix.SetTextWithShift(text);
+    matrix.SetTextWithShift(text, true);    // over and over
 }
 
 void loop()
 {
     /* takes a step only every kShiftIntervalMs, so it can be called on every loop() */
     matrix.ShiftTask();
-    /* restart when the whole text was shifted */
-    if(matrix.GetState() == MaxMatrixState::kReady) matrix.SetTextWithShift(text);
 
     /* other work can be done here */
 }

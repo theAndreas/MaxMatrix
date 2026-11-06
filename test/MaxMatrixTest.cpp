@@ -506,6 +506,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         { "SetText NULL", [](MaxMatrix& m) { return m.SetText(NULL).GetError(); }, MaxMatrixError::kNoText, "SetText" },
         { "SetCharWithShift", [](MaxMatrix& m) { return m.SetCharWithShift('\x01').GetError(); }, MaxMatrixError::kUnknownChar, "SetCharWithShift" },
         { "SetTextWithShift NULL", [](MaxMatrix& m) { return m.SetTextWithShift(NULL).GetError(); }, MaxMatrixError::kNoText, "SetTextWithShift" },
+        { "SetTextWithShift NULL repeating", [](MaxMatrix& m) { return m.SetTextWithShift(NULL, true).GetError(); }, MaxMatrixError::kNoText, "SetTextWithShift" },
         { "number empty", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("", 255).GetError(); }, MaxMatrixError::kNotANumber, NULL },
         { "number with a letter", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("12a", 255).GetError(); }, MaxMatrixError::kNotANumber, NULL },
         { "number too large", [](MaxMatrix&) { return MaxMatrixCommand::ConvertToNumber("256", 255).GetError(); }, MaxMatrixError::kOutOfRange, NULL },
@@ -830,6 +831,60 @@ TEST_F(MaxMatrixTest, TextShiftFinishes)
 
     ShiftWholeText(text);
     EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady);
+}
+
+/* A text that repeats goes on with its first char right after its last (OIL item 31): once the picture before it has
+ * left the panel, every picture comes again one pass of the text later, with no column between its end and its start,
+ * and the shift does not end. A pass is what the text takes when it does not repeat, less the last step, which only
+ * shifts the panel once more. */
+TEST_F(MaxMatrixTest, RepeatingTextStartsOver)
+{
+    char text[] = "Hi \xC4\x01 ";
+    std::vector<std::vector<std::string>> pictures;
+
+    ShiftWholeText(text);
+    uint16_t const pass = shift_calls_ - 1;
+    ASSERT_GT(pass, 0);
+
+    matrix_.Clear();
+    matrix_.SetDot(0, 0, true);
+    ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), MaxMatrixError::kOk);
+    for(uint16_t step = 0; step < kNumberOfColumns + 3 * pass; step++) {
+        matrix_.ShiftTask();
+        pictures.push_back(ShownPicture(matrix_));
+    }
+    EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kStringShift);
+    EXPECT_NE(pictures.back(), Picture([](int16_t, int16_t) { return false; }));
+    for(uint16_t step = kNumberOfColumns; step + pass < pictures.size(); step++) {
+        ASSERT_EQ(pictures[step + pass], pictures[step]) << "step " << step << " and one pass later";
+    }
+}
+
+/* a text that repeats but has no char of the font ends at once, rather than reading itself over and over in one call */
+TEST_F(MaxMatrixTest, RepeatingTextWithoutAKnownCharEnds)
+{
+    char text[] = "\x01\x02";
+
+    ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), MaxMatrixError::kOk);
+    matrix_.ShiftTask();
+    EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady);
+}
+
+/* StopShift() ends a text that would repeat for ever, and leaves the picture as it stands */
+TEST_F(MaxMatrixTest, StopShiftHoldsThePicture)
+{
+    char text[] = "Hello ";
+
+    ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), MaxMatrixError::kOk);
+    for(byte step = 0; step < 20; step++) matrix_.ShiftTask();
+    std::vector<std::string> const stopped = ShownPicture(matrix_);
+
+    matrix_.StopShift();
+    EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady);
+    for(byte step = 0; step < 20; step++) matrix_.ShiftTask();
+    EXPECT_EQ(ShownPicture(matrix_), stopped);
+    matrix_.StopShift();
+    EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady) << "stopped twice";
 }
 
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */

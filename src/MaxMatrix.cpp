@@ -87,12 +87,18 @@ MaxMatrixStatus MaxMatrix::SetCharWithShift(char c)
     return status;
 }
 
-MaxMatrixStatus MaxMatrix::SetTextWithShift(char* string)
+MaxMatrixStatus MaxMatrix::SetTextWithShift(char* string, bool repeat)
 {
-    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("SetTextWithShift", text_.SetTextWithShift(string));
+    MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("SetTextWithShift", text_.SetTextWithShift(string, repeat));
 
     if(status.IsOk()) StartShift(MaxMatrixState::kStringShift);
     return status;
+}
+
+void MaxMatrix::StopShift()
+{
+    // Only a shift ends here: before Init() the state says the chain is not set up.
+    if(state_ == MaxMatrixState::kStringShift || state_ == MaxMatrixState::kCharShift) state_ = MaxMatrixState::kReady;
 }
 
 /*

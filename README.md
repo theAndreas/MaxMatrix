@@ -15,7 +15,7 @@ Features:
 - set and get single dots, rows and columns, in the same coordinates on every type of module
 - draw lines, rectangles, circles and pictures from flash
 - print chars and text (ASCII 32 to 126, the German umlauts, ß and °, variable char width)
-- shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps
+- shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps, once or over and over
 - shift the matrix content left, right, up and down, with or without rotation
 - send a picture drawn with many calls at once, in at most eight frames
 - all eight ways a module can be wired, mirrored ones included, and a board mounted upside down
@@ -73,13 +73,12 @@ void setup()
 {
     matrix.Init();
     matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see "Module type"
-    matrix.SetTextWithShift(text);
+    matrix.SetTextWithShift(text, true);    // over and over
 }
 
 void loop()
 {
     matrix.ShiftTask();     // shifts the text one column every 50 ms
-    if(matrix.GetState() == MaxMatrixState::kReady) matrix.SetTextWithShift(text);
 }
 ```
 
@@ -88,7 +87,9 @@ passed since the last one. `SetShiftInterval()` sets the interval in millisecond
 step, for a sketch that times the steps itself. A call that comes late, because `loop()` was busy, takes one step and
 does not catch up.
 
-`SetTextWithShift()` only stores a pointer to the text, so the text has to stay valid until the state changes back to `MaxMatrixState::kReady`.
+With `true`, `SetTextWithShift()` starts the text over with its first char right after its last, so the spaces at the
+end of the text keep the two apart; `StopShift()` ends it. `SetTextWithShift()` only stores a pointer to the text, so
+the text has to stay valid as long as it shifts.
 
 More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
@@ -133,7 +134,8 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `DrawCircle(x, y, radius, value)` | the outline of a circle; radius 3 fills the height |
 | `DrawBitmap(x, y, bitmap, width)` | a picture in `PROGMEM`, a column per byte, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
-| `SetCharWithShift(c)`, `SetTextWithShift(text)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right |
+| `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
+| `StopShift()` | stops a shifting char or text where it stands |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
 | `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
 | `GetNumberOfModules()`, `GetNumberOfColumns()` | the length of the chain, eight columns per module |

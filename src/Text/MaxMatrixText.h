@@ -53,8 +53,11 @@ class MaxMatrixText
     uint16_t sprite_shift_counter_;
     byte space_between_chars_;
     char* string_;
+    /* the start of a text that starts over after its last char, NULL for one that stops there */
+    char* repeat_from_;
 
     MaxMatrixStatus FindGlyph(char c, MaxMatrixGlyph* glyph) const;
+    void ReadNextChar();
 
   public:
     /*! \brief Makes a text with nothing to shift. */
@@ -113,14 +116,15 @@ class MaxMatrixText
 
     /*!
      * \brief Starts shifting a text in from the right, until its last char stands at the right
-     *        edge.
+     *        edge, or over and over.
      *
      * \param[in] string The text, UTF-8 or latin-1. It is kept as a pointer, so it has to live
-     *                   until the text stands.
+     *                   until the text stands, or as long as it starts over.
+     * \param[in] repeat True to start over with the first char after the last, without end.
      * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `string` is null; nothing starts
      *         then.
      */
-    MaxMatrixStatus SetTextWithShift(char* string);
+    MaxMatrixStatus SetTextWithShift(char* string, bool repeat);
 
     /*!
      * \brief Sets the empty columns between two chars of a text.

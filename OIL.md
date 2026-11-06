@@ -40,6 +40,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 28 | Errors and containers from Utl | 27 | dropped | #43 |
 | 29 | The real binary against the model, in simavr | 3 | done | #41 |
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
+| 31 | A shifting text that starts over | 23 | done | #63 |
 
 ### 1 Build with CMake
 
@@ -204,8 +205,8 @@ Not planned yet, collected so they are not lost:
 - More than one row of modules, as `setPosition` in Max72xxPanel.
 - Other architectures: an `SPIClass&` instead of the global `SPI`, and more than `avr` in
   `library.properties`.
-- Text effects and zones, as in MD_Parola, and a shifting text that starts over by itself
-  (`ScrollText` restarts it when the state is `MaxMatrixState::kReady`).
+- Text effects and zones, as in MD_Parola. A shifting text that starts over by itself became
+  item 31.
 
 ### 13 Split the library into modules
 
@@ -687,6 +688,24 @@ The facade and the parts below went in one step, #48, not two: the facade takes 
 from MaxMatrixPanel and MaxMatrixFont with `\copydoc`, and would have shown their old texts until
 the next one.
 
+### 31 A shifting text that starts over
+
+`ScrollText` started its text again itself, whenever the state was `MaxMatrixState::kReady`; a
+sketch that scrolls a text without end, the most common one, had to know that. Taken out of 12,
+where the rest of its ideas stay.
+
+As built, `SetTextWithShift(text, true)` starts the text over with its first char in the same step
+that would have ended it, so no column comes between its end and its start, where the restart in
+the sketch had one; a few spaces at the end of the text keep the two apart. `StopShift()` ends it,
+or any shift, with the picture as it stands, which a text without end needs and no function did
+before. A text without a char of the font ends at once rather than reading itself over and over.
+It costs 2 bytes of RAM for the start of the text, in every sketch, and 4 bytes of flash in a
+sketch that shifts no text. `ScrollText` became 44 bytes smaller without its own restart,
+`SerialControl` 42 larger, and `Messages` 124, of which 80 because avr-gcc now inlines
+`SetTextWithShift()` at both calls of `Show()`, as an attribute `noinline` showed; one was not
+added for a choice of the compiler's.
+
+## Decisions
 
 Why it is planned this way rather than the obvious alternative.
 
