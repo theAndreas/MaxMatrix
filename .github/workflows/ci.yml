@@ -43,9 +43,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The .deb files of this job's last run, for tools/apt-install.sh --cache. A new key every run,
-      # so that what apt downloaded anew is kept as well, and the newest one comes back.
-      - uses: actions/cache@v6
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
+      # back. Saved after the install under a new key every run, even when the install failed: what
+      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
+      - uses: actions/cache/restore@v6
         with:
           path: ~/apt-archives
           key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -58,6 +59,12 @@ jobs:
       # window are tested either way, the window is checked by hand.
       - name: Install GoogleTest and wxWidgets
         run: tools/apt-install.sh --cache ~/apt-archives libgtest-dev libwxgtk3.2-dev
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Which CMake built it, as the log is all that is left of the runner.
       - name: Build and run
@@ -119,9 +126,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The .deb files of this job's last run, for tools/apt-install.sh --cache. A new key every run,
-      # so that what apt downloaded anew is kept as well, and the newest one comes back.
-      - uses: actions/cache@v6
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
+      # back. Saved after the install under a new key every run, even when the install failed: what
+      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
+      - uses: actions/cache/restore@v6
         with:
           path: ~/apt-archives
           key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -140,6 +148,12 @@ jobs:
       # neither and leaves them out.
       - name: Install GoogleTest and simavr
         run: tools/apt-install.sh --cache ~/apt-archives libgtest-dev libsimavr-dev libelf-dev pkg-config
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Build
         run: |

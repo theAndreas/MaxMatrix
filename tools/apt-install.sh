@@ -13,7 +13,9 @@
 # That is not enough when the whole mirror trickles: no new connection is faster then, and the 17 MB of wxWidgets for
 # clang-tidy did not fit into three attempts of #57. So with --cache, apt finds the .deb files of the last run in
 # DIRECTORY before it downloads anything, and afterwards DIRECTORY holds those of this run, which actions/cache keeps
-# for the next one in GitHub's own storage: a run downloads only what has changed since.
+# for the next one in GitHub's own storage: a run downloads only what has changed since. What was downloaded whole is
+# kept even when the download as a whole failed, so that a mirror that trickles for longer than a job may wait is
+# overcome over several runs, as #59's own first run, which had no cache yet, showed it has to be.
 set -eu
 
 Cache=""
@@ -35,17 +37,20 @@ fetch() {
     return 1
 }
 
+# the directory is there even if the update fails, as actions/cache refuses to save a path that is not
+if [ -n "$Cache" ]; then mkdir -p "$Cache"; fi
 fetch update
 if [ -n "$Cache" ] && compgen -G "$Cache/*.deb" > /dev/null; then
     sudo cp "$Cache"/*.deb /var/cache/apt/archives/
 fi
-fetch install -y --no-install-recommends --download-only "$@"
+Fetched=true
+fetch install -y --no-install-recommends --download-only "$@" || Fetched=false
 # what the mirror no longer has goes, so that the cache does not grow with every update
 if [ -n "$Cache" ]; then
     sudo apt-get autoclean -y > /dev/null
-    mkdir -p "$Cache"
     rm -f "$Cache"/*.deb
-    cp /var/cache/apt/archives/*.deb "$Cache"/
+    if compgen -G "/var/cache/apt/archives/*.deb" > /dev/null; then cp /var/cache/apt/archives/*.deb "$Cache"/; fi
     echo "$(ls "$Cache" | wc -l) packages, $(du -sh "$Cache" | cut -f1), kept for the next run"
 fi
+$Fetched
 sudo apt-get install -y --no-install-recommends "$@"
