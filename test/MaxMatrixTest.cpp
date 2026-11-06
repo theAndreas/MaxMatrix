@@ -122,7 +122,7 @@ class MaxMatrixTest : public ::testing::Test {
 
     void SetUp() override
     {
-        mock::Reset(kChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
+        mock::Reset(kDataInPin, kChipSelectPin, kClockPin, MAXMATRIX_NUMBER_OF_MODULES);
         reports.clear();
         matrix_.Init();
         /* the tests step a shifting text with every call; the timing of the steps has tests of its own */
@@ -130,10 +130,13 @@ class MaxMatrixTest : public ::testing::Test {
     }
 
     /* whatever a test did, the LEDs have to show what the buffer says - the get functions read the buffer, because
-     * the MAX7219 cannot be read back, so a buffer that drifts from the display makes them lie */
+     * the MAX7219 cannot be read back, so a buffer that drifts from the display makes them lie; and every bit went out
+     * within a frame, with the interrupts off, which are on again afterwards */
     void TearDown() override
     {
         EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_, sizeof(matrix_.panel_.wired_.matrix_buffer_))) << "display differs from matrix_buffer_";
+        EXPECT_EQ(mock::errors, 0) << "a transfer outside a frame, or a port written with the interrupts on";
+        EXPECT_EQ(SREG, 0x80) << "the interrupts left off";
     }
 
     /* the ShiftTask() calls the last ShiftWholeText() took, each one a step of the text on the panel */
@@ -597,7 +600,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule)
  * is empty, so a clear that sent only what changed in the buffer would send nothing */
 TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft)
 {
-    mock::Reset(kChipSelectPin, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(kDataInPin, kChipSelectPin, kClockPin, MAXMATRIX_NUMBER_OF_MODULES);
     for(Max7219& chip : mock::chain.chips) {
         for(byte digit = 0; digit < Max7219::kNumberOfDigits; digit++) chip.digit[digit] = 0xA5;
     }

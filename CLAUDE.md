@@ -151,9 +151,15 @@ Only `MaxMatrixChain` touches the pins. A transfer to the MAX7219 chain is frame
 `StartTransmission()` and `StopTransmission()`, which drive chip select and, in SPI mode, begin
 and end the SPI transaction. Every module in the chain gets one address/value pair per frame.
 `WriteRegisterAll()` (one value for every module) and `WriteRegisterEach()` (one value per
-module) are the two kinds of frame. Bit banging and SPI
-are selected with `#if` on `MAXMATRIX_USE_SPI` in `Transfer()` and nowhere else, and both
-branches have to keep working.
+module) are the two kinds of frame. Bit banging and SPI are selected with `#if` on
+`MAXMATRIX_USE_SPI` in `Transfer()`, and in `Init()` and the members for the two pins only bit
+banging uses; both branches have to keep working.
+
+The pins are written through their port registers, not with `digitalWrite()`: `Init()` looks up
+each pin's port and bit once (`digitalPinToPort()`, `digitalPinToBitMask()`), and a write takes
+`portOutputRegister()` of the port, with the interrupts held off as `digitalWrite()` holds them
+off. That made a bit-banged frame four times as fast (measured in simavr). The mock's port
+registers are objects that pass every bit on to the pins, so the host tests run the same code.
 
 ## Code conventions
 
@@ -356,11 +362,14 @@ with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on ea
 first two only. In `det/`, the test file defines `MaxMatrixReportError()` itself and records into
 `Reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
 only the tests are C++17, which GoogleTest needs. A test that loops over the four orientations
-is a `TEST_P` instead. The mock records every frame between a falling and a rising chip select in
-`mock::last_frame` and counts a transfer outside a frame or outside an SPI transaction in
-`mock::errors`, so a test can check what went to the chain, not just the buffer.
+is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
+a falling chip select starts a frame, a rising clock takes the level of data in as a bit, and a
+rising chip select latches the frame, as SimulatorAvr does for the real binary. It records every
+frame in `mock::last_frame` and counts in `mock::errors` a bit or an SPI byte outside a frame or
+an SPI transaction, a frame that ends within a byte, and a port written with the interrupts on;
+every library test ends by checking that there are none and that the interrupts are on again.
 
-Every byte and every rising chip select also drive `mock::chain`, a model of the MAX7219 chain
+Every bit and every rising chip select also drive `mock::chain`, a model of the MAX7219 chain
 (`test/mock/Max7219.h`): it shifts like the hardware and each chip latches its register on the
 rising edge, so a frame that is too short or a wrong address shows on the model's LEDs.
 `Display()` in the tests reads them back laid out like `matrix_buffer_`, and every library test

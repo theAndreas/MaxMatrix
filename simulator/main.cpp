@@ -35,8 +35,10 @@
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
 
-/* the examples put chip select on pin 10 */
+/* the pins every example puts the chain on */
+#define SIMULATOR_DATA_IN_PIN                                       11u
 #define SIMULATOR_CHIP_SELECT_PIN                                   10u
+#define SIMULATOR_CLOCK_PIN                                         13u
 
 /* exit codes */
 #define SIMULATOR_EXIT_OK                                           0
@@ -100,7 +102,7 @@ int main(int argc, char** argv)
         return SIMULATOR_EXIT_USAGE;
     }
     panel.SetUpsideDown(options.IsUpsideDown());
-    mock::Reset(SIMULATOR_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(SIMULATOR_DATA_IN_PIN, SIMULATOR_CHIP_SELECT_PIN, SIMULATOR_CLOCK_PIN, MAXMATRIX_NUMBER_OF_MODULES);
     mock::serial_input = options.GetSerialInput();
     mock::tick = Tick;
     if(!front_end.Begin(options)) return SIMULATOR_EXIT_FAILED;

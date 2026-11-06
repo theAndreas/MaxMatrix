@@ -31,7 +31,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 19 | More of the MAX7219 in the public API | 3 | in progress | #55 |
 | 20 | More examples | 5 | done | #38 |
 | 21 | Control page for simulator and board | 6 | done | #28 |
-| 22 | Fast pin access for bit banging | 3 | open | |
+| 22 | Fast pin access for bit banging | 3 | in progress | #57 |
 | 23 | The library keeps the shift timing | 13 | done | #22 |
 | 24 | No pause for a skipped char | 2 | done | #12 |
 | 25 | Matrix orientation apart from module orientation | 4 | done | #8 |
@@ -394,6 +394,16 @@ Options: drop the switch; or look up port register and bit mask once in `Init()`
 (`portOutputRegister(digitalPinToPort(Pin))`, `digitalPinToBitMask(Pin)`) and write them
 directly, which is fast with pins chosen at run time. Measure the frame time either way; the
 mock from 3 checks that the bits stay the same.
+
+As built, the second, and the switch is gone. `Init()` looks up port and bit of each pin, and a
+byte goes out through the port registers with the interrupts held off, as `digitalWrite()` holds
+them off; the register's address is read where it is written, since the core reads it from
+flash with a statement expression that `decltype()` cannot take outside a function. In simavr a
+frame of four modules took 12 600 cycles through `shiftOut()` and takes 2 600 to 3 500 now, about
+four times as fast; flash grew by 6 to 36 bytes per example, RAM by 6. simavr's SPI is no faster
+than the old bit banging, so it says nothing of the SPI path, whose code did not change but for
+chip select. The mock now follows the pins bit by bit, as SimulatorAvr does, and counts a port
+written with the interrupts on as an error. Not run on hardware yet.
 
 ### 23 The library keeps the shift timing
 

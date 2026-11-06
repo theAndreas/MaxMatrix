@@ -6,7 +6,9 @@
 namespace mock {
     uint8_t pin_mode[kNumberOfPins];
     uint8_t pin_level[kNumberOfPins];
+    uint8_t data_in_pin;
     uint8_t chip_select_pin;
+    uint8_t clock_pin;
     bool transaction_open;
     int32_t errors;
     int32_t frames;
@@ -17,6 +19,9 @@ namespace mock {
     std::string serial_output;
     void (*tick)() = NULL;
     bool spi_used;
+    /* the bits of the byte that is being clocked in, and how many there are */
+    static uint8_t bits;
+    static uint8_t bit_count;
 
     /* the host clock from the first call on, as an Arduino counts from reset */
     static std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -30,12 +35,17 @@ namespace mock {
         held_millis = milliseconds;
     }
 
-    void Reset(uint8_t chip_select_pin, uint8_t number_of_chips)
+    void Reset(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin, uint8_t number_of_chips)
     {
         clock_held = false;
         memset(pin_mode, INPUT, sizeof(pin_mode));
         memset(pin_level, LOW, sizeof(pin_level));
+        mock::data_in_pin = data_in_pin;
         mock::chip_select_pin = chip_select_pin;
+        mock::clock_pin = clock_pin;
+        bits = 0;
+        bit_count = 0;
+        SREG = 0x80;
         transaction_open = false;
         errors = 0;
         frames = 0;
@@ -56,26 +66,76 @@ namespace mock {
     }
 
     bool UsesSpi() { return spi_used; }
+
+    /* A falling chip select starts a frame and a rising one latches it; a rising clock takes the level of data in as the
+     * next bit, and every eighth makes a byte of the frame. A bit needs chip select low and all three pins outputs. */
+    void SetPin(uint8_t pin, uint8_t level)
+    {
+        uint8_t const was = pin_level[pin];
+
+        pin_level[pin] = level;
+        if(pin == chip_select_pin && was == HIGH && level == LOW) {
+            frame.clear();
+            bit_count = 0;
+        } else if(pin == chip_select_pin && was == LOW && level == HIGH) {
+            if(bit_count != 0) errors++;
+            bit_count = 0;
+            last_frame = frame;
+            frames++;
+            chain.Latch();
+            if(tick) tick();
+        } else if(pin == clock_pin && was == LOW && level == HIGH) {
+            if(pin_mode[chip_select_pin] != OUTPUT || pin_level[chip_select_pin] != LOW || pin_mode[clock_pin] != OUTPUT ||
+               pin_mode[data_in_pin] != OUTPUT) {
+                errors++;
+                return;
+            }
+            chain.ShiftBit(pin_level[data_in_pin] == HIGH);
+            bits = static_cast<uint8_t>((bits << 1) | (pin_level[data_in_pin] == HIGH ? 1 : 0));
+            if(++bit_count == 8) {
+                frame.push_back(bits);
+                bit_count = 0;
+            }
+        }
+    }
+
+    static PortRegister port_registers[kNumberOfPins / 8] = {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};
+
+    /* every pin of the port in mask goes to level, one after the other from bit 0, as one write sets them at once; with
+     * the interrupts on, an interrupt that wrote another pin of the port between the read and the write would be undone */
+    static void WritePort(uint8_t port, uint8_t mask, uint8_t level)
+    {
+        if((SREG & 0x80) != 0) errors++;
+        for(uint8_t bit = 0; bit < 8; bit++) {
+            uint8_t const pin = static_cast<uint8_t>(port * 8 + bit);
+            if((mask & (1u << bit)) != 0 && pin_level[pin] != level) SetPin(pin, level);
+        }
+    }
+
+    PortRegister& PortRegister::operator|=(uint8_t mask)
+    {
+        WritePort(port, mask, HIGH);
+        return *this;
+    }
+
+    PortRegister& PortRegister::operator&=(uint8_t mask)
+    {
+        WritePort(port, static_cast<uint8_t>(~mask), LOW);
+        return *this;
+    }
 }
+
+uint8_t SREG = 0x80;
+
+uint8_t digitalPinToPort(uint8_t pin) { return static_cast<uint8_t>(pin / 8); }
+
+uint8_t digitalPinToBitMask(uint8_t pin) { return static_cast<uint8_t>(1u << (pin % 8)); }
+
+mock::PortRegister* portOutputRegister(uint8_t port) { return &mock::port_registers[port]; }
 
 void pinMode(uint8_t pin, uint8_t mode) { mock::pin_mode[pin] = mode; }
 
-void digitalWrite(uint8_t pin, uint8_t value)
-{
-    /* the rising edge of chip select is where the MAX7219 latches the frame */
-    if(pin == mock::chip_select_pin) {
-        if(mock::pin_level[pin] == HIGH && value == LOW) mock::frame.clear();
-        if(mock::pin_level[pin] == LOW && value == HIGH) {
-            mock::last_frame = mock::frame;
-            mock::frames++;
-            mock::chain.Latch();
-            if(mock::tick) mock::tick();
-        }
-    }
-    mock::pin_level[pin] = value;
-}
-
-void shiftOut(uint8_t, uint8_t, uint8_t, uint8_t value) { mock::Transfer(value); }
+void digitalWrite(uint8_t pin, uint8_t value) { mock::SetPin(pin, value); }
 
 HardwareSerial Serial;
 

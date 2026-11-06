@@ -1,9 +1,10 @@
 /* Stand-in for the Arduino core, so the library can be compiled and tested with the host compiler.
  *
- * Only what MaxMatrix uses is here. The pins are not simulated as hardware: the mock records what the
- * library sends between a falling and a rising chip select, which is the frame the MAX7219 chain latches,
- * and counts every transfer that happens outside such a frame or outside an SPI transaction as an error.
- * Every byte and every rising chip select also go to the MAX7219 model in Max7219.h, mock::chain. */
+ * Only what MaxMatrix uses is here. The pins are followed as the chain sees them: a falling chip select starts a
+ * frame and a rising one latches it, and a rising clock shifts the level of data in into the chain, as SimulatorAvr
+ * does for the real binary. The mock records what the library sends within a frame and counts every bit or SPI byte
+ * outside one, outside an SPI transaction, or on a pin that is no output, a frame that ends within a byte, and a port
+ * written with the interrupts on, as an error. Every bit and every rising chip select also go to the MAX7219 model in Max7219.h, mock::chain. */
 #ifndef MAXMATRIX_TEST_MOCK_ARDUINO_H_
 #define MAXMATRIX_TEST_MOCK_ARDUINO_H_
 
@@ -52,7 +53,6 @@ inline void* pgm_read_ptr(AddressType const* address)
 
 void pinMode(uint8_t pin, uint8_t mode);
 void digitalWrite(uint8_t pin, uint8_t value);
-void shiftOut(uint8_t data_pin, uint8_t clock_pin, uint8_t bit_order, uint8_t value);
 unsigned long millis();
 unsigned long micros();
 void delay(unsigned long milliseconds);
@@ -81,6 +81,29 @@ class HardwareSerial : public Print {
 };
 
 extern HardwareSerial Serial;
+
+namespace mock {
+    /* A port register as the library writes it, by |= and &= with the mask of a pin: an object rather than a byte,
+     * so that every bit it changes reaches its pin as digitalWrite() would, with the edges the chain sees. */
+    class PortRegister {
+      public:
+        uint8_t port;
+
+        PortRegister& operator|=(uint8_t mask);
+        PortRegister& operator&=(uint8_t mask);
+    };
+}
+
+/* The ports of the AVR core, by which the library bit bangs: a pin is bit pin % 8 of port pin / 8 here, so that the
+ * pins 10, 11 and 13 of the examples share a port, as they share PORTB on the Uno. */
+uint8_t digitalPinToPort(uint8_t pin);
+uint8_t digitalPinToBitMask(uint8_t pin);
+mock::PortRegister* portOutputRegister(uint8_t port);
+
+/* the status register and cli(), which the library holds the interrupts off with while it writes a port: cli() clears
+ * the I bit, 0x80, which the library puts back by restoring SREG */
+extern uint8_t SREG;
+inline void cli() { SREG &= 0x7F; }
 // NOLINTEND(readability-identifier-naming)
 
 namespace mock {
@@ -88,7 +111,9 @@ namespace mock {
 
     extern uint8_t pin_mode[kNumberOfPins];
     extern uint8_t pin_level[kNumberOfPins];
+    extern uint8_t data_in_pin;
     extern uint8_t chip_select_pin;
+    extern uint8_t clock_pin;
     extern bool transaction_open;
     extern int32_t errors;
     extern int32_t frames;
@@ -102,7 +127,10 @@ namespace mock {
      * while a sketch blocks in delay(); none in the tests */
     extern void (*tick)();
 
-    void Reset(uint8_t chip_select_pin, uint8_t number_of_chips);
+    /* every pin an input and low, the chain at its pins with number_of_chips chips, every count at 0 */
+    void Reset(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin, uint8_t number_of_chips);
+    /* a pin goes to level, by digitalWrite() or a port register */
+    void SetPin(uint8_t pin, uint8_t level);
     /* holds millis() at Milliseconds until the next Reset(); delay() then moves it on without waiting */
     void SetMillis(uint32_t milliseconds);
     void Transfer(uint8_t value);

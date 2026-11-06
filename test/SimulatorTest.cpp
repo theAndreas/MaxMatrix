@@ -22,7 +22,7 @@ static bool Parse(SimulatorOptions& options, std::vector<std::string> arguments)
 /* a chain whose chips each have their own intensity, Chips[i] the intensity i, so that an order shows */
 static void ResetChainWithDistinctIntensities()
 {
-    mock::Reset(10, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(11, 10, 13, MAXMATRIX_NUMBER_OF_MODULES);
     for(size_t chip = 0; chip < mock::chain.chips.size(); chip++) mock::chain.chips[chip].intensity = static_cast<uint8_t>(chip);
 }
 

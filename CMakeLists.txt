@@ -157,8 +157,10 @@ if(ArduinoCli AND Simavr_FOUND)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
 
     # an example, the simulated seconds it runs for, and the --serial lines it is sent; its expectation is
-    # simulator/Expected/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one
-    set(AvrRuns "Basics|1|" "ScrollText|2|" "Messages|3|" "Animation|1|" "Sprites|1.5|" "SerialControl|1|text=AVR")
+    # simulator/Expected/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one.
+    # Sprites steps by delay() plus the time its frames take, which simavr's SPI takes longer for than bit banging, so
+    # the two drift apart a step at a time; at 0.48 s, in the middle of a window of 0.45 to 0.51 s, both show the same.
+    set(AvrRuns "Basics|1|" "ScrollText|2|" "Messages|3|" "Animation|1|" "Sprites|0.48|" "SerialControl|1|text=AVR")
     file(GLOB_RECURSE LibraryHeaders CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.h)
     set(AvrElfs)
     foreach(Transfer bitbang spi)

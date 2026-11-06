@@ -32,11 +32,6 @@
 #define MAXMATRIX_USE_SPI                                           STD_OFF
 #endif
 
-/*! \brief Meant for the digitalWriteFast library, for chip select; it has no effect yet. */
-#ifndef MAXMATRIX_USE_DIGITAL_WRITE_FAST
-#define MAXMATRIX_USE_DIGITAL_WRITE_FAST                            STD_OFF
-#endif
-
 /*! \brief The SPI clock in Hz; the MAX7219 takes 10 MHz at most. */
 #ifndef MAXMATRIX_SPI_CLOCK_SPEED
 #define MAXMATRIX_SPI_CLOCK_SPEED                                   10000000

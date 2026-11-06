@@ -9,7 +9,9 @@ set -eu
 source "$(dirname "$0")/WebTestLib.sh"
 
 Port=$2
-startSimulator "$1" "$Port" 3 "${@:3}"
+# Five seconds: the five answers below are each read for half a second, so the last command goes out 2.5 s after the
+# start, and with 3 s a simulator slowed down by the tests around it exited before it answered.
+startSimulator "$1" "$Port" 5 "${@:3}"
 openWebSocket "$Port"
 grep -q '^HTTP/1.1 101 ' <<< "$HandshakeAnswer" || fail "the WebSocket got no 101"
 
