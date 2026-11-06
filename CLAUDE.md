@@ -11,7 +11,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   - `Max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
   - `Matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
     coordinates as the viewer sees them.
-  - `Font/` — `MaxMatrixFont`, the sprite table, the latin-1 lookup and `DecodeChar()`.
+  - `Font/` — `MaxMatrixFont`, the font format of MD_MAX72XX, `kMaxMatrixDefaultFont`, the
+    lookup of a char's glyph and `DecodeChar()`.
   - `Text/` — `MaxMatrixText`, text that stands or shifts in.
   - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
@@ -243,7 +244,7 @@ A function of the library that can fail says why, in `MaxMatrixError`
 `MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
 `E_OK` was 0 and `if(matrix.SetText(…))` was true on an error; code asks `IsOk()` or compares
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
-reference, `GetSprite()`). A new reason gets its own value in the enum, a text in `kErrorTexts`
+reference). A new reason gets its own value in the enum, a text in `kErrorTexts`
 (`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
 call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` answers a failed line with
 `GetErrorText()` on the `Print` it is given, and returns the reason as well.
@@ -307,10 +308,11 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 
 - **Never compare against a character literal such as `'ä'`.** In a UTF-8 source file it is a
   two-byte multi-character constant that never equals a `char`. Compare against the latin-1
-  code (`0xE4`) and put the character in a comment beside it, as `ConvertCharToSprite` does.
+  code (`0xE4`) and put the character in a comment beside it, as `kMaxMatrixDefaultFont` does.
 - Text goes through `DecodeChar()`, which turns a two-byte UTF-8 sequence into one latin-1
-  char before the sprite lookup. A new function that walks a string uses it too.
-- A sprite added to `SpriteTable` gets its latin-1 code in `ConvertCharToSprite`.
+  char before the glyph lookup. A new function that walks a string uses it too.
+- A font holds its chars at their latin-1 codes, a char it lacks as a width of 0: a char added
+  to `kMaxMatrixDefaultFont` takes the place of the 0 at its code.
 
 ## Build and check
 

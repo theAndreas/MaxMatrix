@@ -24,7 +24,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | open | |
-| 15 | Font format | 13 | in progress | #42 |
+| 15 | Font format | 13 | in progress | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
@@ -263,7 +263,26 @@ The font now has the ß and the degree sign as well, `0xDF` and `0xB0` in latin-
 `SetText("Grüße")` failed and a shifting "Grüße" or "21 °C" lost the char without a word, as
 `Messages` showed when it was written. They cost 30 to 38 bytes of flash in the examples that
 draw text, none of RAM. The € was left out: it is not in latin-1, and `DecodeChar()` reads two
-bytes of UTF-8, not the three it takes. The rest of the item is open.
+bytes of UTF-8, not the three it takes.
+
+Decided on 2026-11-06: the font format of MD_MAX72XX, rather than a format of our own with an index
+of each char's place, which no font and no tool would have come with, or that of Adafruit GFX, whose
+bitmaps lie in rows with seven bytes of header per char and fit an 8-row matrix badly.
+
+As built, a font is a `PROGMEM` array in that format, version 1 or 2, and `SetFont()` sets the one
+every char is drawn in; `CheckFont()` refuses an array that does not start as a font with
+`kNotAFont`. The sprite table became `kMaxMatrixDefaultFont` in the same format, converted once
+with the same look, the chars at their latin-1 codes and a width of 0 between them: 614 bytes
+against 721. A char is found by walking from the first to it, as MD_MAX72XX does: 34 us for an A
+and 211 us for an ü on the Uno, measured in simavr; an index would cost two bytes per char. A char of a font is a
+`MaxMatrixGlyph`, its columns in flash, so it may be wider than a sprite's five columns; a sprite
+of the sketch stays a `MaxMatrixSprite`. `GetSprite()` by an index into the table is gone with the
+table. The text keeps `NULL` for the default font, so that a sketch that draws no char does not
+link it: Animation stays 2282 bytes. Basics 3608 to 3548, Messages 3742 to 3698, ScrollText 3668
+to 3632, SerialControl 6048 to 6088, Sprites 2314 to 2342 bytes of flash; RAM as it was, as the
+font pointer and the glyph take the seven bytes the sprite buffer took. The count of a shifting
+char's columns became 16 bits, as with a space of 255 it never reached a char's width and space.
+A second, smaller font is not shipped: any font of MD_MAX72XX serves.
 
 ### 16 Static analysis in CI
 

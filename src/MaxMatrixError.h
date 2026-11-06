@@ -35,12 +35,13 @@
 /*! \brief Why a call did not do what it was asked; one byte, so that it returns in a register. */
 enum class MaxMatrixError : uint8_t {
     kOk = 0,         /*!< No error. */
-    kOutOfRange,     /*!< A coordinate, module, sprite index, intensity or number beyond its range. */
-    kUnknownChar,    /*!< The font has no sprite for the char. */
+    kOutOfRange,     /*!< A coordinate, module, intensity or number beyond its range. */
+    kUnknownChar,    /*!< The font has no char for it. */
     kNoText,         /*!< The text is null, or the text of a command empty. */
     kNotANumber,     /*!< The value of a command is empty or holds anything but digits. */
     kUnknownCommand, /*!< No command has this name. */
-    kLineTooLong     /*!< A command line did not fit into `MAXMATRIX_COMMAND_LINE_LENGTH`. */
+    kLineTooLong,    /*!< A command line did not fit into `MAXMATRIX_COMMAND_LINE_LENGTH`. */
+    kNotAFont        /*!< The font is null or does not start as MaxMatrixFont says a font starts. */
 };
 
 /*!
@@ -109,7 +110,7 @@ class MaxMatrixStatus
  *
  * Instead of the value through a pointer beside a status. After an error the value is 0, or what
  * `ValueType()` is, never undefined. An array cannot be returned, so GetRow() of the whole panel
- * and GetSprite() keep their parameter and return a MaxMatrixStatus.
+ * keeps its parameter and returns a MaxMatrixStatus.
  *
  * \tparam ValueType The type of the value.
  */

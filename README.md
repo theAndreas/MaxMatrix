@@ -117,7 +117,8 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetColumn(x, value)`, `SetColumn(module, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
 | `SetRow(row, values)`, `SetRow(module, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
 | `SetChar(x, y, c)`, `SetText(text)` | a char at x, y, or a text from the left edge |
-| `SetSprite(x, y, sprite)`, `GetSprite(index, &sprite)` | a sprite of the font, or one of your own |
+| `SetSprite(x, y, sprite)` | a sprite of your own, up to 5 columns wide |
+| `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
 | `SetCharWithShift(c)`, `SetTextWithShift(text)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
 | `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
@@ -284,6 +285,29 @@ The German umlauts Ä, Ö, Ü, ä, ö and ü, the ß and the degree sign ° are 
 `SetChar()` and `SetCharWithShift()` take a single `char`, so these have to be passed as ISO 8859-1 code there, e.g. `'\xE4'` for ä, `'\xDF'` for ß or `'\xB0'` for °.
 The € is not in ISO 8859-1, and its three bytes of UTF-8 are not read.
 While shifting a text, chars which are not part of the font are skipped.
+
+## Fonts
+A font is an array of bytes in flash, in the font format of [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX),
+so that its fonts and its font builder serve here as well: `'F'`, the version, the code of the first char, that of
+the last, and the height in rows, and then every char from the first to the last as its width and that many columns,
+bit 0 the top row. A char of width 0 is not in the font. Version 1 gives each code in one byte, version 2 in two, high
+byte first. A char may be wider than a sprite's 5 columns.
+
+```cpp
+uint8_t const kDigits[] PROGMEM = {
+    'F', 1, '0', '1', 7,                // version 1, the chars 0 to 1, 7 rows high
+    3, B00111110, B01000001, B00111110, // 0
+    2, B01000010, B01111111,            // 1
+};
+
+matrix.SetFont(kDigits);                // MaxMatrixError::kNotAFont for an array that does not start as a font
+matrix.SetText("10");
+matrix.SetFont(kMaxMatrixDefaultFont);  // the font MaxMatrix starts with
+```
+
+The font has to stay where it is as long as it is set, as a `PROGMEM` array does. Chars are looked up by their latin-1
+code, the one `DecodeChar()` makes of UTF-8. The default font holds ASCII and the chars of [Umlauts](#umlauts), 8 rows
+high, in 614 bytes; a sketch that draws no char does not link it.
 
 ## Development
 The host-side tests build the library against a mock of the Arduino core, once with bit banging and once with SPI:

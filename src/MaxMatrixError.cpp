@@ -22,15 +22,16 @@ static char const kErrorTextNoText[] PROGMEM = "no text";
 static char const kErrorTextNotANumber[] PROGMEM = "not a number";
 static char const kErrorTextUnknownCommand[] PROGMEM = "unknown command";
 static char const kErrorTextLineTooLong[] PROGMEM = "line too long";
+static char const kErrorTextNotAFont[] PROGMEM = "not a font";
 static char const kErrorTextUnknownError[] PROGMEM = "unknown error";
 
 /* in the order of MaxMatrixError */
 static char const* const kErrorTexts[] PROGMEM = {
     kErrorTextOk, kErrorTextOutOfRange, kErrorTextUnknownChar, kErrorTextNoText, kErrorTextNotANumber, kErrorTextUnknownCommand,
-    kErrorTextLineTooLong
+    kErrorTextLineTooLong, kErrorTextNotAFont
 };
 
-static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) == static_cast<uint8_t>(MaxMatrixError::kLineTooLong) + 1, "every error needs a text");
+static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) == static_cast<uint8_t>(MaxMatrixError::kNotAFont) + 1, "every error needs a text");
 
 __FlashStringHelper const* MaxMatrixStatus::GetErrorText() const
 {

@@ -22,10 +22,29 @@ static byte const kDataInPin = 11;
 static byte const kChipSelectPin = 10;
 static byte const kClockPin = 13;
 
+/* fonts in the format of MD_MAX72XX for the tests of SetFont(): the digits 0 and 1, 7 rows high, with a 2 of width 0
+ * that the font lacks, in version 1 and in version 2; a char of 8 columns; and an array that is no font */
+static uint8_t const kDigitFont[] PROGMEM = {
+    'F', 1, '0', '2', 7,
+    3, B00111110, B01000001, B00111110, // 0
+    2, B01000010, B01111111,            // 1
+    0,                                  // 2, not in the font
+};
+static uint8_t const kDigitFontVersion2[] PROGMEM = {
+    'F', 2, 0, '0', 0, '1', 7,
+    3, B00111110, B01000001, B00111110, // 0
+    2, B01000010, B01111111,            // 1
+};
+static uint8_t const kWideFont[] PROGMEM = {
+    'F', 1, 'W', 'W', 8,
+    8, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, // W, a diagonal
+};
+static uint8_t const kNoFont[] PROGMEM = { 'G', 1, 32, 126, 8 };
+
 /* every error by name, in the order of the enum */
 static char const* const kErrorNames[] = {
     "MaxMatrixError::kOk", "MaxMatrixError::kOutOfRange", "MaxMatrixError::kUnknownChar", "MaxMatrixError::kNoText", "MaxMatrixError::kNotANumber",
-    "MaxMatrixError::kUnknownCommand", "MaxMatrixError::kLineTooLong"
+    "MaxMatrixError::kUnknownCommand", "MaxMatrixError::kLineTooLong", "MaxMatrixError::kNotAFont"
 };
 static uint8_t const kNumberOfErrors = sizeof(kErrorNames) / sizeof(kErrorNames[0]);
 
@@ -466,7 +485,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
         { "GetDot right", [](MaxMatrix& m) { return m.GetDot(MAXMATRIX_NUMBER_OF_COLUMNS, 0).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
         { "GetDot above", [](MaxMatrix& m) { return m.GetDot(0, -1).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
         { "GetDot below", [](MaxMatrix& m) { return m.GetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError(); }, MaxMatrixError::kOutOfRange, "GetDot" },
-        { "GetSprite", [](MaxMatrix& m) { MaxMatrixSprite sprite; return m.GetSprite(255, &sprite).GetError(); }, MaxMatrixError::kOutOfRange, "GetSprite" },
+        { "SetFont", [](MaxMatrix& m) { return m.SetFont(kNoFont).GetError(); }, MaxMatrixError::kNotAFont, "SetFont" },
         { "SetIntensity", [](MaxMatrix& m) { return m.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).GetError(); }, MaxMatrixError::kOutOfRange, "SetIntensity" },
         { "SetChar", [](MaxMatrix& m) { return m.SetChar(0, 0, '\x01').GetError(); }, MaxMatrixError::kUnknownChar, "SetChar" },
         { "SetText unknown char", [](MaxMatrix& m) { return m.SetText("\x01").GetError(); }, MaxMatrixError::kUnknownChar, "SetText" },
@@ -502,7 +521,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy)
 TEST(MaxMatrixErrorTest, EveryErrorHasItsText)
 {
     char const* const texts[] = {
-        "ok", "out of range", "unknown char", "no text", "not a number", "unknown command", "line too long"
+        "ok", "out of range", "unknown char", "no text", "not a number", "unknown command", "line too long", "not a font"
     };
     ASSERT_EQ(sizeof(texts) / sizeof(texts[0]), kNumberOfErrors);
 
@@ -561,9 +580,10 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut)
  * at the top, single dots for one moved down */
 TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
 {
-    MaxMatrixSprite sprite;
-    ASSERT_EQ(MaxMatrixFont::GetCharSprite('A', &sprite).GetError(), MaxMatrixError::kOk);
-    int16_t const width = sprite[kSpriteWidth], height = sprite[kSpriteHeight];
+    MaxMatrixResult<MaxMatrixGlyph> const glyph = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, 'A');
+    ASSERT_EQ(glyph.GetError(), MaxMatrixError::kOk);
+    int16_t const width = glyph.GetValue().width, height = glyph.GetValue().height;
+    uint8_t const* const columns = glyph.GetValue().columns;
     struct {
         int16_t x, y;
     } const places[] = { { -2, 0 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 0 }, { -2, -3 }, { MAXMATRIX_NUMBER_OF_COLUMNS - 2, 5 } };
@@ -571,10 +591,10 @@ TEST_P(MaxMatrixOrientationTest, CharPartlyOffThePanelShowsThePartOnIt)
     for(auto const& place : places) {
         matrix_.Clear();
         ASSERT_EQ(matrix_.SetChar(place.x, place.y, 'A').GetError(), MaxMatrixError::kOk);
-        EXPECT_EQ(ShownPicture(matrix_), Picture([&sprite, &place, width, height](int16_t x, int16_t y) {
+        EXPECT_EQ(ShownPicture(matrix_), Picture([columns, &place, width, height](int16_t x, int16_t y) {
             int16_t sprite_x = x - place.x, sprite_y = y - place.y;
             return sprite_x >= 0 && sprite_x < width && sprite_y >= 0 && sprite_y < height &&
-                   bitRead(sprite[kSpriteColumn1 + sprite_x], sprite_y);
+                   bitRead(columns[sprite_x], sprite_y);
         })) << "X " << place.x << ", Y " << place.y;
     }
 }
@@ -821,24 +841,24 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match)
     EXPECT_EQ(utf8, latin1);
 }
 
-TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnSprite)
+/* the chars beyond ASCII lie at their latin-1 codes in the default font, each its own */
+TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph)
 {
     char const* chars[] = { "Ä", "Ö", "Ü", "ä", "ö", "ü", "ß", "°" };
+    byte const codes[] = { 0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF, 0xB0 };
     char c;
 
     for(byte i = 0; i < 8; i++) {
         SCOPED_TRACE(chars[i]);
         EXPECT_EQ(MaxMatrixFont::DecodeChar(chars[i], &c), 2);
-        MaxMatrixResult<MaxMatrixSpriteIndex> sprite_index = MaxMatrixFont::ConvertCharToSprite(c);
-        EXPECT_EQ(sprite_index.GetError(), MaxMatrixError::kOk);
-        EXPECT_EQ(sprite_index.GetValue(), 95 + i);
+        EXPECT_EQ(static_cast<byte>(c), codes[i]);
+        EXPECT_EQ(MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, c).GetError(), MaxMatrixError::kOk);
     }
 
     /* the Ü sprite used to be a copy of the O */
-    MaxMatrixSprite ue, o;
-    EXPECT_EQ(matrix_.GetSprite(97, &ue).GetError(), MaxMatrixError::kOk);
-    EXPECT_EQ(matrix_.GetSprite('O' + MAXMATRIX_ASCII_TABLE_OFFSET, &o).GetError(), MaxMatrixError::kOk);
-    EXPECT_NE(Bytes(ue, sizeof(ue)), Bytes(o, sizeof(o)));
+    MaxMatrixGlyph const ue = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, '\xDC').GetValue();
+    MaxMatrixGlyph const o = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, 'O').GetValue();
+    EXPECT_NE(Bytes(ue.columns, ue.width), Bytes(o.columns, o.width));
 }
 
 /* Bug: the font had no ß and no °, so SetText() failed on them and a shifting text, "Grüße" or "21 °C", lost them
@@ -1114,4 +1134,95 @@ TEST_P(MaxMatrixOrientationTest, PictureAnswerIsWhatTheViewerSees)
         expected += column == 0 ? "01" : column == 9 ? "02" : column == 16 ? "10" : column == 31 ? "80" : "00";
     }
     EXPECT_EQ(answer.text, expected + "\r\n");
+}
+
+/* the default font, converted from the table of sprites the library had: every ASCII char from the space to the tilde,
+ * no char between the tilde and the degree sign, and 8 rows high */
+TEST_F(MaxMatrixTest, DefaultFontHasAsciiAndNothingBetween)
+{
+    EXPECT_EQ(matrix_.GetFont(), kMaxMatrixDefaultFont);
+    EXPECT_TRUE(MaxMatrixFont::CheckFont(kMaxMatrixDefaultFont).IsOk());
+    for(uint16_t code = 32; code <= 126; code++) {
+        MaxMatrixResult<MaxMatrixGlyph> const glyph = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, static_cast<char>(code));
+        EXPECT_EQ(glyph.GetError(), MaxMatrixError::kOk) << code;
+        EXPECT_EQ(glyph.GetValue().height, 8) << code;
+    }
+    for(uint16_t code = 127; code < 0xB0; code++) {
+        EXPECT_EQ(MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, static_cast<char>(code)).GetError(), MaxMatrixError::kUnknownChar) << code;
+    }
+    EXPECT_EQ(MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, '\x1F').GetError(), MaxMatrixError::kUnknownChar);
+    EXPECT_EQ(MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, '\xFF').GetError(), MaxMatrixError::kUnknownChar);
+}
+
+/* a font of MD_MAX72XX that the sketch sets: its chars in its height, which is not the panel's, so dot by dot; a char
+ * it lacks, by a width of 0 or beyond its last, fails as one the default font lacks */
+TEST_F(MaxMatrixTest, SetFontDrawsInThatFont)
+{
+    byte const expected[] = { 0x42, 0x7F, 0x00, 0x3E, 0x41, 0x3E, 0x00 };
+
+    ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), MaxMatrixError::kOk);
+    EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+    ASSERT_EQ(matrix_.SetText("10").GetError(), MaxMatrixError::kOk);
+    for(byte column = 0; column < sizeof(expected); column++) EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column]) << "column " << static_cast<uint16_t>(column);
+    EXPECT_EQ(matrix_.SetText("2").GetError(), MaxMatrixError::kUnknownChar);
+    EXPECT_EQ(matrix_.SetText("A").GetError(), MaxMatrixError::kUnknownChar);
+
+    ASSERT_EQ(matrix_.SetFont(kMaxMatrixDefaultFont).GetError(), MaxMatrixError::kOk);
+    EXPECT_EQ(matrix_.SetText("A").GetError(), MaxMatrixError::kOk);
+}
+
+/* version 2 gives first and last char in two bytes each, so its chars start two bytes later */
+TEST_F(MaxMatrixTest, SetFontTakesVersion2)
+{
+    byte const expected[] = { 0x3E, 0x41, 0x3E, 0x00, 0x42, 0x7F };
+
+    ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), MaxMatrixError::kOk);
+    ASSERT_EQ(matrix_.SetText("01").GetError(), MaxMatrixError::kOk);
+    for(byte column = 0; column < sizeof(expected); column++) EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column]) << "column " << static_cast<uint16_t>(column);
+}
+
+/* a sprite has five columns at most; a char of a font may have more, standing and shifting in */
+TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole)
+{
+    uint16_t steps = 0;
+
+    ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), MaxMatrixError::kOk);
+    ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), MaxMatrixError::kOk);
+    for(byte column = 0; column < 8; column++) EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1u << column) << "standing, column " << static_cast<uint16_t>(column);
+
+    matrix_.Clear();
+    ASSERT_EQ(matrix_.SetCharWithShift('W').GetError(), MaxMatrixError::kOk);
+    for(; steps < 100 && matrix_.GetState() != MaxMatrixState::kReady; steps++) matrix_.ShiftTask();
+    EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
+    for(byte column = 0; column < 8; column++) {
+        EXPECT_EQ(matrix_.GetColumn(MAXMATRIX_NUMBER_OF_COLUMNS - 10 + column).GetValue(), 1u << column) << "shifted, column " << static_cast<uint16_t>(column);
+    }
+}
+
+/* only what starts as a font is taken, and the font set before stays */
+TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont)
+{
+    static uint8_t const kVersion3[] PROGMEM = { 'F', 3, 32, 32, 8, 1, 0 };
+    static uint8_t const kNoHeight[] PROGMEM = { 'F', 1, 32, 32, 0, 1, 0 };
+    static uint8_t const kTooHigh[] PROGMEM = { 'F', 1, 32, 32, 9, 1, 0 };
+    static uint8_t const kLastBeforeFirst[] PROGMEM = { 'F', 1, 33, 32, 8, 1, 0 };
+    uint8_t const* const fonts[] = { NULL, kNoFont, kVersion3, kNoHeight, kTooHigh, kLastBeforeFirst };
+
+    ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), MaxMatrixError::kOk);
+    for(uint8_t const* font : fonts) {
+        EXPECT_EQ(matrix_.SetFont(font).GetError(), MaxMatrixError::kNotAFont);
+        EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+    }
+}
+
+/* Bug: the count of the columns shifted in was a byte, so with the largest space it never reached a char's width and
+ * space, and the char shifted for ever */
+TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting)
+{
+    uint16_t steps = 0;
+
+    matrix_.SetSpaceBetweenChars(255);
+    ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), MaxMatrixError::kOk);
+    for(; steps < 1000 && matrix_.GetState() != MaxMatrixState::kReady; steps++) matrix_.ShiftTask();
+    EXPECT_EQ(steps, 4 + 255);
 }
