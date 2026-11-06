@@ -8,7 +8,8 @@
  */
 #include <MaxMatrix.h>
 
-MaxMatrix matrix(11, 10, 13);
+/* a chain of four modules, with the buffer for them; one of eight is MaxMatrixOf<8> */
+MaxMatrixOf<4> matrix(11, 10, 13);
 
 void setup()
 {
@@ -25,14 +26,14 @@ void loop()
 
     /* Draw a diagonal line dot by dot */
     matrix.Clear();
-    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+    for(byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
         matrix.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
         delay(30);
     }
     delay(1000);
 
     /* fill row 3 on every module */
-    for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
+    for(byte module = 0; module < matrix.GetNumberOfModules(); module++) {
         matrix.SetRow(module, 3, 0xFF);
     }
     delay(1000);
@@ -41,13 +42,13 @@ void loop()
     {
         MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
         matrix.Clear();
-        for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
+        for(byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
             matrix.SetDot(column, 0, true);
             matrix.SetDot(column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
         }
         for(byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
             matrix.SetDot(0, row, true);
-            matrix.SetDot(MAXMATRIX_NUMBER_OF_COLUMNS - 1, row, true);
+            matrix.SetDot(matrix.GetNumberOfColumns() - 1, row, true);
         }
     }
     delay(1000);

@@ -23,7 +23,7 @@ int16_t const kSpriteY = 2;
 MaxMatrixSprite const kInvaderLegsOut = { 5, 5, 0x16, 0x0D, 0x07, 0x0D, 0x16 };
 MaxMatrixSprite const kInvaderLegsIn = { 5, 5, 0x06, 0x1D, 0x07, 0x1D, 0x06 };
 
-MaxMatrix matrix(11, 10, 13);
+MaxMatrixOf<4> matrix(11, 10, 13);
 
 void setup()
 {
@@ -35,7 +35,7 @@ void loop()
 {
     int16_t const width = kInvaderLegsOut[kSpriteWidth];
 
-    for(int16_t x = MAXMATRIX_NUMBER_OF_COLUMNS; x >= -width; x--) {
+    for(int16_t x = matrix.GetNumberOfColumns(); x >= -width; x--) {
         {
             /* cleared and drawn again as one picture, so that the column it left goes dark without a flicker */
             MaxMatrixBatch batch(matrix);

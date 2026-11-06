@@ -26,7 +26,8 @@ class MaxMatrixWired
 {
   private:
     MaxMatrixChain chain_;
-    byte matrix_buffer_[MAXMATRIX_BUFFER_SIZE];
+    // The sketch's, MAXMATRIX_BUFFER_SIZE() of the chain's modules long; MaxMatrixOf brings one.
+    byte* matrix_buffer_;
     /*
      * A frame carries one register of every module, so the same column of all modules goes out in
      * one frame. The buffer therefore keeps which columns of a module have changed, one bit each,
@@ -37,19 +38,26 @@ class MaxMatrixWired
 
   public:
     /*!
-     * \brief Makes the matrix of the chain at these pins, with an empty buffer.
+     * \brief Makes the matrix of the chain at these pins, and empties its buffer.
      *
      * \param[in] data_in_pin The pin DIN of the chain is connected to.
      * \param[in] chip_select_pin The pin CS of the chain is connected to.
      * \param[in] clock_pin The pin CLK of the chain is connected to.
+     * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)` bytes, which has to
+     *                    live as long as the matrix.
+     * \param[in] number_of_modules The modules in the chain, 1 to
+     *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
      */
-    MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin);
+    MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules);
 
     /*! \brief Returns the chain the matrix sends to. */
     MaxMatrixChain& GetChain() { return chain_; }
 
     /*! \copydoc GetChain() */
     MaxMatrixChain const& GetChain() const { return chain_; }
+
+    /*! \brief Returns the columns of the chain, eight per module. */
+    byte GetNumberOfColumns() const { return static_cast<byte>(chain_.GetNumberOfModules() * MAXMATRIX_COLUMN_NUMBER_OF_MODULE); }
 
     /*!
      * \brief Returns a column of the buffer, unchecked.

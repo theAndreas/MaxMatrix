@@ -36,12 +36,6 @@ enum class MaxMatrixModuleOrientation : uint8_t {
 };
 
 /*!
- * \brief A row of the whole matrix: one byte per module from the left, bit 7 of each the leftmost
- *        column of its module.
- */
-typedef byte MaxMatrixRow[MAXMATRIX_NUMBER_OF_MODULES];
-
-/*!
  * \brief The matrix as the viewer sees it: columns, rows and dots in the viewer's coordinates.
  *
  * It turns every coordinate by the matrix and the module orientation into the buffer of
@@ -58,8 +52,7 @@ class MaxMatrixPanel
     void ConvertDotToBuffer(byte column, byte row, byte* buffer_column, byte* buffer_bit);
     byte GetLine(byte column, byte row, bool vertical);
     void SetLine(byte column, byte row, bool vertical, byte value);
-    void GetPicture(byte* picture);
-    void SetPicture(byte const* picture);
+    void ChangeOrientation(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleOrientation module_orientation);
 
   public:
     /*!
@@ -68,8 +61,18 @@ class MaxMatrixPanel
      * \param[in] data_in_pin The pin DIN of the chain is connected to.
      * \param[in] chip_select_pin The pin CS of the chain is connected to.
      * \param[in] clock_pin The pin CLK of the chain is connected to.
+     * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)` bytes, which has to
+     *                    live as long as the panel.
+     * \param[in] number_of_modules The modules in the chain, 1 to
+     *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
      */
-    MaxMatrixPanel(byte data_in_pin, byte chip_select_pin, byte clock_pin);
+    MaxMatrixPanel(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules);
+
+    /*! \brief Returns the modules of the chain. */
+    byte GetNumberOfModules() const { return wired_.GetChain().GetNumberOfModules(); }
+
+    /*! \brief Returns the columns of the panel, eight per module. */
+    byte GetNumberOfColumns() const { return wired_.GetNumberOfColumns(); }
 
     /*! \brief Returns the matrix as it is wired, below this one. */
     MaxMatrixWired& GetWired() { return wired_; }
@@ -106,11 +109,13 @@ class MaxMatrixPanel
      * \brief Gives a row of the matrix, one byte per module.
      *
      * \param[in] row The row, from 0 at the top.
-     * \param[out] value The row, bit 7 of each byte the leftmost column of its module; left as it
-     *                   was on an error.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the row lies off the panel.
+     * \param[out] values The row, bit 7 of each byte the leftmost column of its module; left as it
+     *                    was on an error.
+     * \param[in] number_of_values The bytes `values` has room for.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the row lies off the panel or
+     *         `values` has room for fewer bytes than there are modules.
      */
-    MaxMatrixStatus GetRow(int16_t row, MaxMatrixRow& value);
+    MaxMatrixStatus GetRow(int16_t row, byte* values, byte number_of_values);
 
     /*!
      * \brief Returns a row of a module.
@@ -158,12 +163,14 @@ class MaxMatrixPanel
     /*!
      * \brief Sets a row of the matrix, one byte per module.
      *
-     * A row off the panel is left out, as for SetDot().
+     * A row off the panel is left out, as for SetDot(), and so are the modules beyond the bytes
+     * given, or the bytes beyond the modules.
      *
      * \param[in] row The row, from 0 at the top.
-     * \param[in] value The row, bit 7 of each byte the leftmost column of its module.
+     * \param[in] values The row, bit 7 of each byte the leftmost column of its module.
+     * \param[in] number_of_values The bytes in `values`.
      */
-    void SetRow(int16_t row, MaxMatrixRow const value);
+    void SetRow(int16_t row, byte const* values, byte number_of_values);
 
     /*!
      * \brief Sets a row of a module.

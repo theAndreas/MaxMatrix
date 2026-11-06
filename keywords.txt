@@ -1,4 +1,5 @@
 MaxMatrix	KEYWORD1
+MaxMatrixOf	KEYWORD1
 MaxMatrixBatch	KEYWORD1
 MaxMatrixCommand	KEYWORD1
 MaxMatrixStatus	KEYWORD1
@@ -9,8 +10,7 @@ MaxMatrixMatrixOrientation	KEYWORD1
 MaxMatrixError	KEYWORD1
 MaxMatrixCommandState	KEYWORD1
 MaxMatrixSprite	KEYWORD1
-MaxMatrixSpriteIndex	KEYWORD1
-MaxMatrixRow	KEYWORD1
+MaxMatrixGlyph	KEYWORD1
 Init	KEYWORD2
 Clear	KEYWORD2
 ShiftTask	KEYWORD2
@@ -22,6 +22,10 @@ GetState	KEYWORD2
 SetAutoUpdate	KEYWORD2
 GetAutoUpdate	KEYWORD2
 SetIntensity	KEYWORD2
+SetShutdown	KEYWORD2
+SetDisplayTest	KEYWORD2
+GetNumberOfModules	KEYWORD2
+GetNumberOfColumns	KEYWORD2
 SetDot	KEYWORD2
 GetDot	KEYWORD2
 SetColumn	KEYWORD2
@@ -34,7 +38,8 @@ SetText	KEYWORD2
 SetTextWithShift	KEYWORD2
 SetSpaceBetweenChars	KEYWORD2
 SetSprite	KEYWORD2
-GetSprite	KEYWORD2
+SetFont	KEYWORD2
+GetFont	KEYWORD2
 SetModuleOrientation	KEYWORD2
 SetMatrixOrientation	KEYWORD2
 GetModuleOrientation	KEYWORD2
@@ -61,7 +66,10 @@ kNoText	LITERAL1
 kNotANumber	LITERAL1
 kUnknownCommand	LITERAL1
 kLineTooLong	LITERAL1
+kNotAFont	LITERAL1
 kPending	LITERAL1
 kDone	LITERAL1
+kAnswered	LITERAL1
+kMaxMatrixDefaultFont	LITERAL1
 kSpriteWidth	LITERAL1
 kSpriteHeight	LITERAL1

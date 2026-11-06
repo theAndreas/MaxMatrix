@@ -37,7 +37,7 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark, char cons
     std::string text;
 
     for(uint8_t y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
-        for(uint8_t x = 0; x < MAXMATRIX_NUMBER_OF_COLUMNS; x++) text += mock::chain.IsLit(*wiring_, x, y, upside_down_) ? lit : dark;
+        for(uint8_t x = 0; x < GetNumberOfColumns(); x++) text += mock::chain.IsLit(*wiring_, x, y, upside_down_) ? lit : dark;
         text += end_of_row;
     }
     return text;

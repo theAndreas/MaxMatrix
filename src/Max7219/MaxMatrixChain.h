@@ -71,6 +71,7 @@ class MaxMatrixChain
     byte data_in_pin_;
     byte chip_select_pin_;
     byte clock_pin_;
+    byte number_of_modules_;
     /*
      * The port and the bit of each pin, looked up once in Init(): digitalWrite() looks both up in
      * tables in flash on every call, which made a byte bit banged by shiftOut() take about 1500
@@ -108,8 +109,13 @@ class MaxMatrixChain
      * \param[in] data_in_pin The pin DIN of the chain is connected to.
      * \param[in] chip_select_pin The pin CS of the chain is connected to.
      * \param[in] clock_pin The pin CLK of the chain is connected to.
+     * \param[in] number_of_modules The MAX7219s in the chain, 1 to
+     *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
      */
-    MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin);
+    MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte number_of_modules);
+
+    /*! \brief Returns the MAX7219s in the chain. */
+    byte GetNumberOfModules() const { return number_of_modules_; }
 
     /*! \brief Returns the pin DIN of the chain is connected to. */
     byte GetDataInPin() const { return data_in_pin_; }
@@ -165,8 +171,11 @@ class MaxMatrixChain
      *
      * \param[in] register_address The address of the register, one of `MAX7219_REG_..._ADDRESS`.
      * \param[in] register_values One value per module, module 0 first.
+     * \param[in] stride The bytes from one module's value to the next: 1 for an array of values, or
+     *                   the columns of a module to take one column of every module straight from
+     *                   the matrix buffer.
      */
-    void WriteRegisterEach(byte register_address, byte const* register_values);
+    void WriteRegisterEach(byte register_address, byte const* register_values, byte stride);
 };
 
 #endif

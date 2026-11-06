@@ -29,7 +29,7 @@ Message const kMessages[] = {
 };
 byte const kNumberOfMessages = sizeof(kMessages) / sizeof(kMessages[0]);
 
-MaxMatrix matrix(11, 10, 13);
+MaxMatrixOf<4> matrix(11, 10, 13);
 byte current = 0;
 
 void Show(Message const& message)

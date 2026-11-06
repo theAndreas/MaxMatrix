@@ -11,7 +11,8 @@
 
 #include "MaxMatrix.h"
 
-MaxMatrix::MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin) : panel_(data_in_pin, chip_select_pin, clock_pin)
+MaxMatrix::MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules)
+    : panel_(data_in_pin, chip_select_pin, clock_pin, buffer, number_of_modules)
 {
     state_ = MaxMatrixState::kNone;
     auto_update_ = true;

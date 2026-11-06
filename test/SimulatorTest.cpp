@@ -10,6 +10,9 @@
 #include "SimulatorTerminal.h"
 #include "Web/SimulatorWeb.h"
 
+/* the chain the examples have */
+static uint8_t const kNumberOfModules = 4;
+
 static bool Parse(SimulatorOptions& options, std::vector<std::string> arguments)
 {
     std::vector<char*> argv;
@@ -22,7 +25,7 @@ static bool Parse(SimulatorOptions& options, std::vector<std::string> arguments)
 /* a chain whose chips each have their own intensity, Chips[i] the intensity i, so that an order shows */
 static void ResetChainWithDistinctIntensities()
 {
-    mock::Reset(11, 10, 13, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(11, 10, 13, kNumberOfModules);
     for(size_t chip = 0; chip < mock::chain.chips.size(); chip++) mock::chain.chips[chip].intensity = static_cast<uint8_t>(chip);
 }
 
@@ -79,7 +82,7 @@ TEST(SimulatorTest, IntensityIsCountedFromTheLeft)
     SimulatorPanel panel;
 
     ResetChainWithDistinctIntensities();
-    EXPECT_EQ(panel.GetIntensity(0), MAXMATRIX_NUMBER_OF_MODULES - 1u);
+    EXPECT_EQ(panel.GetIntensity(0), kNumberOfModules - 1u);
     panel.SetUpsideDown(true);
     EXPECT_EQ(panel.GetIntensity(0), 0u);
 }

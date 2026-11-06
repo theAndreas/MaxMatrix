@@ -11,7 +11,7 @@
 
 uint32_t const kStepIntervalMs = 40;
 
-MaxMatrix matrix(11, 10, 13);
+MaxMatrixOf<4> matrix(11, 10, 13);
 
 int16_t ball_x = 0;
 int16_t ball_y = 0;
@@ -36,7 +36,7 @@ void loop()
     MaxMatrixBatch batch(matrix);
     matrix.SetDot(ball_x, ball_y, false);
     /* turn round at an edge rather than leave the matrix */
-    if(ball_x + step_x < 0 || ball_x + step_x >= MAXMATRIX_NUMBER_OF_COLUMNS) step_x = -step_x;
+    if(ball_x + step_x < 0 || ball_x + step_x >= matrix.GetNumberOfColumns()) step_x = -step_x;
     if(ball_y + step_y < 0 || ball_y + step_y >= MAXMATRIX_ROW_NUMBER_OF_MODULE) step_y = -step_y;
     ball_x += step_x;
     ball_y += step_y;

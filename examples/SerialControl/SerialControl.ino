@@ -26,7 +26,7 @@ byte const kChipSelectPin = 10;
 byte const kClockPin = 13;
 uint32_t const kBaudRate = 115200;
 
-MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin);
+MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
 MaxMatrixCommand command;
 
 void setup()

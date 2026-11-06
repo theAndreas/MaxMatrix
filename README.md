@@ -43,7 +43,6 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 
 | Parameter                                  | Default   | Description                                           |
 |--------------------------------------------|-----------|-------------------------------------------------------|
-| `MAXMATRIX_NUMBER_OF_MODULES`              | `4`       | number of chained 8x8 modules                         |
 | `MAXMATRIX_USE_SPI`                        | `STD_OFF` | use hardware SPI instead of bit banging on any pins   |
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
@@ -52,12 +51,21 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `MaxMatrixCommand`, in chars   |
 | `MAXMATRIX_DEV_ERROR_DETECT`               | `STD_OFF` | report every failed call, see [Functions](#functions)  |
 
+The length of the chain is not configured here but in the sketch, where the Arduino IDE lets it change: `MaxMatrixOf<4>`
+is a matrix of four modules and brings their buffer, eight bytes per module, and `MaxMatrixOf<8>` one of eight, up to 31.
+A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own:
+
+```cpp
+byte buffer[MAXMATRIX_BUFFER_SIZE(6)];
+MaxMatrix matrix(11, 10, 13, buffer, 6);
+```
+
 ## Usage
 
 ```cpp
 #include <MaxMatrix.h>
 
-MaxMatrix matrix(11, 10, 13);   // DIN, CS, CLK
+MaxMatrixOf<4> matrix(11, 10, 13);   // a chain of 4 modules at DIN, CS, CLK
 char text[] = "Hello World!   ";
 
 void setup()
@@ -97,7 +105,7 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 ![Coordinates as a sketch uses them](docu/Coordinates.svg)
 
 `SetDot(x, y)` counts x from the left and y from the top, across all modules: x from 0 to
-`MAXMATRIX_NUMBER_OF_COLUMNS - 1`, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
+`GetNumberOfColumns() - 1`, eight columns per module, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
 This holds for every type of module once the orientation fits it, see [Module orientation](#module-orientation).
 
 The two functions that set eight LEDs at once read their byte in different directions:
@@ -122,6 +130,7 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetCharWithShift(c)`, `SetTextWithShift(text)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
 | `ShiftLeft()`, `ShiftRight()`, `ShiftUp()`, `ShiftDown()` | moves the whole picture by one dot, rotating or filling up |
+| `GetNumberOfModules()`, `GetNumberOfColumns()` | the length of the chain, eight columns per module |
 | `SetIntensity(intensity)` | brightness of every module, 0 to 15 |
 | `SetShutdown(on)` | turns the LEDs off without losing the picture, which still takes what is drawn |
 | `SetDisplayTest(on)` | lights every LED at full brightness, to check the modules, and shows the picture again |
@@ -176,7 +185,7 @@ draw it inside a block that starts with a `MaxMatrixBatch`; the picture is sent 
 {
     MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
     matrix.Clear();
-    for(byte column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) matrix.SetDot(column, column % 8, true);
+    for(byte column = 0; column < matrix.GetNumberOfColumns(); column++) matrix.SetDot(column, column % 8, true);
 }                                   // the whole picture at once, in at most eight frames
 ```
 

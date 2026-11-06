@@ -6,7 +6,7 @@
  * Wiring (Arduino Uno / Nano):
  *   DIN -> 11, CS -> 10, CLK -> 13
  *
- * The number of modules is configured with MAXMATRIX_NUMBER_OF_MODULES in MaxMatrixConfig.h.
+ * A chain of four modules, as MaxMatrixOf<4> says below; one of eight is MaxMatrixOf<8>.
  */
 #include <MaxMatrix.h>
 
@@ -15,7 +15,7 @@ byte const kChipSelectPin = 10;
 byte const kClockPin = 13;
 uint16_t const kShiftIntervalMs = 50;
 
-MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin);
+MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
 
 /* Text must stay valid while it is shifted, so don't use a local variable */
 char text[] = "Hello World!   ";

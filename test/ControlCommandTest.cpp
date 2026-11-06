@@ -55,10 +55,10 @@ TEST(ControlCommandTest, DecodesThePicture)
     std::vector<uint8_t> columns;
     std::vector<uint8_t> expected = {0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40};
 
-    expected.resize(MAXMATRIX_NUMBER_OF_COLUMNS, 0x00);
-    ASSERT_TRUE(ControlCommand::DecodePicture("picture=7F08087F00447D40" + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS - 16, '0'), &columns));
+    expected.resize(CONTROL_NUMBER_OF_COLUMNS, 0x00);
+    ASSERT_TRUE(ControlCommand::DecodePicture("picture=7F08087F00447D40" + std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 16, '0'), &columns));
     EXPECT_EQ(columns, expected);
-    ASSERT_TRUE(ControlCommand::DecodePicture("picture=ff" + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS - 2, '0'), &columns));
+    ASSERT_TRUE(ControlCommand::DecodePicture("picture=ff" + std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 2, '0'), &columns));
     EXPECT_EQ(columns[0], 0xFF);
 }
 
@@ -68,9 +68,9 @@ TEST(ControlCommandTest, DecodesAPictureItCannotDrawAsEmpty)
 {
     std::vector<uint8_t> columns = {1, 2, 3};
 
-    EXPECT_TRUE(ControlCommand::DecodePicture("picture=" + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS + 2, '0'), &columns));
+    EXPECT_TRUE(ControlCommand::DecodePicture("picture=" + std::string(2 * CONTROL_NUMBER_OF_COLUMNS + 2, '0'), &columns));
     EXPECT_TRUE(columns.empty());
-    EXPECT_TRUE(ControlCommand::DecodePicture("picture=" + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS - 1, '0') + "x", &columns));
+    EXPECT_TRUE(ControlCommand::DecodePicture("picture=" + std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 1, '0') + "x", &columns));
     EXPECT_TRUE(columns.empty());
     EXPECT_FALSE(ControlCommand::DecodePicture("ok", &columns));
     EXPECT_FALSE(ControlCommand::DecodePicture("error: unknown command", &columns));

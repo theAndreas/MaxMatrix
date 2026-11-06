@@ -12,9 +12,11 @@
 
 #include "MaxMatrixWired.h"
 
-MaxMatrixWired::MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin) : chain_(data_in_pin, chip_select_pin, clock_pin)
+MaxMatrixWired::MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules)
+    : chain_(data_in_pin, chip_select_pin, clock_pin, number_of_modules)
 {
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) matrix_buffer_[i] = 0;
+    matrix_buffer_ = buffer;
+    memset(matrix_buffer_, 0, GetNumberOfColumns());
     changed_columns_ = 0;
 }
 
@@ -31,20 +33,17 @@ void MaxMatrixWired::StoreBit(byte column, byte bit, bool value)
 
 void MaxMatrixWired::Clear()
 {
-    for(byte i = 0; i < MAXMATRIX_NUMBER_OF_COLUMNS; i++) matrix_buffer_[i] = 0;
+    memset(matrix_buffer_, 0, GetNumberOfColumns());
     changed_columns_ = 0xFF;
 }
 
+// The values of a column lie a module's columns apart in the buffer, and go out from there rather
+// than through an array of one per module, which would need its length at compile time.
 void MaxMatrixWired::Send()
 {
-    byte values[MAXMATRIX_NUMBER_OF_MODULES];
-
     for(byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
         if(bitRead(changed_columns_, column)) {
-            for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
-                values[module] = matrix_buffer_[module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + column];
-            }
-            chain_.WriteRegisterEach(MAX7219_REG_DIGIT0_ADDRESS + column, values);
+            chain_.WriteRegisterEach(MAX7219_REG_DIGIT0_ADDRESS + column, matrix_buffer_ + column, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
         }
     }
     changed_columns_ = 0;

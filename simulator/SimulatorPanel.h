@@ -49,6 +49,12 @@ class SimulatorPanel
     /*! \brief Returns whether the board is mounted upside down. */
     bool IsUpsideDown() const { return upside_down_; }
 
+    /*! \brief Returns the modules of the model's chain, as mock::Reset() made it. */
+    static uint8_t GetNumberOfModules() { return static_cast<uint8_t>(mock::chain.chips.size()); }
+
+    /*! \brief Returns the columns of the model's chain, eight per module. */
+    static uint8_t GetNumberOfColumns() { return static_cast<uint8_t>(GetNumberOfModules() * MAXMATRIX_COLUMN_NUMBER_OF_MODULE); }
+
     /*!
      * \brief Returns the panel as text, the LEDs row after row, as the chosen module lights them.
      *
