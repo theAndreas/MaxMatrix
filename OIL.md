@@ -24,11 +24,11 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
 | 14 | Chain length at run time | 13 | in progress | #60 |
-| 15 | Font format | 13 | in progress | #42, #58 |
+| 15 | Font format | 13 | done | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
-| 19 | More of the MAX7219 in the public API | 3 | in progress | #55 |
+| 19 | More of the MAX7219 in the public API | 3 | done | #55 |
 | 20 | More examples | 5 | done | #38 |
 | 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | in progress | #57 |
@@ -397,6 +397,10 @@ both leaving the buffer and the intensity alone, so that the picture is back whe
 decode mode got no function: it turns a digit's byte into the segments of a 7-segment digit, so
 on a dot matrix the LEDs no longer show the buffer, which every getter and every drawing function
 rely on. `RegisterWrite()` still reaches it for whoever drives a 7-segment display.
+
+That the LEDs really go dark and light up is checked on a matrix with the example `Shutdown`, as
+`docu/HardwareCheck.md` lists it; the registers it writes are the model's, tested against the
+datasheet.
 
 ### 20 More examples
 
