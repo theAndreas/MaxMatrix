@@ -82,7 +82,8 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   `tools/east-const.py`, which finds a `const` left of what it qualifies, and
   `tools/doc-indent.py`, which finds a line of a Doxygen block not indented under its command.
   Every workflow installs from apt through `tools/apt-install.sh`, which starts a download again
-  that has run past a limit, as the runner's mirror now and then trickles for minutes; CMake and
+  that has run past a limit, as the runner's mirror now and then trickles for minutes, and with
+  `--cache` takes the `.deb` files of the job's last run, which `actions/cache` keeps; CMake and
   Ninja are the runner image's.
 - `.github/workflows/docs.yml` — the reference from the Doxygen blocks, checked on every pull
   request by `tools/docs.py` and published on GitHub Pages from `main`; `Doxyfile` says what

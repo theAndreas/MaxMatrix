@@ -23,9 +23,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The .deb files of this job's last run, for tools/apt-install.sh --cache. A new key every run,
+      # so that what apt downloaded anew is kept as well, and the newest one comes back.
+      - uses: actions/cache@v6
+        with:
+          path: ~/apt-archives
+          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: apt-${{ github.job }}-${{ strategy.job-index }}-
+
       # From apt, as in the Dockerfile, so that CI and the container warn alike.
       - name: Install Doxygen
-        run: tools/apt-install.sh doxygen
+        run: tools/apt-install.sh --cache ~/apt-archives doxygen
 
       - name: Build and check
         run: python3 tools/docs.py
