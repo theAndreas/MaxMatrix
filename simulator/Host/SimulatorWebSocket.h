@@ -9,8 +9,8 @@
  * socket in here, so that the tests can check every byte without a network.
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORWEBSOCKET_H_
+#ifndef MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_
+#define MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_
 
 #include <stddef.h>
 #include <stdint.h>

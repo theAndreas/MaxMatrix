@@ -2,7 +2,7 @@
 // it sends where. CI has no browser; WebTest.sh and ControlTest.sh stand in for the page towards the simulator, and
 // this is the page itself.
 //
-//   node simulator/PageTest.js simulator/index.html
+//   node simulator/Test/PageTest.js simulator/Web/index.html
 //
 // Needs Node 18 or newer, for ReadableStream, WritableStream and TextDecoderStream without an import.
 "use strict";

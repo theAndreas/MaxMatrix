@@ -2,7 +2,7 @@
 # Runs SerialControl with --web and controls it as the control page does: "serial LINE" over the WebSocket reaches the
 # sketch's Serial as a line, and what the sketch answers comes back with the next panel, in "serial".
 #
-#   simulator/ControlTest.sh SIMULATOR PORT [ARGUMENT...]
+#   simulator/Test/ControlTest.sh SIMULATOR PORT [ARGUMENT...]
 #
 # The arguments go to the simulator: --elf FILE, for SimulatorAvr.
 set -eu

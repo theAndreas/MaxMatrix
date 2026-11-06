@@ -5,18 +5,18 @@
  * \file
  * \brief The simulator's panel in a browser.
  *
- * What the page in simulator/index.html is sent - the panel, the brightness of every module, the
+ * What the page in simulator/Web/index.html is sent - the panel, the brightness of every module, the
  * frames on the wire - and what it sends back: the wiring and the mounting to choose while the
  * sketch runs.
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORWEB_H_
+#ifndef MAXMATRIX_SIMULATOR_WEB_SIMULATORWEB_H_
+#define MAXMATRIX_SIMULATOR_WEB_SIMULATORWEB_H_
 
 #include <string>
 #include <vector>
+#include "Host/SimulatorWebHost.h"
 #include "SimulatorPanel.h"
-#include "SimulatorWebHost.h"
 
 /* SimulatorWeb Parameter */
 /* the most frames the page is sent at once; more would scroll past before anyone read them */

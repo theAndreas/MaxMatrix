@@ -10,8 +10,8 @@
  * program needs no WebSocket for it, which wxWidgets does not have.
  */
 
-#ifndef MAXMATRIX_SIMULATOR_SIMULATORSERIALHOST_H_
-#define MAXMATRIX_SIMULATOR_SIMULATORSERIALHOST_H_
+#ifndef MAXMATRIX_SIMULATOR_HOST_SIMULATORSERIALHOST_H_
+#define MAXMATRIX_SIMULATOR_HOST_SIMULATORSERIALHOST_H_
 
 #include <stdint.h>
 #include <string>
