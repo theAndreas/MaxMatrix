@@ -71,6 +71,21 @@ class MaxMatrixChain
     byte data_in_pin_;
     byte chip_select_pin_;
     byte clock_pin_;
+    /*
+     * The port and the bit of each pin, looked up once in Init(): digitalWrite() looks both up in
+     * tables in flash on every call, which made a byte bit banged by shiftOut() take about 1500
+     * cycles of the Uno's 16 MHz. The port, not its register: the core reads the register's
+     * address from flash with a statement expression, which decltype() cannot take outside a
+     * function, so it is read where it is written. Data in and clock only bit bang.
+     */
+    byte chip_select_port_;
+    byte chip_select_mask_;
+#if(MAXMATRIX_USE_SPI == STD_OFF)
+    byte data_in_port_;
+    byte data_in_mask_;
+    byte clock_port_;
+    byte clock_mask_;
+#endif
 
     /*
      * Not const, though they change no member: they change the chain this object stands for, and a
@@ -81,6 +96,10 @@ class MaxMatrixChain
     void StartTransmission();
     void StopTransmission();
     void Transfer(byte register_address, byte register_value);
+#if(MAXMATRIX_USE_SPI == STD_OFF)
+    void ShiftOut(byte value);
+#endif
+    static void WritePin(byte port, byte mask, bool high);
 
   public:
     /*!
@@ -104,21 +123,21 @@ class MaxMatrixChain
     /*!
      * \brief Sets the pin DIN of the chain is connected to.
      *
-     * \param[in] data_in_pin The pin; Init() makes it an output.
+     * \param[in] data_in_pin The pin; the next Init() makes it an output and takes it.
      */
     void SetDataInPin(byte data_in_pin) { data_in_pin_ = data_in_pin; }
 
     /*!
      * \brief Sets the pin CS of the chain is connected to.
      *
-     * \param[in] chip_select_pin The pin; Init() makes it an output.
+     * \param[in] chip_select_pin The pin; the next Init() makes it an output and takes it.
      */
     void SetChipSelectPin(byte chip_select_pin) { chip_select_pin_ = chip_select_pin; }
 
     /*!
      * \brief Sets the pin CLK of the chain is connected to.
      *
-     * \param[in] clock_pin The pin; Init() makes it an output.
+     * \param[in] clock_pin The pin; the next Init() makes it an output and takes it.
      */
     void SetClockPin(byte clock_pin) { clock_pin_ = clock_pin; }
 

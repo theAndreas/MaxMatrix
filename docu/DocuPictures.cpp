@@ -433,7 +433,7 @@ int main(int argc, char** argv)
     std::string const folder = argv[2];
     byte failed = 0;
 
-    mock::Reset(DOCU_CHIP_SELECT_PIN, MAXMATRIX_NUMBER_OF_MODULES);
+    mock::Reset(DOCU_DATA_IN_PIN, DOCU_CHIP_SELECT_PIN, DOCU_CLOCK_PIN, MAXMATRIX_NUMBER_OF_MODULES);
     matrix.Init();
 
     std::vector<std::pair<std::string, std::string>> pictures;
