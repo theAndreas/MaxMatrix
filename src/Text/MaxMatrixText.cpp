@@ -88,30 +88,16 @@ MaxMatrixStatus MaxMatrixText::FindGlyph(char c, MaxMatrixGlyph* glyph) const
 
 void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixSprite const sprite)
 {
+    // As in MaxMatrixPanel::DrawBitmap(): right of the panel x plus a column could overflow.
+    if(x >= panel.GetNumberOfColumns()) return;
     for(byte sprite_column = 0; sprite_column < sprite[kSpriteWidth]; sprite_column++) {
-        SetSpriteColumn(panel, static_cast<int16_t>(x + sprite_column), y, sprite[kSpriteHeight], sprite[kSpriteColumn1 + sprite_column]);
+        panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y, sprite[kSpriteHeight], sprite[kSpriteColumn1 + sprite_column]);
     }
 }
 
 void MaxMatrixText::SetGlyph(MaxMatrixPanel& panel, int16_t x, int16_t y, MaxMatrixGlyph const& glyph)
 {
-    for(byte glyph_column = 0; glyph_column < glyph.width; glyph_column++) {
-        SetSpriteColumn(panel, static_cast<int16_t>(x + glyph_column), y, glyph.height, pgm_read_byte(glyph.columns + glyph_column));
-    }
-}
-
-/*
- * Draws one column of a sprite or glyph `height` rows high, bit 0 at `y`: a whole column at once
- * if it fills one, otherwise dot by dot, as the rows below it are not its own. The panel leaves out
- * what lies off it.
- */
-void MaxMatrixText::SetSpriteColumn(MaxMatrixPanel& panel, int16_t x, int16_t y, byte height, byte column)
-{
-    if(height == MAXMATRIX_ROW_NUMBER_OF_MODULE && y == 0) {
-        panel.SetColumn(x, column);
-    } else {
-        for(byte row = 0; row < height; row++) panel.SetDot(x, static_cast<int16_t>(y + row), bitRead(column, row));
-    }
+    panel.DrawBitmap(x, y, glyph.columns, glyph.width, glyph.height);
 }
 
 void MaxMatrixText::SetSpaceBetweenChars(byte space_between_chars)

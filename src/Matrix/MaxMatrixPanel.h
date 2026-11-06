@@ -71,6 +71,8 @@ class MaxMatrixPanel
     void ConvertDotToBuffer(byte column, byte row, byte* buffer_column, byte* buffer_bit);
     byte GetLine(byte column, byte row, bool vertical);
     void SetLine(byte column, byte row, bool vertical, byte value);
+    void SetFarDot(int32_t column, int32_t row, bool value);
+    void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom, bool value);
     void ChangeMapping(MaxMatrixMatrixOrientation matrix_orientation, MaxMatrixModuleType module_type);
 
   public:
@@ -216,6 +218,86 @@ class MaxMatrixPanel
      * \param[in] value True to light it.
      */
     void SetDot(int16_t column, int16_t row, bool value);
+
+    /*!
+     * \brief Draws a straight line from one dot to another, both ends included.
+     *
+     * What lies off the panel is left out, as for SetDot(); the ends may lie off it.
+     *
+     * \param[in] x0 The column of the first end.
+     * \param[in] y0 The row of the first end.
+     * \param[in] x1 The column of the second end.
+     * \param[in] y1 The row of the second end.
+     * \param[in] value True to light the line, false to turn it off.
+     */
+    void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value);
+
+    /*!
+     * \brief Draws the outline of a rectangle.
+     *
+     * What lies off the panel is left out, as for SetDot(). A width or height of 0 or less draws
+     * nothing.
+     *
+     * \param[in] x The column of the left edge.
+     * \param[in] y The row of the top edge.
+     * \param[in] width The columns it spans.
+     * \param[in] height The rows it spans.
+     * \param[in] value True to light the outline, false to turn it off.
+     */
+    void DrawRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value);
+
+    /*!
+     * \brief Draws a rectangle with its inside.
+     *
+     * What lies off the panel is left out, as for SetDot(). A width or height of 0 or less draws
+     * nothing.
+     *
+     * \param[in] x The column of the left edge.
+     * \param[in] y The row of the top edge.
+     * \param[in] width The columns it spans.
+     * \param[in] height The rows it spans.
+     * \param[in] value True to light it, false to turn it off.
+     */
+    void FillRect(int16_t x, int16_t y, int16_t width, int16_t height, bool value);
+
+    /*!
+     * \brief Draws the outline of a circle.
+     *
+     * What lies off the panel is left out, as for SetDot(). A radius of 0 draws the centre only, a
+     * negative one nothing.
+     *
+     * \param[in] x The column of the centre.
+     * \param[in] y The row of the centre.
+     * \param[in] radius The dots from the centre to the outline; 3 fills the height of the panel.
+     * \param[in] value True to light the outline, false to turn it off.
+     */
+    void DrawCircle(int16_t x, int16_t y, int16_t radius, bool value);
+
+    /*!
+     * \brief Draws a picture from flash with its top left corner at `x`, `y`.
+     *
+     * The picture is a column per byte, bit 0 the top row, as a glyph of a font: a 0 bit turns its
+     * dot off. Rows below `height` are left as they are, and what lies off the panel is left out.
+     *
+     * \param[in] x The column of the left edge; it may lie off the panel.
+     * \param[in] y The row of the top edge; it may lie off the panel.
+     * \param[in] bitmap The columns, `width` bytes in `PROGMEM`.
+     * \param[in] width The columns of the picture.
+     * \param[in] height The rows of the picture, 1 to 8.
+     */
+    void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width, byte height = MAXMATRIX_ROW_NUMBER_OF_MODULE);
+
+    /*!
+     * \brief Draws one column of a picture, `height` rows from `y` on.
+     *
+     * What lies off the panel is left out; rows below `height` are left as they are.
+     *
+     * \param[in] x The column; it may lie off the panel.
+     * \param[in] y The row of bit 0; it may lie off the panel.
+     * \param[in] height The rows to draw, 1 to 8.
+     * \param[in] value The column, bit 0 at `y`.
+     */
+    void DrawColumn(int16_t x, int16_t y, byte height, byte value);
 
     /*!
      * \brief Sets how the LEDs of every module are wired.

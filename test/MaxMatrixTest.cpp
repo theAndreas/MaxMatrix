@@ -5,6 +5,7 @@
  * side - whether a real MAX7219 accepts the frames is only known on hardware. */
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -177,6 +178,9 @@ class MaxMatrixTest : public ::testing::Test {
     }
 };
 
+/* a picture in flash, a column per byte, for DrawBitmap() */
+static byte const kBitmap[] PROGMEM = { 0x01, 0x82, 0xFF, 0x00, 0x3C };
+
 static MaxMatrixMatrixOrientation const kMatrixOrientations[] = {
     MaxMatrixMatrixOrientation::k0, MaxMatrixMatrixOrientation::k180
 };
@@ -257,6 +261,10 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames)
         { "SetColumn", [](MaxMatrix& m) { m.SetColumn(17, 0x5A); } },
         { "ShiftUp", [](MaxMatrix& m) { m.ShiftUp(true); } },
         { "clear", [](MaxMatrix& m) { m.Clear(); } },
+        { "DrawLine", [](MaxMatrix& m) { m.DrawLine(0, 7, 31, 0, true); } },
+        { "FillRect", [](MaxMatrix& m) { m.FillRect(-1, -1, 34, 10, true); } },
+        { "DrawCircle", [](MaxMatrix& m) { m.DrawCircle(15, 3, 9, true); } },
+        { "DrawBitmap", [](MaxMatrix& m) { m.DrawBitmap(3, 1, kBitmap, sizeof(kBitmap)); } },
     };
     char text[] = "Hi \xC4!";
 
@@ -1233,7 +1241,162 @@ TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting)
     EXPECT_EQ(steps, 4 + 255);
 }
 
-/* Chains of other lengths than the examples', in every orientation: one module, which is a pair of itself when the
+/* Whether a line drawn from (x0, y0) to (x1, y1) is the line on the panel: along its longer axis it has exactly one dot
+ * in each column or row between the ends, at most half a dot from the true line, and nothing beyond the ends. */
+static void ExpectLine(MaxMatrix& matrix, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
+{
+    bool const steep = std::abs(y1 - y0) > std::abs(x1 - x0);
+    int16_t const length = steep ? MAXMATRIX_ROW_NUMBER_OF_MODULE : matrix.GetNumberOfColumns();
+    int16_t const breadth = steep ? matrix.GetNumberOfColumns() : MAXMATRIX_ROW_NUMBER_OF_MODULE;
+    double const along_0 = steep ? y0 : x0, along_1 = steep ? y1 : x1;
+    double const across_0 = steep ? x0 : y0, across_1 = steep ? x1 : y1;
+
+    for(int16_t along = 0; along < length; along++) {
+        bool const inside = along >= std::min(along_0, along_1) && along <= std::max(along_0, along_1);
+        double const ideal = along_0 == along_1 ? across_0 : across_0 + (across_1 - across_0) * (along - along_0) / (along_1 - along_0);
+        uint16_t lit = 0;
+        for(int16_t across = 0; across < breadth; across++) {
+            if(!(steep ? matrix.GetDot(across, along) : matrix.GetDot(along, across)).GetValue()) continue;
+            lit++;
+            EXPECT_TRUE(inside) << "a dot beyond the ends at " << along;
+            EXPECT_LE(std::abs(across - ideal), 0.5) << "at " << along << ", " << across << " off the line";
+        }
+        bool const ideal_on_panel = std::round(ideal) >= 0 && std::round(ideal) < breadth;
+        if(inside && ideal_on_panel) {
+            EXPECT_EQ(lit, 1u) << "at " << along;
+        }
+    }
+}
+
+/* a line in each of the eight directions, both ways round, and lines whose ends lie off the panel, as far as an
+ * int16_t reaches: the sum of their differences does not fit in an int, which has 16 bits on the Uno */
+TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd)
+{
+    struct {
+        int16_t x0, y0, x1, y1;
+    } const lines[] = {
+        { 2, 3, 20, 3 }, { 7, 0, 7, 7 }, { 0, 0, 7, 7 }, { 0, 0, 31, 7 }, { 3, 1, 9, 6 }, { 30, 0, 26, 7 },
+        { 0, 7, 31, 0 }, { 12, 4, 12, 4 }, { -40, -10, 60, 17 }, { 5, -20, 9, 30 },
+        { -32768, 0, 32767, 7 }, { -32768, -32768, 32767, 32767 }, { 16, -32768, 17, 32767 },
+    };
+
+    for(auto const& line : lines) {
+        for(bool reverse : { false, true }) {
+            SCOPED_TRACE(::testing::Message() << "(" << line.x0 << ", " << line.y0 << ") to (" << line.x1 << ", " << line.y1 << ")"
+                                              << (reverse ? " reversed" : ""));
+            matrix_.Clear();
+            if(reverse) matrix_.DrawLine(line.x1, line.y1, line.x0, line.y0, true);
+            else matrix_.DrawLine(line.x0, line.y0, line.x1, line.y1, true);
+            ExpectLine(matrix_, line.x0, line.y0, line.x1, line.y1);
+        }
+    }
+    matrix_.Clear();
+    matrix_.DrawLine(-32768, 0, 32767, 7, true);
+    matrix_.DrawLine(-32768, 0, 32767, 7, false);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << "a line turned off";
+}
+
+/* a rectangle on the panel, one partly off it and one as large as an int16_t allows; the outline is what the filled
+ * one has more than its inside */
+TEST_F(MaxMatrixTest, RectanglesCoverTheirArea)
+{
+    struct {
+        int16_t x, y, width, height;
+    } const rectangles[] = {
+        { 2, 1, 5, 4 }, { 10, 0, 1, 8 }, { 20, 6, 4, 1 }, { -3, -2, 6, 5 }, { 29, 5, 10, 10 }, { -32768, -32768, 32767, 32767 },
+        { 0, 0, 32767, 32767 }, { 32767, 0, 32767, 8 },
+    };
+
+    for(auto const& r : rectangles) {
+        SCOPED_TRACE(::testing::Message() << r.x << ", " << r.y << ", " << r.width << " x " << r.height);
+        int32_t const right = static_cast<int32_t>(r.x) + r.width - 1, bottom = static_cast<int32_t>(r.y) + r.height - 1;
+        auto inside = [&](int16_t x, int16_t y) { return x >= r.x && x <= right && y >= r.y && y <= bottom; };
+        auto edge = [&](int16_t x, int16_t y) { return inside(x, y) && (x == r.x || x == right || y == r.y || y == bottom); };
+
+        matrix_.Clear();
+        matrix_.FillRect(r.x, r.y, r.width, r.height, true);
+        EXPECT_EQ(ShownPicture(matrix_), Picture(inside)) << "filled";
+        matrix_.Clear();
+        matrix_.DrawRect(r.x, r.y, r.width, r.height, true);
+        EXPECT_EQ(ShownPicture(matrix_), Picture(edge)) << "outline";
+    }
+
+    matrix_.FillRect(0, 0, 32, 8, true);
+    matrix_.FillRect(1, 1, 3, 2, false);
+    matrix_.DrawRect(5, 0, 0, 8, false);
+    matrix_.FillRect(5, 0, 8, -1, false);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) { return !(x >= 1 && x <= 3 && y >= 1 && y <= 2); }))
+        << "turned off, and nothing drawn without a width or height";
+}
+
+/* the outlines the midpoint circle gives for small radii, round and closed, also across the edge of the panel */
+TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline)
+{
+    std::vector<std::string> const radius_3 = {
+        "..###..",
+        ".#...#.",
+        "#.....#",
+        "#.....#",
+        "#.....#",
+        ".#...#.",
+        "..###..",
+    };
+
+    matrix_.DrawCircle(10, 3, 3, true);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
+        return x >= 7 && x <= 13 && y <= 6 && radius_3[y][x - 7] == '#';
+    }));
+
+    matrix_.Clear();
+    matrix_.DrawCircle(0, 0, 3, true);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
+        return x <= 3 && y <= 3 && radius_3[y + 3][x + 3] == '#';
+    })) << "the quarter on the panel";
+
+    matrix_.Clear();
+    matrix_.DrawCircle(20, 4, 0, true);
+    matrix_.DrawCircle(25, 4, 1, true);
+    matrix_.DrawCircle(28, 4, -1, true);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
+        return (x == 20 && y == 4) || (std::abs(x - 25) + std::abs(y - 4) == 1);
+    })) << "radius 0 is a dot, 1 a cross, a negative one nothing";
+
+    matrix_.Clear();
+    matrix_.DrawCircle(16, 3, 32767, true);
+    matrix_.DrawCircle(-32768, -32768, 32767, true);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << "circles far beyond the panel";
+}
+
+/* a bitmap is drawn column by column from flash, also partly off the panel, and leaves the rows below its height */
+TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns)
+{
+    auto bitmap_dot = [](int16_t column, int16_t row) {
+        return column >= 0 && column < static_cast<int16_t>(sizeof(kBitmap)) && row >= 0 && row < 8 && bitRead(kBitmap[column], row);
+    };
+
+    matrix_.DrawBitmap(3, 0, kBitmap, sizeof(kBitmap));
+    EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) { return bitmap_dot(x - 3, y); }));
+
+    matrix_.Clear();
+    matrix_.DrawBitmap(-2, 3, kBitmap, sizeof(kBitmap));
+    matrix_.DrawBitmap(29, -1, kBitmap, sizeof(kBitmap));
+    EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) { return bitmap_dot(x + 2, y - 3) || bitmap_dot(x - 29, y + 1); }))
+        << "partly off the panel";
+
+    matrix_.FillRect(0, 0, 32, 8, true);
+    matrix_.DrawBitmap(10, 2, kBitmap, sizeof(kBitmap), 3);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
+        return x < 10 || x >= 15 || y < 2 || y >= 5 || bitmap_dot(x - 10, y - 2);
+    })) << "three rows high, over a lit panel";
+
+    matrix_.Clear();
+    matrix_.DrawBitmap(32767, 0, kBitmap, sizeof(kBitmap));
+    matrix_.DrawBitmap(-32768, 0, kBitmap, sizeof(kBitmap));
+    matrix_.DrawBitmap(0, 32767, kBitmap, sizeof(kBitmap), 8);
+    EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t, int16_t) { return false; })) << "far off the panel";
+}
+
+/* Chains of other lengths than the examples\', in every orientation: one module, which is a pair of itself when the
  * orientation changes, three, with one module in the middle, and six. The buffer is the test's, filled with a pattern
  * that the matrix has to empty. */
 static byte const kChainLengths[] = { 1, 3, 6 };
