@@ -3,7 +3,7 @@
 
 /*!
  * \file
- * \brief The LEDs of the whole panel, to switch one by a click.
+ * \brief The LEDs of the whole panel, as the matrix shows them, to switch one by a click.
  *
  * As many modules as the library is built for by default, `MAXMATRIX_NUMBER_OF_MODULES`, which is
  * what SerialControl drives unless its sketch was built for another chain.
@@ -26,7 +26,7 @@
 #define CONTROL_DOT_PANEL_DISABLED                                  wxColour(0x40, 0x40, 0x40)
 
 ControlDotPanel::ControlDotPanel(wxWindow* parent, std::function<void(uint8_t, uint8_t, bool)> on_switch)
-    : wxPanel(parent), lit_(static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS) * MAXMATRIX_ROW_NUMBER_OF_MODULE, false), on_switch_(std::move(on_switch))
+    : wxPanel(parent), columns_(static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS), 0x00), on_switch_(std::move(on_switch))
 {
     wxCoord const width = MAXMATRIX_NUMBER_OF_COLUMNS * CONTROL_DOT_PANEL_CELL + (MAXMATRIX_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
                       2 * CONTROL_DOT_PANEL_MARGIN;
@@ -39,9 +39,16 @@ ControlDotPanel::ControlDotPanel(wxWindow* parent, std::function<void(uint8_t, u
     Bind(wxEVT_LEFT_DOWN, &ControlDotPanel::OnClick, this);
 }
 
+void ControlDotPanel::SetPicture(std::vector<uint8_t> const& columns)
+{
+    if(columns.size() != columns_.size() || columns == columns_) return;
+    columns_ = columns;
+    Refresh();
+}
+
 void ControlDotPanel::Clear()
 {
-    std::fill(lit_.begin(), lit_.end(), false);
+    std::fill(columns_.begin(), columns_.end(), 0x00);
     Refresh();
 }
 
@@ -60,7 +67,7 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */)
     dc.SetPen(*wxTRANSPARENT_PEN);
     for(uint8_t row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
         for(uint8_t column = 0; column < MAXMATRIX_NUMBER_OF_COLUMNS; column++) {
-            bool const lit = lit_[row * MAXMATRIX_NUMBER_OF_COLUMNS + column];
+            bool const lit = ((columns_[column] >> row) & 0x01) != 0;
             wxCoord const x = margin + column * cell + (column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * gap + (cell - led) / 2;
             wxCoord const y = margin + row * cell + (cell - led) / 2;
             if(!IsEnabled()) dc.SetBrush(wxBrush(CONTROL_DOT_PANEL_DISABLED));
@@ -77,10 +84,9 @@ void ControlDotPanel::OnClick(wxMouseEvent& event)
     uint8_t row;
 
     if(!GetDotAt(event.GetPosition(), &column, &row)) return;
-    std::vector<bool>::reference lit = lit_[row * MAXMATRIX_NUMBER_OF_COLUMNS + column];
-    lit = !lit;
+    columns_[column] ^= static_cast<uint8_t>(1u << row);
     Refresh();
-    on_switch_(column, row, lit);
+    on_switch_(column, row, ((columns_[column] >> row) & 0x01) != 0);
 }
 
 /*

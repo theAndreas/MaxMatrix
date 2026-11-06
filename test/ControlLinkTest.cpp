@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "ControlLink.h"
+#include "MaxMatrixConfig.h"
 
 // A port whose other end is the test: what the link writes collects in `written`, what the test puts into `incoming`
 // arrives at the next Read(), and `gone` ends the connection as a pulled cable would.
@@ -125,4 +126,97 @@ TEST(ControlLinkTest, BeginForgetsHalfALine)
     link.Task(&lines);
     EXPECT_EQ(lines, (std::vector<std::string>{"dy"}));
     EXPECT_FALSE(link.IsReady());
+}
+
+// The answer to picture with the first column `first` and the rest dark, as SerialControl prints it.
+static std::string Picture(char const* first)
+{
+    return std::string("picture=") + first + std::string(2 * MAXMATRIX_NUMBER_OF_COLUMNS - 2, '0') + "\r\n";
+}
+
+// the picture is asked for once per interval, and its answer is kept rather than shown as a line
+TEST(ControlLinkTest, AsksForThePictureOncePerInterval)
+{
+    FakePort port;
+    ControlLink link(port);
+    std::vector<std::string> lines;
+
+    link.Begin(false);
+    EXPECT_TRUE(link.GetPicture().empty());
+    link.AskForPicture(1000);
+    link.AskForPicture(1010);
+    EXPECT_EQ(port.written, "picture\n");
+    port.incoming = Picture("81");
+    link.Task(&lines);
+    EXPECT_TRUE(lines.empty());
+    ASSERT_EQ(link.GetPicture().size(), static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS));
+    EXPECT_EQ(link.GetPicture()[0], 0x81);
+    link.AskForPicture(1000 + CONTROL_LINK_PICTURE_INTERVAL_MS - 1);
+    EXPECT_EQ(port.written, "picture\n");
+    link.AskForPicture(1000 + CONTROL_LINK_PICTURE_INTERVAL_MS);
+    EXPECT_EQ(port.written, "picture\npicture\n");
+}
+
+// an answer that never comes, a line lost on the wire say, would stop the picture for good
+TEST(ControlLinkTest, AsksAgainWhenAnAnswerIsLost)
+{
+    FakePort port;
+    ControlLink link(port);
+
+    link.Begin(false);
+    link.AskForPicture(0);
+    link.AskForPicture(CONTROL_LINK_PICTURE_TIMEOUT_MS - 1);
+    EXPECT_EQ(port.written, "picture\n");
+    link.AskForPicture(CONTROL_LINK_PICTURE_TIMEOUT_MS);
+    EXPECT_EQ(port.written, "picture\npicture\n");
+}
+
+// a dot clicked while an answer is due: the answer shows the matrix before the click and would turn the dot off again
+// on the screen for a moment, so it is dropped
+TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand)
+{
+    FakePort port;
+    ControlLink link(port);
+    std::vector<std::string> lines;
+
+    link.Begin(false);
+    link.AskForPicture(0);
+    link.Send("setDot=0,0,1");
+    port.incoming = Picture("00") + "ok\r\n";
+    link.Task(&lines);
+    EXPECT_TRUE(link.GetPicture().empty());
+    EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
+    link.AskForPicture(CONTROL_LINK_PICTURE_INTERVAL_MS);
+    port.incoming = Picture("01");
+    link.Task(&lines);
+    ASSERT_FALSE(link.GetPicture().empty());
+    EXPECT_EQ(link.GetPicture()[0], 0x01);
+}
+
+// a board reset by its button says ready again and answers nothing asked for before; the link asks again at the next
+// interval rather than after the timeout
+TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain)
+{
+    FakePort port;
+    ControlLink link(port);
+    std::vector<std::string> lines;
+
+    link.Begin(false);
+    link.AskForPicture(0);
+    port.incoming = "ready\r\n";
+    link.Task(&lines);
+    EXPECT_EQ(lines, (std::vector<std::string>{"ready"}));
+    link.AskForPicture(CONTROL_LINK_PICTURE_INTERVAL_MS);
+    EXPECT_EQ(port.written, "picture\npicture\n");
+}
+
+// a board that waits for ready is not asked, as it would lose the line
+TEST(ControlLinkTest, AsksNothingBeforeReady)
+{
+    FakePort port;
+    ControlLink link(port);
+
+    link.Begin(true);
+    link.AskForPicture(1000);
+    EXPECT_EQ(port.written, "");
 }

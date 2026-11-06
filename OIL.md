@@ -459,9 +459,14 @@ so that to the program both ends look alike, and to the sketch the program and t
 
 How it is shipped, a Windows `.exe` and an AppImage, is decided with 18.
 
-As built, the window follows the old tool's layout, in English as the rest of the repository: a tab
-for the text with the intensity and speed sliders, one with every LED of the panel to click on
-rather than one module at a time, and on the right the board, the simulator and a log. Like the page,
+As built, the window follows the old tool's layout, in English as the rest of the repository, but
+for its two tabs: every LED of the panel on top, rather than one module at a time, the text with the
+intensity and speed sliders below it, and on the right the board, the simulator and a log. The old
+tool only sent; the panel here shows what the board shows, as SerialControl answers `picture`, up
+to twenty times a second, and a SerialControl that starts takes the window's settings, so that the
+window and the matrix agree. For that `MaxMatrixCommand` answers every line itself, on a `Print`,
+rather than leaving `ok` and `error:` to the sketch, which would have had to know that `picture`
+answers in their place; SerialControl grew by 152 bytes of flash and no RAM. Like the page,
 it sends every command to both ends, whichever is connected, and nothing to a board until
 SerialControl has said `ready`; the simulator's sketch said so before the program connected, so
 there it is not waited for. The simulator's TCP port is `--tcp PORT`, in both simulators, with one

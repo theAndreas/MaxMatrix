@@ -234,10 +234,15 @@ Opening the port resets an Uno; the page sends the board nothing until SerialCon
 
 ### The control program
 `control/` holds the same controls as a program of its own, for a browser without Web Serial and for whoever wants a
-window rather than a page, laid out as the Windows tool of [Led-Matrix](https://github.com/AndreasBur/Led-Matrix) was:
-the text, *Shift in*, the space and the intensity and speed sliders on one tab, every LED of the panel to click on the
-other, and on the right the board's serial port, the simulator and a log of every line and answer. Every command goes
+window rather than a page, laid out as the Windows tool of [Led-Matrix](https://github.com/AndreasBur/Led-Matrix) was,
+but for its tabs: the whole panel on top, below it the text, *Shift in*, the space and the intensity and speed
+sliders, and on the right the board's serial port, the simulator and a log of every line and answer. Every command goes
 to the board and to the simulator, whichever is connected.
+
+The panel shows what the board shows, or the simulator while no board is ready: the program asks SerialControl for
+its `picture` up to twenty times a second, so a text that shifts in moves there as well, and a click switches the LED
+that is lit or dark on the matrix. When SerialControl starts, or the simulator is connected, the program sends it the
+intensity, speed and space the window shows.
 
 It is built with the rest when CMake finds wxWidgets 3.2 (`apt install libwxgtk3.2-dev`, in the dev container
 already), and runs the simulator over a TCP port that `--tcp` opens beside the page:

@@ -3,9 +3,12 @@
 
 /*!
  * \file
- * \brief The command lines of SerialControl, as the control program sends them.
+ * \brief The command lines of SerialControl, as the control program sends them, and the answer to
+ *        `picture`.
  */
 
+#include <ctype.h>
+#include <stdlib.h>
 #include "ControlCommand.h"
 #include "MaxMatrixConfig.h"
 
@@ -37,6 +40,30 @@ std::string ControlCommand::MakeDot(uint8_t column, uint8_t row, bool lit)
 std::string ControlCommand::MakeClear()
 {
     return "clear";
+}
+
+std::string ControlCommand::MakePicture()
+{
+    return "picture";
+}
+
+// Two hex digits per column, upper case as SerialControl prints them; lower case is taken as well.
+bool ControlCommand::DecodePicture(std::string const& line, std::vector<uint8_t>* columns)
+{
+    static std::string const kName = "picture=";
+
+    if(line.compare(0, kName.size(), kName) != 0) return false;
+    columns->clear();
+    if(line.size() != kName.size() + 2u * static_cast<size_t>(MAXMATRIX_NUMBER_OF_COLUMNS)) return true;
+    for(size_t i = kName.size(); i < line.size(); i += 2) {
+        char const digits[] = {line[i], line[i + 1], '\0'};
+        if(!isxdigit(static_cast<unsigned char>(digits[0])) || !isxdigit(static_cast<unsigned char>(digits[1]))) {
+            columns->clear();
+            return true;
+        }
+        columns->push_back(static_cast<uint8_t>(strtoul(digits, nullptr, 16)));
+    }
+    return true;
 }
 
 bool ControlCommand::Fits(std::string const& line)

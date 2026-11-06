@@ -5,8 +5,8 @@
  * \file
  * \brief The window of the control program.
  *
- * Laid out as the Windows tool of AndreasBur/Led-Matrix was: a tab for the text and one for the
- * LEDs on the left, the connections and the log on the right.
+ * Laid out as the Windows tool of AndreasBur/Led-Matrix was, but for its two tabs: the matrix and
+ * the text below it on the left, the connections and the log on the right.
  */
 
 #ifndef MAXMATRIX_CONTROL_CONTROLWINDOW_H_
@@ -36,6 +36,11 @@ class ControlDotPanel;
  * simulator's page; with SerialControl in both, the simulator shows what the board should. The
  * controls are enabled while at least one of them takes commands.
  *
+ * The matrix in the window is what the board shows, or the simulator while no board is ready, as
+ * SerialControl answers `picture`; it is asked for up to twenty times a second. When SerialControl
+ * starts, or the simulator is connected, it is sent the intensity, speed and space the window
+ * shows, so that the two agree.
+ *
  * It holds no logic a test would need: the lines are ControlCommand's, the connections ControlLink's,
  * so the window itself is checked by hand.
  */
@@ -49,8 +54,7 @@ class ControlWindow : public wxFrame
     wxTimer timer_;
     std::string last_setting_;
 
-    wxWindow* text_page_;
-    wxWindow* dot_page_;
+    wxWindow* controls_;
     wxTextCtrl* text_;
     wxCheckBox* shift_;
     wxSpinCtrl* space_;
@@ -66,8 +70,8 @@ class ControlWindow : public wxFrame
     wxTextCtrl* log_;
 
     void MakeMenu();
-    wxWindow* MakeTextPage(wxWindow* parent);
-    wxWindow* MakeDotPage(wxWindow* parent);
+    wxWindow* MakeMatrix(wxWindow* parent);
+    wxWindow* MakeText(wxWindow* parent);
     wxWindow* MakeConnections(wxWindow* parent);
     void OnSend(wxCommandEvent& event);
     void OnClear(wxCommandEvent& event);
@@ -83,7 +87,9 @@ class ControlWindow : public wxFrame
     void OnExit(wxCommandEvent& event);
     void Broadcast(std::string const& line);
     void BroadcastSetting(std::string const& line);
+    void SendSettings(ControlLink& link, char const* name);
     void Follow(ControlLink& link, char const* name);
+    ControlLink* GetShownLink();
     void ShowState();
     void Log(wxString const& text);
     static wxString ConvertToText(std::string const& line);

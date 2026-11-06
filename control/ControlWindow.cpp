@@ -8,12 +8,12 @@
  * The labels are English, as the rest of the repository is; the old tool's were German.
  */
 
+#include <chrono>
 #include <wx/aboutdlg.h>
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/combobox.h>
 #include <wx/menu.h>
-#include <wx/notebook.h>
 #include <wx/settings.h>
 #include <wx/sizer.h>
 #include <wx/slider.h>
@@ -50,14 +50,14 @@ ControlWindow::ControlWindow()
 {
     wxPanel* const content = new wxPanel(this);
     wxBoxSizer* const columns = new wxBoxSizer(wxHORIZONTAL);
-    wxNotebook* const pages = new wxNotebook(content, wxID_ANY);
+    wxBoxSizer* const controls = new wxBoxSizer(wxVERTICAL);
 
     MakeMenu();
-    text_page_ = MakeTextPage(pages);
-    dot_page_ = MakeDotPage(pages);
-    pages->AddPage(text_page_, "Text");
-    pages->AddPage(dot_page_, "LEDs");
-    columns->Add(pages, 1, wxEXPAND | wxALL, FromDIP(CONTROL_WINDOW_BORDER));
+    controls_ = new wxPanel(content);
+    controls->Add(MakeMatrix(controls_), 0, wxEXPAND);
+    controls->Add(MakeText(controls_), 1, wxEXPAND);
+    controls_->SetSizer(controls);
+    columns->Add(controls_, 1, wxEXPAND | wxALL, FromDIP(CONTROL_WINDOW_BORDER));
     columns->Add(MakeConnections(content), 0, wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(CONTROL_WINDOW_BORDER));
     content->SetSizer(columns);
     SetClientSize(content->GetBestSize());
@@ -89,7 +89,7 @@ void ControlWindow::MakeMenu()
  * them whether it shifts, the space between the chars, Clear and Send. Enter in the field sends as
  * well.
  */
-wxWindow* ControlWindow::MakeTextPage(wxWindow* parent)
+wxWindow* ControlWindow::MakeText(wxWindow* parent)
 {
     wxPanel* const page = new wxPanel(parent);
     wxBoxSizer* const rows = new wxBoxSizer(wxVERTICAL);
@@ -137,20 +137,16 @@ wxWindow* ControlWindow::MakeTextPage(wxWindow* parent)
     return page;
 }
 
-// The whole panel to click on, and a button that turns every LED off.
-wxWindow* ControlWindow::MakeDotPage(wxWindow* parent)
+// The whole panel as the matrix shows it, to click on; Clear below it turns every LED off.
+wxWindow* ControlWindow::MakeMatrix(wxWindow* parent)
 {
-    wxPanel* const page = new wxPanel(parent);
-    wxBoxSizer* const rows = new wxBoxSizer(wxVERTICAL);
-    wxButton* const clear = new wxButton(page, wxID_ANY, "All off");
-    wxCoord const border = FromDIP(CONTROL_WINDOW_BORDER);
+    wxPanel* const panel = new wxPanel(parent);
+    wxStaticBoxSizer* const box = new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix");
 
-    dots_ = new ControlDotPanel(page, [this](uint8_t column, uint8_t row, bool lit) { Broadcast(ControlCommand::MakeDot(column, row, lit)); });
-    rows->Add(dots_, 0, wxALL, border);
-    rows->Add(clear, 0, wxLEFT | wxRIGHT | wxBOTTOM, border);
-    page->SetSizer(rows);
-    clear->Bind(wxEVT_BUTTON, &ControlWindow::OnClear, this);
-    return page;
+    dots_ = new ControlDotPanel(box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) { Broadcast(ControlCommand::MakeDot(column, row, lit)); });
+    box->Add(dots_, 0, wxALL, FromDIP(CONTROL_WINDOW_BORDER));
+    panel->SetSizer(box);
+    return panel;
 }
 
 /*
@@ -219,7 +215,7 @@ void ControlWindow::OnSend(wxCommandEvent& /* event */)
     else Log(wxString::Format("Not sent: the line takes %zu bytes, SerialControl takes %u.\n", line.size(), MAXMATRIX_COMMAND_LINE_LENGTH));
 }
 
-// Turns every LED off, on the board and on the LED tab.
+// Turns every LED off, on the board and in the window at once.
 void ControlWindow::OnClear(wxCommandEvent& /* event */)
 {
     Broadcast(ControlCommand::MakeClear());
@@ -275,6 +271,7 @@ void ControlWindow::OnSimulator(wxCommandEvent& /* event */)
     } else if(tcp_port_.Open(port)) {
         simulator_link_.Begin(false);
         Log(wxString::Format("simulator: connected to localhost:%u\n", port));
+        SendSettings(simulator_link_, "simulator");
     } else {
         Log(wxString::Format("simulator: none on localhost:%u; start it with --tcp %u\n", port, port));
     }
@@ -292,11 +289,20 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */)
     else if(serial_port_name_->GetCount() > 0) serial_port_name_->SetSelection(0);
 }
 
-// Reads what the board and the simulator have said.
+/*
+ * Reads what the board and the simulator have said, and asks the one the window shows for its
+ * picture; only that one, as the other would answer for nothing.
+ */
 void ControlWindow::OnTimer(wxTimerEvent& /* event */)
 {
+    uint32_t const now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
+
     Follow(board_link_, "board");
     Follow(simulator_link_, "simulator");
+    ControlLink* const shown = GetShownLink();
+    if(shown == nullptr) return;
+    shown->AskForPicture(now);
+    dots_->SetPicture(shown->GetPicture());
 }
 
 void ControlWindow::OnAbout(wxCommandEvent& /* event */)
@@ -334,8 +340,26 @@ void ControlWindow::BroadcastSetting(std::string const& line)
 }
 
 /*
+ * Sends `link` the intensity, speed and space the window shows: its SerialControl has just started
+ * with the ones it was built with, or the simulator's has been set by another program before.
+ */
+void ControlWindow::SendSettings(ControlLink& link, char const* name)
+{
+    std::string const lines[] = {ControlCommand::MakeIntensity(static_cast<uint8_t>(intensity_->GetValue())),
+                                 ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue())),
+                                 ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()))};
+
+    for(std::string const& line : lines) {
+        Log(wxString(name) + ": > " + ConvertToText(line) + "\n");
+        link.Send(line);
+    }
+}
+
+/*
  * Logs what `link` has received, each line after the `name` of its end, and says so when its port
- * has closed under it: the board unplugged, the simulator stopped or taken by another program.
+ * has closed under it: the board unplugged, the simulator stopped or taken by another program. A
+ * SerialControl that says ready has started, at the first connection or after a reset, and takes
+ * the window's settings.
  */
 void ControlWindow::Follow(ControlLink& link, char const* name)
 {
@@ -345,9 +369,20 @@ void ControlWindow::Follow(ControlLink& link, char const* name)
     bool const was_ready = link.IsReady();
     bool const open = link.Task(&lines);
 
-    for(std::string const& line : lines) Log(wxString(name) + ": " + ConvertToText(line) + "\n");
+    for(std::string const& line : lines) {
+        Log(wxString(name) + ": " + ConvertToText(line) + "\n");
+        if(line == CONTROL_LINK_READY) SendSettings(link, name);
+    }
     if(!open) Log(wxString(name) + ": the connection has closed\n");
     if(!open || was_ready != link.IsReady()) ShowState();
+}
+
+// The board while it is ready, as that is what the window is for; the simulator otherwise.
+ControlLink* ControlWindow::GetShownLink()
+{
+    if(board_link_.IsReady()) return &board_link_;
+    if(simulator_link_.IsReady()) return &simulator_link_;
+    return nullptr;
 }
 
 /*
@@ -368,8 +403,7 @@ void ControlWindow::ShowState()
     tcp_port_number_->Enable(!tcp_port_.IsOpen());
     simulator_status_->SetLabel(simulator_link_.IsReady() ? "ready" : "not connected");
     simulator_status_->SetForegroundColour(simulator_link_.IsReady() ? CONTROL_WINDOW_READY : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
-    text_page_->Enable(any_ready);
-    dot_page_->Enable(any_ready);
+    controls_->Enable(any_ready);
     speed_->Enable(any_ready && shift_->GetValue());
     dots_->Refresh();
 }

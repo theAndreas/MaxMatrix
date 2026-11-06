@@ -59,9 +59,12 @@ An Arduino library for chained 8x8 LED dot matrix modules driven by the MAX7219.
   Classes start with `Control`; everything but the window is the library `Control`, tested
   without wxWidgets:
   - `ControlPort` — one end: `ControlSerialPort` (`termios` / Win32) or `ControlTcpPort`.
-  - `ControlLink` — the lines over a port, and waiting for `ready` on a board.
-  - `ControlCommand` — the lines `MaxMatrixCommand` reads, and whether one fits its buffer.
-  - `ControlWindow`, `ControlDotPanel` — the window and the LEDs to click on, checked by hand;
+  - `ControlLink` — the lines over a port, waiting for `ready` on a board, and asking for the
+    `picture` the window shows.
+  - `ControlCommand` — the lines `MaxMatrixCommand` reads, whether one fits its buffer, and the
+    answer to `picture`.
+  - `ControlWindow`, `ControlDotPanel` — the window and the matrix as SerialControl answers
+    `picture`, to click on, checked by hand;
     `.clang-tidy` there switches off the check that argues with wxWidgets' flag enums.
 - `diagram.json`, `wokwi.toml` — a Uno with four FC-16 modules for Wokwi, which runs the real
   AVR binary that `tools/wokwi.py EXAMPLE` builds; to look at, not tested in CI.
