@@ -15,6 +15,9 @@
 # but these jobs are meant to answer in minutes. arduino-cli is pinned to the version the
 # Dockerfile installs, so a compile error here is one the container can reproduce.
 #
+# Packages from apt go through tools/apt-install.sh, in every workflow: the runner's mirror now and
+# then trickles for minutes, and the script starts such a download again rather than wait for it.
+#
 # Every job carries a timeout-minutes, set well above what it takes: they are there for a job
 # that has stopped making progress, which otherwise runs into GitHub's own six-hour limit.
 name: CI
@@ -38,17 +41,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # From apt, as in the Dockerfile, rather than whatever cmake the runner image carries, so
-      # that CI and the container build with the same versions.
+      # CMake and Ninja come with the runner image, in /usr/local/bin, which PATH puts ahead of
+      # /usr/bin: a cmake from apt, as the Dockerfile has it, was installed here and never run.
+      # The image's is the newer, so a preset or policy that changes shows here first.
       # wxWidgets so that the control program's window is built as well; its classes without a
       # window are tested either way, the window is checked by hand.
-      - name: Install CMake, Ninja, GoogleTest and wxWidgets
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev libwxgtk3.2-dev
+      - name: Install GoogleTest and wxWidgets
+        run: tools/apt-install.sh libgtest-dev libwxgtk3.2-dev
 
+      # Which CMake built it, as the log is all that is left of the runner.
       - name: Build and run
-        run: cmake --workflow --preset default
+        run: |
+          command -v cmake && cmake --version
+          cmake --workflow --preset default
 
   examples:
     name: Examples on arduino:avr:uno
@@ -115,11 +120,8 @@ jobs:
 
       # CMake finds arduino-cli and simavr and adds the tests avr/; the host-tests job above has
       # neither and leaves them out.
-      - name: Install CMake, GoogleTest and simavr
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build libgtest-dev \
-                                                          libsimavr-dev libelf-dev pkg-config
+      - name: Install GoogleTest and simavr
+        run: tools/apt-install.sh libgtest-dev libsimavr-dev libelf-dev pkg-config
 
       - name: Build
         run: |
