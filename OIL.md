@@ -28,7 +28,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
-| 19 | More of the MAX7219 in the public API | 3 | in progress | |
+| 19 | More of the MAX7219 in the public API | 3 | in progress | #55 |
 | 20 | More examples | 5 | done | #38 |
 | 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | open | |
