@@ -185,6 +185,30 @@ class MaxMatrix
      */
     MaxMatrixStatus SetIntensity(byte intensity);
 
+    /*!
+     * \brief Turns the LEDs of every MAX7219 off, or on again.
+     *
+     * In shutdown the MAX7219s draw next to no current, keep their registers and still take what
+     * is drawn: the LEDs show the picture as it is then once the shutdown ends, at the intensity
+     * they had. Sent at once, whatever auto update is.
+     *
+     * \param[in] shutdown True to turn the LEDs off, false to turn them on again.
+     * \pre Init().
+     */
+    void SetShutdown(bool shutdown);
+
+    /*!
+     * \brief Lights every LED at full brightness, or shows the picture again.
+     *
+     * The display test of the MAX7219 overrides the picture and the intensity without changing
+     * either, and also lights a module in shutdown: a check that every LED and every module of
+     * the chain works. Sent at once, whatever auto update is.
+     *
+     * \param[in] display_test True to light every LED, false to show the picture again.
+     * \pre Init().
+     */
+    void SetDisplayTest(bool display_test);
+
     /*! \copydoc MaxMatrixPanel::SetColumn(int16_t, byte) */
     void SetColumn(int16_t column, byte value) { panel_.SetColumn(column, value); UpdateIfAuto(); }
 

@@ -889,6 +889,44 @@ TEST_F(MaxMatrixTest, UnknownChars)
     EXPECT_EQ(matrix_.GetState(), MaxMatrixState::kReady);
 }
 
+/* shutdown darkens every module and loses nothing: a dot drawn meanwhile shows once it ends, at the intensity set
+ * before */
+TEST_F(MaxMatrixTest, ShutdownKeepsThePicture)
+{
+    std::vector<byte> const dark(MAXMATRIX_NUMBER_OF_COLUMNS, 0x00);
+
+    ASSERT_TRUE(matrix_.SetIntensity(9).IsOk());
+    ASSERT_TRUE(matrix_.SetText("Hi").IsOk());
+    matrix_.SetShutdown(true);
+    for(byte module = 0; module < MAXMATRIX_NUMBER_OF_MODULES; module++) {
+        EXPECT_EQ(ChipOfModule(module).shutdown, 0) << "module " << static_cast<uint16_t>(module);
+    }
+    EXPECT_EQ(Display(), dark);
+    matrix_.SetDot(31, 7, true);
+    EXPECT_EQ(Display(), dark) << "lit in shutdown";
+
+    matrix_.SetShutdown(false);
+    EXPECT_TRUE(matrix_.GetDot(31, 7).GetValue());
+    EXPECT_EQ(Display()[31], 0x80) << "the dot drawn in shutdown";
+    EXPECT_EQ(ChipOfModule(0).intensity, 9);
+}
+
+/* the display test lights every LED of every module at full brightness, even in shutdown, and the picture is back
+ * when it ends */
+TEST_F(MaxMatrixTest, DisplayTestLightsEveryLed)
+{
+    ASSERT_TRUE(matrix_.SetText("Hi").IsOk());
+    std::vector<byte> const shown = Display();
+
+    matrix_.SetShutdown(true);
+    matrix_.SetDisplayTest(true);
+    EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0xFF));
+    matrix_.SetDisplayTest(false);
+    EXPECT_EQ(Display(), std::vector<byte>(MAXMATRIX_NUMBER_OF_COLUMNS, 0x00)) << "still in shutdown";
+    matrix_.SetShutdown(false);
+    EXPECT_EQ(Display(), shown);
+}
+
 class MaxMatrixCommandTest : public MaxMatrixTest {
   protected:
     MaxMatrixCommand command_;

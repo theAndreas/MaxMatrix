@@ -67,6 +67,17 @@ MaxMatrixStatus MaxMatrix::SetIntensity(byte intensity)
     return MaxMatrixError::kOk;
 }
 
+void MaxMatrix::SetShutdown(bool shutdown)
+{
+    RegisterWrite(MAX7219_REG_SHUTDOWN_ADDRESS, shutdown ? MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE : MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
+}
+
+void MaxMatrix::SetDisplayTest(bool display_test)
+{
+    RegisterWrite(MAX7219_REG_DISPLAY_TEST_ADDRESS,
+                  display_test ? MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE : MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
+}
+
 MaxMatrixStatus MaxMatrix::SetCharWithShift(char c)
 {
     MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c));

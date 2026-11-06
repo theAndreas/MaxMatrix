@@ -28,7 +28,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
 | 18 | Releases and the Library Manager | 13 | open | |
-| 19 | More of the MAX7219 in the public API | 3 | open | |
+| 19 | More of the MAX7219 in the public API | 3 | in progress | |
 | 20 | More examples | 5 | done | #38 |
 | 21 | Control page for simulator and board | 6 | done | #28 |
 | 22 | Fast pin access for bit banging | 3 | open | |
@@ -319,6 +319,12 @@ version has the API that is meant to stay.
 Shutdown and display test as public functions, and the decode mode for 7-segment displays,
 which LedControl offers. Today only `RegisterWrite` reaches them. The model from 3 already
 knows the registers, so the tests come with it.
+
+As built, `SetShutdown()` and `SetDisplayTest()`, both sent at once whatever auto update is, and
+both leaving the buffer and the intensity alone, so that the picture is back when they end. The
+decode mode got no function: it turns a digit's byte into the segments of a 7-segment digit, so
+on a dot matrix the LEDs no longer show the buffer, which every getter and every drawing function
+rely on. `RegisterWrite()` still reaches it for whoever drives a 7-segment display.
 
 ### 20 More examples
 
