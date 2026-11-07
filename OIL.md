@@ -42,7 +42,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
 | 31 | A shifting text that starts over | 23 | done | #63 |
 | 32 | The column shifted in and out | 12 | done | #66 |
-| 33 | A font checked against its length | 15 | in progress | |
+| 33 | A font checked against its length | 15 | in progress | #67 |
 
 ### 1 Build with CMake
 
