@@ -1253,7 +1253,7 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees)
 TEST_F(MaxMatrixTest, DefaultFontHasAsciiAndNothingBetween)
 {
     EXPECT_EQ(matrix_.GetFont(), kMaxMatrixDefaultFont);
-    EXPECT_TRUE(MaxMatrixFont::CheckFont(kMaxMatrixDefaultFont).IsOk());
+    EXPECT_TRUE(MaxMatrixFont::CheckFont(kMaxMatrixDefaultFont, sizeof(kMaxMatrixDefaultFont)).IsOk());
     for(uint16_t code = 32; code <= 126; code++) {
         MaxMatrixResult<MaxMatrixGlyph> const glyph = MaxMatrixFont::GetGlyph(kMaxMatrixDefaultFont, static_cast<char>(code));
         EXPECT_EQ(glyph.GetError(), MaxMatrixError::kOk) << code;
@@ -1318,13 +1318,46 @@ TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont)
     static uint8_t const kNoHeight[] PROGMEM = { 'F', 1, 32, 32, 0, 1, 0 };
     static uint8_t const kTooHigh[] PROGMEM = { 'F', 1, 32, 32, 9, 1, 0 };
     static uint8_t const kLastBeforeFirst[] PROGMEM = { 'F', 1, 33, 32, 8, 1, 0 };
-    uint8_t const* const fonts[] = { NULL, kNoFont, kVersion3, kNoHeight, kTooHigh, kLastBeforeFirst };
+    struct {
+        uint8_t const* font;
+        size_t size;
+    } const fonts[] = {
+        { NULL, 0 }, { kNoFont, sizeof(kNoFont) }, { kVersion3, sizeof(kVersion3) }, { kNoHeight, sizeof(kNoHeight) },
+        { kTooHigh, sizeof(kTooHigh) }, { kLastBeforeFirst, sizeof(kLastBeforeFirst) },
+    };
 
     ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), MaxMatrixError::kOk);
-    for(uint8_t const* font : fonts) {
-        EXPECT_EQ(matrix_.SetFont(font).GetError(), MaxMatrixError::kNotAFont);
+    for(auto const& font : fonts) {
+        EXPECT_EQ(matrix_.SetFont(font.font, font.size).GetError(), MaxMatrixError::kNotAFont) << static_cast<void const*>(font.font);
         EXPECT_EQ(matrix_.GetFont(), kDigitFont);
     }
+}
+
+/* Bug: only the header of a font was checked, as the format holds no length, so a font whose header promised more
+ * chars than its array held was taken, and a char beyond its end was read from whatever lay behind it in flash. Now
+ * the chars have to fill the array exactly, from a header that fits into it. */
+TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray)
+{
+    static uint8_t const kLastBeyondTheEnd[] PROGMEM = { 'F', 1, '0', '1', 7, 1, 0x7F };
+    static uint8_t const kByteAfterTheLast[] PROGMEM = { 'F', 1, '0', '0', 7, 1, 0x7F, 0 };
+    static uint8_t const kWidthBeyondTheEnd[] PROGMEM = { 'F', 1, '0', '0', 7, 3, 0x7F };
+    static uint8_t const kShortHeader[] PROGMEM = { 'F', 1, '0', '0' };
+    static uint8_t const kShortHeaderVersion2[] PROGMEM = { 'F', 2, 0, '0', 0, '0' };
+    static uint8_t const kOneChar[] PROGMEM = { 'F', 1, '0', '0', 7, 1, 0x7F };
+
+    ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), MaxMatrixError::kOk);
+    EXPECT_EQ(matrix_.SetFont(kLastBeyondTheEnd).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.SetFont(kByteAfterTheLast).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.SetFont(kWidthBeyondTheEnd).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.SetFont(kShortHeader).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.SetFont(kShortHeaderVersion2).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.SetFont(kDigitFont, sizeof(kDigitFont) - 1).GetError(), MaxMatrixError::kNotAFont);
+    EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+
+    /* the same chars, filling the array, are taken, by the array and by its address and length */
+    EXPECT_EQ(matrix_.SetFont(kOneChar).GetError(), MaxMatrixError::kOk);
+    EXPECT_EQ(matrix_.SetFont(kDigitFontVersion2, sizeof(kDigitFontVersion2)).GetError(), MaxMatrixError::kOk);
+    EXPECT_EQ(matrix_.GetFont(), kDigitFontVersion2);
 }
 
 /* Bug: the count of the columns shifted in was a byte, so with the largest space it never reached a char's width and

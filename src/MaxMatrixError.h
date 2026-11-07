@@ -41,7 +41,7 @@ enum class MaxMatrixError : uint8_t {
     kNotANumber,     /*!< The value of a command is empty or holds anything but digits. */
     kUnknownCommand, /*!< No command has this name. */
     kLineTooLong,    /*!< A command line did not fit into `MAXMATRIX_COMMAND_LINE_LENGTH`. */
-    kNotAFont        /*!< The font is null or does not start as MaxMatrixFont says a font starts. */
+    kNotAFont        /*!< The font is null, does not start as MaxMatrixFont says, or its chars do not fill its array. */
 };
 
 /*!

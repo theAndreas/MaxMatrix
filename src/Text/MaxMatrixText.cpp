@@ -22,9 +22,9 @@ MaxMatrixText::MaxMatrixText()
     glyph_.height = 0;
 }
 
-MaxMatrixStatus MaxMatrixText::SetFont(uint8_t const* font)
+MaxMatrixStatus MaxMatrixText::SetFont(uint8_t const* font, size_t size)
 {
-    MaxMatrixStatus const status = MaxMatrixFont::CheckFont(font);
+    MaxMatrixStatus const status = MaxMatrixFont::CheckFont(font, size);
 
     if(status.IsOk()) font_ = font;
     return status;
