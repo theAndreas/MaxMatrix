@@ -21,9 +21,11 @@
 /*
  * The sprites of the font MaxMatrix had from the start, converted once: the ASCII chars at their
  * codes, the chars beyond it at their latin-1 codes, and a width of 0 for every code between them
- * that has no char. As a table of 7 bytes per char it took 721 bytes.
+ * that has no char. As a table of 7 bytes per char it took 721 bytes. The header gives its length,
+ * so that SetFont() can check it as any other font; a byte too few would be padded with a 0, which
+ * the test DefaultFontHasAsciiAndNothingBetween finds, as the chars then no longer end the array.
  */
-uint8_t const kMaxMatrixDefaultFont[] PROGMEM = {
+uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
     'F', 1, 32, 252, 8, // version 1, chars 32 to 252, 8 rows high
     3, B00000000, B00000000, B00000000, // 32 space
     1, B01011111, // 33 !
@@ -144,26 +146,41 @@ uint8_t const kMaxMatrixDefaultFont[] PROGMEM = {
     4, B00111100, B01000010, B01000010, B01111100, // 252 ü
 };
 
-MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font)
+/*
+ * The chars are walked by their offset into the array rather than by a pointer, as a pointer more
+ * than one past the end of the array would be undefined behaviour already, compared or not.
+ */
+MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size)
 {
-    if(font == NULL || pgm_read_byte(font) != MAXMATRIX_FONT_FILE_INDICATOR) return MaxMatrixError::kNotAFont;
+    if(font == NULL || size < MAXMATRIX_FONT_HEADER_LENGTH_1 || pgm_read_byte(font) != MAXMATRIX_FONT_FILE_INDICATOR) {
+        return MaxMatrixError::kNotAFont;
+    }
 
     byte const version = pgm_read_byte(font + 1);
     uint16_t first;
     uint16_t last;
     byte height;
+    size_t offset;
 
     if(version == MAXMATRIX_FONT_VERSION_1) {
         first = pgm_read_byte(font + 2);
         last = pgm_read_byte(font + 3);
         height = pgm_read_byte(font + 4);
-    } else if(version == MAXMATRIX_FONT_VERSION_2) {
+        offset = MAXMATRIX_FONT_HEADER_LENGTH_1;
+    } else if(version == MAXMATRIX_FONT_VERSION_2 && size >= MAXMATRIX_FONT_HEADER_LENGTH_2) {
         first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) | pgm_read_byte(font + 3));
         last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) | pgm_read_byte(font + 5));
         height = pgm_read_byte(font + 6);
+        offset = MAXMATRIX_FONT_HEADER_LENGTH_2;
     } else return MaxMatrixError::kNotAFont;
     if(first > last || height < 1 || height > MAXMATRIX_ROW_NUMBER_OF_MODULE) return MaxMatrixError::kNotAFont;
-    return MaxMatrixError::kOk;
+    /* the loop ends at the last char rather than past it, as a last char of 0xFFFF has no next */
+    for(uint16_t code = first;; code++) {
+        if(offset >= size) return MaxMatrixError::kNotAFont;
+        offset += pgm_read_byte(font + offset) + 1u;
+        if(code == last) break;
+    }
+    return offset == size ? MaxMatrixError::kOk : MaxMatrixError::kNotAFont;
 }
 
 /*

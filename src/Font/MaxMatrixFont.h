@@ -18,6 +18,7 @@
 
 /* MaxMatrixFont Parameter */
 #define MAXMATRIX_SPRITE_NUMBER_OF_BYTES                            7
+#define MAXMATRIX_DEFAULT_FONT_SIZE                                 614
 
 /*!
  * \brief A sprite of your own: its width, its height and up to five columns, bit 0 the top row.
@@ -50,7 +51,7 @@ struct MaxMatrixGlyph {
  *
  * In the format of MaxMatrixFont, which MaxMatrix::SetFont() takes. 614 bytes of flash.
  */
-extern uint8_t const kMaxMatrixDefaultFont[] PROGMEM; /* NOLINT(bugprone-dynamic-static-initializers): declared here, constant data in the .cpp */
+extern uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM; /* NOLINT(bugprone-dynamic-static-initializers): declared here, constant data in the .cpp */
 
 /*!
  * \brief The format of a font, and the way from a char of a string to its glyph.
@@ -61,6 +62,10 @@ extern uint8_t const kMaxMatrixDefaultFont[] PROGMEM; /* NOLINT(bugprone-dynamic
  * from the first to the last as its width and that many columns, bit 0 the top row. A char of
  * width 0 is not in the font. Version 1 gives each code in one byte; version 2, which lets a font
  * go past 255, in two, high byte first.
+ *
+ * The format holds no length of its own, so a font is checked against the length of its array:
+ * every char from the first to the last has to fit into it, and the last has to end it. A font
+ * that CheckFont() took cannot lead GetGlyph() past its end.
  *
  * \code{.cpp}
  * uint8_t const kDigits[] PROGMEM = {
@@ -81,16 +86,18 @@ class MaxMatrixFont
 {
   public:
     /*!
-     * \brief Returns whether `font` starts as a font does.
+     * \brief Returns whether `font` is a font of `size` bytes.
      *
-     * Only the start can be checked: a font has no length of its own.
+     * A font in RAM fails as well, almost always, as it is read from flash: the bytes found there
+     * at its address would have to add up to its length exactly.
      *
      * \param[in] font The font, in flash.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is null or does not start
-     *         with `'F'`, version 1 or 2, a first char no later than the last, and a height of 1 to
-     *         8.
+     * \param[in] size The length of its array in bytes.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is null, does not start
+     *         with `'F'`, version 1 or 2, a first char no later than the last and a height of 1 to
+     *         8, or its chars do not fill exactly `size` bytes.
      */
-    static MaxMatrixStatus CheckFont(uint8_t const* font);
+    static MaxMatrixStatus CheckFont(uint8_t const* font, size_t size);
 
     /*!
      * \brief Finds the glyph of a char in a font.

@@ -378,12 +378,33 @@ class MaxMatrix
      * matrix.SetFont(kBigFont);
      * \endcode
      *
+     * The length of the font is that of its array, so that the whole font is checked once, here,
+     * and no char can be read past its end; a pointer does not compile. A font in RAM, without
+     * `PROGMEM`, fails as well, almost always, as the Uno reads it from flash.
+     *
+     * \tparam Size The bytes of `font`, which the array says itself.
      * \param[in] font The font, in flash; it has to live as long as it is set, as a `PROGMEM` array
      *                 does.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is null or does not start
-     *         as a font does; the font then stays as it was.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if MaxMatrixFont::CheckFont() does
+     *         not take it; the font then stays as it was.
      */
-    MaxMatrixStatus SetFont(uint8_t const* font) { return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font)); }
+    template<size_t Size>
+    MaxMatrixStatus SetFont(uint8_t const (&font)[Size])
+    {
+        return SetFont(font, Size);
+    }
+
+    /*!
+     * \brief Sets the font every char is drawn in from now on, for a font known by its address
+     *        only, such as one of a table of fonts.
+     *
+     * \param[in] font The font, in flash; it has to live as long as it is set, as a `PROGMEM` array
+     *                 does.
+     * \param[in] size The length of its array in bytes, `sizeof` of the array.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if MaxMatrixFont::CheckFont() does
+     *         not take it; the font then stays as it was.
+     */
+    MaxMatrixStatus SetFont(uint8_t const* font, size_t size) { return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font, size)); }
 
     /*!
      * \brief Draws a sprite with its top left corner at `x`, `y`.

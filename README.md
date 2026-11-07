@@ -320,10 +320,15 @@ uint8_t const kDigits[] PROGMEM = {
     2, B01000010, B01111111,            // 1
 };
 
-matrix.SetFont(kDigits);                // MaxMatrixError::kNotAFont for an array that does not start as a font
+matrix.SetFont(kDigits);                // MaxMatrixError::kNotAFont for an array that is not a font of its length
 matrix.SetText("10");
 matrix.SetFont(kMaxMatrixDefaultFont);  // the font MaxMatrix starts with
 ```
+
+`SetFont()` takes the array itself, not a pointer, so that it knows the length: the chars from the first to the last
+have to fill it exactly, and no char can then be read past its end. A font forgotten in RAM, without `PROGMEM`, is
+refused as well, almost always, as the Uno reads it from flash. A font known only by its address, from a table of
+fonts, goes with its length: `SetFont(font, sizeof(kDigits))`.
 
 The font has to stay where it is as long as it is set, as a `PROGMEM` array does. Chars are looked up by their latin-1
 code, the one `DecodeChar()` makes of UTF-8. The default font holds ASCII and the chars of [Umlauts](#umlauts), 8 rows
