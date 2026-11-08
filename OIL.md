@@ -42,6 +42,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
 | 31 | A shifting text that starts over | 23 | done | #63 |
 | 32 | The column shifted in and out | 12 | done | #66 |
+| 33 | A font checked against its length | 15 | in progress | #67 |
 
 ### 1 Build with CMake
 
@@ -732,6 +733,25 @@ ambiguous between a `bool` and a `byte` and did not compile; an `enum class` tak
 two bools also had a combination without meaning, `fill_with_zero` with `rotate`, and up and down
 had no keep. The text shifts by the column as well, so that a sketch that only shifts text does
 not link the fills. The new example `Band` runs a heartbeat from flash.
+
+### 33 A font checked against its length
+
+`SetFont(uint8_t const* font)` of 15 checked only the header, as the format of MD_MAX72XX holds
+no length. A header that promised more chars than the array held was taken, and `GetGlyph()`
+walked on past its end, through whatever lay behind it in flash, and on ARM into undefined
+behaviour. Nor could a pointer tell flash from RAM: a font without `PROGMEM` compiled, and on the
+Uno was read from flash at its RAM address.
+
+`SetFont()` now takes the array, `template<size_t Size> SetFont(uint8_t const (&font)[Size])`, as
+`GetRow()` and `SetRow()` take theirs, and `CheckFont(font, size)` walks every char once: each has
+to fit into the array, and the last has to end it. A font it took cannot lead `GetGlyph()` past
+its end, which keeps walking without a bound, and the length is not kept, so it costs no RAM. A
+font in RAM fails as well, almost always, as the bytes in flash at its address would have to add
+up to its length exactly. A pointer no longer compiles; `SetFont(font, size)` takes a font from a
+table of fonts. `kMaxMatrixDefaultFont` is declared with its length, 614, for the template.
+
+Measured on the Uno: every example is the same size, as none sets a font; a sketch that sets one
+takes 52 bytes more flash and no RAM.
 
 ## Decisions
 

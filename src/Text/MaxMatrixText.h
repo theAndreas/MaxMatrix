@@ -75,10 +75,11 @@ class MaxMatrixText
      * A char that shifts in already goes on in the font it started in.
      *
      * \param[in] font The font, in flash, in the format MaxMatrixFont describes.
-     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` does not start as a font
-     *         does; the font then stays as it was.
+     * \param[in] size The length of its array in bytes.
+     * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if MaxMatrixFont::CheckFont() does
+     *         not take it; the font then stays as it was.
      */
-    MaxMatrixStatus SetFont(uint8_t const* font);
+    MaxMatrixStatus SetFont(uint8_t const* font, size_t size);
 
     /*!
      * \brief Draws a char with its top left corner at `x`, `y`.
