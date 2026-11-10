@@ -25,6 +25,7 @@ static bool Parse(SimulatorOptions& options,
   std::vector<char*> argv;
 
   arguments.insert(arguments.begin(), "Simulator");
+  argv.reserve(arguments.size());
   for (std::string& argument : arguments) argv.push_back(&argument[0]);
   return options.Parse(static_cast<int>(argv.size()), argv.data());
 }

@@ -23,6 +23,7 @@ static uint16_t const kPort = 18087;
 // A client connected to the host on loopback, or -1 if the connection failed.
 static int Connect() {
   int const client = socket(AF_INET, SOCK_STREAM, 0);
+  if (client < 0) return -1;
   sockaddr_in address = sockaddr_in();
 
   address.sin_family = AF_INET;

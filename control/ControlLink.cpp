@@ -92,6 +92,6 @@ void ControlLink::Take(std::string line, std::vector<std::string>* lines) {
     lines->push_back(std::move(line));
     return;
   }
-  if (picture_asked_ && !picture_stale_) picture_ = picture;
+  if (picture_asked_ && !picture_stale_) picture_ = std::move(picture);
   picture_asked_ = false;
 }

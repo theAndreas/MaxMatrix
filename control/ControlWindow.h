@@ -22,14 +22,14 @@
 #include "ControlSerialPort.h"
 #include "ControlTcpPort.h"
 
-class wxButton;
-class wxCheckBox;
-class wxComboBox;
-class wxSlider;
-class wxSpinCtrl;
+class wxButton;    // NOLINT(readability-identifier-naming): wxWidgets' name
+class wxCheckBox;  // NOLINT(readability-identifier-naming): wxWidgets' name
+class wxComboBox;  // NOLINT(readability-identifier-naming): wxWidgets' name
+class wxSlider;    // NOLINT(readability-identifier-naming): wxWidgets' name
+class wxSpinCtrl;  // NOLINT(readability-identifier-naming): wxWidgets' name
 class wxSpinEvent;
-class wxStaticText;
-class wxTextCtrl;
+class wxStaticText;  // NOLINT(readability-identifier-naming): wxWidgets' name
+class wxTextCtrl;    // NOLINT(readability-identifier-naming): wxWidgets' name
 class ControlDotPanel;
 
 /*!

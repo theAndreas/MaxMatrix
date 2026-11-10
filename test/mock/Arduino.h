@@ -36,7 +36,8 @@ typedef uint8_t byte;
 #define strcmp_P strcmp
 /* F() has the type it has in the Arduino core, so that a function returning a
  * text in flash builds as on the board */
-class __FlashStringHelper;
+class __FlashStringHelper;  // NOLINT(bugprone-reserved-identifier): the core's
+                            // name
 #define F(text) (reinterpret_cast<__FlashStringHelper const*>(PSTR(text)))
 /* pgm_read_byte() reads the byte at address, as avr-libc reads it from flash,
  * taking the address as it is given, as pgm_read_ptr() does */
@@ -86,6 +87,8 @@ void delay(unsigned long milliseconds);
 /* Print as far as the library and the examples use it: what prints a char is
  * the class below, the rest is built on it, as in the Arduino core; a line ends
  * in \r\n, as the core prints it */
+// Without a virtual destructor, as the core's Print, which a sketch's own
+// derives from. NOLINTNEXTLINE(clang-diagnostic-non-virtual-dtor)
 class Print {
  public:
   virtual size_t write(uint8_t c) = 0;
@@ -100,6 +103,7 @@ class Print {
 /* Serial as far as the examples use it, declared with the types of the Arduino
  * core: it reads what a test or the simulator has put into mock::serial_input
  * and appends what the sketch prints to mock::serial_output */
+// NOLINTNEXTLINE(clang-diagnostic-non-virtual-dtor): as Print
 class HardwareSerial : public Print {
  public:
   void begin(unsigned long baud);

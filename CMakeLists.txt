@@ -156,12 +156,21 @@ add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/d
 # simavr. Only with MAXMATRIX_AVR_TESTS, which `make avr` sets in a build of its own: the presets
 # of the host would compile all examples twice each again, and their compiler flags, coverage or
 # the sanitizers, do not reach avr-gcc anyway.
-if(MAXMATRIX_AVR_TESTS)
-    find_program(ArduinoCli arduino-cli REQUIRED)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(Simavr REQUIRED IMPORTED_TARGET simavr)
+#
+# SimulatorAvr itself is built wherever simavr is, so that the compilation database has it for
+# clang-tidy and clangd; the tests need MAXMATRIX_AVR_TESTS as well, and fail without simavr.
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+    pkg_check_modules(Simavr IMPORTED_TARGET simavr)
+endif()
+if(Simavr_FOUND)
     add_executable(SimulatorAvr simulator/Avr/mainAvr.cpp simulator/Avr/SimulatorAvr.cpp)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
+elseif(MAXMATRIX_AVR_TESTS)
+    message(FATAL_ERROR "MAXMATRIX_AVR_TESTS needs simavr's library, see .devcontainer/apt-packages.txt")
+endif()
+if(MAXMATRIX_AVR_TESTS)
+    find_program(ArduinoCli arduino-cli REQUIRED)
 
     # an example, the simulated seconds it runs for, and the --serial lines it is sent; its expectation is
     # simulator/Expected/EXAMPLE.txt, the same as for the simulator a sketch is built into, where there is one.

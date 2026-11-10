@@ -46,6 +46,7 @@ Checks: >
   -bugprone-too-small-loop-variable,
   -cert-err33-c,
   -cert-err58-cpp,
+  -bugprone-throwing-static-initialization,
   -cppcoreguidelines-*,
   -google-*,
   -house-*,
@@ -69,7 +70,8 @@ Checks: >
 # cert-err33-c: reports the simulator's prints to the terminal and its snprintf() into buffers
 #   that are large enough. A simulator that cannot print has nobody to tell; the library calls
 #   none of the functions the rule lists.
-# cert-err58-cpp: reports the simulator's static objects, which a sketch has as well: a static
+# cert-err58-cpp, bugprone-throwing-static-initialization, its name in clang-tidy 23: reports
+#   the simulator's static objects, which a sketch has as well: a static
 #   object whose constructor could throw. Nothing here throws, and the library is built without
 #   exceptions on the board.
 # MaxMatrix's own, for now: cppcoreguidelines-*, google-*, house-*, misc-*, modernize-*,

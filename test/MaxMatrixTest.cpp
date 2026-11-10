@@ -97,7 +97,7 @@ static void PrintTo(MaxMatrixResult<MaxMatrixCommandState> const& result,
 
 /* where MaxMatrixCommand answers in a test: a Print that keeps what it is given
  */
-class TextPrint : public Print {
+class TextPrint final : public Print {
  public:
   std::string text;
 
@@ -478,9 +478,11 @@ TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
  * matrix */
 TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   std::vector<byte> band;
+  band.reserve(size_t{3} * kNumberOfColumns);
   for (uint16_t index = 0; index < 3 * kNumberOfColumns; index++)
     band.push_back(static_cast<byte>(index * 37 + 11));
   std::vector<byte> out;
+  out.reserve(band.size());
 
   for (byte column : band) out.push_back(matrix_.ShiftLeft(column));
   for (byte column = 0; column < kNumberOfColumns; column++) {
@@ -899,8 +901,8 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (byte i = 0; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
-    EXPECT_EQ(mock::last_frame[2u * i], MAX7219_REG_DIGIT3_ADDRESS);
-    EXPECT_EQ(mock::last_frame[2u * i + 1u], i == module ? 0x02 : 0x00);
+    EXPECT_EQ(mock::last_frame[size_t{2} * i], MAX7219_REG_DIGIT3_ADDRESS);
+    EXPECT_EQ(mock::last_frame[size_t{2} * i + 1], i == module ? 0x02 : 0x00);
   }
 }
 
@@ -934,7 +936,9 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   int32_t frames_before = mock::frames;
 
   for (byte column = 0; column < kNumberOfColumns; column++)
-    matrix_.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    matrix_.SetDot(
+        column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+        true);
   EXPECT_EQ(mock::frames - frames_before, kNumberOfColumns);
   drawn = Display();
 
@@ -942,7 +946,9 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   matrix_.SetAutoUpdate(false);
   frames_before = mock::frames;
   for (byte column = 0; column < kNumberOfColumns; column++)
-    matrix_.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    matrix_.SetDot(
+        column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+        true);
   EXPECT_EQ(mock::frames, frames_before);
   EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
       << "shown before Update()";
@@ -967,7 +973,9 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
   {
     MaxMatrixBatch batch(matrix_);
     for (byte column = 0; column < kNumberOfColumns; column++)
-      matrix_.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+      matrix_.SetDot(
+          column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+          true);
     EXPECT_FALSE(matrix_.GetAutoUpdate());
     EXPECT_EQ(mock::frames, frames_before);
     EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
@@ -1878,8 +1886,8 @@ class MaxMatrixChainLengthTest
   byte number_of_modules_ = std::get<0>(GetParam());
   byte number_of_columns_ =
       static_cast<byte>(number_of_modules_ * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-  std::vector<byte> buffer_ =
-      std::vector<byte>(MAXMATRIX_BUFFER_SIZE(number_of_modules_), 0xAA);
+  std::vector<byte> buffer_ = std::vector<byte>(
+      static_cast<size_t>(MAXMATRIX_BUFFER_SIZE(number_of_modules_)), 0xAA);
   MaxMatrix matrix_{kDataInPin, kChipSelectPin, kClockPin, buffer_.data(),
                     number_of_modules_};
 

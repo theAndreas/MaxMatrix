@@ -201,12 +201,11 @@ static std::string GetModules() {
  * \param[in] x The column, as the viewer sees it.
  * \return The pixels from the left.
  */
-static int16_t GetCellX(byte x) {
-  return static_cast<int16_t>(
-      DOCU_LEFT +
-      (x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) *
-          (MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL + DOCU_MODULE_GAP) +
-      (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL);
+static int32_t GetCellX(byte x) {
+  return DOCU_LEFT +
+         (x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) *
+             (MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL + DOCU_MODULE_GAP) +
+         (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL;
 }
 
 /*!
@@ -216,9 +215,7 @@ static int16_t GetCellX(byte x) {
  * \param[in] y The row, as the viewer sees it.
  * \return The pixels from the top.
  */
-static int16_t GetCellY(byte y) {
-  return static_cast<int16_t>(DOCU_TOP + y * DOCU_CELL);
-}
+static int32_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
 
 /*!
  * \brief Returns the width of a picture of the whole panel.
@@ -256,7 +253,7 @@ static uint16_t GetPictureHeight() {
  */
 static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
                     std::string const& label) {
-  int16_t const inset = (DOCU_CELL - DOCU_LED) / 2;
+  int32_t const inset = (DOCU_CELL - DOCU_LED) / 2;
 
   svg->AddRect(GetCellX(x) + inset, GetCellY(y) + inset, DOCU_LED, DOCU_LED,
                colour, "none", 3);
@@ -276,15 +273,15 @@ static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
  * \param[in] title The line above the panel, or empty for none.
  */
 static void DrawPanel(DocuSvg* svg, std::string const& title) {
-  int16_t const module_width = MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL;
-  int16_t const module_height = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
+  int32_t const module_width = MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL;
+  int32_t const module_height = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
   DocuLed led;
 
   if (!title.empty())
     svg->AddText(DOCU_LEFT, 30, title, DOCU_FONT_TITLE, DOCU_COLOUR_TEXT,
                  "start", true);
   for (byte module = 0; module < DOCU_NUMBER_OF_MODULES; module++) {
-    int16_t const left = GetCellX(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    int32_t const left = GetCellX(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
     svg->AddRect(left - 4, DOCU_TOP - 4, module_width + 8, module_height + 8,
                  "none", DOCU_COLOUR_FRAME, 4);
     svg->AddText(left + module_width / 2, DOCU_TOP - 14,
@@ -294,12 +291,11 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
     if (FindLedOfDot(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0, &led) &&
         led.chip == 0) {
       bool const right = module == DOCU_NUMBER_OF_MODULES - 1;
-      int16_t const edge = right ? left + module_width + 8 : left - 8;
-      int16_t const outside = right ? edge + 70 : edge - 70;
+      int32_t const edge = right ? left + module_width + 8 : left - 8;
+      int32_t const outside = right ? edge + 70 : edge - 70;
       svg->AddArrow(outside, edge, DOCU_TOP + module_height / 2, 3,
                     DOCU_COLOUR_FRAME);
-      svg->AddText(static_cast<int16_t>((outside + edge) / 2),
-                   static_cast<int16_t>(DOCU_TOP + module_height / 2 - 10),
+      svg->AddText((outside + edge) / 2, DOCU_TOP + module_height / 2 - 10,
                    "DIN", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT);
     }
   }
@@ -332,7 +328,7 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
 static std::string DrawWiring(MaxMatrixModuleType module_type) {
   DocuSvg svg(GetPictureWidth(), GetPictureHeight());
   DocuLed leds[DOCU_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
-  int16_t const inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
+  int32_t const inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
 
   matrix.SetModuleType(module_type);
   for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
@@ -369,7 +365,7 @@ static std::string DrawWiring(MaxMatrixModuleType module_type) {
     }
   }
 
-  int16_t const legend =
+  int32_t const legend =
       GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + 56;
   svg.AddText(DOCU_LEFT, legend,
               "Each LED is labelled byte.bit: byte n is digit register n of "
@@ -396,7 +392,7 @@ static std::string DrawWiring(MaxMatrixModuleType module_type) {
  * \return The SVG text.
  */
 static std::string DrawCoordinates() {
-  int16_t const panel_height = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
+  int32_t const panel_height = MAXMATRIX_ROW_NUMBER_OF_MODULE * DOCU_CELL;
   DocuSvg svg(GetPictureWidth(),
               DOCU_COORDINATES_ABOVE + panel_height + DOCU_COORDINATES_BELOW,
               DOCU_TOP - DOCU_COORDINATES_ABOVE);
@@ -440,8 +436,8 @@ static std::string DrawCoordinates() {
     }
   }
 
-  int16_t const names = DOCU_TOP + panel_height + 46;
-  int16_t const row_module_left =
+  int32_t const names = DOCU_TOP + panel_height + 46;
+  int32_t const row_module_left =
       GetCellX(DOCU_EXAMPLE_ROW_MODULE * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
   svg.AddText(GetCellX(DOCU_EXAMPLE_COLUMN) + DOCU_CELL / 2, names,
               "SetColumn(" + std::to_string(DOCU_EXAMPLE_COLUMN) + ", value)",

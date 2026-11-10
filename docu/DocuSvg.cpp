@@ -19,7 +19,7 @@
 #define DOCU_SVG_ARROW_HEAD_LENGTH 10
 #define DOCU_SVG_ARROW_HEAD_HALF_WIDTH 6
 
-DocuSvg::DocuSvg(uint16_t width, uint16_t height, int16_t top) {
+DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top) {
   width_ = width;
   height_ = height;
   top_ = top;
@@ -37,7 +37,7 @@ std::string DocuSvg::GetDocument() const {
   return document.str();
 }
 
-void DocuSvg::AddRect(int16_t x, int16_t y, uint16_t rect_width,
+void DocuSvg::AddRect(int32_t x, int32_t y, uint16_t rect_width,
                       uint16_t rect_height, char const* fill,
                       char const* stroke, uint8_t radius) {
   body_ << "  <rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << rect_width
@@ -46,7 +46,7 @@ void DocuSvg::AddRect(int16_t x, int16_t y, uint16_t rect_width,
         << "\" stroke=\"" << stroke << "\" stroke-width=\"2\"/>\n";
 }
 
-void DocuSvg::AddText(int16_t x, int16_t y, std::string const& text,
+void DocuSvg::AddText(int32_t x, int32_t y, std::string const& text,
                       uint8_t size, char const* fill, char const* anchor,
                       bool bold) {
   body_ << "  <text x=\"" << x << "\" y=\"" << y << "\" font-size=\""
@@ -55,11 +55,10 @@ void DocuSvg::AddText(int16_t x, int16_t y, std::string const& text,
         << (bold ? " font-weight=\"bold\"" : "") << ">" << text << "</text>\n";
 }
 
-void DocuSvg::AddArrow(int16_t from_x, int16_t to_x, int16_t y,
-                       int16_t thickness, char const* colour) {
-  int16_t const direction = to_x < from_x ? 1 : -1;
-  int16_t const head_base{
-      static_cast<int16_t>(to_x + direction * DOCU_SVG_ARROW_HEAD_LENGTH)};
+void DocuSvg::AddArrow(int32_t from_x, int32_t to_x, int32_t y,
+                       int32_t thickness, char const* colour) {
+  int32_t const direction = to_x < from_x ? 1 : -1;
+  int32_t const head_base{to_x + direction * DOCU_SVG_ARROW_HEAD_LENGTH};
 
   body_ << "  <line x1=\"" << from_x << "\" y1=\"" << y << "\" x2=\""
         << head_base << "\" y2=\"" << y << "\" stroke=\"" << colour

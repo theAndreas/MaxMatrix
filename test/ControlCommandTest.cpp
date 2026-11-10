@@ -68,7 +68,7 @@ TEST(ControlCommandTest, DecodesThePicture) {
   std::vector<uint8_t> expected = {0x7F, 0x08, 0x08, 0x7F,
                                    0x00, 0x44, 0x7D, 0x40};
 
-  expected.resize(CONTROL_NUMBER_OF_COLUMNS, 0x00);
+  expected.resize(static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS), 0x00);
   ASSERT_TRUE(ControlCommand::DecodePicture(
       "picture=7F08087F00447D40" +
           std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 16, '0'),

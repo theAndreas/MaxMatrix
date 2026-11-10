@@ -23,7 +23,7 @@ class DocuSvg {
  private:
   uint16_t width_;
   uint16_t height_;
-  int16_t top_;
+  int32_t top_;
   std::ostringstream body_;
 
  public:
@@ -37,7 +37,7 @@ class DocuSvg {
    * \param[in] height The height in pixels.
    * \param[in] top The coordinate shown at the top edge.
    */
-  DocuSvg(uint16_t width, uint16_t height, int16_t top = 0);
+  DocuSvg(uint16_t width, uint16_t height, int32_t top = 0);
 
   /*!
    * \brief Returns the picture as an SVG document.
@@ -60,7 +60,7 @@ class DocuSvg {
    * \param[in] stroke The outline colour, or `"none"` for no outline.
    * \param[in] radius The radius of the corners.
    */
-  void AddRect(int16_t x, int16_t y, uint16_t rect_width, uint16_t rect_height,
+  void AddRect(int32_t x, int32_t y, uint16_t rect_width, uint16_t rect_height,
                char const* fill, char const* stroke = "none",
                uint8_t radius = 0);
 
@@ -77,7 +77,7 @@ class DocuSvg {
    * \param[in] bold True for bold.
    * \pre `text` holds no `&`, `<` or `>`.
    */
-  void AddText(int16_t x, int16_t y, std::string const& text, uint8_t size,
+  void AddText(int32_t x, int32_t y, std::string const& text, uint8_t size,
                char const* fill = "#222222", char const* anchor = "middle",
                bool bold = false);
 
@@ -91,7 +91,7 @@ class DocuSvg {
    * \param[in] thickness The width of the line.
    * \param[in] colour The colour of line and head.
    */
-  void AddArrow(int16_t from_x, int16_t to_x, int16_t y, int16_t thickness,
+  void AddArrow(int32_t from_x, int32_t to_x, int32_t y, int32_t thickness,
                 char const* colour);
 };
 

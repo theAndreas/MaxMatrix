@@ -40,8 +40,10 @@
  * \param[in] format As for `printf()`.
  * \param[in] arguments As for `vprintf()`.
  */
-static void LogSimavr(avr_t* avr, int const level, char const* format,
-                      va_list arguments) {
+__attribute__((format(printf, 3, 0))) static void LogSimavr(avr_t* avr,
+                                                            int const level,
+                                                            char const* format,
+                                                            va_list arguments) {
   (void)avr;
   // simavr also reports every section of the .elf it loads, which would stand
   // between the panel and the command line.

@@ -55,8 +55,8 @@
 #define SIMULATOR_EXIT_USAGE 2
 
 /* the sketch's, compiled into the same program */
-void setup();
-void loop();
+void setup();  // NOLINT(readability-identifier-naming): Arduino's name
+void loop();   // NOLINT(readability-identifier-naming): Arduino's name
 
 // mock::tick is a plain function pointer, so what Tick() works on has to be
 // reachable without an object.
@@ -70,7 +70,7 @@ static SimulatorFrontEnd front_end;
  * It prints the panel and exits, from within the sketch's loop() or delay(),
  * which never return on their own.
  */
-static void Finish() {
+[[noreturn]] static void Finish() {
   bool const passed =
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
       mock::errors == 0;
