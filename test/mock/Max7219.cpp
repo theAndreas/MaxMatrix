@@ -108,7 +108,7 @@ void Max7219Chain::Latch() {
 bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
                          bool upside_down) const {
   if (upside_down) {
-    x = chips.size() * Max7219::kNumberOfDigits - 1 - x;
+    x = static_cast<uint16_t>(chips.size() * Max7219::kNumberOfDigits - 1 - x);
     y = Max7219::kNumberOfDigits - 1 - y;
   }
 
@@ -125,6 +125,8 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
 /* the chip that drives the LEDs in column X of the panel, by the same placement
  * as IsLit() */
 Max7219 const& Max7219Chain::ChipAt(uint16_t x, bool upside_down) const {
-  if (upside_down) x = chips.size() * Max7219::kNumberOfDigits - 1 - x;
+  if (upside_down) {
+    x = static_cast<uint16_t>(chips.size() * Max7219::kNumberOfDigits - 1 - x);
+  }
   return chips[chips.size() - 1 - x / Max7219::kNumberOfDigits];
 }

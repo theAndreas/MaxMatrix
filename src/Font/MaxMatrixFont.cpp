@@ -235,8 +235,8 @@ MaxMatrixResult<MaxMatrixGlyph> MaxMatrixFont::GetGlyph(uint8_t const* font,
 }
 
 byte MaxMatrixFont::DecodeChar(char const* text, char* c) {
-  byte lead_byte = text[0];
-  byte next_byte = text[1];
+  byte const lead_byte{static_cast<byte>(text[0])};
+  byte const next_byte{static_cast<byte>(text[1])};
 
   /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
   if ((0xC2 == lead_byte || 0xC3 == lead_byte) && 0x80 == (next_byte & 0xC0)) {

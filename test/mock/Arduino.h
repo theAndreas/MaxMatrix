@@ -66,14 +66,21 @@ inline void* pgm_read_ptr(AddressType const* address) {
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
-#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+// The core's bitClear() is ((value) &= ~(1UL << (bit))), which narrows an
+// unsigned long into the byte it clears a bit of: avr-gcc warns of none,
+// -Wconversion here of each. So it is a function.
+#define bitClear(value, bit) mock::BitClear((value), (bit))
 #define bitWrite(value, bit, bitvalue) \
   ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
 void pinMode(uint8_t pin, uint8_t mode);
 void digitalWrite(uint8_t pin, uint8_t value);
-unsigned long millis();
-unsigned long micros();
+// uint32_t rather than the core's unsigned long, which is 32 bits on the Uno
+// and 64 on the host: a sketch keeps them in a uint32_t, which would narrow on
+// the host alone, and they overflow as the Uno's do, micros() after 71 minutes,
+// millis() after 49 days.
+uint32_t millis();
+uint32_t micros();
 void delay(unsigned long milliseconds);
 
 /* Print as far as the library and the examples use it: what prints a char is
@@ -104,6 +111,13 @@ class HardwareSerial : public Print {
 extern HardwareSerial Serial;
 
 namespace mock {
+
+/* bitClear() of the core, without its narrowing */
+template <typename T>
+T& BitClear(T& value, uint8_t bit) {
+  return value = static_cast<T>(value & ~(1UL << bit));
+}
+
 /* A port register as the library writes it, by |= and &= with the mask of a
  * pin: an object rather than a byte, so that every bit it changes reaches its
  * pin as digitalWrite() would, with the edges the chain sees. */
@@ -153,7 +167,7 @@ extern void (*tick)();
 
 /* every pin an input and low, the chain at its pins with number_of_chips chips,
  * every count at 0 */
-void Reset(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
            uint8_t number_of_chips);
 /* a pin goes to level, by digitalWrite() or a port register */
 void SetPin(uint8_t pin, uint8_t level);

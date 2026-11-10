@@ -43,14 +43,14 @@ void SetMillis(uint32_t milliseconds) {
   held_millis = milliseconds;
 }
 
-void Reset(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
            uint8_t number_of_chips) {
   clock_held = false;
   memset(pin_mode, INPUT, sizeof(pin_mode));
   memset(pin_level, LOW, sizeof(pin_level));
-  mock::data_in_pin = data_in_pin;
-  mock::chip_select_pin = chip_select_pin;
-  mock::clock_pin = clock_pin;
+  mock::data_in_pin = data_in;
+  mock::chip_select_pin = chip_select;
+  mock::clock_pin = clock;
   bits = 0;
   bit_count = 0;
   SREG = 0x80;
@@ -214,15 +214,21 @@ uint8_t SPIClass::transfer(uint8_t value) {
   return 0;
 }
 
-unsigned long micros() {
-  if (mock::clock_held)
-    return static_cast<unsigned long>(mock::held_millis) * 1000;
-  return std::chrono::duration_cast<std::chrono::microseconds>(
-             std::chrono::steady_clock::now() - mock::start)
-      .count();
+uint32_t micros() {
+  if (mock::clock_held) return mock::held_millis * 1000u;
+  auto const elapsed{std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::steady_clock::now() - mock::start)
+                         .count()};
+  return static_cast<uint32_t>(elapsed);
 }
 
-unsigned long millis() { return micros() / 1000; }
+uint32_t millis() {
+  if (mock::clock_held) return mock::held_millis;
+  auto const elapsed{std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::steady_clock::now() - mock::start)
+                         .count()};
+  return static_cast<uint32_t>(elapsed);
+}
 
 /* waits for real, a millisecond at a time, so that a sketch runs at its own
  * pace in the simulator; a held clock is moved on instead, which no waiting
@@ -236,7 +242,7 @@ void delay(unsigned long milliseconds) {
     return;
   }
   uint32_t const begin = millis();
-  while (static_cast<uint32_t>(millis()) - begin < milliseconds) {
+  while (millis() - begin < milliseconds) {
     if (mock::tick) mock::tick();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }

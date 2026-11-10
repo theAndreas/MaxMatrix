@@ -202,10 +202,11 @@ static std::string GetModules() {
  * \return The pixels from the left.
  */
 static int16_t GetCellX(byte x) {
-  return DOCU_LEFT +
-         (x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) *
-             (MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL + DOCU_MODULE_GAP) +
-         (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL;
+  return static_cast<int16_t>(
+      DOCU_LEFT +
+      (x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) *
+          (MAXMATRIX_COLUMN_NUMBER_OF_MODULE * DOCU_CELL + DOCU_MODULE_GAP) +
+      (x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * DOCU_CELL);
 }
 
 /*!
@@ -215,7 +216,9 @@ static int16_t GetCellX(byte x) {
  * \param[in] y The row, as the viewer sees it.
  * \return The pixels from the top.
  */
-static int16_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
+static int16_t GetCellY(byte y) {
+  return static_cast<int16_t>(DOCU_TOP + y * DOCU_CELL);
+}
 
 /*!
  * \brief Returns the width of a picture of the whole panel.
@@ -225,7 +228,8 @@ static int16_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
  * \return The width in pixels.
  */
 static uint16_t GetPictureWidth() {
-  return GetCellX(DOCU_NUMBER_OF_COLUMNS - 1) + DOCU_CELL + DOCU_RIGHT;
+  return static_cast<uint16_t>(GetCellX(DOCU_NUMBER_OF_COLUMNS - 1) +
+                               DOCU_CELL + DOCU_RIGHT);
 }
 
 /*!
@@ -236,7 +240,8 @@ static uint16_t GetPictureWidth() {
  * \return The height in pixels.
  */
 static uint16_t GetPictureHeight() {
-  return GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) + DOCU_CELL + DOCU_BOTTOM;
+  return static_cast<uint16_t>(GetCellY(MAXMATRIX_ROW_NUMBER_OF_MODULE - 1) +
+                               DOCU_CELL + DOCU_BOTTOM);
 }
 
 /*!
@@ -293,7 +298,8 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
       int16_t const outside = right ? edge + 70 : edge - 70;
       svg->AddArrow(outside, edge, DOCU_TOP + module_height / 2, 3,
                     DOCU_COLOUR_FRAME);
-      svg->AddText((outside + edge) / 2, DOCU_TOP + module_height / 2 - 10,
+      svg->AddText(static_cast<int16_t>((outside + edge) / 2),
+                   static_cast<int16_t>(DOCU_TOP + module_height / 2 - 10),
                    "DIN", DOCU_FONT_MODULE, DOCU_COLOUR_TEXT);
     }
   }
@@ -404,7 +410,7 @@ static std::string DrawCoordinates() {
   matrix.SetModuleType(MaxMatrixModuleType::kFc16);
   for (byte bit = 0; bit < 8; bit++) {
     matrix.Clear();
-    matrix.SetColumn(DOCU_EXAMPLE_COLUMN, 1 << bit);
+    matrix.SetColumn(DOCU_EXAMPLE_COLUMN, static_cast<byte>(1 << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
         if (matrix.GetDot(x, y).GetValue())
@@ -412,7 +418,8 @@ static std::string DrawCoordinates() {
       }
     }
     matrix.Clear();
-    matrix.SetRow(DOCU_EXAMPLE_ROW_MODULE, DOCU_EXAMPLE_ROW, 1 << bit);
+    matrix.SetRow(DOCU_EXAMPLE_ROW_MODULE, DOCU_EXAMPLE_ROW,
+                  static_cast<byte>(1 << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
         if (matrix.GetDot(x, y).GetValue())

@@ -437,20 +437,19 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
     matrix_.Clear();
     DrawPattern(matrix_);
     test_case.shift(matrix_);
-    EXPECT_EQ(ShownPicture(matrix_),
-              Picture([&test_case](int16_t x, int16_t y) {
-                int16_t source_x = x + test_case.source_x,
-                        source_y = y + test_case.source_y;
-                bool const inside = source_x >= 0 && source_x < width &&
-                                    source_y >= 0 && source_y < height;
-                if (inside) return Pattern(source_x, source_y);
-                if (test_case.fill == MaxMatrixShiftFill::kRotate)
-                  return Pattern((source_x + width) % width,
-                                 (source_y + height) % height);
-                if (test_case.fill == MaxMatrixShiftFill::kKeep)
-                  return Pattern(x, y);
-                return false;
-              }))
+    EXPECT_EQ(
+        ShownPicture(matrix_), Picture([&test_case](int16_t x, int16_t y) {
+          int16_t source_x = x + test_case.source_x,
+                  source_y = y + test_case.source_y;
+          bool const inside = source_x >= 0 && source_x < width &&
+                              source_y >= 0 && source_y < height;
+          if (inside) return Pattern(source_x, source_y);
+          if (test_case.fill == MaxMatrixShiftFill::kRotate)
+            return Pattern(static_cast<int16_t>((source_x + width) % width),
+                           static_cast<int16_t>((source_y + height) % height));
+          if (test_case.fill == MaxMatrixShiftFill::kKeep) return Pattern(x, y);
+          return false;
+        }))
         << test_case.name;
   }
 }
@@ -900,8 +899,8 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (byte i = 0; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
-    EXPECT_EQ(mock::last_frame[2 * i], MAX7219_REG_DIGIT3_ADDRESS);
-    EXPECT_EQ(mock::last_frame[2 * i + 1], i == module ? 0x02 : 0x00);
+    EXPECT_EQ(mock::last_frame[2u * i], MAX7219_REG_DIGIT3_ADDRESS);
+    EXPECT_EQ(mock::last_frame[2u * i + 1u], i == module ? 0x02 : 0x00);
   }
 }
 
@@ -1026,7 +1025,7 @@ TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(50);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), MaxMatrixError::kOk);
-  int16_t const start = matrix_.text_.sprite_shift_counter_;
+  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
   matrix_.ShiftTask();
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1)
@@ -1046,7 +1045,7 @@ TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(50);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), MaxMatrixError::kOk);
-  int16_t const start = matrix_.text_.sprite_shift_counter_;
+  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
   matrix_.ShiftTask();
   mock::SetMillis(1180);
@@ -1065,7 +1064,7 @@ TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(0);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), MaxMatrixError::kOk);
-  int16_t const start = matrix_.text_.sprite_shift_counter_;
+  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
   for (uint8_t call = 0; call < 3; call++) matrix_.ShiftTask();
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 3);
@@ -1081,7 +1080,7 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce) {
 
   mock::SetMillis(1010);
   ASSERT_EQ(matrix_.SetCharWithShift('+').GetError(), MaxMatrixError::kOk);
-  int16_t const start = matrix_.text_.sprite_shift_counter_;
+  uint16_t const start{matrix_.text_.sprite_shift_counter_};
   matrix_.ShiftTask();
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1);
 }
@@ -1793,14 +1792,19 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
   };
 
   matrix_.DrawCircle(10, 3, 3, true);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
-              return x >= 7 && x <= 13 && y <= 6 && radius_3[y][x - 7] == '#';
-            }));
+  EXPECT_EQ(
+      ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
+        return x >= 7 && x <= 13 && y <= 6 &&
+               radius_3[static_cast<size_t>(y)][static_cast<size_t>(x - 7)] ==
+                   '#';
+      }));
 
   matrix_.Clear();
   matrix_.DrawCircle(0, 0, 3, true);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
-              return x <= 3 && y <= 3 && radius_3[y + 3][x + 3] == '#';
+              return x <= 3 && y <= 3 &&
+                     radius_3[static_cast<size_t>(y + 3)]
+                             [static_cast<size_t>(x + 3)] == '#';
             }))
       << "the quarter on the panel";
 
@@ -1959,11 +1963,12 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
 
   DrawPattern(matrix_);
   matrix_.ShiftLeft(MaxMatrixShiftFill::kRotate);
-  EXPECT_EQ(ShownPicture(matrix_), Picture(
-                                       [columns](int16_t x, int16_t y) {
-                                         return ::Pattern((x + 1) % columns, y);
-                                       },
-                                       columns));
+  EXPECT_EQ(ShownPicture(matrix_),
+            Picture(
+                [columns](int16_t x, int16_t y) {
+                  return ::Pattern(static_cast<int16_t>((x + 1) % columns), y);
+                },
+                columns));
   matrix_.ShiftRight(MaxMatrixShiftFill::kRotate);
   EXPECT_EQ(ShownPicture(matrix_), Pattern());
   matrix_.ShiftUp(MaxMatrixShiftFill::kRotate);

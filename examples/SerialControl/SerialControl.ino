@@ -44,6 +44,7 @@ void setup() {
 }
 
 void loop() {
-  while (Serial.available() > 0) command.Feed(matrix, Serial.read(), Serial);
+  while (Serial.available() > 0)
+    command.Feed(matrix, static_cast<char>(Serial.read()), Serial);
   matrix.ShiftTask();
 }

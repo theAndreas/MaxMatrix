@@ -22,7 +22,7 @@ MaxMatrixPanel::MaxMatrixPanel(byte data_in_pin, byte chip_select_pin,
 
 MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns())
-    return GetLine(column, 0, true);
+    return GetLine(static_cast<byte>(column), 0, true);
   else
     return MaxMatrixError::kOutOfRange;
 }
@@ -39,7 +39,7 @@ MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(byte module, byte column) {
 
 void MaxMatrixPanel::SetColumn(int16_t column, byte value) {
   if (column >= 0 && column < GetNumberOfColumns())
-    SetLine(column, 0, true, value);
+    SetLine(static_cast<byte>(column), 0, true, value);
 }
 
 void MaxMatrixPanel::SetColumn(byte module, byte column, byte value) {
@@ -61,7 +61,7 @@ MaxMatrixStatus MaxMatrixPanel::GetRow(int16_t row, byte* values,
       number_of_values >= GetNumberOfModules()) {
     byte const modules = GetNumberOfModules();
     for (byte module = 0; module < modules; module++)
-      values[module] = GetRow(module, row).GetValue();
+      values[module] = GetRow(module, static_cast<byte>(row)).GetValue();
     return MaxMatrixError::kOk;
   } else {
     return MaxMatrixError::kOutOfRange;
@@ -84,7 +84,7 @@ void MaxMatrixPanel::SetRow(int16_t row, byte const* values,
                              ? GetNumberOfModules()
                              : number_of_values;
     for (byte module = 0; module < modules; module++)
-      SetRow(module, row, values[module]);
+      SetRow(module, static_cast<byte>(row), values[module]);
   }
 }
 
@@ -100,7 +100,8 @@ MaxMatrixResult<bool> MaxMatrixPanel::GetDot(int16_t column, int16_t row) {
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-    ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
+    ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
+                       &buffer_column, &buffer_bit);
     return static_cast<bool>(
         bitRead(wired_.GetColumn(buffer_column), buffer_bit));
   } else {
@@ -113,7 +114,8 @@ void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value) {
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-    ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
+    ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
+                       &buffer_column, &buffer_bit);
     wired_.StoreBit(buffer_column, buffer_bit, value);
   }
 }
@@ -381,9 +383,9 @@ void MaxMatrixPanel::ChangeMapping(
 
 // Returns `input` with its bits in the opposite order.
 byte MaxMatrixPanel::ReverseByte(byte input) {
-  input = (input & 0xF0) >> 4 | (input & 0x0F) << 4;
-  input = (input & 0xCC) >> 2 | (input & 0x33) << 2;
-  input = (input & 0xAA) >> 1 | (input & 0x55) << 1;
+  input = static_cast<byte>((input & 0xF0) >> 4 | (input & 0x0F) << 4);
+  input = static_cast<byte>((input & 0xCC) >> 2 | (input & 0x33) << 2);
+  input = static_cast<byte>((input & 0xAA) >> 1 | (input & 0x55) << 1);
 
   return input;
 }
@@ -405,7 +407,7 @@ byte MaxMatrixPanel::ReverseByte(byte input) {
 void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row,
                                         byte* buffer_column, byte* buffer_bit) {
   if (matrix_orientation_ == MaxMatrixMatrixOrientation::k180) {
-    column = GetNumberOfColumns() - 1 - column;
+    column = static_cast<byte>(GetNumberOfColumns() - 1 - column);
     row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
   }
 
@@ -422,7 +424,8 @@ void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row,
     digit = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - digit;
   if ((type & MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS) != 0)
     segment = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - segment;
-  *buffer_column = (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + digit;
+  *buffer_column =
+      static_cast<byte>((module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + digit);
   *buffer_bit = segment;
 }
 

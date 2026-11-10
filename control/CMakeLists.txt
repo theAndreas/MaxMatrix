@@ -22,6 +22,9 @@ if(wxWidgets_FOUND)
     target_include_directories(MaxMatrixControl SYSTEM PRIVATE ${wxWidgets_INCLUDE_DIRS})
     target_compile_definitions(MaxMatrixControl PRIVATE ${wxWidgets_DEFINITIONS})
     target_compile_options(MaxMatrixControl PRIVATE ${wxWidgets_CXX_FLAGS})
+    # wxWidgets combines flags of different enum types, wxEXPAND | wxALL, by design, and clang's
+    # -Wenum-enum-conversion reports each; only the window does it, not the library Control.
+    target_compile_options(MaxMatrixControl PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-enum-enum-conversion>)
     target_link_libraries(MaxMatrixControl PRIVATE Control ${wxWidgets_LIBRARIES})
 else()
     message(STATUS "wxWidgets not found: the control program is left out")

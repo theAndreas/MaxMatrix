@@ -55,7 +55,7 @@ void loop() {
   matrix.ShiftTask();
   /* the text has been shifted in completely: on to the next one */
   if (matrix.GetState() == MaxMatrixState::kReady) {
-    current = (current + 1) % kNumberOfMessages;
+    current = static_cast<byte>((current + 1) % kNumberOfMessages);
     Show(kMessages[current]);
   }
 }

@@ -34,6 +34,8 @@
 #define CONTROL_TCP_PORT_SOCKET(socket) static_cast<SOCKET>(socket)
 #define CONTROL_TCP_PORT_WOULD_BLOCK() (WSAGetLastError() == WSAEWOULDBLOCK)
 #define CONTROL_TCP_PORT_SEND_FLAGS 0
+/* send() takes the length as an int on Windows, a size_t on POSIX */
+#define CONTROL_TCP_PORT_LENGTH(length) static_cast<int>(length)
 #define CONTROL_TCP_PORT_CLOSE(socket) closesocket(socket)
 #define CONTROL_TCP_PORT_POLL(descriptors, timeout) \
   WSAPoll(descriptors, 1, timeout)
@@ -43,6 +45,7 @@
 /* a write to a socket the simulator has closed fails rather than ending the
  * program with SIGPIPE */
 #define CONTROL_TCP_PORT_SEND_FLAGS MSG_NOSIGNAL
+#define CONTROL_TCP_PORT_LENGTH(length) (length)
 #define CONTROL_TCP_PORT_CLOSE(socket) close(socket)
 #define CONTROL_TCP_PORT_POLL(descriptors, timeout) \
   poll(descriptors, 1, timeout)
@@ -100,7 +103,8 @@ bool ControlTcpPort::Write(std::string const& data) {
   while (sent < data.size()) {
     auto const written =
         send(CONTROL_TCP_PORT_SOCKET(socket_), data.data() + sent,
-             static_cast<int>(data.size() - sent), CONTROL_TCP_PORT_SEND_FLAGS);
+             CONTROL_TCP_PORT_LENGTH(data.size() - sent),
+             CONTROL_TCP_PORT_SEND_FLAGS);
     pollfd writable = {CONTROL_TCP_PORT_SOCKET(socket_), POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);

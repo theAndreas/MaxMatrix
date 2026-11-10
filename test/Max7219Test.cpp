@@ -156,7 +156,7 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
 static Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                         uint8_t digit, uint8_t segment) {
   Max7219Chain chain = ChainInNormalOperation(number_of_chips);
-  chain.chips[chip].digit[digit] = 1 << segment;
+  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1 << segment);
   return chain;
 }
 

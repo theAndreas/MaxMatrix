@@ -163,7 +163,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix,
     MaxMatrixResult<uint16_t> number =
         ConvertToNumber(value, MAX7219_REG_INTENSITY_MAX_VALUE);
     if (!number.IsOk()) return number.GetError();
-    matrix.SetIntensity(number.GetValue());
+    // ConvertToNumber() held it to the intensity's 15.
+    matrix.SetIntensity(static_cast<byte>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
     MaxMatrixResult<uint16_t> number =
         ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_INTERVAL);
@@ -173,7 +174,8 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix,
     MaxMatrixResult<uint16_t> number =
         ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_BYTE);
     if (!number.IsOk()) return number.GetError();
-    matrix.SetSpaceBetweenChars(number.GetValue());
+    // ConvertToNumber() held it to a byte.
+    matrix.SetSpaceBetweenChars(static_cast<byte>(number.GetValue()));
   } else {
     return MaxMatrixError::kUnknownCommand;
   }
@@ -210,7 +212,8 @@ MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text,
   if (*text == STD_NULL_CHARACTER) return MaxMatrixError::kNotANumber;
   for (; *text != STD_NULL_CHARACTER; text++) {
     if (*text < '0' || *text > '9') return MaxMatrixError::kNotANumber;
-    if (value <= maximum) value = value * 10 + (*text - '0');
+    if (value <= maximum)
+      value = value * 10 + static_cast<uint32_t>(*text - '0');
   }
   if (value > maximum) return MaxMatrixError::kOutOfRange;
   return static_cast<uint16_t>(value);
