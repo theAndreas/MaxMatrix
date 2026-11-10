@@ -108,7 +108,10 @@ curl -sSL "https://github.com/cli/cli/releases/download/v$V/gh_${V}_checksums.tx
 ```
 
 `gh auth login` has to run **in a terminal** — the browser and device flows both need to
-prompt. `gh auth setup-git` afterwards lets `git push` over HTTPS use the same token.
+prompt, once, as its login stays in its volume. The shared feature's `postAttachCommand` then
+runs `gh auth setup-git` on every attach, so that `git push` over HTTPS uses the same token
+instead of VS Code's helper, which opens a window on the host; on every attach, as VS Code
+copies the host's `.gitconfig` into a new container.
 
 `gh` is pointed at `github.com` by the shared feature, because an internal base image may
 set `GH_HOST` to a company GitHub, where every call for this repository answers `HTTP 401`.
