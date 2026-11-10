@@ -3,30 +3,29 @@
 #
 # The tag has no hyphen. devcontainers/cpp publishes ubuntu-24.04 and ubuntu24.04 both,
 # but from 26.04 only the unhyphenated form exists, so the older spelling looks like the
-# newest release when it is not. The base image carries build-essential and gdb, which the
-# host-side tests against an Arduino mock build with, together with CMake and GoogleTest below.
+# newest release when it is not. The base image carries build-essential and gdb: the host
+# g++ builds the tests against the mock of the core, and whatever tools/project.sh prepares
+# for the build, such as a GCC plugin against the plugin headers of the AVR core's avr-gcc.
 ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/cpp:ubuntu26.04
 FROM ${BASE_IMAGE}
 
-# CMake, Ninja and GoogleTest build and run the host-side tests; clangd gives the editor its
-# IntelliSense, from the compilation database CMake writes into build/. clang-tidy, cppcheck and
-# python3 (for tools/cross-clang-tidy.py) run what .github/workflows/static-analysis.yml runs,
-# Doxygen what docs.yml runs. simavr, as a library, runs the examples' .elf for the tests avr/.
-# wxWidgets builds the control program in control/; its window needs a display, which WSLg gives
-# the wsl2 variant.
-# From apt rather than
-# pinned like the tools below: the distribution's versions are what CI installs as well, and
-# none of them has a bug that forces a newer release.
+# CMake, Ninja and GoogleTest build and run the tests on the host, clang a second time beside
+# the base image's g++ (make clang); simavr runs examples/SelfCheck as the board would
+# (tools/self_check.sh); jq writes the compilation database of tools/tidy.sh; Doxygen builds
+# the reference (tools/docs.sh), and cppcheck reads the library beside clang-tidy
+# (tools/cppcheck.sh); neither of the two is on PyPI. From apt
+# rather than pinned like the tools below: the distribution's versions are what CI installs
+# as well, and none of them has a bug that forces a newer release.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        cmake ninja-build libgtest-dev clangd clang-tidy cppcheck python3 doxygen \
-        libsimavr-dev libelf-dev pkg-config libwxgtk3.2-dev && \
+        cmake ninja-build libgtest-dev clang simavr jq doxygen cppcheck && \
     rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which
-# is the one check the host-side tests cannot replace: they build against a mock of
-# Arduino.h, not against avr-gcc. Not gcc-avr from apt - the AVR core brings its own
-# toolchain, and that one is what the Arduino IDE compiles a user's sketch with.
+# is the one check the tests on the host cannot replace: they build against a mock of
+# Arduino.h, not against avr-gcc, and flash is RAM there. Not gcc-avr from apt - the AVR
+# core brings its own toolchain, and that one is what the Arduino IDE compiles a user's
+# sketch with.
 # A pinned release tarball with its published checksum, for the same reason as gh below:
 # the trust stays anchored to something visible in this file, at the cost of bumping the
 # version by hand.
@@ -84,22 +83,75 @@ RUN ARCH="$(dpkg --print-architecture)" && \
     dpkg -i /tmp/gh.deb && \
     rm /tmp/gh.deb
 
-# The Arduino data directory is a named volume: the AVR core and its toolchain are
-# downloaded on first use, and the volume is what keeps a rebuild from fetching them again.
-# An empty named volume takes its ownership from the path it covers, so the path has to
-# exist and belong to the remote user first, or arduino-cli cannot write into it.
-RUN install -d -o vscode -g vscode -m 0755 /home/vscode/.arduino15
+# uv makes the environment of the Python tools from pyproject.toml and uv.lock, in the
+# workspace's .venv, on the first `uv run` or with `uv sync --frozen` when the container is
+# created: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff and copier,
+# at the versions CI checks with. This ARG is the one place uv's version is written:
+# .github/actions/uv-sync reads it for CI. Pinned with its published checksum, as the tools
+# above.
+ARG UV_VERSION=0.12.0
+ARG UV_SHA256_AMD64=eaf842262aa1c418d8ecc5605f02ee1ebfd369124fa48548e85f9481a47831a9
+ARG UV_SHA256_ARM64=2c5d6e3092cc5223b10ff403880cc75121bf64e84644e7a0c69f643b0d89ac95
+RUN ARCH="$(dpkg --print-architecture)" && \
+    case "${ARCH}" in \
+        amd64) TRIPLE=x86_64-unknown-linux-gnu; SHA256="${UV_SHA256_AMD64}" ;; \
+        arm64) TRIPLE=aarch64-unknown-linux-gnu; SHA256="${UV_SHA256_ARM64}" ;; \
+        *) echo "uv: no pinned checksum for ${ARCH}; add one or drop uv" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL -o /tmp/uv.tar.gz \
+        "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${TRIPLE}.tar.gz" && \
+    echo "${SHA256}  /tmp/uv.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/uv.tar.gz -C /usr/local/bin --strip-components=1 \
+        "uv-${TRIPLE}/uv" "uv-${TRIPLE}/uvx" && \
+    rm /tmp/uv.tar.gz
 
-# The same arrangement for the two logins a rebuild would otherwise throw away: Codex, whose
-# extension the shared feature installs, and gh, which every push and every pull request
+# clangd gives the editor completion, navigation and the findings of clang-tidy, with the
+# .clang-tidy of the repository, reading the compilation databases that .clangd names.
+# From PyPI through uv, pinned, as clang-tidy in tools/tidy.sh; 22 is the newest there, one
+# behind the clang-tidy 23 of CI, which stays the measure. The package wraps the binary in
+# a Python script whose interpreter would lie in root's home, out of the remote user's
+# reach, so the link goes to the binary itself, which finds its headers next to it.
+ARG CLANGD_VERSION=22.1.1
+RUN UV_TOOL_DIR=/opt/uv/tools UV_PYTHON_INSTALL_DIR=/opt/uv/python \
+        UV_TOOL_BIN_DIR=/opt/uv/bin \
+        uv tool install --no-cache "clangd==${CLANGD_VERSION}" && \
+    ln -s "$(find /opt/uv/tools/clangd -path '*/clangd/data/bin/clangd' -type f)" \
+        /usr/local/bin/clangd && \
+    clangd --version
+
+# The headers of LLVM, clang and clang-tidy that tools/tidy_module.sh compiles the checks of
+# our own against, as a module that the clang-tidy of uv.lock loads. LLVM_MAJOR is that
+# clang-tidy's major version: tools/tidy_module.sh fails, saying so, when uv.lock moves on and
+# this does not. CI's action llvm-headers reads it from here, so there is one place that says
+# which LLVM. llvm-headers.sh says where they come from, and why not pinned closer.
+ARG LLVM_MAJOR=23
+COPY llvm-headers.sh /tmp/llvm-headers.sh
+RUN /tmp/llvm-headers.sh "${LLVM_MAJOR}" "/opt/llvm-${LLVM_MAJOR}/include" && \
+    rm /tmp/llvm-headers.sh
+
+# The Arduino data directory and uv's cache are named volumes: the AVR core and its
+# toolchain, and the checkers from PyPI, are downloaded on first use, and the volumes are
+# what keep a rebuild from fetching them again. An empty named volume takes its ownership
+# from the path it covers, so the path has to exist and belong to the remote user first,
+# or nothing can write into it. `install -d` gives only the last component to the owner and
+# creates missing parents as root, so ~/.cache is named on its own: a base image without it
+# would otherwise leave it to root, and arduino-cli could not put its build cache there.
+RUN install -d -o vscode -g vscode -m 0755 /home/vscode/.arduino15 && \
+    install -d -o vscode -g vscode -m 0755 /home/vscode/.cache /home/vscode/.cache/uv
+
+# The same arrangement for the logins a rebuild would otherwise throw away: Codex and Claude
+# Code, whose extensions the shared feature installs, and gh, which every push and every pull request
 # goes through. Mode 0700 rather than 0755, because what these hold is a credential and not
-# a cache - and gh refuses to read a config directory others can enter. ~/.config is named on
-# its own: `install -d` gives only the last component to the owner and creates missing parents
-# as root, so a base image without ~/.config would leave it to root, and nothing could write its
-# settings there.
+# a cache - and gh refuses to read a config directory others can enter. ~/.config is
+# named on its own, as ~/.cache above, so that it does not fall to root.
 RUN install -d -o vscode -g vscode -m 0700 /home/vscode/.codex && \
+    install -d -o vscode -g vscode -m 0700 /home/vscode/.claude && \
     install -d -o vscode -g vscode -m 0755 /home/vscode/.config && \
     install -d -o vscode -g vscode -m 0700 /home/vscode/.config/gh
+
+# The shell history, a volume as well, so that a rebuild keeps it. 0700 too: a command line
+# can carry a token.
+RUN install -d -o vscode -g vscode -m 0700 /home/vscode/.commandhistory
 
 # GitHub's SSH host key, so that the first git operation in a fresh container verifies
 # against something rather than failing with "Host key verification failed", because
@@ -119,6 +171,18 @@ RUN printf '# SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU\n%s %s\n%s %s\n
         '[ssh.github.com]:443' "${GITHUB_HOST_KEY}" \
         >> /etc/ssh/ssh_known_hosts && \
     chmod 0644 /etc/ssh/ssh_known_hosts
+
+# The project's own packages, from apt-packages.txt beside this file, which the project's
+# workflows install as well. Last, so that a change to the list builds this layer alone and none
+# of the downloads above. Nothing to do for an empty list.
+COPY apt-packages.txt /tmp/apt-packages.txt
+RUN packages="$(sed -e 's/#.*//' /tmp/apt-packages.txt | xargs)" && \
+    if [ -n "${packages}" ]; then \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${packages} && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi && \
+    rm /tmp/apt-packages.txt
 
 ENV TZ=Europe/Berlin
 

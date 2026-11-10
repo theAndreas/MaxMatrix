@@ -2,29 +2,28 @@
     "id": "shared",
     "version": "1.0.0",
     "name": "MaxMatrix shared editor configuration",
-    "description": "Extensions, the Arduino AVR core, the toolchain sanity check and the volumes for the Arduino data directory and logins shared by every devcontainer.json variant.",
+    "description": "Extensions, the Arduino core, the CMake build of the tests and the volumes for the Arduino data directory, uv's cache and logins shared by every devcontainer.json variant.",
     "customizations": {
         "vscode": {
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
                 "ms-vscode.cpptools",
-                "EditorConfig.EditorConfig",
                 "eamodio.gitlens",
                 "cschlosser.doxdocgen",
-                "openai.chatgpt"
+                "openai.chatgpt",
+                "anthropic.claude-code"
             ],
-            // clangd for IntelliSense, from build/compile_commands.json, which it finds
-            // on its own; cpptools only for debugging, its IntelliSense off so that the
-            // two do not answer twice. No header insertion: an include in src/ names
-            // its header by the path from src/, which the editor would not know. An
-            // .ino is C++, and the simulator compiles each into the database.
+            // clangd for IntelliSense, with the databases .clangd names; cpptools only
+            // for debugging, its IntelliSense off so that the two do not answer twice.
             // doxdocgen writes the skeleton of a Doxygen block, see the settings below.
+            // No header insertion: a sketch includes <MaxMatrix.h> first, and an
+            // include put in by the editor would not know that. An .ino is C++.
             "settings": {
                 "C_Cpp.intelliSenseEngine": "disabled",
-                "clangd.path": "/usr/bin/clangd",
+                "clangd.path": "/usr/local/bin/clangd",
                 "clangd.arguments": ["--header-insertion=never"],
                 "files.associations": { "*.ino": "cpp" },
-                // The skeleton of a Doxygen block in the style of docu/Documentation.md:
+                // The skeleton of a Doxygen block in the style of docs/Documentation.md:
                 // /*! and Enter above a declaration.
                 "doxdocgen.c.triggerSequence": "/*!",
                 "doxdocgen.c.firstLine": "/*!",
@@ -39,28 +38,56 @@
             }
         }
     },
+    // uv's cache is a volume of its own, another file system than the workspace's .venv, so it
+    // copies rather than failing to link and saying so on every sync.
     "containerEnv": {
-        "GH_HOST": "github.com"
+        "GH_HOST": "github.com",
+        "UV_LINK_MODE": "copy",
+        // Claude Code keeps .claude.json beside ~/.claude rather than in it; this puts both
+        // into the volume below, so that a rebuild keeps the login and the settings.
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+        // The shell history in the volume below, written after every command rather than
+        // when the shell exits, as a terminal that a rebuild closes never exits cleanly.
+        // ~/.bashrc appends its own hook to PROMPT_COMMAND, so this one stays.
+        "HISTFILE": "/home/vscode/.commandhistory/.bash_history",
+        "PROMPT_COMMAND": "history -a"
     },
-    "postCreateCommand": "arduino-cli core update-index && arduino-cli core install arduino:avr && arduino-cli version && arduino-lint --version && gh --version && clangd --version && cmake --preset default",
+    // The Python tools of uv.lock, the core of tools/project.sh, pinned as in CI, and what
+    // prepare() there builds; then the compilation databases clangd reads, see .clangd.
+    "postCreateCommand": "uv sync --frozen && make setup && cmake --preset default && tools/tidy.sh --database-only && arduino-cli version && arduino-lint --version && gh --version && uv --version && clangd --version && command -v simavr && doxygen --version && cppcheck --version && clang++ --version",
     // git signs in to GitHub through gh, whose login is in the volume below, rather than
     // through VS Code's helper, which opens a window on the host. On every attach, after VS Code
     // has copied the host's .gitconfig in; nothing without a login.
     "postAttachCommand": "gh auth status --hostname github.com >/dev/null 2>&1 && gh auth setup-git --hostname github.com || true",
     "mounts": [
         {
-            "source": "maxmatrix-arduino15",
+            "source": "max_matrix-arduino15",
             "target": "/home/vscode/.arduino15",
             "type": "volume"
         },
         {
-            "source": "maxmatrix-codex",
+            "source": "max_matrix-uv-cache",
+            "target": "/home/vscode/.cache/uv",
+            "type": "volume"
+        },
+        {
+            "source": "max_matrix-codex",
             "target": "/home/vscode/.codex",
             "type": "volume"
         },
         {
-            "source": "maxmatrix-gh",
+            "source": "max_matrix-claude",
+            "target": "/home/vscode/.claude",
+            "type": "volume"
+        },
+        {
+            "source": "max_matrix-gh",
             "target": "/home/vscode/.config/gh",
+            "type": "volume"
+        },
+        {
+            "source": "max_matrix-history",
+            "target": "/home/vscode/.commandhistory",
             "type": "volume"
         }
     ]

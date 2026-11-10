@@ -1,13 +1,17 @@
 # Host-side tests against the Arduino stand-in in test/mock/, built once per transfer path.
 #
-#   cmake --workflow --preset default
+#   make tests      # cmake --workflow --preset default, and the presets clang, sanitize, coverage
+#   make avr        # the examples as the Uno runs them, in simavr: MAXMATRIX_AVR_TESTS
 #
 # In the root rather than under test/, so that compile_commands.json covers the library itself and
-# the simulator can join later. The Arduino IDE and arduino-lint ignore the file.
+# the simulator can join later. The Arduino IDE and arduino-lint ignore the file. The presets come
+# from the template; the warnings and their instrumentation from cmake/checks.cmake.
 cmake_minimum_required(VERSION 3.25)
 project(MaxMatrix LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(cmake/checks.cmake)
+option(MAXMATRIX_AVR_TESTS "Build every example for the Uno and run it in simavr" OFF)
 
 # The library and the mock are built as gnu++11, which is what avr-gcc compiles a sketch with, so a
 # construct the Uno cannot take fails here too. Only the tests are C++17, because GoogleTest 1.17
@@ -16,9 +20,12 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-# -Werror here and not in a sketch build: the library is compiled with the same flags as the tests,
-# so a new warning fails the tests rather than waiting for someone to read the compiler output.
-add_compile_options(-Wall -Wextra -Werror)
+# The template's warnings for everything built here, the library, the tests, the simulator and the
+# control program, as the library is compiled with the same flags as the tests. Errors where
+# CMAKE_COMPILE_WARNING_AS_ERROR is on, as the ci- presets and `make check` set it. The
+# instrumentation of the presets sanitize and coverage likewise.
+add_compile_options(${CHECK_WARNINGS} ${CHECK_INSTRUMENT})
+add_link_options(${CHECK_INSTRUMENT})
 
 find_package(GTest REQUIRED)
 include(GoogleTest)
@@ -146,13 +153,13 @@ add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/d
 # The examples as the Uno runs them: the .elf avr-gcc makes of each, with bit banging and with SPI, in simavr against the
 # MAX7219 model. Both transfer paths have to light what the one expectation of an example says, at a simulated time,
 # which ends the same every run, so that a moving example is checked as well. Needs arduino-cli with the AVR core and
-# simavr; left out where either is missing, as in the host-tests job of CI.
-find_program(ArduinoCli arduino-cli)
-find_package(PkgConfig)
-if(PkgConfig_FOUND)
-    pkg_check_modules(Simavr IMPORTED_TARGET simavr)
-endif()
-if(ArduinoCli AND Simavr_FOUND)
+# simavr. Only with MAXMATRIX_AVR_TESTS, which `make avr` sets in a build of its own: the presets
+# of the host would compile all examples twice each again, and their compiler flags, coverage or
+# the sanitizers, do not reach avr-gcc anyway.
+if(MAXMATRIX_AVR_TESTS)
+    find_program(ArduinoCli arduino-cli REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(Simavr REQUIRED IMPORTED_TARGET simavr)
     add_executable(SimulatorAvr simulator/Avr/mainAvr.cpp simulator/Avr/SimulatorAvr.cpp)
     target_link_libraries(SimulatorAvr PRIVATE Simulator PkgConfig::Simavr)
 
@@ -202,6 +209,4 @@ if(ArduinoCli AND Simavr_FOUND)
         set_tests_properties(avr/${Transfer}/tcp PROPERTIES RESOURCE_LOCK SimulatorAvrTcpPort)
     endforeach()
     add_custom_target(AvrExamples ALL DEPENDS ${AvrElfs})
-else()
-    message(STATUS "arduino-cli or simavr not found: the tests avr/ are left out")
 endif()

@@ -1,55 +1,49 @@
 # The reference from the Doxygen blocks, on GitHub Pages. Every pull request builds it and fails
-# on a warning, so that a block that Doxygen cannot read, or a function of the sketch API without
-# one, is found before the merge; only main publishes it. Which warnings count is in
-# tools/docs.py, what Doxygen reads in the Doxyfile.
+# on a warning, so that a block Doxygen cannot read, or an entity of the API without one, is
+# found before the merge; only main publishes it. Which warnings count is in tools/docs.sh,
+# what Doxygen reads in the Doxyfile, how a block is written in docs/Documentation.md.
 name: docs
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, master]
 
 # A second push to the same branch makes the first answer worthless. On main, a deployment that
 # runs is left to finish, rather than cut off halfway, and the next one waits for it.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:
     name: Doxygen
     runs-on: ubuntu-26.04
     timeout-minutes: 10
+    # Read the repository; the deploy job below asks for what publishing needs.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
 
-      # The .deb files of this job's last run, for tools/apt-install.sh --cache; the newest one comes
-      # back. Saved after the install under a new key every run, even when the install failed: what
-      # apt downloaded anew is kept, and a mirror slower than a job may wait is overcome over runs.
-      - uses: actions/cache/restore@v6
-        with:
-          path: ~/apt-archives
-          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: apt-${{ github.job }}-${{ strategy.job-index }}-
-
       # From apt, as in the Dockerfile, so that CI and the container warn alike.
       - name: Install Doxygen
-        run: tools/apt-install.sh --cache ~/apt-archives doxygen
-
-      - uses: actions/cache/save@v6
-        if: always()
+        uses: ./.github/actions/apt-install
         with:
-          path: ~/apt-archives
-          key: apt-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          packages: doxygen
 
       - name: Build and check
-        run: python3 tools/docs.py
+        run: make docs
 
       - name: Hand the pages over
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: build/docu/html
+          path: build/docs/html
 
   deploy:
     name: GitHub Pages

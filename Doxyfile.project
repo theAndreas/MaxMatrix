@@ -1,0 +1,14 @@
+# The project's own settings of the reference, which Doxyfile includes at its end: Doxyfile is
+# the template's and `copier update` brings it up to date, this file is the project's and the
+# update leaves it alone. += adds to a list of Doxyfile, = replaces a setting:
+#
+#   INPUT                  += docs/Wiring.md
+#   IMAGE_PATH             = docs
+#   PREDEFINED             += PREFIX_CHECK_ACCESS=1
+
+# The pages of docu/, which the README links, and their pictures.
+INPUT                  += docu/README.md
+IMAGE_PATH             = docu
+# The reports of MAXMATRIX_DEV_ERROR_DETECT are API as well: MaxMatrixReportError() and what a
+# sketch sees of them exist only with the switch on.
+PREDEFINED             += MAXMATRIX_DEV_ERROR_DETECT=1u

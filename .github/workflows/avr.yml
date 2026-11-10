@@ -1,0 +1,46 @@
+# The examples as the Uno runs them: `make avr` compiles each with arduino-cli, with bit banging
+# and with SPI, and runs the .elf in simavr against the model of the MAX7219 chain, comparing the
+# panel with simulator/Expected/. MaxMatrix's own, beside the template's ci.yml: the template
+# runs examples/SelfCheck in simavr, which MaxMatrix has not; these tests say more. On every pull
+# request, as every change to the library reaches the examples.
+name: AVR
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Read the repository and nothing else.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first answer worthless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  avr:
+    name: Examples in simavr
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # CMake builds SimulatorAvr against simavr's library, which apt-packages.txt names.
+      - name: Install the toolchain
+        uses: ./.github/actions/apt-install
+        with:
+          packages: cmake ninja-build libgtest-dev
+          file: .devcontainer/apt-packages.txt
+
+      # arduino-cli and the pinned core, as in CI.
+      - uses: ./.github/actions/arduino-setup
+
+      - name: The examples in simavr
+        run: make avr
