@@ -15,6 +15,8 @@
 #include <stdio.h>
 
 #include <sstream>
+#include <string>
+#include <vector>
 
 /* commands of the page */
 #define SIMULATOR_WEB_COMMAND_WIRING "wiring "

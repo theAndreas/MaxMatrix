@@ -12,6 +12,8 @@
 
 #include "DocuSvg.h"
 
+#include <string>
+
 /* DocuSvg Parameter */
 #define DOCU_SVG_FONT "Helvetica, Arial, sans-serif"
 #define DOCU_SVG_ARROW_HEAD_LENGTH 10

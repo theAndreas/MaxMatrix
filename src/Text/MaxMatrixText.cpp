@@ -45,13 +45,13 @@ MaxMatrixStatus MaxMatrixText::SetCharWithShift(char c) {
 }
 
 MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel,
-                                       char const* string) const {
+                                       char const* text) const {
   int16_t char_column = 0;
   char c;
 
-  if (string == NULL) return MaxMatrixError::kNoText;
-  while (*string != STD_NULL_CHARACTER) {
-    string += MaxMatrixFont::DecodeChar(string, &c);
+  if (text == NULL) return MaxMatrixError::kNoText;
+  while (*text != STD_NULL_CHARACTER) {
+    text += MaxMatrixFont::DecodeChar(text, &c);
     MaxMatrixGlyph glyph;
     MaxMatrixStatus const status = FindGlyph(c, &glyph);
     if (!status.IsOk()) return status;
@@ -63,11 +63,11 @@ MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel,
   return MaxMatrixError::kOk;
 }
 
-MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* string, bool repeat) {
-  if (string == NULL) return MaxMatrixError::kNoText;
+MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* text, bool repeat) {
+  if (text == NULL) return MaxMatrixError::kNoText;
   sprite_shift_counter_ = kShiftIdle;
-  string_ = string;
-  repeat_from_ = repeat ? string : NULL;
+  string_ = text;
+  repeat_from_ = repeat ? text : NULL;
   return MaxMatrixError::kOk;
 }
 
@@ -120,10 +120,9 @@ bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel) {
              static_cast<int16_t>(panel.GetNumberOfColumns() -
                                   sprite_shift_counter_),
              0, glyph_);
-  }
-  /* if sprite and spaces are completed task has finished */
-  else if (sprite_shift_counter_ ==
-           static_cast<uint16_t>(glyph_.width + space_between_chars_ + 1)) {
+  } else if (sprite_shift_counter_ ==
+             static_cast<uint16_t>(glyph_.width + space_between_chars_ + 1)) {
+    /* if sprite and spaces are completed task has finished */
     sprite_shift_counter_ = kShiftIdle;
     return false;
   }

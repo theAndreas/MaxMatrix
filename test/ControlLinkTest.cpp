@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the link between the control program and SerialControl, against a
  * port that is a string each way. */
 #include "ControlLink.h"

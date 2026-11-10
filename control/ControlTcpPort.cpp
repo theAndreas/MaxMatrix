@@ -21,6 +21,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
+#include <string>
+
 #include "ControlTcpPort.h"
 
 /* ControlTcpPort Parameter */

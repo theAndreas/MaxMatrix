@@ -17,6 +17,7 @@
 #include <wx/dcbuffer.h>
 
 #include <algorithm>
+#include <utility>
 
 #include "ControlCommand.h"
 #include "MaxMatrixConfig.h"

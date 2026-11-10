@@ -9,7 +9,9 @@
 
 #include "ControlLink.h"
 
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "ControlCommand.h"
 

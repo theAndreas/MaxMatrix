@@ -108,4 +108,4 @@ class SimulatorWebSocket {
   static std::string ConvertToBase64(uint8_t const* bytes, size_t length);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_

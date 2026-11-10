@@ -17,6 +17,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <string>
+
 /* SimulatorSocket Parameter */
 #define SIMULATOR_SOCKET_BACKLOG 4
 

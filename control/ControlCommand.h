@@ -133,4 +133,4 @@ class ControlCommand {
   static int32_t GetBytesLeft(std::string const& line);
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLCOMMAND_H_

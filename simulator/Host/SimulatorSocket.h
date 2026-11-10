@@ -72,4 +72,4 @@ class SimulatorSocket {
   static bool SendAll(int socket, std::string const& data);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORSOCKET_H_

@@ -29,14 +29,14 @@
 
 /*! \brief What a MaxMatrix is doing, as MaxMatrix::GetState() tells it. */
 enum class MaxMatrixState : uint8_t {
-  kNone,  /*!< Constructed; MaxMatrix::Init() not called yet. */
-  kInit,  /*!< MaxMatrix::Init() is running. */
-  kReady, /*!< Nothing to shift: a text or a char shifted in is complete, or
-             stopped. */
-  kStringShift, /*!< A text of MaxMatrix::SetTextWithShift() is being shifted
-                   in. */
-  kCharShift /*!< A char of MaxMatrix::SetCharWithShift() is being shifted in.
-              */
+  kNone, /*!< Constructed; MaxMatrix::Init() not called yet. */
+  kInit, /*!< MaxMatrix::Init() is running. */
+  /*! Nothing to shift: a text or a char shifted in is complete, or stopped. */
+  kReady,
+  /*! A text of MaxMatrix::SetTextWithShift() is being shifted in. */
+  kStringShift,
+  /*! A char of MaxMatrix::SetCharWithShift() is being shifted in. */
+  kCharShift
 };
 
 /*!
@@ -413,14 +413,14 @@ class MaxMatrix {
   /*!
    * \brief Draws a text from the left edge, as far as it fits.
    *
-   * \param[in] string The text, UTF-8 or latin-1.
-   * \return MaxMatrixError::kOk; MaxMatrixError::kNoText if `string` is null;
-   *         or MaxMatrixError::kUnknownChar if a char of the text is not in the
+   * \param[in] text The text, UTF-8 or latin-1.
+   * \return MaxMatrixError::kOk; MaxMatrixError::kNoText if `text` is null; or
+   *         MaxMatrixError::kUnknownChar if a char of the text is not in the
    *         font, with the chars before it drawn.
    */
-  MaxMatrixStatus SetText(char const* string) {
+  MaxMatrixStatus SetText(char const* text) {
     return UpdateIfAuto(
-        MAXMATRIX_REPORT_ERROR("SetText", text_.SetText(panel_, string)));
+        MAXMATRIX_REPORT_ERROR("SetText", text_.SetText(panel_, text)));
   }
 
   /*!
@@ -432,13 +432,13 @@ class MaxMatrix {
    * right after its last, so a few spaces at its end keep the two apart; it
    * shifts until StopShift() or the next shift starts.
    *
-   * \param[in] string The text, UTF-8 or latin-1. It has to live until the text
-   *                   stands, or as long as it repeats.
+   * \param[in] text The text, UTF-8 or latin-1. It has to live until the text
+   *                 stands, or as long as it repeats.
    * \param[in] repeat True to start over after the last char, without end.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `string` is
-   *         null; nothing starts then.
+   * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `text` is null;
+   *         nothing starts then.
    */
-  MaxMatrixStatus SetTextWithShift(char* string, bool repeat = false);
+  MaxMatrixStatus SetTextWithShift(char* text, bool repeat = false);
 
   /*!
    * \brief Stops a shifting text or char where it is.
@@ -719,4 +719,4 @@ class MaxMatrixOf : private MaxMatrixBuffer<NumberOfModules>, public MaxMatrix {
                   NumberOfModules) {}
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_MAXMATRIX_H_

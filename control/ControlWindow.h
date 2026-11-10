@@ -106,4 +106,4 @@ class ControlWindow : public wxFrame {
   ControlWindow();
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLWINDOW_H_

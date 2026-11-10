@@ -1,7 +1,12 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "Arduino.h"
 
 #include <chrono>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include "SPI.h"
 

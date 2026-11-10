@@ -38,18 +38,19 @@
 /*! \brief Why a call did not do what it was asked; one byte, so that it returns
  * in a register. */
 enum class MaxMatrixError : uint8_t {
-  kOk = 0,      /*!< No error. */
-  kOutOfRange,  /*!< A coordinate, module, intensity or number beyond its range.
-                 */
+  kOk = 0, /*!< No error. */
+  /*! A coordinate, module, intensity or number beyond its range. */
+  kOutOfRange,
   kUnknownChar, /*!< The font has no char for it. */
   kNoText,      /*!< The text is null, or the text of a command empty. */
-  kNotANumber,  /*!< The value of a command is empty or holds anything but
-                   digits. */
+  /*! The value of a command is empty or holds anything but digits. */
+  kNotANumber,
   kUnknownCommand, /*!< No command has this name. */
-  kLineTooLong,    /*!< A command line did not fit into
-                      `MAXMATRIX_COMMAND_LINE_LENGTH`. */
-  kNotAFont /*!< The font is null, does not start as MaxMatrixFont says, or its
-               chars do not fill its array. */
+  /*! A command line did not fit into `MAXMATRIX_COMMAND_LINE_LENGTH`. */
+  kLineTooLong,
+  /*! The font is null, does not start as MaxMatrixFont says, or its chars do
+     not fill its array. */
+  kNotAFont
 };
 
 /*!
@@ -78,7 +79,9 @@ class MaxMatrixStatus {
    *
    * \param[in] error The error, or MaxMatrixError::kOk.
    */
-  MaxMatrixStatus(MaxMatrixError error = MaxMatrixError::kOk) : error_(error) {}
+  MaxMatrixStatus(  // NOLINT(runtime/explicit)
+      MaxMatrixError error = MaxMatrixError::kOk)
+      : error_(error) {}
 
   /*! \brief Returns why the call failed, or MaxMatrixError::kOk. */
   MaxMatrixError GetError() const { return error_; }
@@ -140,7 +143,7 @@ class MaxMatrixResult {
    *
    * \param[in] value The value.
    */
-  MaxMatrixResult(ValueType value)
+  MaxMatrixResult(ValueType value)  // NOLINT(runtime/explicit)
       : value_(value), error_(MaxMatrixError::kOk) {}
 
   /*!
@@ -150,7 +153,8 @@ class MaxMatrixResult {
    *
    * \param[in] error The error.
    */
-  MaxMatrixResult(MaxMatrixError error) : value_(), error_(error) {}
+  MaxMatrixResult(MaxMatrixError error)  // NOLINT(runtime/explicit)
+      : value_(), error_(error) {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
   ValueType GetValue() const { return value_; }
@@ -215,4 +219,4 @@ ResultType MaxMatrixReportIfError(__FlashStringHelper const* api,
 /*! \endcond */
 #endif
 
-#endif
+#endif  // MAXMATRIX_SRC_MAXMATRIXERROR_H_

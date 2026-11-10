@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the simulator's web host, over a real socket on loopback.
  *
  * simulator/web checks what a browser gets that sends its requests. What it

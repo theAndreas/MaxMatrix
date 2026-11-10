@@ -118,4 +118,4 @@ class MaxMatrixCommand {
                                               Print& answer);
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_

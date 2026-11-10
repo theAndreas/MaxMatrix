@@ -117,4 +117,4 @@ class SimulatorAvr {
   bool Run(uint32_t milliseconds);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_AVR_SIMULATORAVR_H_

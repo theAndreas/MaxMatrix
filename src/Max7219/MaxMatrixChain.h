@@ -220,4 +220,4 @@ class MaxMatrixChain {
                          byte stride);
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_

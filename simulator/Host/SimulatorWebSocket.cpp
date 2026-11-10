@@ -14,6 +14,8 @@
 
 #include <ctype.h>
 
+#include <string>
+
 /* handshake, RFC 6455 section 1.3: the server hashes the client's key with this
  * fixed string */
 #define SIMULATOR_WEB_SOCKET_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -48,8 +50,9 @@ bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request,
         "Sec-WebSocket-Accept: " +
         ConvertKeyToAcceptKey(key) + "\r\n\r\n";
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {

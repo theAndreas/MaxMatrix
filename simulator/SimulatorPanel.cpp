@@ -12,6 +12,8 @@
 
 #include "SimulatorPanel.h"
 
+#include <string>
+
 /* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1
  * from kMax7219Wirings */
 static struct {
@@ -59,8 +61,9 @@ bool SimulatorPanel::SetWiring(std::string const& name) {
     wiring_name_ = name;
     draw_requested_ = true;
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 void SimulatorPanel::SetUpsideDown(bool upside_down) {

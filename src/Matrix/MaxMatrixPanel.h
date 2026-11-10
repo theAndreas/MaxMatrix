@@ -47,16 +47,18 @@ enum class MaxMatrixMatrixOrientation : uint8_t {
  */
 enum class MaxMatrixModuleType : uint8_t {
   kDr0Cr0Rr0 = 0, /*!< Digits as columns. */
-  kDr0Cr0Rr1 = 1, /*!< Digits as columns, in reverse; the buffer is the picture
-                     as the viewer sees it. */
+  /*! Digits as columns, in reverse; the buffer is the picture as the viewer
+     sees it. */
+  kDr0Cr0Rr1 = 1,
   kDr0Cr1Rr0 = 2, /*!< Digits as columns, their bits in reverse. */
   kDr0Cr1Rr1 = 3, /*!< Digits as columns, both in reverse. */
   kDr1Cr0Rr0 = 4, /*!< Digits as rows. */
   kDr1Cr0Rr1 = 5, /*!< Digits as rows, in reverse. */
   kDr1Cr1Rr0 = 6, /*!< Digits as rows, their bits in reverse. */
   kDr1Cr1Rr1 = 7, /*!< Digits as rows, both in reverse. */
-  kGeneric = kDr0Cr1Rr0, /*!< The generic modules, often with the MAX7219 in a
-                            DIP package (`GENERIC_HW`). */
+  /*! The generic modules, often with the MAX7219 in a DIP package
+     (`GENERIC_HW`). */
+  kGeneric = kDr0Cr1Rr0,
   kFc16 =
       kDr1Cr0Rr0, /*!< FC-16, the common boards of four modules (`FC16_HW`). */
   kParola = kDr1Cr1Rr0,   /*!< The Parola modules (`PAROLA_HW`). */
@@ -413,4 +415,4 @@ class MaxMatrixPanel {
   void ShiftDown(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_

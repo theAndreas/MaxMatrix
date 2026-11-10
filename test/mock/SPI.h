@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Stand-in for the Arduino SPI library, see Arduino.h. */
 #ifndef MAXMATRIX_TEST_MOCK_SPI_H_
 #define MAXMATRIX_TEST_MOCK_SPI_H_
@@ -25,4 +28,4 @@ class SPIClass {
 extern SPIClass SPI;
 
 // NOLINTEND(readability-identifier-naming)
-#endif
+#endif  // MAXMATRIX_TEST_MOCK_SPI_H_

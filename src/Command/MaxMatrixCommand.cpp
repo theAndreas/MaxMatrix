@@ -110,8 +110,9 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix,
                 "ShiftText has to hold any text of a line");
 
   if (*value == STD_NULL_CHARACTER) return MaxMatrixError::kNoText;
-  strcpy(shift_text_,
-         value); /* NOLINT(clang-analyzer-security.insecureAPI.strcpy) */
+  // strcpy() into a buffer that the static_assert above holds large enough.
+  // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
+  strcpy(shift_text_, value);  // NOLINT(runtime/printf)
   return matrix.SetTextWithShift(shift_text_);
 }
 
@@ -173,8 +174,9 @@ MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix,
         ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_BYTE);
     if (!number.IsOk()) return number.GetError();
     matrix.SetSpaceBetweenChars(number.GetValue());
-  } else
+  } else {
     return MaxMatrixError::kUnknownCommand;
+  }
   return MaxMatrixError::kOk;
 }
 

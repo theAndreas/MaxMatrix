@@ -116,26 +116,26 @@ class MaxMatrixText {
    * \brief Draws a text from the left edge, as far as it fits.
    *
    * \param[in,out] panel The panel to draw on.
-   * \param[in] string The text, UTF-8 or latin-1.
-   * \return MaxMatrixError::kOk; MaxMatrixError::kNoText if `string` is null;
-   *         or MaxMatrixError::kUnknownChar if the font lacks a char of the
-   *         text, with the chars before it drawn.
+   * \param[in] text The text, UTF-8 or latin-1.
+   * \return MaxMatrixError::kOk; MaxMatrixError::kNoText if `text` is null; or
+   *         MaxMatrixError::kUnknownChar if the font lacks a char of the text,
+   *         with the chars before it drawn.
    */
-  MaxMatrixStatus SetText(MaxMatrixPanel& panel, char const* string) const;
+  MaxMatrixStatus SetText(MaxMatrixPanel& panel, char const* text) const;
 
   /*!
    * \brief Starts shifting a text in from the right, until its last char stands
    *        at the right edge, or over and over.
    *
-   * \param[in] string The text, UTF-8 or latin-1. It is kept as a pointer, so
-   *                   it has to live until the text stands, or as long as it
-   *                   starts over.
+   * \param[in] text The text, UTF-8 or latin-1. It is kept as a pointer, so it
+   *                 has to live until the text stands, or as long as it starts
+   *                 over.
    * \param[in] repeat True to start over with the first char after the last,
    *                   without end.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `string` is
-   *         null; nothing starts then.
+   * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `text` is null;
+   *         nothing starts then.
    */
-  MaxMatrixStatus SetTextWithShift(char* string, bool repeat);
+  MaxMatrixStatus SetTextWithShift(char* text, bool repeat);
 
   /*!
    * \brief Sets the empty columns between two chars of a text.
@@ -193,4 +193,4 @@ class MaxMatrixText {
   bool StringShiftTask(MaxMatrixPanel& panel);
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_

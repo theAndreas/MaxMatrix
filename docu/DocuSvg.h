@@ -95,4 +95,4 @@ class DocuSvg {
                 char const* colour);
 };
 
-#endif
+#endif  // MAXMATRIX_DOCU_DOCUSVG_H_

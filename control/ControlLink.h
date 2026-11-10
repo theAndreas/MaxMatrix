@@ -132,4 +132,4 @@ class ControlLink {
   bool Task(std::vector<std::string>* lines);
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLLINK_H_

@@ -93,4 +93,4 @@ class SimulatorWeb {
   static std::string ConvertToJsonString(std::string const& text);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_WEB_SIMULATORWEB_H_

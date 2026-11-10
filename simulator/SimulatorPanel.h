@@ -138,4 +138,4 @@ class SimulatorPanel {
   void SetDrawn(uint32_t now);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_SIMULATORPANEL_H_

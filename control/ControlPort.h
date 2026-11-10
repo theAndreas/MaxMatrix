@@ -56,4 +56,4 @@ class ControlPort {
   virtual void Close() = 0;
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLPORT_H_

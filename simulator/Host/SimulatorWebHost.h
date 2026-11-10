@@ -85,4 +85,4 @@ class SimulatorWebHost {
   void Broadcast(std::string const& text);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBHOST_H_

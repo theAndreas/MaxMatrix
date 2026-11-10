@@ -26,6 +26,8 @@
 #include <wx/textctrl.h>
 
 #include <chrono>
+#include <string>
+#include <vector>
 
 #include "ControlCommand.h"
 #include "ControlDotPanel.h"

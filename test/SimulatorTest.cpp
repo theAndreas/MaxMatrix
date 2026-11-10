@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the simulator's command line and panel, against the MAX7219 model
  * rather than a sketch.
  *

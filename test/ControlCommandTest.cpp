@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the lines the control program sends, which MaxMatrixCommand reads on
  * the board. */
 #include "ControlCommand.h"

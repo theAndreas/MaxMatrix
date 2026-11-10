@@ -18,6 +18,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "SimulatorSocket.h"
 #include "SimulatorWebSocket.h"
@@ -73,8 +75,9 @@ void SimulatorWebHost::AcceptClients() {
         AnswerRequest(accepted, request)) {
       SimulatorSocket::SetNonBlocking(accepted);
       clients_[slot] = accepted;
-    } else
+    } else {
       close(accepted);
+    }
   }
 }
 

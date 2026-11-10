@@ -109,4 +109,4 @@ class MaxMatrixWired {
   void Send();
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_

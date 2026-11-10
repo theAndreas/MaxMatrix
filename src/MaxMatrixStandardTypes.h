@@ -14,4 +14,4 @@
 
 #define STD_NULL_CHARACTER '\0' /*!< The end of a text. */
 
-#endif
+#endif  // MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_

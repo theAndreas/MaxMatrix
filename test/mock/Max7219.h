@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Model of a chain of MAX7219, fed from the wire by the Arduino stand-in.
  *
  * Driven by the bytes the library shifts out and by the rising edge of chip
@@ -74,4 +77,4 @@ class Max7219Chain {
   std::vector<uint8_t> shift_register_;
 };
 
-#endif
+#endif  // MAXMATRIX_TEST_MOCK_MAX7219_H_

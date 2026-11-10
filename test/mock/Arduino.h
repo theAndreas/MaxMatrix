@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Stand-in for the Arduino core, so the library can be compiled and tested with
  * the host compiler.
  *
@@ -161,4 +164,4 @@ void Transfer(uint8_t value);
 bool UsesSpi();
 }  // namespace mock
 
-#endif
+#endif  // MAXMATRIX_TEST_MOCK_ARDUINO_H_

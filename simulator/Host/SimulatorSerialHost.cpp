@@ -13,6 +13,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
 #include "SimulatorSocket.h"
 
 /* SimulatorSerialHost Parameter */
@@ -71,8 +73,9 @@ void SimulatorSerialHost::AcceptClient() {
     if (client_ == SIMULATOR_SOCKET_NONE) {
       SimulatorSocket::SetNonBlocking(accepted);
       client_ = accepted;
-    } else
+    } else {
       close(accepted);
+    }
   }
 }
 

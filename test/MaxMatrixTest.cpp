@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Host-side tests of MaxMatrix against the Arduino stand-in in mock/.
  *
  * Built twice by CMakeLists.txt, once with bit banging and once with
@@ -10,6 +13,7 @@
 #include <cmath>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "Arduino.h"
@@ -20,9 +24,9 @@
  * zeroes the buffer afterwards and so hides a wrong index. Included after
  * GoogleTest and the standard headers, which must not see it - defined above
  * them, it rewrites their classes too. */
-#define private \
- public  // NOLINT(readability-identifier-naming): what it redefines is a
-         // keyword
+// What it redefines is a keyword, not a name of ours.
+// NOLINTNEXTLINE(readability-identifier-naming)
+#define private public
 #include "MaxMatrix.h"
 #undef private
 

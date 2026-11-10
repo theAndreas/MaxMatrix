@@ -12,6 +12,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include <string>
+#include <vector>
+
 #include "MaxMatrixConfig.h"
 
 std::string ControlCommand::MakeText(std::string const& text, bool shift) {

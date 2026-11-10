@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Binary constants as the Arduino core defines them in binary.h, generated for
  * B00000000 to B11111111. */
 #ifndef MAXMATRIX_TEST_MOCK_BINARY_H_
@@ -264,4 +267,4 @@
 #define B11111111 255
 
 // NOLINTEND(readability-identifier-naming)
-#endif
+#endif  // MAXMATRIX_TEST_MOCK_BINARY_H_

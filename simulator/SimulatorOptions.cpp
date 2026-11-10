@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string>
+
 SimulatorOptions::SimulatorOptions() {
   wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
   upside_down_ = false;
@@ -73,8 +75,9 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index) {
     elf_file_ = argv[++*index];
   } else if (option == "--serial" && has_value) {
     serial_input_ += std::string(argv[++*index]) + "\n";
-  } else
+  } else {
     return false;
+  }
   return true;
 }
 
@@ -88,7 +91,8 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index) {
  */
 bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
   char* end;
-  unsigned long const value = strtoul(text, &end, 10);
+  // What strtoul() returns, until its range is checked below.
+  unsigned long const value = strtoul(text, &end, 10);  // NOLINT(runtime/int)
 
   /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
    * check then refuses */

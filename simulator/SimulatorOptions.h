@@ -111,4 +111,4 @@ class SimulatorOptions {
   static void PrintUsage(char const* program);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_

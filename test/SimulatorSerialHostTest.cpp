@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the simulator's serial host, the sketch's Serial on a TCP port, over
  * a real socket on loopback.
  *

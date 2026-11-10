@@ -85,9 +85,9 @@ MaxMatrixStatus MaxMatrix::SetCharWithShift(char c) {
   return status;
 }
 
-MaxMatrixStatus MaxMatrix::SetTextWithShift(char* string, bool repeat) {
+MaxMatrixStatus MaxMatrix::SetTextWithShift(char* text, bool repeat) {
   MaxMatrixStatus status = MAXMATRIX_REPORT_ERROR(
-      "SetTextWithShift", text_.SetTextWithShift(string, repeat));
+      "SetTextWithShift", text_.SetTextWithShift(text, repeat));
 
   if (status.IsOk()) StartShift(MaxMatrixState::kStringShift);
   return status;

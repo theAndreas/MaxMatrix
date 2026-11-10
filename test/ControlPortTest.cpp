@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the control program's ports: the serial port against a pseudo
  * terminal, which stands in for a board_'s port as the kernel gives it to a
  * program, and the TCP port against the simulator's serial host on loopback. */

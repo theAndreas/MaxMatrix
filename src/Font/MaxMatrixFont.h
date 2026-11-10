@@ -59,10 +59,9 @@ struct MaxMatrixGlyph {
  * In the format of MaxMatrixFont, which MaxMatrix::SetFont() takes. 614 bytes
  * of flash.
  */
-extern uint8_t const kMaxMatrixDefaultFont
-    [MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM; /* NOLINT(bugprone-dynamic-static-initializers):
-                                              declared here, constant data in
-                                              the .cpp */
+// Declared here, the constant data in the .cpp: no static initializer to run.
+// NOLINTNEXTLINE(bugprone-dynamic-static-initializers)
+extern uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM;
 
 /*!
  * \brief The format of a font, and the way from a char of a string to its
@@ -131,12 +130,12 @@ class MaxMatrixFont {
    * A UTF-8 sequence of a latin-1 char, such as an umlaut, becomes that one
    * latin-1 char; every other byte comes back as it is.
    *
-   * \param[in] string The string at the char to decode; not at its terminating
-   *                   null character.
+   * \param[in] text The text at the char to decode; not at its terminating null
+   *                 character.
    * \param[out] c The decoded char.
-   * \return The number of bytes the char took in `string`.
+   * \return The number of bytes the char took in `text`.
    */
-  static byte DecodeChar(char const* string, char* c);
+  static byte DecodeChar(char const* text, char* c);
 };
 
-#endif
+#endif  // MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_

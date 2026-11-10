@@ -32,8 +32,9 @@ MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(byte module, byte column) {
       column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
     return GetColumn(static_cast<int16_t>(
         (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column));
-  } else
+  } else {
     return MaxMatrixError::kOutOfRange;
+  }
 }
 
 void MaxMatrixPanel::SetColumn(int16_t column, byte value) {
@@ -62,16 +63,18 @@ MaxMatrixStatus MaxMatrixPanel::GetRow(int16_t row, byte* values,
     for (byte module = 0; module < modules; module++)
       values[module] = GetRow(module, row).GetValue();
     return MaxMatrixError::kOk;
-  } else
+  } else {
     return MaxMatrixError::kOutOfRange;
+  }
 }
 
 MaxMatrixResult<byte> MaxMatrixPanel::GetRow(byte module, byte row) {
   if (module < GetNumberOfModules() && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
     return ReverseByte(
         GetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false));
-  } else
+  } else {
     return MaxMatrixError::kOutOfRange;
+  }
 }
 
 void MaxMatrixPanel::SetRow(int16_t row, byte const* values,
@@ -100,8 +103,9 @@ MaxMatrixResult<bool> MaxMatrixPanel::GetDot(int16_t column, int16_t row) {
     ConvertDotToBuffer(column, row, &buffer_column, &buffer_bit);
     return static_cast<bool>(
         bitRead(wired_.GetColumn(buffer_column), buffer_bit));
-  } else
+  } else {
     return MaxMatrixError::kOutOfRange;
+  }
 }
 
 void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value) {

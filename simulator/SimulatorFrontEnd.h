@@ -64,4 +64,4 @@ class SimulatorFrontEnd {
   void Follow(SimulatorPanel& panel, uint32_t now);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_SIMULATORFRONTEND_H_

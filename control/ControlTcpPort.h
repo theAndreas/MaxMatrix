@@ -57,4 +57,4 @@ class ControlTcpPort final : public ControlPort {
   void Close() override;
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLTCPPORT_H_

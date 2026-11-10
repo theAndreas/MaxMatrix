@@ -76,4 +76,4 @@ class ControlDotPanel : public wxPanel {
   void Clear();
 };
 
-#endif
+#endif  // MAXMATRIX_CONTROL_CONTROLDOTPANEL_H_

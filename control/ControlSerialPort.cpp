@@ -23,6 +23,8 @@
 #include <unistd.h>
 #endif
 #include <algorithm>
+#include <string>
+#include <vector>
 
 #include "ControlSerialPort.h"
 

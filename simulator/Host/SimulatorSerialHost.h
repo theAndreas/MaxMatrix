@@ -78,4 +78,4 @@ class SimulatorSerialHost {
   void Send(std::string const& text);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORSERIALHOST_H_

@@ -11,6 +11,8 @@
 
 #include <stdio.h>
 
+#include <string>
+
 #include "Arduino.h"
 #include "SimulatorTerminal.h"
 

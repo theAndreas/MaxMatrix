@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the simulator's WebSocket protocol, against the RFCs rather than
  * against a browser.
  *

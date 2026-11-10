@@ -12,6 +12,8 @@
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_
 
+#include <string>
+
 #include "SimulatorPanel.h"
 
 /*!
@@ -66,4 +68,4 @@ class SimulatorTerminal {
   static bool PrintResult(SimulatorPanel const& panel, char const* expect_file);
 };
 
-#endif
+#endif  // MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_

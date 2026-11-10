@@ -1,3 +1,6 @@
+// Copyright 2026 Andreas Burnickl
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Tests of the MAX7219 model in mock/, against the datasheet rather than
  * against the library.
  *

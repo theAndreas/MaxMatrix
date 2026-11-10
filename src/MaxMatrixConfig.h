@@ -84,4 +84,4 @@
 #define MAXMATRIX_BUFFER_SIZE(modules) \
   ((modules) * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
 
-#endif
+#endif  // MAXMATRIX_SRC_MAXMATRIXCONFIG_H_

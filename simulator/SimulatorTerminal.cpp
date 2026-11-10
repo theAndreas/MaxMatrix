@@ -14,6 +14,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
 
 /* ANSI escape sequences */
 #define SIMULATOR_TERMINAL_CLEAR_SCREEN "\x1b[2J"
@@ -72,8 +73,9 @@ bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
   if (!ReadFile(expect_file, &expected) || expected != result) {
     fprintf(stderr, "differs from %s:\n%s", expect_file, expected.c_str());
     return false;
-  } else
+  } else {
     return true;
+  }
 }
 
 // Reads the whole file at `path` into `text`. Returns false if it cannot be
