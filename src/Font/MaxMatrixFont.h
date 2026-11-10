@@ -17,8 +17,8 @@
 #include "MaxMatrixError.h"
 
 /* MaxMatrixFont Parameter */
-#define MAXMATRIX_SPRITE_NUMBER_OF_BYTES                            7
-#define MAXMATRIX_DEFAULT_FONT_SIZE                                 614
+#define MAXMATRIX_SPRITE_NUMBER_OF_BYTES                            7  /*!< The bytes of a MaxMatrixSprite: width, height and five columns. */
+#define MAXMATRIX_DEFAULT_FONT_SIZE                                 614  /*!< The bytes of kMaxMatrixDefaultFont. */
 
 /*!
  * \brief A sprite of your own: its width, its height and up to five columns, bit 0 the top row.
