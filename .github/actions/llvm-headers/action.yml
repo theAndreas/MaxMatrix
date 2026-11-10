@@ -1,5 +1,5 @@
 # The headers of LLVM, clang and clang-tidy for a CI job that runs tools/tidy.sh: the checks of
-# our own, house-*, are a module that tools/tidy_module.sh compiles against them.
+# our own, house-*, are a module that tools/lib/tidy_module.sh compiles against them.
 #
 # The major version is ARG LLVM_MAJOR of .devcontainer/Dockerfile, read from there as uv-sync
 # reads uv's, so that the dev container and CI have the same; .devcontainer/llvm-headers.sh

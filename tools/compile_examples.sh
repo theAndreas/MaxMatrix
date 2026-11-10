@@ -32,10 +32,13 @@ main() {
   local variant
   local output
   local warnings
+  local elf
   local -A flash_size
   local -A ram_size
+  local listed
+  listed="$(list_examples)"
   local examples
-  mapfile -t examples < <(list_examples)
+  mapfile -t examples <<< "${listed}"
   local -r sizes="${BUILD_DIR}/sizes.md"
   rm -f "${sizes}"
 
@@ -54,7 +57,8 @@ main() {
         err "${warnings}"
         failed=1
       fi
-      check_elf "${variant}" "$(elf_of "${variant}" "${example}")" || failed=1
+      elf="$(elf_of "${variant}" "${example}")"
+      check_elf "${variant}" "${elf}" || failed=1
       flash_size["${example}/${variant}"]="$(size_of 'Sketch' "${output}")"
       ram_size["${example}/${variant}"]="$(size_of 'Global variables' "${output}")"
     done

@@ -89,6 +89,7 @@ A change is done when all of these hold, not when it compiles:
 | Tests | `test/`, GoogleTest against a mock of the Arduino core in `test/mock/` |
 | Examples | `examples/`; `SelfCheck` runs on the board in simavr |
 | The project's settings | `tools/project.sh` (board, variants, hooks), `tools/project.mk` (own targets) |
+| The scripts behind `make` | `tools/`; `tools/README.md` says what each is, and when a script is shell or Python |
 
 `.clang-tidy`, `.clang-format`, `CPPLINT.cfg`, the `Makefile`, `tools/` and `.github/` come from
 the template and are updated by `copier update`. Change them only when asked; a project's own

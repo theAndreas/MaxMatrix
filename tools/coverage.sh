@@ -25,18 +25,20 @@ readonly COVERAGE_DIR="${BUILD_DIR}/coverage"
 # the root's and <subdir>/ for one of add_subdirectory(<subdir>), and <source>
 # is relative to that CMakeLists.txt.
 remove_stale_notes() {
+  local notes
+  notes="$(find "${COVERAGE_DIR}" -name '*.gcno')"
   local note
   local subdir
   local source
-  while IFS= read -r -d '' note; do
+  while IFS= read -r note; do
     subdir="${note#"${COVERAGE_DIR}"/}"
     subdir="${subdir%%CMakeFiles/*}"
     source="${note#*.dir/}"
     source="${ROOT_DIR}/${subdir}${source%.gcno}"
-    if [[ ! -f "${source}" ]]; then
+    if [[ -n "${note}" && ! -f "${source}" ]]; then
       rm -f "${note}"
     fi
-  done < <(find "${COVERAGE_DIR}" -name '*.gcno' -print0 2>/dev/null)
+  done <<< "${notes}"
 }
 
 # Fails on a line of src/ excluded from coverage without its reason (Testing.md TS-4): a marker

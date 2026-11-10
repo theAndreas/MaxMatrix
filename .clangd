@@ -32,11 +32,11 @@ CompileFlags:
         -fcomment-block-commands=stddiff]
 ---
 # The clang-tidy module of our own, against the headers of LLVM the dev container keeps for it
-# (tools/tidy_module.sh); the major version follows ARG LLVM_MAJOR of .devcontainer/Dockerfile.
+# (tools/lib/tidy_module.sh); the major version follows ARG LLVM_MAJOR of .devcontainer/Dockerfile.
 # It is written to LLVM's API, not to the library's rules, so the checks of .clang-tidy are
 # not applied to it.
 If:
-  PathMatch: tools/tidy_module/.*
+  PathMatch: tools/lib/tidy_module/.*
 CompileFlags:
   CompilationDatabase: None
   Add: [-xc++, -std=c++17, -isystem/opt/llvm-23/include]

@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Checks the style of the C++ sources (clang-format, cpplint, and the indent
-# of the lines that continue a Doxygen command, tools/doc_indent.pl), of the
-# scripts (shellcheck) and of the CI workflow (actionlint). With --fix, formats
-# the C++ sources instead of only checking them. The Python scripts are read
-# by ruff. The tools run from the environment uv.lock pins, through
-# `uv run --frozen`, so that every machine checks the same; doc_indent.pl
-# needs only Perl.
+# of the lines that continue a Doxygen command, tools/lib/doc_indent.py), of the
+# scripts (shellcheck, with the checks .shellcheckrc turns on) and of the CI
+# workflow (actionlint). With --fix, formats the C++ sources instead of only
+# checking them. The Python scripts are read by ruff. The tools run from the
+# environment uv.lock pins, through `uv run --frozen`, so that every machine
+# checks the same; doc_indent.py needs only Python's standard library.
 
 set -euo pipefail
 
@@ -28,14 +28,18 @@ main() {
   fi
 
   cd "${ROOT_DIR}"
-  # Tracked files and new ones not yet added, but not what .gitignore names:
-  # a file is checked before its first commit, not after.
-  local files=(git ls-files --cached --others --exclude-standard)
+  # The library, its examples and tests, and the code of HOST_CODE beside them.
+  local host_code
+  host_code_dirs host_code
+  local paths=('src/*' 'examples/*' 'test/*')
+  local dir
+  for dir in "${host_code[@]}"; do
+    paths+=("${dir}/*")
+  done
   local sources
-  mapfile -t sources < <("${files[@]}" 'src/*' 'examples/*' 'test/*' \
-    | grep -E '\.(h|cpp|ino)$')
+  list_files sources '\.(h|cpp|ino)$' "${paths[@]}"
   local scripts
-  mapfile -t scripts < <("${files[@]}" 'tools/*.sh')
+  list_files scripts '\.sh$' 'tools/*.sh'
 
   local failed=0
   # The lines that continue a command of a Doxygen block start under its text,
@@ -43,11 +47,11 @@ main() {
   # starts at the margin again, so the indent comes after it.
   if ((fix)); then
     "${UV_RUN[@]}" clang-format -i "${sources[@]}"
-    tools/doc_indent.pl --fix "${sources[@]}"
+    tools/lib/doc_indent.py --fix "${sources[@]}"
   else
     "${UV_RUN[@]}" clang-format --dry-run --Werror \
       "${sources[@]}" || failed=1
-    tools/doc_indent.pl --check "${sources[@]}" || failed=1
+    tools/lib/doc_indent.py --check "${sources[@]}" || failed=1
   fi
   "${UV_RUN[@]}" cpplint --quiet "${sources[@]}" || failed=1
   "${UV_RUN[@]}" shellcheck -x "${scripts[@]}" || failed=1

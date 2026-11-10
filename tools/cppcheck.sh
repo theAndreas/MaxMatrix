@@ -54,8 +54,7 @@ main() {
   # The headers as well, by name: given a folder, cppcheck reads only its .cpp
   # files, and a library of templates may have none.
   local files
-  mapfile -t files < <(git ls-files --cached --others --exclude-standard \
-    'src/*' | grep -E '\.(cpp|h)$')
+  list_files files '\.(cpp|h)$' 'src/*'
 
   mkdir -p "${BUILD_DIR}/cppcheck"
   cppcheck \

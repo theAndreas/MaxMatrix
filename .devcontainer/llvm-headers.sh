@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Puts the headers of LLVM, clang and clang-tidy of one major version into a folder: what the
-# clang-tidy module in tools/tidy_module/ is compiled against. The clang-tidy from PyPI loads a
+# clang-tidy module in tools/lib/tidy_module/ is compiled against. The clang-tidy from PyPI loads a
 # module (--load) and exports the symbols one needs, but comes without headers. The Dockerfile
 # runs this, and the action llvm-headers in CI, so that both have the same.
 #
@@ -21,7 +21,7 @@
 # Not pinned to a patch release: apt.llvm.org keeps only the newest build of a release branch,
 # and an older one is gone the day a newer comes. Within a major version LLVM keeps its ABI, so
 # headers of 23.1.6 build a module that the clang-tidy 23.1.4 of uv.lock loads.
-# tools/tidy_module.sh checks the major version.
+# tools/lib/tidy_module.sh checks the major version.
 
 set -euo pipefail
 

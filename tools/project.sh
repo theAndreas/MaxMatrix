@@ -53,3 +53,7 @@ variant_flags() {
     det) echo "-DMAXMATRIX_DEV_ERROR_DETECT=STD_ON" ;;
   esac
 }
+
+# The simulator, the control program and what draws the pictures of docu/: host code beside the
+# library, built by CMakeLists.txt and formatted and checked as src/ is.
+HOST_CODE=(simulator control docu)

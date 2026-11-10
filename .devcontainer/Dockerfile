@@ -119,9 +119,9 @@ RUN UV_TOOL_DIR=/opt/uv/tools UV_PYTHON_INSTALL_DIR=/opt/uv/python \
         /usr/local/bin/clangd && \
     clangd --version
 
-# The headers of LLVM, clang and clang-tidy that tools/tidy_module.sh compiles the checks of
+# The headers of LLVM, clang and clang-tidy that tools/lib/tidy_module.sh compiles the checks of
 # our own against, as a module that the clang-tidy of uv.lock loads. LLVM_MAJOR is that
-# clang-tidy's major version: tools/tidy_module.sh fails, saying so, when uv.lock moves on and
+# clang-tidy's major version: tools/lib/tidy_module.sh fails, saying so, when uv.lock moves on and
 # this does not. CI's action llvm-headers reads it from here, so there is one place that says
 # which LLVM. llvm-headers.sh says where they come from, and why not pinned closer.
 ARG LLVM_MAJOR=23

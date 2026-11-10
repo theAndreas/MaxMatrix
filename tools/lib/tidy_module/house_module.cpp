@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The module house: checks of the rules every project made from the template
-// keeps, which clang-tidy's own checks do not. tools/tidy_module.sh builds it,
+// keeps, which clang-tidy's own checks do not. tools/lib/tidy_module.sh builds it,
 // and tools/tidy.sh loads it with --load; .clang-tidy turns its checks on as
 // house-*.
 

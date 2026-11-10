@@ -56,8 +56,10 @@ main() {
   local failed=0
   local variant
   local output
+  local elf
   local actual
   local status
+  local expected
   for variant in "${VARIANTS[@]}"; do
     if ! output="$(compile_example "${variant}" "${SELF_CHECK_EXAMPLE}")"; then
       err "${SELF_CHECK_EXAMPLE} (${variant}) does not compile:"
@@ -65,9 +67,9 @@ main() {
       failed=1
       continue
     fi
+    elf="$(elf_of "${variant}" "${SELF_CHECK_EXAMPLE}")"
     status=0
-    actual="$(run_in_simavr "$(elf_of "${variant}" "${SELF_CHECK_EXAMPLE}")")" \
-      || status=$?
+    actual="$(run_in_simavr "${elf}")" || status=$?
     if ((status == 124)); then
       err "${SELF_CHECK_EXAMPLE} (${variant}) did not end within ${TIMEOUT_SECONDS} s:" \
         "it hung or crashed. What it printed until then:"
@@ -76,8 +78,8 @@ main() {
       err "${SELF_CHECK_EXAMPLE} (${variant}): simavr ended with ${status}."
       failed=1
     fi
-    if diff -u --label expected --label "${variant}" \
-        "$(expected_of "${variant}")" <(echo "${actual}"); then
+    expected="$(expected_of "${variant}")"
+    if diff -u --label expected --label "${variant}" "${expected}" <(echo "${actual}"); then
       echo "${SELF_CHECK_EXAMPLE} (${variant}): as expected"
     else
       failed=1

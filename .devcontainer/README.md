@@ -20,7 +20,7 @@ another container is lost with that container.
 | `uv` | the Python tools that `uv.lock` pins, in `.venv`: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff, copier |
 | `clang` | the tests a second time, by another compiler: `make clang` |
 | `clangd` | IntelliSense, see below |
-| LLVM's headers, in `/opt/llvm-23/include` | the checks of our own, `house-*`, a module that `tools/tidy_module.sh` builds and `tools/tidy.sh` loads |
+| LLVM's headers, in `/opt/llvm-23/include` | the checks of our own, `house-*`, a module that `tools/lib/tidy_module.sh` builds and `tools/tidy.sh` loads |
 | `jq` | the compilation database of `tools/tidy.sh` |
 | `cppcheck` | a second analyser beside clang-tidy: `tools/cppcheck.sh` |
 | `arduino-lint` | the rules of the Arduino Library Manager |
@@ -58,7 +58,7 @@ or `tools/tidy.sh --database-only` again. clangd inserts no includes: a sketch i
 `<MaxMatrix.h>` first, which an include put in by the editor would not know.
 
 clangd does not load the module of the checks of our own, `house-*`: those findings come from
-`make tidy` alone. The module's own sources in `tools/tidy_module/` are read against LLVM's
+`make tidy` alone. The module's own sources in `tools/lib/tidy_module/` are read against LLVM's
 headers, without the checks of `.clang-tidy`, which are the library's rules and not LLVM's.
 
 clangd comes from PyPI at 22.1.1, the newest there, one behind the clang-tidy 23 of CI, which stays

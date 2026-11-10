@@ -3,12 +3,12 @@
 # Copyright 2026 Andreas Burnickl
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Builds the clang-tidy module in tools/tidy_module/, the checks of our own, and prints the path
+# Builds the clang-tidy module in tools/lib/tidy_module/, the checks of our own, and prints the path
 # of the shared library that clang-tidy loads with --load. Built again only when a source has
 # changed; tools/tidy.sh calls this before it runs clang-tidy.
 #
 # Usage:
-#   tools/tidy_module.sh [OUTPUT_DIR]
+#   tools/lib/tidy_module.sh [OUTPUT_DIR]
 #
 # OUTPUT_DIR is build/tidy/module if not given.
 #
@@ -20,9 +20,9 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly ROOT_DIR
-readonly SOURCE_DIR="${ROOT_DIR}/tools/tidy_module"
+readonly SOURCE_DIR="${ROOT_DIR}/tools/lib/tidy_module"
 
 err() {
   echo "$*" >&2
@@ -50,11 +50,16 @@ main() {
   fi
 
   local module="${output_dir}/house.so"
+  local listed
+  listed="$(find "${SOURCE_DIR}" -name '*.cpp' | sort)"
   local sources
-  mapfile -t sources < <(find "${SOURCE_DIR}" -name '*.cpp' | sort)
+  mapfile -t sources <<< "${listed}"
   # Again when a source, a header of ours or the headers of LLVM are newer than the module.
-  if [[ ! -f "${module}" ]] \
-    || [[ -n "$(find "${SOURCE_DIR}" "${config}" -newer "${module}" -print -quit)" ]]; then
+  local newer=""
+  if [[ -f "${module}" ]]; then
+    newer="$(find "${SOURCE_DIR}" "${config}" -newer "${module}" -print -quit)"
+  fi
+  if [[ ! -f "${module}" || -n "${newer}" ]]; then
     mkdir -p "${output_dir}"
     "${CXX:-c++}" -std=c++17 -O2 -fPIC -shared -fno-rtti \
       -Wall -Wextra -Werror \

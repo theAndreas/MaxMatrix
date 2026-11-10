@@ -64,9 +64,9 @@ Result<value_type> at(size_type index) const;
    *         beyond the end.
   ```
 
-  `tools/lint.sh --fix` indents it so, with `tools/doc_indent.pl` after clang-format, which keeps
-  such a line but starts one it breaks at the margin again; `tools/lint.sh` fails where a line is
-  not indented so.
+  `tools/lint.sh --fix` indents it so, with `tools/lib/doc_indent.py` after clang-format, which
+  keeps such a line but starts one it breaks at the margin again; `tools/lint.sh` fails where a
+  line is not indented so.
 
 ### The parts, in this order
 

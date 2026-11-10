@@ -78,7 +78,7 @@ Checks: >
 #   template's checks found some 670 places in src/ alone, most of them the macros that version
 #   2.0.0 turns into constants of a namespace (OIL 35); the groups come on one at a time after
 #   it, each with what it finds fixed (OIL 36), and leave this list then.
-# house-*: the checks of our own, in tools/tidy_module/; tools/tidy.sh loads them. Without
+# house-*: the checks of our own, in tools/lib/tidy_module/; tools/tidy.sh loads them. Without
 #   the module, as in clangd, the name matches nothing.
 # bugprone-dynamic-static-initializers: it reports the extern declaration of a constant whose
 #   constexpr definition lies in a .cpp it cannot see, as an object identified by its address
