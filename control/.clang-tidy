@@ -4,6 +4,11 @@
 #   Reports every flag combination of a sizer, wxEXPAND | wxALL: wxWidgets declares the
 #   stretch, the border and the alignment as enums of their own and has them or-ed into one
 #   int, on purpose. A NOLINT on every Add() would hide a real finding among them.
+#
+# clang-diagnostic-enum-enum-conversion
+#   The same flags, as clang's warning reports them; CMakeLists.txt here turns it off for the
+#   window.
 InheritParentConfig: true
 Checks: >
-  -bugprone-suspicious-enum-usage
+  -bugprone-suspicious-enum-usage,
+  -clang-diagnostic-enum-enum-conversion

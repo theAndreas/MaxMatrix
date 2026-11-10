@@ -4,7 +4,7 @@
         "dockerfile": "../Dockerfile",
         "context": ".."
     },
-    // Extensions, the Arduino core and the toolchain check live in ../shared.
+    // Extensions, the Arduino core and the volumes live in ../shared.
     "features": {
         "./../shared": {}
     },

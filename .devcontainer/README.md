@@ -1,175 +1,132 @@
 # MaxMatrix development containers
 
-VS Code offers two configurations when running **Dev Containers: Reopen in
-Container**:
+VS Code offers two configurations when running **Dev Containers: Reopen in Container**:
 
-- **MaxMatrix (Linux)** for native Linux and remote environments. It mounts the
-  host's SSH agent.
-- **MaxMatrix (WSL2)** when VS Code runs in WSL2. It relies on VS Code's own
-  SSH-agent forwarding and mounts nothing.
+- **MaxMatrix (Linux)** for native Linux and remote environments. It mounts the host's SSH agent.
+- **MaxMatrix (WSL2)** when VS Code runs in WSL2. It relies on VS Code's own SSH-agent forwarding and
+  mounts nothing.
+
+Open the repository from a checkout on the host, in WSL2 the Linux side of it: a folder inside
+another container is lost with that container.
 
 ## What the container carries
 
 | Tool | What for |
 |---|---|
-| `arduino-cli` with the `arduino:avr` core | compiling the library and its examples with the real AVR toolchain |
-| `arduino-lint` | checking the library layout against the Arduino Library Manager rules |
-| `g++`, `gdb` (from the base image) | host-side tests against a mock of `Arduino.h` |
-| `cmake`, `ninja`, GoogleTest (apt) | building and running those tests: `cmake --workflow --preset default` |
-| `clangd` (apt) | IntelliSense, see below |
-| `clang-tidy`, `cppcheck`, `python3` (apt) | the static analysis of `.github/workflows/static-analysis.yml`, see `.clang-tidy` |
-| `doxygen` (apt) | the reference of `.github/workflows/docs.yml`: `tools/docs.py` |
-| `libsimavr-dev` (apt) | `build/SimulatorAvr`, the examples' `.elf` on a simulated Uno, and the tests `avr/` |
+| `arduino-cli` with the core of `tools/project.sh` | the library and its examples with the real toolchain, pinned as in CI |
+| `simavr` | `examples/SelfCheck` as the board runs it: `tools/self_check.sh` |
+| `g++`, `gdb` (from the base image) | the tests on the host, and what `tools/project.sh` prepares |
+| `cmake`, `ninja`, GoogleTest | the tests on the host: `cmake --workflow --preset default` |
+| `uv` | the Python tools that `uv.lock` pins, in `.venv`: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff, copier |
+| `clang` | the tests a second time, by another compiler: `make clang` |
+| `clangd` | IntelliSense, see below |
+| LLVM's headers, in `/opt/llvm-23/include` | the checks of our own, `house-*`, a module that `tools/lib/tidy_module.sh` builds and `tools/tidy.sh` loads |
+| `jq` | the compilation database of `tools/tidy.sh` |
+| `cppcheck` | a second analyser beside clang-tidy: `tools/cppcheck.sh` |
+| `arduino-lint` | the rules of the Arduino Library Manager |
 | `gh` | branches and pull requests from the container |
+| what `apt-packages.txt` lists | the project's own, as a simulator's libraries |
 
-Compile an example for an Arduino Uno:
+`apt-packages.txt` is the project's: the Dockerfile installs what it lists, last, so that a
+change to it rebuilds that layer alone, and a workflow of the project's installs the same with
+the action `apt-install` and `file: .devcontainer/apt-packages.txt`, as the jobs of `ci.yml` and
+`static-analysis.yml` that build with CMake do. `copier update` leaves it alone.
 
-```sh
-arduino-cli compile --fqbn arduino:avr:uno --library . examples/ScrollText
-```
+The `postCreateCommand` runs `tools/setup.sh`, which installs the core and builds what
+`tools/project.sh` prepares, configures CMake and writes the compilation databases, so that a new container can build, check and complete code at once.
 
-Check the library:
-
-```sh
-arduino-lint --library-manager submit
-```
-
-**Flashing is not covered.** The container can build; getting the USB serial adapter into
-it is another matter, and under WSL2 it needs `usbipd-win` on the Windows side before the
-container can see anything at all. Build here, flash from the host.
+**Flashing is not covered.** The container builds; getting a USB serial adapter into it is another
+matter, and under WSL2 it needs `usbipd-win` on the Windows side first. Build here, flash from the
+host.
 
 ## IntelliSense: clangd
 
-clangd does completion, navigation, the compiler's diagnostics and the findings of clang-tidy, with
-the repository's `.clang-tidy`, from `build/compile_commands.json`,
-which `cmake --preset default` writes and the `postCreateCommand` runs, and which clangd finds on
-its own. The simulator compiles every example into it, so an `.ino` is understood as well, against
-the mock. cpptools stays installed for debugging, with its IntelliSense off, so that the two do not
-answer twice. clangd inserts no includes: an include in `src/` names its header by its path from
-`src/`, which the editor would not know. After adding a file, run `cmake --preset default` again.
+clangd does completion, navigation and the findings of clang-tidy, with the repository's
+`.clang-tidy`, so the editor shows what CI would. cpptools stays installed for debugging, with its
+IntelliSense off, so that the two do not answer twice.
 
-clang warns about some things GCC does not, and the tests are built with `-Werror`, so clangd shows
-them as errors: a lambda that captured constants it could use without, in `MaxMatrixTest.cpp`, was
-the one such place.
+clangd reads the compilation database that `.clangd` names for a path, as no single one covers
+everything:
 
-One warning clangd alone gives: it parses headers such as GoogleTest's without their function
-bodies, for speed, so a `PrintTo()` or an `operator==` that only `EXPECT_EQ` calls looks unused to
-it. `.clangd` suppresses `-Wunused-function` in `test/` for that; g++ and a full clang build see
-the use. It also leaves clang-tidy out in `test/`, which CI does not read with it either: the tests
-keep a lighter style.
+- `src/` and `test/` from CMake, against the mock of the core, in `build/host/`.
+- `examples/` from `tools/tidy.sh --database-only`, in `build/tidy/default/`, with the flags the
+  board is compiled with: only that one has the sketches, an `.ino` as C++ with `Arduino.h` included
+  first.
 
-## The Arduino data directory
+Both are written when the container is created. After adding a file, run `cmake --preset default`
+or `tools/tidy.sh --database-only` again. clangd inserts no includes: a sketch includes
+`<MaxMatrix.h>` first, which an include put in by the editor would not know.
 
-The AVR core and its toolchain are not part of the image. The shared feature's
-`postCreateCommand` installs them into `~/.arduino15`, which is the named volume
-`maxmatrix-arduino15`, so a rebuild does not download them again. The `Dockerfile` creates
-that path as the remote user first: an empty named volume takes its ownership from the path
-it covers, and a path that does not exist in the image yields a volume owned by root that
-`arduino-cli` cannot write.
+clangd does not load the module of the checks of our own, `house-*`: those findings come from
+`make tidy` alone. The module's own sources in `tools/lib/tidy_module/` are read against LLVM's
+headers, without the checks of `.clang-tidy`, which are the library's rules and not LLVM's.
 
-## Logins that survive a rebuild
+clangd comes from PyPI at 22.1.1, the newest there, one behind the clang-tidy 23 of CI, which stays
+the measure. The package wraps the binary in a Python script whose interpreter would lie in root's
+home; `/usr/local/bin/clangd` links to the binary itself.
 
-Two named volumes carry a login across a rebuild: `maxmatrix-codex` at `/home/vscode/.codex`
-and `maxmatrix-gh` at `/home/vscode/.config/gh`. They are declared by the **shared
-feature**, so every variant gets them. The `Dockerfile` creates both directories as the
-remote user at mode 0700, because a credential is not a cache, and `gh` refuses to read a
-config directory that others can enter.
+## Volumes
 
-Both volumes hold credentials: do not share, export or remove one unless the saved login
-should be discarded.
+The Arduino core and its toolchain, and the checkers uv fetches, are not part of the image. They live
+in the named volumes `max_matrix-arduino15` and `max_matrix-uv-cache`, so that a rebuild does not download them
+again. Three more carry a login across a rebuild: `max_matrix-codex` at `/home/vscode/.codex`,
+`max_matrix-claude` at `/home/vscode/.claude` (with `CLAUDE_CONFIG_DIR` pointing there, so that
+Claude Code's `.claude.json` lands in it too) and `max_matrix-gh` at `/home/vscode/.config/gh`, all at
+mode 0700, as `gh` refuses a config directory others can enter. Those three hold credentials: do not share, export or remove one unless the login should go.
+The shell history lives in `max_matrix-history` at `/home/vscode/.commandhistory`, written after every
+command (`HISTFILE` and `PROMPT_COMMAND` in `shared/devcontainer-feature.json`); remove the volume to
+forget it.
+
+The `Dockerfile` creates each path as the remote user first: an empty named volume takes its
+ownership from the path it covers, and one that does not exist in the image gives a volume owned by
+root that nothing can write into.
 
 ## SSH agent on Linux
 
-The Linux variant mounts the host's `SSH_AUTH_SOCK` at the fixed path `/tmp/ssh-agent`,
-because the host socket carries a random name that would otherwise change under the
-container on every host login. Private key files are never copied into the container.
-
-Before opening the container, the host agent must be running and hold the key:
+The Linux variant mounts the host's `SSH_AUTH_SOCK` at the fixed path `/tmp/ssh-agent`, as the host
+socket carries a random name. An `initializeCommand` checks that the agent runs first, so that a
+missing one is reported as such rather than as a docker error about an empty `source=`:
 
 ```sh
 ssh-add -l
 ```
 
-If no agent is running, the mount would resolve to an empty `source=` and container
-creation would fail on a docker error that never mentions SSH — an `initializeCommand`
-checks for the socket first and says so instead.
+GitHub's SSH host key is written into `/etc/ssh/ssh_known_hosts` by the `Dockerfile`, as published
+by GitHub, so the first SSH operation does not fail with `Host key verification failed`.
 
-## GitHub CLI
+## Pinned tools
 
-`gh` is a **pinned release `.deb`**, verified against its published SHA-256, rather than
-the `universe` package: Ubuntu ships 2.46, whose `gh pr edit` fails on the retired
-Projects-classic `projectCards` field. `arduino-cli` and `arduino-lint` are pinned the same
-way. Bumping a version means bumping its checksums in the `Dockerfile` as well:
+`arduino-cli`, `arduino-lint`, `gh` and `uv` are pinned release downloads, each verified against its
+published SHA-256 in the `Dockerfile`; `clangd` is pinned on PyPI. Bumping a version means bumping
+its checksums as well. `gh auth login` has to run in a terminal, once, as its login stays in its
+volume. The shared feature's `postAttachCommand` then runs `gh auth setup-git` on every attach, so
+that `git push` over HTTPS uses the same token instead of VS Code's helper, which opens a window
+on the host; on every attach, as VS Code copies the host's `.gitconfig` into a new container.
 
-```sh
-V=$(gh api repos/cli/cli/releases/latest --jq .tag_name | tr -d v)
-curl -sSL "https://github.com/cli/cli/releases/download/v$V/gh_${V}_checksums.txt" |
-    grep -E 'linux_(amd64|arm64)\.deb$'
-```
+LLVM's headers are not pinned closer than their major version, `ARG LLVM_MAJOR`: `llvm-headers.sh`
+takes them from apt.llvm.org, which keeps only the newest build of a release branch, and checks the
+archive's signature against the fingerprint in the script. Within a major version LLVM keeps its
+ABI. When `uv.lock` moves clang-tidy to the next major version, `make tidy` says so, and
+`LLVM_MAJOR` follows it, as does the path in `.clangd`.
 
-`gh auth login` has to run **in a terminal** — the browser and device flows both need to
-prompt, once, as its login stays in its volume. The shared feature's `postAttachCommand` then
-runs `gh auth setup-git` on every attach, so that `git push` over HTTPS uses the same token
-instead of VS Code's helper, which opens a window on the host; on every attach, as VS Code
-copies the host's `.gitconfig` into a new container.
+`gh` is pointed at `github.com` by the shared feature's `containerEnv`. A base image that sets
+`GH_HOST` to a company GitHub needs `"remoteEnv": {"GH_HOST": "github.com"}` in its
+`devcontainer.json` as well: the VS Code server starts with the image's value, and `remoteEnv` is
+applied last.
 
-`gh` is pointed at `github.com` by the shared feature, because an internal base image may
-set `GH_HOST` to a company GitHub, where every call for this repository answers `HTTP 401`.
-The feature's `containerEnv` is not enough with the internal Ignite image: its
-`/etc/environment` carries the company host, and the VS Code server already starts with that
-value, before any shell. Such a variant also needs `"remoteEnv": {"GH_HOST": "github.com"}`
-in its `devcontainer.json`, which VS Code applies last.
+## Shared configuration
 
-**The host key is in the image.** The `Dockerfile` writes GitHub's published ed25519 key
-into `/etc/ssh/ssh_known_hosts` for `github.com`, `ssh.github.com` and
-`[ssh.github.com]:443`, so the first SSH operation in a fresh container does not fail with
-`Host key verification failed`.
-
-## Shared editor configuration
-
-Extensions and lifecycle commands live in the local dev container feature in `shared/`,
-which every configuration references:
-
-```jsonc
-"features": { "./../shared": {} }
-```
-
-Feature metadata is merged with the referencing `devcontainer.json`, so a variant can add
-its own extensions on top without repeating the shared list.
-
-Feature metadata is baked into the image at build time, so editing
-`shared/devcontainer-feature.json` requires **Dev Containers: Rebuild Container**.
-Reopening the folder keeps the previous metadata, which looks like a newly added extension
-being ignored.
-
-The Linux configuration mounts `/tmp` as a temporary filesystem with mode
-`1777` using `runArgs`. Podman's generated feature build can leave that
-directory at `0755` despite a `chmod` in the Dockerfile or feature installer.
-Setting the permissions at runtime lets `vscode` write its helper scripts and
-`/tmp/user/1000` before VS Code attaches. The SSH and display sockets remain
-separate bind mounts below `/tmp`. Temporary files disappear when the
-container stops. Run **Dev Containers: Rebuild Container** to apply this
-configuration to an existing container.
+Extensions, settings, volumes, the `postCreateCommand` and the `postAttachCommand` live in the
+local feature in `shared/`, which every configuration references with
+`"features": { "./../shared": {} }`. A variant can add extensions of its own on top. Feature metadata is baked into the image, so a change to
+`shared/devcontainer-feature.json` needs **Dev Containers: Rebuild Container**.
 
 ## Site-specific variants
 
-An additional configuration directory next to `linux/` and `wsl2/` shows up as another
-entry in the same picker, which is the place for settings that must not be committed
-(internal base images, registry-hosted features, credentials). The `Dockerfile` takes a
-`BASE_IMAGE` build argument for that purpose:
+Another directory beside `linux/` and `wsl2/` shows up as another entry in the same picker: the
+place for what must not be committed, such as an internal base image through the `BASE_IMAGE`
+build argument. `/.devcontainer/vector/` is listed in `.gitignore` for that.
 
-```jsonc
-"build": {
-    "dockerfile": "../Dockerfile",
-    "context": "..",
-    "args": { "BASE_IMAGE": "registry.example.internal/base:latest" }
-}
-```
-
-Add such a directory to `.gitignore` to keep it local; `/.devcontainer/vector/` is already
-listed there.
-
-Behind a **TLS-intercepting proxy** the public base image cannot build: it does not trust
-the proxy's certificate, so the first download in the `Dockerfile` fails with `curl` exit
-code 60. A base image that carries the proxy's CA, set through `BASE_IMAGE` in such a
-variant, fixes that.
+Behind a TLS-intercepting proxy the public base image cannot build, as it does not trust the proxy's
+certificate and the first download fails with `curl` exit code 60. A base image that carries the
+proxy's CA, set through `BASE_IMAGE`, fixes that.

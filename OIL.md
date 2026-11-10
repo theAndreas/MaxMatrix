@@ -43,6 +43,9 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 31 | A shifting text that starts over | 23 | done | #63 |
 | 32 | The column shifted in and out | 12 | done | #66 |
 | 33 | A font checked against its length | 15 | in progress | #67 |
+| 34 | On the template embedded-cpp-template | 16, 30 | in progress | #69 |
+| 35 | Version 2.0.0: a namespace, and constants for macros | 34 | open | |
+| 36 | The template's checks, one group at a time | 35 | open | |
 
 ### 1 Build with CMake
 
@@ -752,6 +755,36 @@ table of fonts. `kMaxMatrixDefaultFont` is declared with its length, 614, for th
 
 Measured on the Uno: every example is the same size, as none sets a font; a sketch that sets one
 takes 52 bytes more flash and no RAM.
+
+### 34 On the template embedded-cpp-template
+
+The checks, CI and the dev container from the copier template
+[embedded-cpp-template](https://github.com/theAndreas/embedded-cpp-template), which Utl and
+Wordclock share, so that a change to one reaches the others with `copier update`. What is
+MaxMatrix's own stays its own: the variants, the simulator, the tests in simavr (`make avr`), the
+control program, the pictures of `docu/`. The template's tools replace `tools/apt-install.sh`,
+`cross-clang-tidy.py`, `east-const.py`, `doc-indent.py` and `docs.py`, and its
+`docs/Documentation.md` `docu/Documentation.md`, as 30 meant it to.
+
+In small steps, as the template checks more than MaxMatrix did: clang-format once, the warnings
+of `-Wconversion`, `-Wsign-conversion` and `-Wshadow`, and of clang-tidy what the groups
+MaxMatrix checked before find. The other groups wait for 35 and 36.
+
+### 35 Version 2.0.0: a namespace, and constants for macros
+
+The classes in a namespace `max_matrix`, without the prefix: `max_matrix::Matrix`,
+`max_matrix::MatrixOf<4>`, `max_matrix::ModuleType::kFc16`, as the template's CodingStyle.md asks
+of a library (F-9) and Utl does. The macros that are constants become `constexpr` in it, which
+takes most of the some 670 places clang-tidy's groups find in `src/`; what a sketch sets with
+`-D` stays a macro. The parts below the facade go into `max_matrix::internal`. A sketch has to
+change its names: no aliases for the old ones, a clean break, version 2.0.0.
+
+### 36 The template's checks, one group at a time
+
+`.clang-tidy` turns off, for now, the groups of the template that MaxMatrix did not check before
+34: `cppcoreguidelines-*`, `google-*`, `house-*`, `misc-*`, `modernize-*`, `portability-*`,
+`readability-*` but three, and `bugprone-signed-bitwise`. After 35, each comes on in a pull
+request of its own, with what it finds fixed, and leaves the list.
 
 ## Decisions
 

@@ -1,29 +1,35 @@
-# The reference on GitHub Pages, from the Doxygen blocks of src/ and the README as its main page.
-# Only what differs from Doxygen's defaults is set. Written and checked by tools/docs.py, which
-# fails on every warning but a member left undocumented below the facade; published by
-# .github/workflows/docs.yml.
+# The reference on GitHub Pages, from the Doxygen blocks of src/ and the README as its main
+# page. Only what differs from Doxygen's defaults is set. Built and checked by tools/docs.sh,
+# which fails on a warning, see there which; published by .github/workflows/docs.yml. How a
+# block is written is in docs/Documentation.md.
 
 PROJECT_NAME           = MaxMatrix
-PROJECT_BRIEF          = "Chained 8x8 LED dot matrix modules with the MAX7219, for Arduino"
-OUTPUT_DIRECTORY       = build/docu
+PROJECT_BRIEF          = "Drive chained 8x8 LED dot matrix modules with MAX7219."
+OUTPUT_DIRECTORY       = build/docs
 
-# docu/README.md becomes the page of docu/, with the pictures of the wirings. The examples are
-# not read: they are sketches, not reference, and the README links them on GitHub.
-INPUT                  = README.md docu/README.md docu/Documentation.md src
+# The examples are not read: they are sketches, not reference, and the README links them. The
+# style guide and the dev container's README are pages, as the README links them too.
+INPUT                  = README.md docs/Documentation.md .devcontainer/README.md src
 RECURSIVE              = YES
-FILE_PATTERNS          = *.h *.cpp *.md
+FILE_PATTERNS          = *.h *.md
 USE_MDFILE_AS_MAINPAGE = README.md
-# so that the README's links to its own headings, written for GitHub, find them here as well
+# So that the README's links to its own headings, written for GitHub, find them here as well.
 MARKDOWN_ID_STYLE      = GITHUB
-IMAGE_PATH             = docu
 
-# PROGMEM and the weak attribute mean nothing to Doxygen; read as they are, a table in flash
-# became a symbol "not declared" and maxMatrixReportError() a function without parameters.
-# MAXMATRIX_DEV_ERROR_DETECT on, so that the report and its default are in the reference; the
-# switch itself is then not, and the README's table of the configuration has it.
+# \stddiff opens the paragraph that says where an entity differs from the standard it follows,
+# so that every such difference reads alike. clang knows it from -fcomment-block-commands in
+# .clang-tidy and .clangd, or -Wdocumentation-unknown-command would take it for a typo.
+ALIASES                = "stddiff=\par Differs from the standard:^^"
+
+# PROGMEM and the attributes mean nothing to Doxygen; read as they are, a name in flash would
+# be a symbol "not declared". A switch of the library is left to its header, so that it is in
+# the reference with its default.
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = PROGMEM= "__attribute__(x)=" MAXMATRIX_DEV_ERROR_DETECT=1u
+PREDEFINED             = PROGMEM= "__attribute__(x)="
+
+# A class shows the members it takes from a base in the namespace internal on its own page.
+INLINE_INHERITED_MEMB  = YES
 
 # No graphs: they need Graphviz, and the parts are few enough to read from the README.
 HAVE_DOT               = NO
@@ -32,9 +38,10 @@ GENERATE_LATEX         = NO
 
 QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = YES
-# A parameter without its \param fails, even the only one; docs.py lets a missing \return pass,
-# which a one-line block whose brief says what comes back needs not have. See
-# docu/Documentation.md.
 WARN_IF_INCOMPLETE_DOC = YES
 WARN_NO_PARAMDOC       = YES
-WARN_LOGFILE           = build/docu/warnings.log
+WARN_LOGFILE           = build/docs/warnings.log
+
+# The project's own settings, last, so that += adds to the lists above and a plain = replaces
+# one: Doxyfile.project, which the template writes once and `copier update` leaves alone.
+@INCLUDE               = Doxyfile.project
