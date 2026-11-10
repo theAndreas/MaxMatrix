@@ -1,4 +1,5 @@
-/* Binary constants as the Arduino core defines them in binary.h, generated for B00000000 to B11111111. */
+/* Binary constants as the Arduino core defines them in binary.h, generated for
+ * B00000000 to B11111111. */
 #ifndef MAXMATRIX_TEST_MOCK_BINARY_H_
 #define MAXMATRIX_TEST_MOCK_BINARY_H_
 

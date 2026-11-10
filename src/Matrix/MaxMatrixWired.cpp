@@ -5,46 +5,47 @@
  * \file
  * \brief The matrix as it is wired.
  *
- * The buffer mirrors what is on the LEDs, one byte per column and one bit per row, columns of all
- * modules in a row, module 0 first. Every write to the hardware updates the buffer as well, because
- * the MAX7219 cannot be read back.
+ * The buffer mirrors what is on the LEDs, one byte per column and one bit per
+ * row, columns of all modules in a row, module 0 first. Every write to the
+ * hardware updates the buffer as well, because the MAX7219 cannot be read back.
  */
 
 #include "MaxMatrixWired.h"
 
-MaxMatrixWired::MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer, byte number_of_modules)
-    : chain_(data_in_pin, chip_select_pin, clock_pin, number_of_modules)
-{
-    matrix_buffer_ = buffer;
-    memset(matrix_buffer_, 0, GetNumberOfColumns());
-    changed_columns_ = 0;
+MaxMatrixWired::MaxMatrixWired(byte data_in_pin, byte chip_select_pin,
+                               byte clock_pin, byte* buffer,
+                               byte number_of_modules)
+    : chain_(data_in_pin, chip_select_pin, clock_pin, number_of_modules) {
+  matrix_buffer_ = buffer;
+  memset(matrix_buffer_, 0, GetNumberOfColumns());
+  changed_columns_ = 0;
 }
 
-void MaxMatrixWired::StoreBit(byte column, byte bit, bool value)
-{
-    byte column_value = matrix_buffer_[column];
+void MaxMatrixWired::StoreBit(byte column, byte bit, bool value) {
+  byte column_value = matrix_buffer_[column];
 
-    bitWrite(column_value, bit, value);
-    if(column_value != matrix_buffer_[column]) {
-        matrix_buffer_[column] = column_value;
-        bitSet(changed_columns_, column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+  bitWrite(column_value, bit, value);
+  if (column_value != matrix_buffer_[column]) {
+    matrix_buffer_[column] = column_value;
+    bitSet(changed_columns_, column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+  }
+}
+
+void MaxMatrixWired::Clear() {
+  memset(matrix_buffer_, 0, GetNumberOfColumns());
+  changed_columns_ = 0xFF;
+}
+
+// The values of a column lie a module's columns apart in the buffer, and go out
+// from there rather than through an array of one per module, which would need
+// its length at compile time.
+void MaxMatrixWired::Send() {
+  for (byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
+    if (bitRead(changed_columns_, column)) {
+      chain_.WriteRegisterEach(MAX7219_REG_DIGIT0_ADDRESS + column,
+                               matrix_buffer_ + column,
+                               MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
     }
-}
-
-void MaxMatrixWired::Clear()
-{
-    memset(matrix_buffer_, 0, GetNumberOfColumns());
-    changed_columns_ = 0xFF;
-}
-
-// The values of a column lie a module's columns apart in the buffer, and go out from there rather
-// than through an array of one per module, which would need its length at compile time.
-void MaxMatrixWired::Send()
-{
-    for(byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
-        if(bitRead(changed_columns_, column)) {
-            chain_.WriteRegisterEach(MAX7219_REG_DIGIT0_ADDRESS + column, matrix_buffer_ + column, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-        }
-    }
-    changed_columns_ = 0;
+  }
+  changed_columns_ = 0;
 }

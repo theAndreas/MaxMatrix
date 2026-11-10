@@ -5,28 +5,33 @@
  * \file
  * \brief The font of the MaxMatrix library.
  *
- * The sprite table, which char has which sprite, and the decoding of UTF-8 into latin-1 chars.
+ * The sprite table, which char has which sprite, and the decoding of UTF-8 into
+ * latin-1 chars.
  */
 
 #include "MaxMatrixFont.h"
+
 #include "MaxMatrixConfig.h"
 
 /* MaxMatrixFont Parameter, the bytes of a font's header */
-#define MAXMATRIX_FONT_FILE_INDICATOR                               'F'
-#define MAXMATRIX_FONT_VERSION_1                                    1
-#define MAXMATRIX_FONT_VERSION_2                                    2
-#define MAXMATRIX_FONT_HEADER_LENGTH_1                              5
-#define MAXMATRIX_FONT_HEADER_LENGTH_2                              7
+#define MAXMATRIX_FONT_FILE_INDICATOR 'F'
+#define MAXMATRIX_FONT_VERSION_1 1
+#define MAXMATRIX_FONT_VERSION_2 2
+#define MAXMATRIX_FONT_HEADER_LENGTH_1 5
+#define MAXMATRIX_FONT_HEADER_LENGTH_2 7
 
 /*
- * The sprites of the font MaxMatrix had from the start, converted once: the ASCII chars at their
- * codes, the chars beyond it at their latin-1 codes, and a width of 0 for every code between them
- * that has no char. As a table of 7 bytes per char it took 721 bytes. The header gives its length,
- * so that SetFont() can check it as any other font; a byte too few would be padded with a 0, which
- * the test DefaultFontHasAsciiAndNothingBetween finds, as the chars then no longer end the array.
+ * The sprites of the font MaxMatrix had from the start, converted once: the
+ * ASCII chars at their codes, the chars beyond it at their latin-1 codes, and a
+ * width of 0 for every code between them that has no char. As a table of 7
+ * bytes per char it took 721 bytes. The header gives its length, so that
+ * SetFont() can check it as any other font; a byte too few would be padded with
+ * a 0, which the test DefaultFontHasAsciiAndNothingBetween finds, as the chars
+ * then no longer end the array.
  */
 uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
-    // A glyph a line, with its char beside it: laid out by hand, not by clang-format.
+    // A glyph a line, with its char beside it: laid out by hand, not by
+    // clang-format.
     // clang-format off
     'F', 1, 32, 252, 8, // version 1, chars 32 to 252, 8 rows high
     3, B00000000, B00000000, B00000000, // 32 space
@@ -150,85 +155,94 @@ uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
 };
 
 /*
- * The chars are walked by their offset into the array rather than by a pointer, as a pointer more
- * than one past the end of the array would be undefined behaviour already, compared or not.
+ * The chars are walked by their offset into the array rather than by a pointer,
+ * as a pointer more than one past the end of the array would be undefined
+ * behaviour already, compared or not.
  */
-MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size)
-{
-    if(font == NULL || size < MAXMATRIX_FONT_HEADER_LENGTH_1 || pgm_read_byte(font) != MAXMATRIX_FONT_FILE_INDICATOR) {
-        return MaxMatrixError::kNotAFont;
-    }
+MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size) {
+  if (font == NULL || size < MAXMATRIX_FONT_HEADER_LENGTH_1 ||
+      pgm_read_byte(font) != MAXMATRIX_FONT_FILE_INDICATOR) {
+    return MaxMatrixError::kNotAFont;
+  }
 
-    byte const version = pgm_read_byte(font + 1);
-    uint16_t first;
-    uint16_t last;
-    byte height;
-    size_t offset;
+  byte const version = pgm_read_byte(font + 1);
+  uint16_t first;
+  uint16_t last;
+  byte height;
+  size_t offset;
 
-    if(version == MAXMATRIX_FONT_VERSION_1) {
-        first = pgm_read_byte(font + 2);
-        last = pgm_read_byte(font + 3);
-        height = pgm_read_byte(font + 4);
-        offset = MAXMATRIX_FONT_HEADER_LENGTH_1;
-    } else if(version == MAXMATRIX_FONT_VERSION_2 && size >= MAXMATRIX_FONT_HEADER_LENGTH_2) {
-        first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) | pgm_read_byte(font + 3));
-        last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) | pgm_read_byte(font + 5));
-        height = pgm_read_byte(font + 6);
-        offset = MAXMATRIX_FONT_HEADER_LENGTH_2;
-    } else return MaxMatrixError::kNotAFont;
-    if(first > last || height < 1 || height > MAXMATRIX_ROW_NUMBER_OF_MODULE) return MaxMatrixError::kNotAFont;
-    /* the loop ends at the last char rather than past it, as a last char of 0xFFFF has no next */
-    for(uint16_t code = first;; code++) {
-        if(offset >= size) return MaxMatrixError::kNotAFont;
-        offset += pgm_read_byte(font + offset) + 1u;
-        if(code == last) break;
-    }
-    return offset == size ? MaxMatrixError::kOk : MaxMatrixError::kNotAFont;
+  if (version == MAXMATRIX_FONT_VERSION_1) {
+    first = pgm_read_byte(font + 2);
+    last = pgm_read_byte(font + 3);
+    height = pgm_read_byte(font + 4);
+    offset = MAXMATRIX_FONT_HEADER_LENGTH_1;
+  } else if (version == MAXMATRIX_FONT_VERSION_2 &&
+             size >= MAXMATRIX_FONT_HEADER_LENGTH_2) {
+    first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) |
+                                  pgm_read_byte(font + 3));
+    last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) |
+                                 pgm_read_byte(font + 5));
+    height = pgm_read_byte(font + 6);
+    offset = MAXMATRIX_FONT_HEADER_LENGTH_2;
+  } else
+    return MaxMatrixError::kNotAFont;
+  if (first > last || height < 1 || height > MAXMATRIX_ROW_NUMBER_OF_MODULE)
+    return MaxMatrixError::kNotAFont;
+  /* the loop ends at the last char rather than past it, as a last char of
+   * 0xFFFF has no next */
+  for (uint16_t code = first;; code++) {
+    if (offset >= size) return MaxMatrixError::kNotAFont;
+    offset += pgm_read_byte(font + offset) + 1u;
+    if (code == last) break;
+  }
+  return offset == size ? MaxMatrixError::kOk : MaxMatrixError::kNotAFont;
 }
 
 /*
- * Walks from the first char of the font to `c`, each char its width and that many columns on. The
- * header is read again on every call rather than kept: five bytes from flash cost less than the
- * RAM to keep them.
+ * Walks from the first char of the font to `c`, each char its width and that
+ * many columns on. The header is read again on every call rather than kept:
+ * five bytes from flash cost less than the RAM to keep them.
  */
-MaxMatrixResult<MaxMatrixGlyph> MaxMatrixFont::GetGlyph(uint8_t const* font, char c)
-{
-    bool const version_1 = pgm_read_byte(font + 1) == MAXMATRIX_FONT_VERSION_1;
-    uint16_t const code = static_cast<byte>(c);
-    uint16_t first;
-    uint16_t last;
-    MaxMatrixGlyph glyph;
+MaxMatrixResult<MaxMatrixGlyph> MaxMatrixFont::GetGlyph(uint8_t const* font,
+                                                        char c) {
+  bool const version_1 = pgm_read_byte(font + 1) == MAXMATRIX_FONT_VERSION_1;
+  uint16_t const code = static_cast<byte>(c);
+  uint16_t first;
+  uint16_t last;
+  MaxMatrixGlyph glyph;
 
-    if(version_1) {
-        first = pgm_read_byte(font + 2);
-        last = pgm_read_byte(font + 3);
-        glyph.height = pgm_read_byte(font + 4);
-        font += MAXMATRIX_FONT_HEADER_LENGTH_1;
-    } else {
-        first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) | pgm_read_byte(font + 3));
-        last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) | pgm_read_byte(font + 5));
-        glyph.height = pgm_read_byte(font + 6);
-        font += MAXMATRIX_FONT_HEADER_LENGTH_2;
-    }
-    if(code < first || code > last) return MaxMatrixError::kUnknownChar;
-    for(uint16_t skipped = first; skipped < code; skipped++) font += pgm_read_byte(font) + 1;
-    glyph.width = pgm_read_byte(font);
-    glyph.columns = font + 1;
-    if(glyph.width == 0) return MaxMatrixError::kUnknownChar;
-    return glyph;
+  if (version_1) {
+    first = pgm_read_byte(font + 2);
+    last = pgm_read_byte(font + 3);
+    glyph.height = pgm_read_byte(font + 4);
+    font += MAXMATRIX_FONT_HEADER_LENGTH_1;
+  } else {
+    first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) |
+                                  pgm_read_byte(font + 3));
+    last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) |
+                                 pgm_read_byte(font + 5));
+    glyph.height = pgm_read_byte(font + 6);
+    font += MAXMATRIX_FONT_HEADER_LENGTH_2;
+  }
+  if (code < first || code > last) return MaxMatrixError::kUnknownChar;
+  for (uint16_t skipped = first; skipped < code; skipped++)
+    font += pgm_read_byte(font) + 1;
+  glyph.width = pgm_read_byte(font);
+  glyph.columns = font + 1;
+  if (glyph.width == 0) return MaxMatrixError::kUnknownChar;
+  return glyph;
 }
 
-byte MaxMatrixFont::DecodeChar(char const* string, char* c)
-{
-    byte lead_byte = string[0];
-    byte next_byte = string[1];
+byte MaxMatrixFont::DecodeChar(char const* string, char* c) {
+  byte lead_byte = string[0];
+  byte next_byte = string[1];
 
-    /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
-    if((0xC2 == lead_byte || 0xC3 == lead_byte) && 0x80 == (next_byte & 0xC0)) {
-        *c = static_cast<char>(((lead_byte & 0x03) << 6) | (next_byte & 0x3F));
-        return 2;
-    } else {
-        *c = static_cast<char>(lead_byte);
-        return 1;
-    }
+  /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
+  if ((0xC2 == lead_byte || 0xC3 == lead_byte) && 0x80 == (next_byte & 0xC0)) {
+    *c = static_cast<char>(((lead_byte & 0x03) << 6) | (next_byte & 0x3F));
+    return 2;
+  } else {
+    *c = static_cast<char>(lead_byte);
+    return 1;
+  }
 }

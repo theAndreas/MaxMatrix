@@ -5,193 +5,217 @@
  * \file
  * \brief Commands for the matrix, one per line of text.
  *
- * The names are compared with strcmp_P against strings in flash: in RAM, on the Uno, they would
- * take their length again for nothing.
+ * The names are compared with strcmp_P against strings in flash: in RAM, on the
+ * Uno, they would take their length again for nothing.
  */
 
 #include "MaxMatrixCommand.h"
+
 #include "MaxMatrix.h"
 
 /* MaxMatrixCommand Parameter */
-#define MAXMATRIX_COMMAND_LINE_END                                  '\n'
-#define MAXMATRIX_COMMAND_CARRIAGE_RETURN                           '\r'
-#define MAXMATRIX_COMMAND_VALUE_SEPARATOR                           '='
-#define MAXMATRIX_COMMAND_LIST_SEPARATOR                            ','
+#define MAXMATRIX_COMMAND_LINE_END '\n'
+#define MAXMATRIX_COMMAND_CARRIAGE_RETURN '\r'
+#define MAXMATRIX_COMMAND_VALUE_SEPARATOR '='
+#define MAXMATRIX_COMMAND_LIST_SEPARATOR ','
 
-/* the largest numbers the commands take: a column, row or space fits a byte, the shift interval a uint16_t */
-#define MAXMATRIX_COMMAND_MAX_BYTE                                  0xFFu
-#define MAXMATRIX_COMMAND_MAX_INTERVAL                              0xFFFFu
+/* the largest numbers the commands take: a column, row or space fits a byte,
+ * the shift interval a uint16_t */
+#define MAXMATRIX_COMMAND_MAX_BYTE 0xFFu
+#define MAXMATRIX_COMMAND_MAX_INTERVAL 0xFFFFu
 
-MaxMatrixCommand::MaxMatrixCommand()
-{
-    line_[0] = STD_NULL_CHARACTER;
-    shift_text_[0] = STD_NULL_CHARACTER;
-    line_length_ = 0;
-    line_too_long_ = false;
+MaxMatrixCommand::MaxMatrixCommand() {
+  line_[0] = STD_NULL_CHARACTER;
+  shift_text_[0] = STD_NULL_CHARACTER;
+  line_length_ = 0;
+  line_too_long_ = false;
 }
 
 /*
- * Every line but an empty one gets one line back, so that a program can tell which answer is
- * whose by counting; the answer to `picture` stands in for its `ok`.
+ * Every line but an empty one gets one line back, so that a program can tell
+ * which answer is whose by counting; the answer to `picture` stands in for its
+ * `ok`.
  */
-MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix, char c, Print& answer)
-{
-    if(c == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return MaxMatrixCommandState::kPending;
-    if(c != MAXMATRIX_COMMAND_LINE_END) {
-        if(line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH) line_[line_length_++] = c;
-        else line_too_long_ = true;
-        return MaxMatrixCommandState::kPending;
-    }
+MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Feed(MaxMatrix& matrix,
+                                                              char c,
+                                                              Print& answer) {
+  if (c == MAXMATRIX_COMMAND_CARRIAGE_RETURN)
+    return MaxMatrixCommandState::kPending;
+  if (c != MAXMATRIX_COMMAND_LINE_END) {
+    if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH)
+      line_[line_length_++] = c;
+    else
+      line_too_long_ = true;
+    return MaxMatrixCommandState::kPending;
+  }
 
-    bool const too_long = line_too_long_;
-    bool const empty = line_length_ == 0;
+  bool const too_long = line_too_long_;
+  bool const empty = line_length_ == 0;
 
-    line_[line_length_] = STD_NULL_CHARACTER;
-    line_length_ = 0;
-    line_too_long_ = false;
-    if(empty) return MaxMatrixCommandState::kPending;
-    MaxMatrixResult<MaxMatrixCommandState> result = MaxMatrixError::kLineTooLong;
-    if(!too_long) result = Execute(matrix, line_, answer);
-    if(!result.IsOk()) {
-        answer.print(F("error: "));
-        answer.println(result.GetErrorText());
-    } else if(result.GetValue() == MaxMatrixCommandState::kDone) {
-        answer.println(F("ok"));
-    }
-    return result;
+  line_[line_length_] = STD_NULL_CHARACTER;
+  line_length_ = 0;
+  line_too_long_ = false;
+  if (empty) return MaxMatrixCommandState::kPending;
+  MaxMatrixResult<MaxMatrixCommandState> result = MaxMatrixError::kLineTooLong;
+  if (!too_long) result = Execute(matrix, line_, answer);
+  if (!result.IsOk()) {
+    answer.print(F("error: "));
+    answer.println(result.GetErrorText());
+  } else if (result.GetValue() == MaxMatrixCommandState::kDone) {
+    answer.println(F("ok"));
+  }
+  return result;
 }
 
-// Splits the line at its first '=' into name and value, overwriting the '=' with the end of the
-// name, and passes it on by name.
-MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Execute(MaxMatrix& matrix, char* text, Print& answer)
-{
-    char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
-    MaxMatrixStatus status = MaxMatrixError::kOk;
+// Splits the line at its first '=' into name and value, overwriting the '='
+// with the end of the name, and passes it on by name.
+MaxMatrixResult<MaxMatrixCommandState> MaxMatrixCommand::Execute(
+    MaxMatrix& matrix, char* text, Print& answer) {
+  char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
+  MaxMatrixStatus status = MaxMatrixError::kOk;
 
-    if(value == NULL) {
-        if(0 == strcmp_P(text, PSTR("picture"))) {
-            AnswerPicture(matrix, answer);
-            return MaxMatrixCommandState::kAnswered;
-        }
-        if(0 != strcmp_P(text, PSTR("clear"))) return MaxMatrixError::kUnknownCommand;
-        matrix.Clear();
-    } else {
-        *value++ = STD_NULL_CHARACTER;
-        if(0 == strcmp_P(text, PSTR("text"))) status = ExecuteText(matrix, value);
-        else if(0 == strcmp_P(text, PSTR("textShift"))) status = ExecuteTextShift(matrix, value);
-        else if(0 == strcmp_P(text, PSTR("setDot"))) status = ExecuteDot(matrix, value);
-        else status = ExecuteSetting(matrix, text, value);
+  if (value == NULL) {
+    if (0 == strcmp_P(text, PSTR("picture"))) {
+      AnswerPicture(matrix, answer);
+      return MaxMatrixCommandState::kAnswered;
     }
-    if(!status.IsOk()) return status.GetError();
-    return MaxMatrixCommandState::kDone;
-}
-
-// textShift=TEXT copies the text out of the line buffer first: the shift reads it for as long as
-// it runs, and the next line would overwrite it there.
-MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix, char const* value)
-{
-    /*
-     * The text is part of Line, so it fits into shift_text_ as long as that is no shorter;
-     * strlcpy() would check the same at run time, for 30 bytes of flash in SerialControl
-     */
-    static_assert(sizeof(shift_text_) >= sizeof(line_), "ShiftText has to hold any text of a line");
-
-    if(*value == STD_NULL_CHARACTER) return MaxMatrixError::kNoText;
-    strcpy(shift_text_, value); /* NOLINT(clang-analyzer-security.insecureAPI.strcpy) */
-    return matrix.SetTextWithShift(shift_text_);
-}
-
-// text=TEXT clears the matrix first and sends clear and text as one picture; an empty text only
-// clears it.
-MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix, char const* value)
-{
-    MaxMatrixBatch batch(matrix);
-
+    if (0 != strcmp_P(text, PSTR("clear")))
+      return MaxMatrixError::kUnknownCommand;
     matrix.Clear();
-    return matrix.SetText(value);
+  } else {
+    *value++ = STD_NULL_CHARACTER;
+    if (0 == strcmp_P(text, PSTR("text")))
+      status = ExecuteText(matrix, value);
+    else if (0 == strcmp_P(text, PSTR("textShift")))
+      status = ExecuteTextShift(matrix, value);
+    else if (0 == strcmp_P(text, PSTR("setDot")))
+      status = ExecuteDot(matrix, value);
+    else
+      status = ExecuteSetting(matrix, text, value);
+  }
+  if (!status.IsOk()) return status.GetError();
+  return MaxMatrixCommandState::kDone;
+}
+
+// textShift=TEXT copies the text out of the line buffer first: the shift reads
+// it for as long as it runs, and the next line would overwrite it there.
+MaxMatrixStatus MaxMatrixCommand::ExecuteTextShift(MaxMatrix& matrix,
+                                                   char const* value) {
+  /*
+   * The text is part of Line, so it fits into shift_text_ as long as that is no
+   * shorter; strlcpy() would check the same at run time, for 30 bytes of flash
+   * in SerialControl
+   */
+  static_assert(sizeof(shift_text_) >= sizeof(line_),
+                "ShiftText has to hold any text of a line");
+
+  if (*value == STD_NULL_CHARACTER) return MaxMatrixError::kNoText;
+  strcpy(shift_text_,
+         value); /* NOLINT(clang-analyzer-security.insecureAPI.strcpy) */
+  return matrix.SetTextWithShift(shift_text_);
+}
+
+// text=TEXT clears the matrix first and sends clear and text as one picture; an
+// empty text only clears it.
+MaxMatrixStatus MaxMatrixCommand::ExecuteText(MaxMatrix& matrix,
+                                              char const* value) {
+  MaxMatrixBatch batch(matrix);
+
+  matrix.Clear();
+  return matrix.SetText(value);
 }
 
 /*
- * setDot=COLUMN,ROW,VALUE reads three numbers separated by commas, overwriting the commas with
- * ends of text; the value is 0 or 1. The dot is checked against the panel here, because SetDot()
- * leaves a dot off the panel out without a word, and whoever typed the line should learn that it
- * did nothing.
+ * setDot=COLUMN,ROW,VALUE reads three numbers separated by commas, overwriting
+ * the commas with ends of text; the value is 0 or 1. The dot is checked against
+ * the panel here, because SetDot() leaves a dot off the panel out without a
+ * word, and whoever typed the line should learn that it did nothing.
  */
-MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value)
-{
-    char* row_text = strchr(value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
-    char* lit_text = row_text == NULL ? NULL : strchr(row_text + 1, MAXMATRIX_COMMAND_LIST_SEPARATOR);
+MaxMatrixStatus MaxMatrixCommand::ExecuteDot(MaxMatrix& matrix, char* value) {
+  char* row_text = strchr(value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
+  char* lit_text = row_text == NULL
+                       ? NULL
+                       : strchr(row_text + 1, MAXMATRIX_COMMAND_LIST_SEPARATOR);
 
-    if(lit_text == NULL) return MaxMatrixError::kNotANumber;
-    *row_text++ = STD_NULL_CHARACTER;
-    *lit_text++ = STD_NULL_CHARACTER;
-    MaxMatrixResult<uint16_t> column = ConvertToNumber(value, matrix.GetNumberOfColumns() - 1);
-    MaxMatrixResult<uint16_t> row = ConvertToNumber(row_text, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
-    MaxMatrixResult<uint16_t> lit = ConvertToNumber(lit_text, 1);
-    if(!column.IsOk()) return column.GetError();
-    if(!row.IsOk()) return row.GetError();
-    if(!lit.IsOk()) return lit.GetError();
-    matrix.SetDot(static_cast<int16_t>(column.GetValue()), static_cast<int16_t>(row.GetValue()), lit.GetValue() == 1);
-    return MaxMatrixError::kOk;
+  if (lit_text == NULL) return MaxMatrixError::kNotANumber;
+  *row_text++ = STD_NULL_CHARACTER;
+  *lit_text++ = STD_NULL_CHARACTER;
+  MaxMatrixResult<uint16_t> column =
+      ConvertToNumber(value, matrix.GetNumberOfColumns() - 1);
+  MaxMatrixResult<uint16_t> row =
+      ConvertToNumber(row_text, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
+  MaxMatrixResult<uint16_t> lit = ConvertToNumber(lit_text, 1);
+  if (!column.IsOk()) return column.GetError();
+  if (!row.IsOk()) return row.GetError();
+  if (!lit.IsOk()) return lit.GetError();
+  matrix.SetDot(static_cast<int16_t>(column.GetValue()),
+                static_cast<int16_t>(row.GetValue()), lit.GetValue() == 1);
+  return MaxMatrixError::kOk;
 }
 
-// The commands that set a number: intensity=0..15, speed=MILLISECONDS and space=COLUMNS.
-MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix, char const* name, char const* value)
-{
-    if(0 == strcmp_P(name, PSTR("intensity"))) {
-        MaxMatrixResult<uint16_t> number = ConvertToNumber(value, MAX7219_REG_INTENSITY_MAX_VALUE);
-        if(!number.IsOk()) return number.GetError();
-        matrix.SetIntensity(number.GetValue());
-    } else if(0 == strcmp_P(name, PSTR("speed"))) {
-        MaxMatrixResult<uint16_t> number = ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_INTERVAL);
-        if(!number.IsOk()) return number.GetError();
-        matrix.SetShiftInterval(number.GetValue());
-    } else if(0 == strcmp_P(name, PSTR("space"))) {
-        MaxMatrixResult<uint16_t> number = ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_BYTE);
-        if(!number.IsOk()) return number.GetError();
-        matrix.SetSpaceBetweenChars(number.GetValue());
-    } else return MaxMatrixError::kUnknownCommand;
-    return MaxMatrixError::kOk;
+// The commands that set a number: intensity=0..15, speed=MILLISECONDS and
+// space=COLUMNS.
+MaxMatrixStatus MaxMatrixCommand::ExecuteSetting(MaxMatrix& matrix,
+                                                 char const* name,
+                                                 char const* value) {
+  if (0 == strcmp_P(name, PSTR("intensity"))) {
+    MaxMatrixResult<uint16_t> number =
+        ConvertToNumber(value, MAX7219_REG_INTENSITY_MAX_VALUE);
+    if (!number.IsOk()) return number.GetError();
+    matrix.SetIntensity(number.GetValue());
+  } else if (0 == strcmp_P(name, PSTR("speed"))) {
+    MaxMatrixResult<uint16_t> number =
+        ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_INTERVAL);
+    if (!number.IsOk()) return number.GetError();
+    matrix.SetShiftInterval(number.GetValue());
+  } else if (0 == strcmp_P(name, PSTR("space"))) {
+    MaxMatrixResult<uint16_t> number =
+        ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_BYTE);
+    if (!number.IsOk()) return number.GetError();
+    matrix.SetSpaceBetweenChars(number.GetValue());
+  } else
+    return MaxMatrixError::kUnknownCommand;
+  return MaxMatrixError::kOk;
 }
 
 /*
- * `picture` is answered with the panel as the viewer sees it, rather than the buffer as wired, so
- * that the answer does not depend on the modules, their type and orientation. The column is on the
- * panel, so GetColumn() cannot fail.
+ * `picture` is answered with the panel as the viewer sees it, rather than the
+ * buffer as wired, so that the answer does not depend on the modules, their
+ * type and orientation. The column is on the panel, so GetColumn() cannot fail.
  */
-void MaxMatrixCommand::AnswerPicture(MaxMatrix& matrix, Print& answer)
-{
-    int16_t const columns = matrix.GetNumberOfColumns();
+void MaxMatrixCommand::AnswerPicture(MaxMatrix& matrix, Print& answer) {
+  int16_t const columns = matrix.GetNumberOfColumns();
 
-    answer.print(F("picture="));
-    for(int16_t column = 0; column < columns; column++) {
-        byte const value = matrix.GetColumn(column).GetValue();
-        answer.write(static_cast<uint8_t>(ConvertToHexDigit(value >> 4)));
-        answer.write(static_cast<uint8_t>(ConvertToHexDigit(value & 0x0F)));
-    }
-    answer.println();
+  answer.print(F("picture="));
+  for (int16_t column = 0; column < columns; column++) {
+    byte const value = matrix.GetColumn(column).GetValue();
+    answer.write(static_cast<uint8_t>(ConvertToHexDigit(value >> 4)));
+    answer.write(static_cast<uint8_t>(ConvertToHexDigit(value & 0x0F)));
+  }
+  answer.println();
 }
 
 /*
- * Converts a decimal number of digits only, at least one, up to `maximum`. It stops counting as
- * soon as the number is past `maximum`, so that a long run of digits cannot overflow into a small
- * number, but reads on to the end all the same, so that "999x" is no number rather than too large.
+ * Converts a decimal number of digits only, at least one, up to `maximum`. It
+ * stops counting as soon as the number is past `maximum`, so that a long run of
+ * digits cannot overflow into a small number, but reads on to the end all the
+ * same, so that "999x" is no number rather than too large.
  */
-MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text, uint16_t maximum)
-{
-    uint32_t value = 0;
+MaxMatrixResult<uint16_t> MaxMatrixCommand::ConvertToNumber(char const* text,
+                                                            uint16_t maximum) {
+  uint32_t value = 0;
 
-    if(*text == STD_NULL_CHARACTER) return MaxMatrixError::kNotANumber;
-    for(; *text != STD_NULL_CHARACTER; text++) {
-        if(*text < '0' || *text > '9') return MaxMatrixError::kNotANumber;
-        if(value <= maximum) value = value * 10 + (*text - '0');
-    }
-    if(value > maximum) return MaxMatrixError::kOutOfRange;
-    return static_cast<uint16_t>(value);
+  if (*text == STD_NULL_CHARACTER) return MaxMatrixError::kNotANumber;
+  for (; *text != STD_NULL_CHARACTER; text++) {
+    if (*text < '0' || *text > '9') return MaxMatrixError::kNotANumber;
+    if (value <= maximum) value = value * 10 + (*text - '0');
+  }
+  if (value > maximum) return MaxMatrixError::kOutOfRange;
+  return static_cast<uint16_t>(value);
 }
 
-// Computed rather than looked up: a table of the digits would lie in RAM on the Uno.
-char MaxMatrixCommand::ConvertToHexDigit(byte value)
-{
-    return static_cast<char>(value < 10 ? '0' + value : 'A' + value - 10);
+// Computed rather than looked up: a table of the digits would lie in RAM on the
+// Uno.
+char MaxMatrixCommand::ConvertToHexDigit(byte value) {
+  return static_cast<char>(value < 10 ? '0' + value : 'A' + value - 10);
 }

@@ -9,9 +9,9 @@
 #ifndef MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
 #define MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
 
-#define STD_ON                  1u      /*!< A switch of the configuration turned on. */
-#define STD_OFF                 0u      /*!< A switch of the configuration turned off. */
+#define STD_ON 1u  /*!< A switch of the configuration turned on. */
+#define STD_OFF 0u /*!< A switch of the configuration turned off. */
 
-#define STD_NULL_CHARACTER      '\0'    /*!< The end of a text. */
+#define STD_NULL_CHARACTER '\0' /*!< The end of a text. */
 
 #endif

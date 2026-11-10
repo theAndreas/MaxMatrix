@@ -10,16 +10,16 @@
 #define SPI_MODE0 0
 
 class SPISettings {
-  public:
-    SPISettings(uint32_t, uint8_t, uint8_t) {}
+ public:
+  SPISettings(uint32_t, uint8_t, uint8_t) {}
 };
 
 class SPIClass {
-  public:
-    void begin() {}
-    void beginTransaction(SPISettings);
-    void endTransaction();
-    uint8_t transfer(uint8_t value);
+ public:
+  void begin() {}
+  void beginTransaction(SPISettings);
+  void endTransaction();
+  uint8_t transfer(uint8_t value);
 };
 
 extern SPIClass SPI;

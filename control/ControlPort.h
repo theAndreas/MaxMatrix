@@ -3,7 +3,8 @@
 
 /*!
  * \file
- * \brief One end the control program talks to: a board's serial port or the simulator's TCP port.
+ * \brief One end the control program talks to: a board's serial port or the
+ *        simulator's TCP port.
  */
 
 #ifndef MAXMATRIX_CONTROL_CONTROLPORT_H_
@@ -12,43 +13,47 @@
 #include <string>
 
 /*!
- * \brief One end the control program talks to: a board's serial port or the simulator's TCP port.
+ * \brief One end the control program talks to: a board's serial port or the
+ *        simulator's TCP port.
  *
- * Both carry the same lines, so that to the program both ends look alike and ControlLink needs to
- * know neither. How a port is opened differs, so each kind has an Open() of its own.
+ * Both carry the same lines, so that to the program both ends look alike and
+ * ControlLink needs to know neither. How a port is opened differs, so each kind
+ * has an Open() of its own.
  *
- * Virtual functions, which the library avoids for the RAM of their tables on the Uno: the program
- * runs on a PC, and a test hands ControlLink a port of its own.
+ * Virtual functions, which the library avoids for the RAM of their tables on
+ * the Uno: the program runs on a PC, and a test hands ControlLink a port of its
+ * own.
  */
-class ControlPort
-{
-  public:
-    /*! \brief Closes nothing: each kind of port closes itself when it is destroyed. */
-    virtual ~ControlPort() = default;
+class ControlPort {
+ public:
+  /*! \brief Closes nothing: each kind of port closes itself when it is
+   * destroyed. */
+  virtual ~ControlPort() = default;
 
-    /*! \brief Returns whether the port is open. */
-    virtual bool IsOpen() const = 0;
+  /*! \brief Returns whether the port is open. */
+  virtual bool IsOpen() const = 0;
 
-    /*!
-     * \brief Sends all of `data`.
-     *
-     * \param[in] data The bytes to send.
-     * \return True once all was sent, or false if the port is closed or broken; a broken port is
-     *         closed.
-     */
-    virtual bool Write(std::string const& data) = 0;
+  /*!
+   * \brief Sends all of `data`.
+   *
+   * \param[in] data The bytes to send.
+   * \return True once all was sent, or false if the port is closed or broken; a
+   *         broken port is closed.
+   */
+  virtual bool Write(std::string const& data) = 0;
 
-    /*!
-     * \brief Reads what has arrived, without waiting for more.
-     *
-     * \param[in,out] data Every byte that has arrived since the last call is appended.
-     * \return True while the port is open, or false once the other end is gone: the cable pulled,
-     *         the simulator stopped. The port is closed then.
-     */
-    virtual bool Read(std::string* data) = 0;
+  /*!
+   * \brief Reads what has arrived, without waiting for more.
+   *
+   * \param[in,out] data Every byte that has arrived since the last call is
+   *                     appended.
+   * \return True while the port is open, or false once the other end is gone:
+   *         the cable pulled, the simulator stopped. The port is closed then.
+   */
+  virtual bool Read(std::string* data) = 0;
 
-    /*! \brief Closes the port, if it is open. */
-    virtual void Close() = 0;
+  /*! \brief Closes the port, if it is open. */
+  virtual void Close() = 0;
 };
 
 #endif
