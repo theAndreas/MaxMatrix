@@ -24,9 +24,12 @@ enum class MaxMatrixMatrixOrientation : uint8_t {
 };
 
 /* the three properties of a MaxMatrixModuleType, one bit each of its value */
-#define MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS     0x04u  /*!< DR1 of MD_MAX72XX's names: the digits of the MAX7219 are the rows. */
-#define MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS   0x02u  /*!< CR1 of MD_MAX72XX's names: the columns in reverse order. */
-#define MAXMATRIX_MODULE_TYPE_REVERSED_ROWS      0x01u  /*!< RR1 of MD_MAX72XX's names: the rows in reverse order. */
+/*! DR1 of MD_MAX72XX's names: the digits of the MAX7219 are the rows. */
+#define MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS     0x04u
+/*! CR1 of MD_MAX72XX's names: the columns in reverse order. */
+#define MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS   0x02u
+/*! RR1 of MD_MAX72XX's names: the rows in reverse order. */
+#define MAXMATRIX_MODULE_TYPE_REVERSED_ROWS      0x01u
 
 /*!
  * \brief How the LEDs of a module are wired to its MAX7219, named as MD_MAX72XX names its hardware

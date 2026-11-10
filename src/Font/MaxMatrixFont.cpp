@@ -26,6 +26,8 @@
  * the test DefaultFontHasAsciiAndNothingBetween finds, as the chars then no longer end the array.
  */
 uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
+    // A glyph a line, with its char beside it: laid out by hand, not by clang-format.
+    // clang-format off
     'F', 1, 32, 252, 8, // version 1, chars 32 to 252, 8 rows high
     3, B00000000, B00000000, B00000000, // 32 space
     1, B01011111, // 33 !
@@ -144,6 +146,7 @@ uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
     4, B00111000, B01000110, B01000110, B00111000, // 246 ö
     0, 0, 0, 0, 0, // 247 to 251, none
     4, B00111100, B01000010, B01000010, B01111100, // 252 ü
+    // clang-format on
 };
 
 /*

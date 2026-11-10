@@ -16,48 +16,80 @@
 #include "MaxMatrixConfig.h"
 
 /* Max7219 Register Address Table */
-#define MAX7219_REG_NO_OP_ADDRESS                                   0x00  /*!< No-op: a module that is not addressed in a frame gets it. */
-#define MAX7219_REG_DIGIT0_ADDRESS                                  0x01  /*!< Digit 0: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT1_ADDRESS                                  0x02  /*!< Digit 1: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT2_ADDRESS                                  0x03  /*!< Digit 2: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT3_ADDRESS                                  0x04  /*!< Digit 3: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT4_ADDRESS                                  0x05  /*!< Digit 4: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT5_ADDRESS                                  0x06  /*!< Digit 5: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT6_ADDRESS                                  0x07  /*!< Digit 6: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT7_ADDRESS                                  0x08  /*!< Digit 7: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DECODE_MODE_ADDRESS                             0x09  /*!< Decode mode: BCD code B per digit, or none. */
-#define MAX7219_REG_INTENSITY_ADDRESS                               0x0A  /*!< Intensity: the brightness, 0 to 15. */
-#define MAX7219_REG_SCAN_LIMIT_ADDRESS                              0x0B  /*!< Scan limit: how many digits, here rows or columns, are lit. */
-#define MAX7219_REG_SHUTDOWN_ADDRESS                                0x0C  /*!< Shutdown: off, or normal operation. */
-#define MAX7219_REG_DISPLAY_TEST_ADDRESS                            0x0F  /*!< Display test: every LED on, or normal operation. */
+/*! No-op: a module that is not addressed in a frame gets it. */
+#define MAX7219_REG_NO_OP_ADDRESS                                   0x00
+/*! Digit 0: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT0_ADDRESS                                  0x01
+/*! Digit 1: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT1_ADDRESS                                  0x02
+/*! Digit 2: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT2_ADDRESS                                  0x03
+/*! Digit 3: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT3_ADDRESS                                  0x04
+/*! Digit 4: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT4_ADDRESS                                  0x05
+/*! Digit 5: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT5_ADDRESS                                  0x06
+/*! Digit 6: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT6_ADDRESS                                  0x07
+/*! Digit 7: the LEDs of one row or column of a module. */
+#define MAX7219_REG_DIGIT7_ADDRESS                                  0x08
+/*! Decode mode: BCD code B per digit, or none. */
+#define MAX7219_REG_DECODE_MODE_ADDRESS                             0x09
+/*! Intensity: the brightness, 0 to 15. */
+#define MAX7219_REG_INTENSITY_ADDRESS                               0x0A
+/*! Scan limit: how many digits, here rows or columns, are lit. */
+#define MAX7219_REG_SCAN_LIMIT_ADDRESS                              0x0B
+/*! Shutdown: off, or normal operation. */
+#define MAX7219_REG_SHUTDOWN_ADDRESS                                0x0C
+/*! Display test: every LED on, or normal operation. */
+#define MAX7219_REG_DISPLAY_TEST_ADDRESS                            0x0F
 
 /* Content of Max7219 Decode Mode Register */
-#define MAX7219_REG_DECODE_MODE_NO_DECODE                           0x00  /*!< No digit decoded: each bit is an LED. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_0               0x01  /*!< Code B for digit 0, none for 7 to 1. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_3_TO_0          0x0F  /*!< Code B for digits 3 to 0, none for 7 to 4. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_7_TO_0          0xFF  /*!< Code B for every digit. */
+/*! No digit decoded: each bit is an LED. */
+#define MAX7219_REG_DECODE_MODE_NO_DECODE                           0x00
+/*! Code B for digit 0, none for 7 to 1. */
+#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_0               0x01
+/*! Code B for digits 3 to 0, none for 7 to 4. */
+#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_3_TO_0          0x0F
+/*! Code B for every digit. */
+#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_7_TO_0          0xFF
 
 /* Content of Max7219 Intensity Register */
-#define MAX7219_REG_INTENSITY_MIN_VALUE                             0x00  /*!< The lowest brightness, 1/32 duty cycle. */
-#define MAX7219_REG_INTENSITY_MAX_VALUE                             0x0F  /*!< The highest brightness, 31/32 duty cycle. */
+/*! The lowest brightness, 1/32 duty cycle. */
+#define MAX7219_REG_INTENSITY_MIN_VALUE                             0x00
+/*! The highest brightness, 31/32 duty cycle. */
+#define MAX7219_REG_INTENSITY_MAX_VALUE                             0x0F
 
 /* Content of Max7219 Scan Limit Register */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0                      0x00  /*!< Digit 0 alone is lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_1                 0x01  /*!< Digits 0 to 1 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_2                 0x02  /*!< Digits 0 to 2 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_3                 0x03  /*!< Digits 0 to 3 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_4                 0x04  /*!< Digits 0 to 4 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_5                 0x05  /*!< Digits 0 to 5 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_6                 0x06  /*!< Digits 0 to 6 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7                 0x07  /*!< Digits 0 to 7 are lit. */
+/*! Digit 0 alone is lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0                      0x00
+/*! Digits 0 to 1 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_1                 0x01
+/*! Digits 0 to 2 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_2                 0x02
+/*! Digits 0 to 3 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_3                 0x03
+/*! Digits 0 to 4 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_4                 0x04
+/*! Digits 0 to 5 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_5                 0x05
+/*! Digits 0 to 6 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_6                 0x06
+/*! Digits 0 to 7 are lit. */
+#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7                 0x07
 
 /* Content of Max7219 Shutdown Register */
-#define MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE                     0x00  /*!< Shut down: the LEDs off, the registers kept. */
-#define MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION                  0x01  /*!< Normal operation. */
+/*! Shut down: the LEDs off, the registers kept. */
+#define MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE                     0x00
+/*! Normal operation. */
+#define MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION                  0x01
 
 /* Content of Max7219 Display Test Register */
-#define MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION                   0x00  /*!< Normal operation. */
-#define MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE                  0x01  /*!< Display test: every LED on at full brightness. */
+/*! Normal operation. */
+#define MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION                   0x00
+/*! Display test: every LED on at full brightness. */
+#define MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE                  0x01
 
 /*!
  * \brief The chain of MAX7219s: the pins, and the frames sent to them.

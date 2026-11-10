@@ -73,7 +73,9 @@ void MaxMatrixChain::WriteRegisterEach(byte register_address, byte const* regist
 
 // Starts a frame: pulls chip select low, and in SPI mode reserves the bus. StopTransmission()
 // has to follow once the frame is transferred.
-void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-function-const) */
+// Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+void MaxMatrixChain::StartTransmission()
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
     SPI.beginTransaction(SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
@@ -85,7 +87,9 @@ void MaxMatrixChain::StartTransmission() /* NOLINT(readability-make-member-funct
  * Ends a frame: pulls chip select high, so that every MAX7219 latches what it was sent, and in SPI
  * mode releases the bus for other devices. StartTransmission() has to come first.
  */
-void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-function-const) */
+// Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+void MaxMatrixChain::StopTransmission()
 {
     WritePin(chip_select_port_, chip_select_mask_, true);
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -94,7 +98,9 @@ void MaxMatrixChain::StopTransmission() /* NOLINT(readability-make-member-functi
 }
 
 // Sends the address and value of one module within a frame; StartTransmission() has to come first.
-/* NOLINTNEXTLINE(readability-make-member-function-const, readability-convert-member-functions-to-static) */
+// Neither const nor static: it changes the chain, and bit banging needs the pins, see
+// MaxMatrixChain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
 void MaxMatrixChain::Transfer(byte register_address, byte register_value)
 {
 #if(MAXMATRIX_USE_SPI == STD_ON)
@@ -114,7 +120,9 @@ void MaxMatrixChain::Transfer(byte register_address, byte register_value)
  * between the read and the write of |= would be undone. A byte takes about 320 cycles, 20 us, in
  * simavr, against about 1500 through shiftOut().
  */
-void MaxMatrixChain::ShiftOut(byte value) /* NOLINT(readability-make-member-function-const) */
+// Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+void MaxMatrixChain::ShiftOut(byte value)
 {
     /*
      * The core's portOutputRegister() makes the register's address, a number read from flash, a
