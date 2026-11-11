@@ -57,10 +57,10 @@ class Text {
   /* 16 bits, as a char and its space take up to 255 + 255 columns */
   uint16_t sprite_shift_counter_;
   byte space_between_chars_;
-  char* string_;
+  char const* string_;
   /* the start of a text that starts over after its last char, NULL for one that
    * stops there */
-  char* repeat_from_;
+  char const* repeat_from_;
 
   Status FindGlyph(char c, Glyph* glyph) const;
   void ReadNextChar();
@@ -136,7 +136,7 @@ class Text {
    * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
    *         then.
    */
-  Status SetTextWithShift(char* text, bool repeat);
+  Status SetTextWithShift(char const* text, bool repeat);
 
   /*!
    * \brief Sets the empty columns between two chars of a text.

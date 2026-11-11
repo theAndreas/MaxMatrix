@@ -441,7 +441,7 @@ class Matrix {
    * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
    *         then.
    */
-  Status SetTextWithShift(char* text, bool repeat = false);
+  Status SetTextWithShift(char const* text, bool repeat = false);
 
   /*!
    * \brief Stops a shifting text or char where it is.

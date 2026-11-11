@@ -210,7 +210,7 @@ class MaxMatrixTest : public ::testing::Test {
   uint16_t shift_calls_ = 0;
 
   /* returns the number of frames the shift sent to the chain */
-  int32_t ShiftWholeText(char* text) {
+  int32_t ShiftWholeText(char const* text) {
     matrix_.Clear();
     int32_t frames_before = mock::frames;
     matrix_.SetTextWithShift(text);
@@ -287,7 +287,7 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
 /* the display has to follow the buffer during the shift too, not only once the
  * text has left it */
 TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
-  char text[] = "Hi \xC4!";
+  char const text[] = "Hi \xC4!";
 
   matrix_.SetTextWithShift(text);
   for (uint16_t step = 0; step < 1000 && matrix_.GetState() != State::kReady;
@@ -324,7 +324,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
       {"DrawBitmap",
        [](Matrix& m) { m.DrawBitmap(3, 1, kBitmap, sizeof(kBitmap)); }},
   };
-  char text[] = "Hi \xC4!";
+  char const text[] = "Hi \xC4!";
 
   for (auto const& call : calls) {
     int32_t frames_before = mock::frames;
@@ -1080,7 +1080,7 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce) {
 /* chip select was not an output in SPI mode, and the SPI transaction was never
  * ended */
 TEST_F(MaxMatrixTest, TransfersAreFramed) {
-  char text[] = "Hello";
+  char const text[] = "Hello";
 
   EXPECT_EQ(mock::pin_mode[kChipSelectPin], OUTPUT);
   matrix_.SetText("Hi!");
@@ -1094,8 +1094,10 @@ TEST_F(MaxMatrixTest, TransfersAreFramed) {
   EXPECT_EQ(mock::UsesSpi(), MAXMATRIX_USE_SPI == STD_ON);
 }
 
+/* SetTextWithShift() took a char*, though the shift only reads the text, so
+ * that a sketch could not make its text const */
 TEST_F(MaxMatrixTest, TextShiftFinishes) {
-  char text[] = "Hello World!";
+  char const text[] = "Hello World!";
 
   ShiftWholeText(text);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
@@ -1107,7 +1109,7 @@ TEST_F(MaxMatrixTest, TextShiftFinishes) {
  * start, and the shift does not end. A pass is what the text takes when it does
  * not repeat, less the last step, which only shifts the panel once more. */
 TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
-  char text[] = "Hi \xC4\x01 ";
+  char const text[] = "Hi \xC4\x01 ";
   std::vector<std::vector<std::string>> pictures;
 
   ShiftWholeText(text);
@@ -1133,7 +1135,7 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
 /* a text that repeats but has no char of the font ends at once, rather than
  * reading itself over and over in one call */
 TEST_F(MaxMatrixTest, RepeatingTextWithoutAKnownCharEnds) {
-  char text[] = "\x01\x02";
+  char const text[] = "\x01\x02";
 
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
   matrix_.ShiftTask();
@@ -1143,7 +1145,7 @@ TEST_F(MaxMatrixTest, RepeatingTextWithoutAKnownCharEnds) {
 /* StopShift() ends a text that would repeat for ever, and leaves the picture as
  * it stands */
 TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
-  char text[] = "Hello ";
+  char const text[] = "Hello ";
 
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
   for (byte step = 0; step < 20; step++) matrix_.ShiftTask();
@@ -1355,7 +1357,7 @@ TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix) {
 /* SetTextWithShift() keeps only a pointer: a shift that read its text out of
  * the line buffer would shift whatever line came next */
 TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow) {
-  char text[] = "AB";
+  char const text[] = "AB";
 
   ASSERT_EQ(FeedLine("textShift=AB\n"), CommandState::kDone);
   ASSERT_EQ(FeedLine("intensity=3\n"), CommandState::kDone);
@@ -1987,7 +1989,7 @@ TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
 /* a text shifts in from the right edge of this chain and stops; picture answers
  * with every column of it */
 TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
-  char text[] = "Hi";
+  char const text[] = "Hi";
   Command command;
   TextPrint answer;
   uint16_t steps = 0;

@@ -64,7 +64,7 @@ Status Text::SetText(Panel& panel, char const* text) const {
   return Error::kOk;
 }
 
-Status Text::SetTextWithShift(char* text, bool repeat) {
+Status Text::SetTextWithShift(char const* text, bool repeat) {
   if (text == NULL) return Error::kNoText;
   sprite_shift_counter_ = kShiftIdle;
   string_ = text;
@@ -137,7 +137,7 @@ bool Text::CharShiftTask(Panel& panel) {
  * the end of any other text nothing starts.
  */
 void Text::ReadNextChar() {
-  char* start_over_at = repeat_from_;
+  char const* start_over_at = repeat_from_;
   char c;
 
   while (sprite_shift_counter_ == kShiftIdle) {
