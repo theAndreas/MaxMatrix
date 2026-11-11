@@ -23,7 +23,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
-| 14 | Chain length at run time | 13 | in progress | #60 |
+| 14 | Chain length at run time | 13 | done | #60 |
 | 15 | Font format | 13 | done | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
@@ -42,8 +42,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 30 | Documentation in the style of Utl | 17 | done | #47, #48, #50 |
 | 31 | A shifting text that starts over | 23 | done | #63 |
 | 32 | The column shifted in and out | 12 | done | #66 |
-| 33 | A font checked against its length | 15 | in progress | #67 |
-| 34 | On the template embedded-cpp-template | 16, 30 | in progress | #69 |
+| 33 | A font checked against its length | 15 | done | #67 |
+| 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | open | |
 | 36 | The template's checks, one group at a time | 35 | open | |
 
