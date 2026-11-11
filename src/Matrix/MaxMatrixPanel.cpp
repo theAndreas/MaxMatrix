@@ -30,10 +30,9 @@ Result<byte> Panel::GetColumn(int16_t column) {
 }
 
 Result<byte> Panel::GetColumn(byte module, byte column) {
-  if (module < GetNumberOfModules() &&
-      column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-    return GetColumn(static_cast<int16_t>(
-        (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column));
+  if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
+    return GetColumn(
+        static_cast<int16_t>((module * kColumnNumberOfModule) + column));
   } else {
     return Error::kOutOfRange;
   }
@@ -47,10 +46,8 @@ void Panel::SetColumn(int16_t column, byte value) {
 void Panel::SetColumn(byte module, byte column, byte value) {
   // The column is checked against the module, not the panel, or column 8 of
   // module 0 would be drawn on module 1.
-  if (module < GetNumberOfModules() &&
-      column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
-    SetColumn(static_cast<int16_t>(
-                  (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column),
+  if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
+    SetColumn(static_cast<int16_t>((module * kColumnNumberOfModule) + column),
               value);
   }
 }
@@ -58,7 +55,7 @@ void Panel::SetColumn(byte module, byte column, byte value) {
 // The row is taken by reference rather than as a pointer: GetRow(module, 0)
 // would otherwise be ambiguous, as a literal 0 is a null pointer as well.
 Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
-  if (row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE &&
+  if (row >= 0 && row < kRowNumberOfModule &&
       number_of_values >= GetNumberOfModules()) {
     byte const modules = GetNumberOfModules();
     for (byte module = 0; module < modules; module++)
@@ -70,16 +67,15 @@ Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
 }
 
 Result<byte> Panel::GetRow(byte module, byte row) {
-  if (module < GetNumberOfModules() && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-    return ReverseByte(
-        GetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false));
+  if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
+    return ReverseByte(GetLine(module * kColumnNumberOfModule, row, false));
   } else {
     return Error::kOutOfRange;
   }
 }
 
 void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
-  if (row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+  if (row >= 0 && row < kRowNumberOfModule) {
     byte const modules = GetNumberOfModules() < number_of_values
                              ? GetNumberOfModules()
                              : number_of_values;
@@ -89,9 +85,8 @@ void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
 }
 
 void Panel::SetRow(byte module, byte row, byte value) {
-  if (module < GetNumberOfModules() && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
-    SetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false,
-            ReverseByte(value));
+  if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
+    SetLine(module * kColumnNumberOfModule, row, false, ReverseByte(value));
   }
 }
 
@@ -99,7 +94,7 @@ Result<bool> Panel::GetDot(int16_t column, int16_t row) {
   byte buffer_column, buffer_bit;
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
-      row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+      row < kRowNumberOfModule) {
     ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
                        &buffer_column, &buffer_bit);
     return static_cast<bool>(
@@ -113,7 +108,7 @@ void Panel::SetDot(int16_t column, int16_t row, bool value) {
   byte buffer_column, buffer_bit;
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
-      row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+      row < kRowNumberOfModule) {
     ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
                        &buffer_column, &buffer_bit);
     wired_.StoreBit(buffer_column, buffer_bit, value);
@@ -219,10 +214,9 @@ void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
  * panel draws nothing, and one that starts nearer cannot overflow y plus a row.
  */
 void Panel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
-  if (height == MAXMATRIX_ROW_NUMBER_OF_MODULE && y == 0) {
+  if (height == kRowNumberOfModule && y == 0) {
     SetColumn(x, value);
-  } else if (y > -MAXMATRIX_ROW_NUMBER_OF_MODULE &&
-             y < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+  } else if (y > -kRowNumberOfModule && y < kRowNumberOfModule) {
     for (byte row = 0; row < height; row++)
       SetDot(x, static_cast<int16_t>(y + row), bitRead(value, row));
   }
@@ -232,7 +226,7 @@ void Panel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
 // holds.
 void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
-      row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+      row < kRowNumberOfModule) {
     SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
   }
 }
@@ -244,8 +238,7 @@ void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
   if (left < 0) left = 0;
   if (top < 0) top = 0;
   if (right >= GetNumberOfColumns()) right = GetNumberOfColumns() - 1;
-  if (bottom >= MAXMATRIX_ROW_NUMBER_OF_MODULE)
-    bottom = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1;
+  if (bottom >= kRowNumberOfModule) bottom = kRowNumberOfModule - 1;
   for (int32_t column = left; column <= right; column++) {
     for (int32_t row = top; row <= bottom; row++)
       SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
@@ -308,7 +301,7 @@ byte Panel::GetFill(ShiftFill fill, byte rotated_column, byte kept_column) {
 void Panel::ShiftRows(bool up, ShiftFill fill) {
   byte const columns = GetNumberOfColumns();
   byte const top = 0;
-  byte const bottom = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1;
+  byte const bottom = kRowNumberOfModule - 1;
 
   for (byte column = 0; column < columns; column++) {
     byte const value = GetLine(column, 0, true);
@@ -349,27 +342,23 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
 
   for (int16_t left = 0, right = static_cast<int16_t>(GetNumberOfModules() - 1);
        left <= right; left++, right--) {
-    byte const left_column =
-        static_cast<byte>(left * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-    byte const right_column =
-        static_cast<byte>(right * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-    byte pair[2 * MAXMATRIX_COLUMN_NUMBER_OF_MODULE];
+    byte const left_column = static_cast<byte>(left * kColumnNumberOfModule);
+    byte const right_column = static_cast<byte>(right * kColumnNumberOfModule);
+    byte pair[2 * kColumnNumberOfModule];
 
     matrix_orientation_ = old_matrix_orientation;
     module_type_ = old_module_type;
-    for (byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-         column++) {
+    for (byte column = 0; column < kColumnNumberOfModule; column++) {
       pair[column] = GetLine(left_column + column, 0, true);
-      pair[MAXMATRIX_COLUMN_NUMBER_OF_MODULE + column] =
+      pair[kColumnNumberOfModule + column] =
           GetLine(right_column + column, 0, true);
     }
     matrix_orientation_ = matrix_orientation;
     module_type_ = module_type;
-    for (byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-         column++) {
+    for (byte column = 0; column < kColumnNumberOfModule; column++) {
       SetLine(left_column + column, 0, true, pair[column]);
       SetLine(right_column + column, 0, true,
-              pair[MAXMATRIX_COLUMN_NUMBER_OF_MODULE + column]);
+              pair[kColumnNumberOfModule + column]);
     }
   }
 }
@@ -401,24 +390,22 @@ void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
                                byte* buffer_bit) {
   if (matrix_orientation_ == MatrixOrientation::k180) {
     column = static_cast<byte>(GetNumberOfColumns() - 1 - column);
-    row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
+    row = kRowNumberOfModule - 1 - row;
   }
 
-  byte const module = column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
-  byte const column_from_right = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 -
-                                 (column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+  byte const module = column / kColumnNumberOfModule;
+  byte const column_from_right =
+      kColumnNumberOfModule - 1 - (column % kColumnNumberOfModule);
   byte const type = static_cast<byte>(module_type_);
-  bool const digits_as_rows =
-      (type & MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS) != 0;
+  bool const digits_as_rows = (type & internal::kModuleTypeDigitsAsRows) != 0;
   byte digit = digits_as_rows ? row : column_from_right;
   byte segment = digits_as_rows ? column_from_right : row;
 
-  if ((type & MAXMATRIX_MODULE_TYPE_REVERSED_ROWS) != 0)
-    digit = MAXMATRIX_COLUMN_NUMBER_OF_MODULE - 1 - digit;
-  if ((type & MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS) != 0)
-    segment = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - segment;
-  *buffer_column =
-      static_cast<byte>((module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + digit);
+  if ((type & internal::kModuleTypeReversedRows) != 0)
+    digit = kColumnNumberOfModule - 1 - digit;
+  if ((type & internal::kModuleTypeReversedColumns) != 0)
+    segment = kRowNumberOfModule - 1 - segment;
+  *buffer_column = static_cast<byte>((module * kColumnNumberOfModule) + digit);
   *buffer_bit = segment;
 }
 

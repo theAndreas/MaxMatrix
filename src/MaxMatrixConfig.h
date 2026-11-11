@@ -12,6 +12,11 @@
 #ifndef MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 #define MAXMATRIX_SRC_MAXMATRIXCONFIG_H_
 
+// Not Arduino.h: the control program on the host reads the sizes of a module
+// too, without the core.
+#include <stddef.h>
+#include <stdint.h>
+
 #include "MaxMatrixStandardTypes.h"
 
 /*
@@ -66,22 +71,31 @@
 #define MAXMATRIX_DEV_ERROR_DETECT STD_OFF
 #endif
 
+namespace max_matrix {
+
 /*! \brief The columns of one module. */
-#define MAXMATRIX_COLUMN_NUMBER_OF_MODULE 8
+constexpr uint8_t kColumnNumberOfModule{8};
 
 /*! \brief The rows of one module, and of the matrix. */
-#define MAXMATRIX_ROW_NUMBER_OF_MODULE 8
+constexpr uint8_t kRowNumberOfModule{8};
 
 /*!
  * \brief The most modules a chain may have: a column is counted in a byte
  *        throughout, as an index into the buffer and in every loop over the
  *        columns.
  */
-#define MAXMATRIX_MAX_NUMBER_OF_MODULES 31
+constexpr uint8_t kMaxNumberOfModules{31};
 
-/*! \brief The bytes of the buffer of a chain of `modules` modules, one per
- * column. */
-#define MAXMATRIX_BUFFER_SIZE(modules) \
-  ((modules) * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
+/*!
+ * \brief The bytes of the buffer of a chain, one per column.
+ *
+ * \param[in] modules The modules of the chain.
+ * \return The size of its buffer in bytes.
+ */
+constexpr size_t BufferSize(size_t modules) {
+  return modules * kColumnNumberOfModule;
+}
+
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MAXMATRIXCONFIG_H_

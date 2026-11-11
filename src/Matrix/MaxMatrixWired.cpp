@@ -29,7 +29,7 @@ void Wired::StoreBit(byte column, byte bit, bool value) {
   bitWrite(column_value, bit, value);
   if (column_value != matrix_buffer_[column]) {
     matrix_buffer_[column] = column_value;
-    bitSet(changed_columns_, column % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+    bitSet(changed_columns_, column % kColumnNumberOfModule);
   }
 }
 
@@ -42,11 +42,10 @@ void Wired::Clear() {
 // from there rather than through an array of one per module, which would need
 // its length at compile time.
 void Wired::Send() {
-  for (byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE; column++) {
+  for (byte column = 0; column < kColumnNumberOfModule; column++) {
     if (bitRead(changed_columns_, column)) {
-      chain_.WriteRegisterEach(MAX7219_REG_DIGIT0_ADDRESS + column,
-                               matrix_buffer_ + column,
-                               MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+      chain_.WriteRegisterEach(max7219::kDigit0Address + column,
+                               matrix_buffer_ + column, kColumnNumberOfModule);
     }
   }
   changed_columns_ = 0;

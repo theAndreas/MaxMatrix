@@ -50,7 +50,7 @@ ControlDotPanel::ControlDotPanel(
       (CONTROL_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
       2 * CONTROL_DOT_PANEL_MARGIN;
   wxCoord const height =
-      MAXMATRIX_ROW_NUMBER_OF_MODULE * CONTROL_DOT_PANEL_CELL +
+      max_matrix::kRowNumberOfModule * CONTROL_DOT_PANEL_CELL +
       2 * CONTROL_DOT_PANEL_MARGIN;
 
   // the background is painted whole by OnPaint(), which the buffered DC needs
@@ -87,11 +87,11 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
   dc.SetBackground(wxBrush(CONTROL_DOT_PANEL_BOARD));
   dc.Clear();
   dc.SetPen(*wxTRANSPARENT_PEN);
-  for (uint8_t row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+  for (uint8_t row = 0; row < max_matrix::kRowNumberOfModule; row++) {
     for (uint8_t column = 0; column < CONTROL_NUMBER_OF_COLUMNS; column++) {
       bool const lit = IsLit(column, row);
       wxCoord const x = margin + column * cell +
-                        (column / MAXMATRIX_COLUMN_NUMBER_OF_MODULE) * gap +
+                        (column / max_matrix::kColumnNumberOfModule) * gap +
                         (cell - led) / 2;
       wxCoord const y = margin + row * cell + (cell - led) / 2;
       if (!IsEnabled())
@@ -189,19 +189,19 @@ bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
 bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
                                uint8_t* row) const {
   wxCoord const cell = FromDIP(CONTROL_DOT_PANEL_CELL);
-  wxCoord const module_width = MAXMATRIX_COLUMN_NUMBER_OF_MODULE * cell +
+  wxCoord const module_width = max_matrix::kColumnNumberOfModule * cell +
                                FromDIP(CONTROL_DOT_PANEL_MODULE_GAP);
   wxCoord const x = point.x - FromDIP(CONTROL_DOT_PANEL_MARGIN);
   wxCoord const y = point.y - FromDIP(CONTROL_DOT_PANEL_MARGIN);
   wxCoord const in_module = x % module_width;
 
-  if (x < 0 || y < 0 || in_module >= MAXMATRIX_COLUMN_NUMBER_OF_MODULE * cell)
+  if (x < 0 || y < 0 || in_module >= max_matrix::kColumnNumberOfModule * cell)
     return false;
   wxCoord const found_column =
-      x / module_width * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + in_module / cell;
+      x / module_width * max_matrix::kColumnNumberOfModule + in_module / cell;
   wxCoord const found_row = y / cell;
   if (found_column >= CONTROL_NUMBER_OF_COLUMNS ||
-      found_row >= MAXMATRIX_ROW_NUMBER_OF_MODULE)
+      found_row >= max_matrix::kRowNumberOfModule)
     return false;
   *column = static_cast<uint8_t>(found_column);
   *row = static_cast<uint8_t>(found_row);

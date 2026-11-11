@@ -120,7 +120,7 @@ exception goes at the end of a list, with its reason.
   - `MaxMatrixError.h` / `.cpp` — `Error`, and `Status` / `Result<T>`,
     what a function that can fail returns, with `GetErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
-  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
+  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `internal::kNullCharacter`.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -198,7 +198,7 @@ the module type `kDr0Cr0Rr1` is also how the viewer sees it; `docu/Wiring_*.svg`
 The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
 The buffer is the sketch's, and so is the length of the chain: `MatrixOf<N>` brings a buffer
-of `MAXMATRIX_BUFFER_SIZE(N)` bytes in a base class, which is made before the `Matrix` it is
+of `BufferSize(N)` bytes in a base class, which is made before the `Matrix` it is
 handed to, and `Matrix` takes any buffer and length at run time, as the Arduino IDE passes a
 sketch's defines to no library. So nothing in the library may size an array by the chain: what
 needs the whole panel works in place, a column at a time, or on a pair of modules, as
@@ -276,10 +276,9 @@ registers are objects that pass every bit on to the pins, so the host tests run 
 ### Code conventions
 
 [docs/CodingStyle.md](docs/CodingStyle.md) is the standard, as in every project made from the
-template; this section says how MaxMatrix's code is written today where it says more or else. One of
-its conventions goes with version 2.0.0, as OIL.md records: constants as `#define`, for
-`constexpr`; the prefix `MaxMatrix` has already given way to the namespace `max_matrix` (F-9). The file names in `PascalCase` stay
-(F-3). They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
+template; this section says how MaxMatrix's code is written today where it says more or else. Since
+version 2.0.0 the library lies in the namespace `max_matrix` (F-9) and its constants are
+`constexpr`, as OIL.md records. The file names in `PascalCase` stay (F-3). They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
 the library is read beside it. Only the tests in `test/` keep a lighter style, a comment at the top
 and one above each test.
 
@@ -299,8 +298,8 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 - Enums are `enum class` with values in the same form: `State::kReady`,
   `Error::kOutOfRange`. The indices of a sprite, `kSpriteWidth` and on, are a plain
   enum, as they index an array.
-- Macros upper case and prefixed with the module: `MAXMATRIX_USE_SPI`,
-  `MAX7219_REG_INTENSITY_ADDRESS`. An include guard names the path:
+- Macros upper case and prefixed with the library: `MAXMATRIX_USE_SPI`. An include guard
+  names the path:
   `MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_`.
 - The library lies in the namespace `max_matrix` (F-9 of `docs/CodingStyle.md`), so its names
   carry no prefix: `max_matrix::Matrix`, `max_matrix::Font`. What a sketch does not use, the
@@ -344,9 +343,12 @@ fails on one left of it.
 
 #### Constants and configuration
 
-Constants are `#define`s in the header, grouped under a comment. Configuration switches are
+Constants are `constexpr` in the namespace, grouped under a comment; one that only a `.cpp`
+uses lies in an anonymous namespace there. A macro is left for what a sketch or the build sets
+with `-D` and what `#if` reads: the configuration parameters. Configuration switches are
 `STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. Register addresses
-and values of the MAX7219 get a named macro rather than a literal.
+and values of the MAX7219 get a named constant in `max7219` rather than a literal, as
+`Matrix::RegisterWrite()` takes them: `max7219::kIntensityAddress`.
 
 Every configuration parameter is wrapped in `#ifndef`, because that is how the tests build the
 SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.

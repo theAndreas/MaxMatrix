@@ -56,7 +56,7 @@ class Matrix;
  * over; a board cannot be told what it shows otherwise.
  *
  * \code{.cpp}
- * Command command;
+ * max_matrix::Command command;
  *
  * void loop() {
  *     while(Serial.available() > 0) command.Feed(matrix, Serial.read(),

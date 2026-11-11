@@ -15,20 +15,24 @@
 
 namespace max_matrix {
 
-/* Command Parameter */
-#define MAXMATRIX_COMMAND_LINE_END '\n'
-#define MAXMATRIX_COMMAND_CARRIAGE_RETURN '\r'
-#define MAXMATRIX_COMMAND_VALUE_SEPARATOR '='
-#define MAXMATRIX_COMMAND_LIST_SEPARATOR ','
+namespace {
+
+/* the chars that end a line and divide it */
+constexpr char kLineEnd{'\n'};
+constexpr char kCarriageReturn{'\r'};
+constexpr char kValueSeparator{'='};
+constexpr char kListSeparator{','};
 
 /* the largest numbers the commands take: a column, row or space fits a byte,
  * the shift interval a uint16_t */
-#define MAXMATRIX_COMMAND_MAX_BYTE 0xFFu
-#define MAXMATRIX_COMMAND_MAX_INTERVAL 0xFFFFu
+constexpr uint16_t kMaxByte{0xFF};
+constexpr uint16_t kMaxInterval{0xFFFF};
+
+}  // namespace
 
 Command::Command() {
-  line_[0] = STD_NULL_CHARACTER;
-  shift_text_[0] = STD_NULL_CHARACTER;
+  line_[0] = internal::kNullCharacter;
+  shift_text_[0] = internal::kNullCharacter;
   line_length_ = 0;
   line_too_long_ = false;
 }
@@ -39,8 +43,8 @@ Command::Command() {
  * `ok`.
  */
 Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
-  if (c == MAXMATRIX_COMMAND_CARRIAGE_RETURN) return CommandState::kPending;
-  if (c != MAXMATRIX_COMMAND_LINE_END) {
+  if (c == kCarriageReturn) return CommandState::kPending;
+  if (c != kLineEnd) {
     if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH)
       line_[line_length_++] = c;
     else
@@ -51,7 +55,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   bool const too_long = line_too_long_;
   bool const empty = line_length_ == 0;
 
-  line_[line_length_] = STD_NULL_CHARACTER;
+  line_[line_length_] = internal::kNullCharacter;
   line_length_ = 0;
   line_too_long_ = false;
   if (empty) return CommandState::kPending;
@@ -70,7 +74,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
 // with the end of the name, and passes it on by name.
 Result<CommandState> Command::Execute(Matrix& matrix, char* text,
                                       Print& answer) {
-  char* value = strchr(text, MAXMATRIX_COMMAND_VALUE_SEPARATOR);
+  char* value = strchr(text, kValueSeparator);
   Status status = Error::kOk;
 
   if (value == NULL) {
@@ -81,7 +85,7 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
     if (0 != strcmp_P(text, PSTR("clear"))) return Error::kUnknownCommand;
     matrix.Clear();
   } else {
-    *value++ = STD_NULL_CHARACTER;
+    *value++ = internal::kNullCharacter;
     if (0 == strcmp_P(text, PSTR("text")))
       status = ExecuteText(matrix, value);
     else if (0 == strcmp_P(text, PSTR("textShift")))
@@ -106,7 +110,7 @@ Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
   static_assert(sizeof(shift_text_) >= sizeof(line_),
                 "ShiftText has to hold any text of a line");
 
-  if (*value == STD_NULL_CHARACTER) return Error::kNoText;
+  if (*value == internal::kNullCharacter) return Error::kNoText;
   // strcpy() into a buffer that the static_assert above holds large enough.
   // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
   strcpy(shift_text_, value);  // NOLINT(runtime/printf)
@@ -129,18 +133,16 @@ Status Command::ExecuteText(Matrix& matrix, char const* value) {
  * word, and whoever typed the line should learn that it did nothing.
  */
 Status Command::ExecuteDot(Matrix& matrix, char* value) {
-  char* row_text = strchr(value, MAXMATRIX_COMMAND_LIST_SEPARATOR);
-  char* lit_text = row_text == NULL
-                       ? NULL
-                       : strchr(row_text + 1, MAXMATRIX_COMMAND_LIST_SEPARATOR);
+  char* row_text = strchr(value, kListSeparator);
+  char* lit_text =
+      row_text == NULL ? NULL : strchr(row_text + 1, kListSeparator);
 
   if (lit_text == NULL) return Error::kNotANumber;
-  *row_text++ = STD_NULL_CHARACTER;
-  *lit_text++ = STD_NULL_CHARACTER;
+  *row_text++ = internal::kNullCharacter;
+  *lit_text++ = internal::kNullCharacter;
   Result<uint16_t> column =
       ConvertToNumber(value, matrix.GetNumberOfColumns() - 1);
-  Result<uint16_t> row =
-      ConvertToNumber(row_text, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1);
+  Result<uint16_t> row = ConvertToNumber(row_text, kRowNumberOfModule - 1);
   Result<uint16_t> lit = ConvertToNumber(lit_text, 1);
   if (!column.IsOk()) return column.GetError();
   if (!row.IsOk()) return row.GetError();
@@ -156,18 +158,16 @@ Status Command::ExecuteSetting(Matrix& matrix, char const* name,
                                char const* value) {
   if (0 == strcmp_P(name, PSTR("intensity"))) {
     Result<uint16_t> number =
-        ConvertToNumber(value, MAX7219_REG_INTENSITY_MAX_VALUE);
+        ConvertToNumber(value, max7219::kIntensityMaxValue);
     if (!number.IsOk()) return number.GetError();
     // ConvertToNumber() held it to the intensity's 15.
     matrix.SetIntensity(static_cast<byte>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
-    Result<uint16_t> number =
-        ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_INTERVAL);
+    Result<uint16_t> number = ConvertToNumber(value, kMaxInterval);
     if (!number.IsOk()) return number.GetError();
     matrix.SetShiftInterval(number.GetValue());
   } else if (0 == strcmp_P(name, PSTR("space"))) {
-    Result<uint16_t> number =
-        ConvertToNumber(value, MAXMATRIX_COMMAND_MAX_BYTE);
+    Result<uint16_t> number = ConvertToNumber(value, kMaxByte);
     if (!number.IsOk()) return number.GetError();
     // ConvertToNumber() held it to a byte.
     matrix.SetSpaceBetweenChars(static_cast<byte>(number.GetValue()));
@@ -203,8 +203,8 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
 Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
   uint32_t value = 0;
 
-  if (*text == STD_NULL_CHARACTER) return Error::kNotANumber;
-  for (; *text != STD_NULL_CHARACTER; text++) {
+  if (*text == internal::kNullCharacter) return Error::kNotANumber;
+  for (; *text != internal::kNullCharacter; text++) {
     if (*text < '0' || *text > '9') return Error::kNotANumber;
     if (value <= maximum)
       value = value * 10 + static_cast<uint32_t>(*text - '0');

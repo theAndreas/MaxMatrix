@@ -24,7 +24,7 @@
  * the window and the length of a picture */
 #define CONTROL_NUMBER_OF_MODULES 4
 #define CONTROL_NUMBER_OF_COLUMNS \
-  (CONTROL_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
+  (CONTROL_NUMBER_OF_MODULES * max_matrix::kColumnNumberOfModule)
 
 /*!
  * \brief The command lines of SerialControl, as the control program sends them,

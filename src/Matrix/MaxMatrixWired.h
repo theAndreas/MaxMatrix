@@ -31,7 +31,7 @@ namespace internal {
 class Wired {
  private:
   Chain chain_;
-  // The sketch's, MAXMATRIX_BUFFER_SIZE() of the chain's modules long;
+  // The sketch's, BufferSize() of the chain's modules long;
   // MatrixOf brings one.
   byte* matrix_buffer_;
   /*
@@ -49,10 +49,10 @@ class Wired {
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)`
-   *                    bytes, which has to live as long as the matrix.
+   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
+   *                    has to live as long as the matrix.
    * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+   *                              `kMaxNumberOfModules`.
    */
   Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
         byte number_of_modules);
@@ -66,7 +66,7 @@ class Wired {
   /*! \brief Returns the columns of the chain, eight per module. */
   byte GetNumberOfColumns() const {
     return static_cast<byte>(chain_.GetNumberOfModules() *
-                             MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+                             kColumnNumberOfModule);
   }
 
   /*!

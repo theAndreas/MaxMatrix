@@ -27,13 +27,17 @@ enum class MatrixOrientation : uint8_t {
   k180 /*!< The board upside down: the module at the input on the left. */
 };
 
+namespace internal {
+
 /* the three properties of a ModuleType, one bit each of its value */
 /*! DR1 of MD_MAX72XX's names: the digits of the MAX7219 are the rows. */
-#define MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS 0x04u
+constexpr uint8_t kModuleTypeDigitsAsRows{0x04};
 /*! CR1 of MD_MAX72XX's names: the columns in reverse order. */
-#define MAXMATRIX_MODULE_TYPE_REVERSED_COLUMNS 0x02u
+constexpr uint8_t kModuleTypeReversedColumns{0x02};
 /*! RR1 of MD_MAX72XX's names: the rows in reverse order. */
-#define MAXMATRIX_MODULE_TYPE_REVERSED_ROWS 0x01u
+constexpr uint8_t kModuleTypeReversedRows{0x01};
+
+}  // namespace internal
 
 /*!
  * \brief How the LEDs of a module are wired to its MAX7219, named as MD_MAX72XX
@@ -111,10 +115,10 @@ class Panel {
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)`
-   *                    bytes, which has to live as long as the panel.
+   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
+   *                    has to live as long as the panel.
    * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+   *                              `kMaxNumberOfModules`.
    */
   Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
         byte number_of_modules);
@@ -326,7 +330,7 @@ class Panel {
    * \param[in] height The rows of the picture, 1 to 8.
    */
   void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
-                  byte height = MAXMATRIX_ROW_NUMBER_OF_MODULE);
+                  byte height = kRowNumberOfModule);
 
   /*!
    * \brief Draws one column of a picture, `height` rows from `y` on.

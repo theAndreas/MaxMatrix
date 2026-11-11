@@ -61,7 +61,7 @@ enum class Error : uint8_t {
  * A sketch asks IsOk(), or compares with an error:
  *
  * \code{.cpp}
- * if(matrix.SetText(text) == Error::kUnknownChar) { ... }
+ * if(matrix.SetText(text) == max_matrix::Error::kUnknownChar) { ... }
  * \endcode
  *
  * \note It has no conversion to `bool`, on purpose: with `stdReturnType`,
