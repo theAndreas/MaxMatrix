@@ -37,9 +37,9 @@
 
 ControlDotPanel::ControlDotPanel(
     wxWindow* parent, std::function<void(uint8_t, uint8_t, bool)> on_switch)
-    : wxPanel(parent),
+    : wxPanel{parent},
       columns_(static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS), 0x00),
-      on_switch_(std::move(on_switch)) {
+      on_switch_{std::move(on_switch)} {
   painting_ = false;
   paint_lit_ = false;
   on_dot_ = false;
