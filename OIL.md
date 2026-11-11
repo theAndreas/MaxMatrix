@@ -44,8 +44,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 32 | The column shifted in and out | 12 | done | #66 |
 | 33 | A font checked against its length | 15 | done | #67 |
 | 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
-| 35 | Version 2.0.0: a namespace, and constants for macros | 34 | open | |
-| 36 | The template's checks, one group at a time | 35 | open | |
+| 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
+| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74 |
 
 ### 1 Build with CMake
 
@@ -779,12 +779,38 @@ takes most of the some 670 places clang-tidy's groups find in `src/`; what a ske
 `-D` stays a macro. The parts below the facade go into `max_matrix::internal`. A sketch has to
 change its names: no aliases for the old ones, a clean break, version 2.0.0.
 
+In two pull requests, released together as 2.0.0: first the namespace, the names without the
+prefix and `max_matrix::internal`; then the macros that are constants as `constexpr`.
+
 ### 36 The template's checks, one group at a time
 
 `.clang-tidy` turns off, for now, the groups of the template that MaxMatrix did not check before
 34: `cppcoreguidelines-*`, `google-*`, `house-*`, `misc-*`, `modernize-*`, `portability-*`,
 `readability-*` but three, and `bugprone-signed-bitwise`. After 35, each comes on in a pull
 request of its own, with what it finds fixed, and leaves the list.
+
+What each group found on 2026-11-11, after 35, with clang-tidy 23 as `make tidy` runs it: the
+library and the examples in the three variants, the tests and the host code. A place reported
+under two names, as `google-readability-braces-around-statements` and
+`readability-braces-around-statements`, counts in both groups.
+
+| Group | All | `src/` | `examples/` | Tests and host code |
+|---|---|---|---|---|
+| `portability-*` | 0 | 0 | 0 | 0 |
+| `house-*` | 18 | 11 | 0 | 7 |
+| `bugprone-signed-bitwise` | 94 | 30 | 1 | 63 |
+| `google-*` | 133 | 30 | 5 | 98 |
+| `misc-*` | 518 | 91 | 57 | 370 |
+| `modernize-*` | 595 | 29 | 3 | 563 |
+| `cppcoreguidelines-*` | 719 | 102 | 21 | 596 |
+| `readability-*` | 776 | 148 | 50 | 578 |
+
+They come on in this order, the smallest first: each pull request stays one a reviewer can
+read, and what an early group fixes, a later one no longer finds, as the braces both `google-*`
+and `readability-*` ask for. Some 510 of the places of `cppcoreguidelines-macro-usage` and
+`modernize-macro-to-enum` lie in `test/mock/binary.h`, the stand-in for the core's `B00000001`
+and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reaches
+through the tests' header filter; that is a question for the template before those groups.
 
 ## Decisions
 

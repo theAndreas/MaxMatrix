@@ -49,16 +49,16 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `Init()` (0 to 15)                |
 | `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
-| `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `MaxMatrixCommand`, in chars   |
+| `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `max_matrix::Command`, in chars   |
 | `MAXMATRIX_DEV_ERROR_DETECT`               | `STD_OFF` | report every failed call, see [Functions](#functions)  |
 
-The length of the chain is not configured here but in the sketch, where the Arduino IDE lets it change: `MaxMatrixOf<4>`
-is a matrix of four modules and brings their buffer, eight bytes per module, and `MaxMatrixOf<8>` one of eight, up to 31.
+The length of the chain is not configured here but in the sketch, where the Arduino IDE lets it change: `max_matrix::MatrixOf<4>`
+is a matrix of four modules and brings their buffer, eight bytes per module, and `max_matrix::MatrixOf<8>` one of eight, up to 31.
 A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own:
 
 ```cpp
-byte buffer[MAXMATRIX_BUFFER_SIZE(6)];
-MaxMatrix matrix(11, 10, 13, buffer, 6);
+byte buffer[max_matrix::BufferSize(6)];
+max_matrix::Matrix matrix(11, 10, 13, buffer, 6);
 ```
 
 ## Usage
@@ -66,14 +66,14 @@ MaxMatrix matrix(11, 10, 13, buffer, 6);
 ```cpp
 #include <MaxMatrix.h>
 
-MaxMatrixOf<4> matrix(11, 10, 13);   // a chain of 4 modules at DIN, CS, CLK
-char text[] = "Hello World!   ";
+max_matrix::MatrixOf<4> matrix(11, 10, 13);   // a chain of 4 modules at DIN, CS, CLK
+char const kText[] = "Hello World!   ";
 
 void setup()
 {
     matrix.Init();
-    matrix.SetModuleType(MaxMatrixModuleType::kFc16);    // see "Module type"
-    matrix.SetTextWithShift(text, true);    // over and over
+    matrix.SetModuleType(max_matrix::ModuleType::kFc16);    // see "Module type"
+    matrix.SetTextWithShift(kText, true);    // over and over
 }
 
 void loop()
@@ -139,16 +139,16 @@ The two functions that set eight LEDs at once read their byte in different direc
 | `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
 | `StopShift()` | stops a shifting char or text where it stands |
 | `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
-| `ShiftLeft(fill)`, `ShiftRight(fill)`, `ShiftUp(fill)`, `ShiftDown(fill)` | moves the whole picture by one dot; what comes in is empty, what fell out at the other edge, or kept: `MaxMatrixShiftFill::kZero`, `kRotate`, `kKeep` |
+| `ShiftLeft(fill)`, `ShiftRight(fill)`, `ShiftUp(fill)`, `ShiftDown(fill)` | moves the whole picture by one dot; what comes in is empty, what fell out at the other edge, or kept: `max_matrix::ShiftFill::kZero`, `kRotate`, `kKeep` |
 | `ShiftLeft(column)`, `ShiftRight(column)` | moves the picture by one column and brings `column` in, bit 0 at the top; returns the column that fell out |
 | `GetNumberOfModules()`, `GetNumberOfColumns()` | the length of the chain, eight columns per module |
 | `SetIntensity(intensity)` | brightness of every module, 0 to 15 |
 | `SetShutdown(on)` | turns the LEDs off without losing the picture, which still takes what is drawn |
 | `SetDisplayTest(on)` | lights every LED at full brightness, to check the modules, and shows the picture again |
-| `MaxMatrixBatch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
+| `max_matrix::Batch`, `SetAutoUpdate(on)`, `Update()` | holds the sending back, see [below](#drawing-a-picture-in-one-go) |
 | `SetModuleType(…)`, `SetMatrixOrientation(…)` | fits the coordinates to the module, see [below](#module-type) |
 | `RegisterWrite(address, value)` | writes a register of every MAX7219, past the picture |
-| `MaxMatrixCommand`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
+| `max_matrix::Command`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
 in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative,
@@ -157,16 +157,16 @@ A function that can fail says why, and changes nothing when it does. A getter re
 error, so ask `IsOk()` before you use `GetValue()`:
 
 ```cpp
-MaxMatrixResult<bool> lit = matrix.GetDot(x, y);
+max_matrix::Result<bool> lit = matrix.GetDot(x, y);
 if(lit.IsOk() && lit.GetValue()) { /* the LED at x, y is on */ }
 
-MaxMatrixStatus status = matrix.SetText(text);
-if(status == MaxMatrixError::kUnknownChar) { /* the font lacks a char of Text */ }
+max_matrix::Status status = matrix.SetText(text);
+if(status == max_matrix::Error::kUnknownChar) { /* the font lacks a char of Text */ }
 ```
 
-The errors are `MaxMatrixError::kOutOfRange`, `MaxMatrixError::kUnknownChar` and `MaxMatrixError::kNoText`, and from
-`MaxMatrixCommand` also `MaxMatrixError::kNotANumber`, `MaxMatrixError::kUnknownCommand` and `MaxMatrixError::kLineTooLong`;
-`MaxMatrixError::kOk` means none. A status is not a `bool`: write `Status.IsOk()`, not `if(Status)`.
+The errors are `max_matrix::Error::kOutOfRange`, `max_matrix::Error::kUnknownChar` and `max_matrix::Error::kNoText`, and from
+`max_matrix::Command` also `max_matrix::Error::kNotANumber`, `max_matrix::Error::kUnknownCommand` and `max_matrix::Error::kLineTooLong`;
+`max_matrix::Error::kOk` means none. A status is not a `bool`: write `Status.IsOk()`, not `if(Status)`.
 `Serial.println(Status.GetErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
 and a sketch that never asks for one does not carry them.
 
@@ -178,7 +178,7 @@ whose `Serial` carries something else, or which would rather blink or halt, defi
 that prints is left out:
 
 ```cpp
-void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error)
+void max_matrix::ReportError(__FlashStringHelper const* api, max_matrix::Error error)
 {
     digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -191,17 +191,17 @@ In SerialControl a `text=` with a char the font lacks is then reported as well, 
 ## Drawing a picture in one go
 Every call that draws shows its result before it returns, and sends only what it changed: at most eight frames to
 the chain, however much it drew. A picture made of many calls would still be shown half drawn in between. For that,
-draw it inside a block that starts with a `MaxMatrixBatch`; the picture is sent at the end of the block:
+draw it inside a block that starts with a `max_matrix::Batch`; the picture is sent at the end of the block:
 
 ```cpp
 {
-    MaxMatrixBatch batch(matrix);   // nothing is sent until the end of this block
+    max_matrix::Batch batch(matrix);   // nothing is sent until the end of this block
     matrix.Clear();
     for(byte column = 0; column < matrix.GetNumberOfColumns(); column++) matrix.SetDot(column, column % 8, true);
 }                                   // the whole picture at once, in at most eight frames
 ```
 
-The batch needs a name: `MaxMatrixBatch{Matrix};` on its own is gone again before the next line and holds nothing
+The batch needs a name: `max_matrix::Batch{Matrix};` on its own is gone again before the next line and holds nothing
 back. Batches can be nested; only the outermost one sends.
 
 A picture that is built over several calls of `loop()` does not fit into a block. There, turn the automatic update
@@ -210,7 +210,7 @@ off with `SetAutoUpdate(false)` and send with `Update()` whenever the picture is
 `SetIntensity()` takes effect at once either way. `Init()` always clears the LEDs, whatever the setting.
 
 ## Control over Serial
-`MaxMatrixCommand` carries out commands that arrive as lines of text, one command per line:
+`max_matrix::Command` carries out commands that arrive as lines of text, one command per line:
 
 | Command | What it does |
 |---------|--------------|
@@ -229,7 +229,7 @@ viewer sees it, bit 0 the top row. The [SerialControl](https://github.com/theAnd
 Arduino IDE sends them with "Newline" as line ending:
 
 ```cpp
-MaxMatrixCommand command;
+max_matrix::Command command;
 
 void loop()
 {
@@ -238,9 +238,9 @@ void loop()
 }
 ```
 
-`Feed()` also returns what became of the line: `MaxMatrixCommandState::kPending` while it goes on,
-`MaxMatrixCommandState::kDone` when it is carried out, `MaxMatrixCommandState::kAnswered` after `picture`, and
-why it failed otherwise: `intensity=16` is `MaxMatrixError::kOutOfRange`, `intensity=x` `MaxMatrixError::kNotANumber`. A line
+`Feed()` also returns what became of the line: `max_matrix::CommandState::kPending` while it goes on,
+`max_matrix::CommandState::kDone` when it is carried out, `max_matrix::CommandState::kAnswered` after `picture`, and
+why it failed otherwise: `intensity=16` is `max_matrix::Error::kOutOfRange`, `intensity=x` `max_matrix::Error::kNotANumber`. A line
 longer than `MAXMATRIX_COMMAND_LINE_LENGTH` is dropped whole rather than carried out cut short. The class keeps the
 line and the text of `textShift=`, so it takes twice that length in RAM; a sketch that does not use it pays nothing.
 
@@ -284,18 +284,18 @@ be typed into the box. As on the page, nothing goes to a board until SerialContr
 ## Module type
 Two settings make the text upright:
 
-- `SetModuleType()` says how the LEDs of a module are wired to its MAX7219. The types are named as the hardware types of [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), so a module that works there with `FC16_HW` takes `MaxMatrixModuleType::kFc16` here.
+- `SetModuleType()` says how the LEDs of a module are wired to its MAX7219. The types are named as the hardware types of [MD_MAX72XX](https://github.com/MajicDesigns/MD_MAX72XX), so a module that works there with `FC16_HW` takes `max_matrix::ModuleType::kFc16` here.
 - `SetMatrixOrientation()` turns the whole display by 0 or 180 degrees, for a board mounted upside down, with the input (DIN) on the left.
 
 | Module | Module type |
 |--------|-------------|
-| FC-16 (`FC16_HW`), the common 4-in-1 boards | `MaxMatrixModuleType::kFc16` (checked on hardware) |
-| Parola (`PAROLA_HW`) | `MaxMatrixModuleType::kParola` |
-| ICStation (`ICSTATION_HW`) | `MaxMatrixModuleType::kIcstation` |
-| Generic (`GENERIC_HW`) | `MaxMatrixModuleType::kGeneric` |
-| `DR0CR0RR0_HW` to `DR1CR1RR1_HW` | `MaxMatrixModuleType::kDr0Cr0Rr0` to `kDr1Cr1Rr1` |
+| FC-16 (`FC16_HW`), the common 4-in-1 boards | `max_matrix::ModuleType::kFc16` (checked on hardware) |
+| Parola (`PAROLA_HW`) | `max_matrix::ModuleType::kParola` |
+| ICStation (`ICSTATION_HW`) | `max_matrix::ModuleType::kIcstation` |
+| Generic (`GENERIC_HW`) | `max_matrix::ModuleType::kGeneric` |
+| `DR0CR0RR0_HW` to `DR1CR1RR1_HW` | `max_matrix::ModuleType::kDr0Cr0Rr0` to `kDr1Cr1Rr1` |
 
-For a module of unknown type, try the four named ones first; if none of them shows the text upright, one of the four others does. With the input on the right, the matrix orientation stays at `MaxMatrixMatrixOrientation::k0`; mounted upside down, it is `MaxMatrixMatrixOrientation::k180` with the same module type.
+For a module of unknown type, try the four named ones first; if none of them shows the text upright, one of the four others does. With the input on the right, the matrix orientation stays at `max_matrix::MatrixOrientation::k0`; mounted upside down, it is `max_matrix::MatrixOrientation::k180` with the same module type.
 
 How the bytes of the MAX7219 lie on the LEDs of each module type is drawn in [docu/](docu/README.md); a sketch
 does not need it, only work on the library does.
@@ -320,9 +320,9 @@ uint8_t const kDigits[] PROGMEM = {
     2, B01000010, B01111111,            // 1
 };
 
-matrix.SetFont(kDigits);                // MaxMatrixError::kNotAFont for an array that is not a font of its length
+matrix.SetFont(kDigits);                // max_matrix::Error::kNotAFont for an array that is not a font of its length
 matrix.SetText("10");
-matrix.SetFont(kMaxMatrixDefaultFont);  // the font MaxMatrix starts with
+matrix.SetFont(max_matrix::kDefaultFont);  // the font MaxMatrix starts with
 ```
 
 `SetFont()` takes the array itself, not a pointer, so that it knows the length: the chars from the first to the last

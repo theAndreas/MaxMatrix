@@ -54,10 +54,10 @@
 #define CONTROL_WINDOW_TOO_LONG wxColour(0xC0, 0x00, 0x00)
 
 ControlWindow::ControlWindow()
-    : wxFrame(nullptr, wxID_ANY, "MaxMatrix Control"),
-      board_link_(serial_port_),
-      simulator_link_(tcp_port_),
-      timer_(this) {
+    : wxFrame{nullptr, wxID_ANY, "MaxMatrix Control"},
+      board_link_{serial_port_},
+      simulator_link_{tcp_port_},
+      timer_{this} {
   wxPanel* const content = new wxPanel(this);
   wxBoxSizer* const columns = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer* const controls = new wxBoxSizer(wxVERTICAL);

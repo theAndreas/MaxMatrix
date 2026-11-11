@@ -15,7 +15,7 @@
 
 #include "ControlCommand.h"
 
-ControlLink::ControlLink(ControlPort& port) : port_(port) {
+ControlLink::ControlLink(ControlPort& port) : port_{port} {
   ready_ = false;
   picture_asked_ = false;
   picture_stale_ = false;

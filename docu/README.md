@@ -2,7 +2,7 @@
 
 A sketch never sees this: it works in the coordinates of [Coordinates.svg](Coordinates.svg), which are the same
 for every module once the module type fits it. The pictures below are for working on `src/Matrix/`, where
-`MaxMatrixPanel::ConvertDotToBuffer()` maps a dot as the viewer sees it to a byte and a bit of `matrix_buffer_`.
+`max_matrix::internal::Panel::ConvertDotToBuffer()` maps a dot as the viewer sees it to a byte and a bit of `matrix_buffer_`.
 
 Each LED is labelled `byte.bit`. Byte *n* of a module is digit register *n* of its MAX7219 and
 `matrix_buffer_[8 * module + n]`; the library sends the same byte of every module in one frame. A blue band joins

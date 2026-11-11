@@ -12,6 +12,12 @@
 #define STD_ON 1u  /*!< A switch of the configuration turned on. */
 #define STD_OFF 0u /*!< A switch of the configuration turned off. */
 
-#define STD_NULL_CHARACTER '\0' /*!< The end of a text. */
+namespace max_matrix {
+namespace internal {
+
+constexpr char kNullCharacter{'\0'}; /*!< The end of a text. */
+
+}  // namespace internal
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_

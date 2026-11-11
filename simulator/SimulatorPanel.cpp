@@ -39,7 +39,7 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark,
                                     char const* end_of_row) const {
   std::string text;
 
-  for (uint8_t y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
+  for (uint8_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
     for (uint8_t x = 0; x < GetNumberOfColumns(); x++)
       text += mock::chain.IsLit(*wiring_, x, y, upside_down_) ? lit : dark;
     text += end_of_row;
@@ -49,7 +49,7 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark,
 
 uint8_t SimulatorPanel::GetIntensity(uint8_t module) const {
   return mock::chain
-      .ChipAt(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, upside_down_)
+      .ChipAt(module * max_matrix::kColumnNumberOfModule, upside_down_)
       .intensity;
 }
 

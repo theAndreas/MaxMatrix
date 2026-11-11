@@ -31,9 +31,9 @@
  */
 class SimulatorWeb {
  private:
-  // Every function that needs the panel is handed it, as MaxMatrixText is,
-  // rather than the class keeping a reference: the panel belongs to the
-  // simulator, and the terminal is handed it too.
+  // Every function that needs the panel is handed it, as
+  // max_matrix::internal::Text is, rather than the class keeping a reference:
+  // the panel belongs to the simulator, and the terminal is handed it too.
 
   SimulatorWebHost host_;
   /* the frames since the page was last sent the panel, as hex pairs, one string

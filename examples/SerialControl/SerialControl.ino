@@ -32,14 +32,14 @@ byte const kChipSelectPin = 10;
 byte const kClockPin = 13;
 uint32_t const kBaudRate = 115200;
 
-MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
-MaxMatrixCommand command;
+max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+max_matrix::Command command;
 
 void setup() {
   Serial.begin(kBaudRate);
   matrix.Init();
   /* the common 4-in-1 FC-16 boards; the README lists the other modules */
-  matrix.SetModuleType(MaxMatrixModuleType::kFc16);
+  matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   Serial.println(F("ready"));
 }
 

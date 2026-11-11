@@ -6,6 +6,12 @@ obvious ones from AUTOSAR and Rust do not carry over as they are. Measured on 20
 `arduino-cli`, the Arduino AVR platform 1.8.8 (avr-gcc 7.3.0, `-Os -flto`) and `arduino:avr:uno`
 (ATmega328P, as on the classic Nano).
 
+The names are those before version 2.0.0, which put the library into the namespace `max_matrix`
+(OIL 35): `MaxMatrixError`, `MaxMatrixStatus` and `MaxMatrixResult<T>` are now `max_matrix::Error`,
+`max_matrix::Status` and `max_matrix::Result<T>`, `MaxMatrixReportError()` is
+`max_matrix::ReportError()`, and the parts below the facade, as `MaxMatrixText`, lie in
+`max_matrix::internal`.
+
 ## Where it starts
 
 - `stdReturnType` has `E_OK` (0) and `E_NOT_OK` (1); a result goes through a pointer parameter.

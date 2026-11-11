@@ -16,25 +16,25 @@
 /* a text must stay valid while it is shifted, so none of them is a local
  * variable; the blanks at the end let it leave the matrix before the next one
  * comes in */
-char hello[] = "Hello!    ";
-char umlauts[] = "Grüne Äpfel, schöne Öfen    ";
-char fast[] = "fast...    ";
-char slow[] = "and slow    ";
+char const kHello[] = "Hello!    ";
+char const kUmlauts[] = "Grüne Äpfel, schöne Öfen    ";
+char const kFast[] = "fast...    ";
+char const kSlow[] = "and slow    ";
 
 struct Message {
-  char* text;
+  char const* text;
   uint16_t shift_interval_ms;
 };
 
 Message const kMessages[] = {
-    {hello, 50},
-    {umlauts, 50},
-    {fast, 15},
-    {slow, 120},
+    {kHello, 50},
+    {kUmlauts, 50},
+    {kFast, 15},
+    {kSlow, 120},
 };
 byte const kNumberOfMessages = sizeof(kMessages) / sizeof(kMessages[0]);
 
-MaxMatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 byte current = 0;
 
 void Show(Message const& message) {
@@ -45,7 +45,7 @@ void Show(Message const& message) {
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
   matrix.SetIntensity(2);
   Show(kMessages[current]);
 }
@@ -54,7 +54,7 @@ void loop() {
   /* takes a step only when the interval of the current text has passed */
   matrix.ShiftTask();
   /* the text has been shifted in completely: on to the next one */
-  if (matrix.GetState() == MaxMatrixState::kReady) {
+  if (matrix.GetState() == max_matrix::State::kReady) {
     current = static_cast<byte>((current + 1) % kNumberOfMessages);
     Show(kMessages[current]);
   }

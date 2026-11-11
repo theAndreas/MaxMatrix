@@ -102,23 +102,25 @@ exception goes at the end of a list, with its reason.
 
 ### Layout
 
-- `src/` — the library, in the Arduino library format 1.5, one part per folder:
-  - `MaxMatrix.h` / `MaxMatrix.cpp` — the `MaxMatrix` class, the facade a sketch includes:
+- `src/` — the library, in the Arduino library format 1.5, one part per folder. Everything
+  lies in the namespace `max_matrix`, the parts below the facade in `max_matrix::internal`;
+  the names below are as the code in the namespace writes them.
+  - `MaxMatrix.h` / `MaxMatrix.cpp` — the class `Matrix`, the facade a sketch includes:
     the public API, the state of the library and `Init()`; the rest it passes on.
   - `MaxMatrixConfig.h` — the configuration macros and the size of a module; the length of the
-    chain is the sketch's, `MaxMatrixOf<N>` or a buffer handed to `MaxMatrix`.
-  - `Max7219/` — `MaxMatrixChain`, the transfer to the chain, and the register macros.
-  - `Matrix/` — `MaxMatrixWired`, the buffer as wired, and `MaxMatrixPanel` on top of it, the
+    chain is the sketch's, `MatrixOf<N>` or a buffer handed to `Matrix`.
+  - `Max7219/` — `internal::Chain`, the transfer to the chain, and the register macros.
+  - `Matrix/` — `internal::Wired`, the buffer as wired, and `internal::Panel` on top of it, the
     coordinates as the viewer sees them.
-  - `Font/` — `MaxMatrixFont`, the font format of MD_MAX72XX, `kMaxMatrixDefaultFont`, the
+  - `Font/` — `Font`, the font format of MD_MAX72XX, `kDefaultFont`, the
     lookup of a char's glyph and `DecodeChar()`.
-  - `Text/` — `MaxMatrixText`, text that stands or shifts in.
-  - `Command/` — `MaxMatrixCommand`, the lines of text a control page or program sends
-    (`text=`, `setDot=`, …), carried out on a `MaxMatrix`.
-  - `MaxMatrixError.h` / `.cpp` — `MaxMatrixError`, and `MaxMatrixStatus` / `MaxMatrixResult<T>`,
+  - `Text/` — `internal::Text`, text that stands or shifts in.
+  - `Command/` — `Command`, the lines of text a control page or program sends
+    (`text=`, `setDot=`, …), carried out on a `Matrix`.
+  - `MaxMatrixError.h` / `.cpp` — `Error`, and `Status` / `Result<T>`,
     what a function that can fail returns, with `GetErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
-  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `STD_NULL_CHARACTER`.
+  - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `internal::kNullCharacter`.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -167,7 +169,7 @@ exception goes at the end of a list, with its reason.
   - `ControlPort` — one end: `ControlSerialPort` (`termios` / Win32) or `ControlTcpPort`.
   - `ControlLink` — the lines over a port, waiting for `ready` on a board, and asking for the
     `picture` the window shows.
-  - `ControlCommand` — the lines `MaxMatrixCommand` reads, whether one fits its buffer, and the
+  - `ControlCommand` — the lines `Command` reads, whether one fits its buffer, and the
     answer to `picture`.
   - `ControlWindow`, `ControlDotPanel` — the window and the matrix as SerialControl answers
     `picture`, to click and paint on, checked by hand;
@@ -195,22 +197,22 @@ exception goes at the end of a list, with its reason.
 the module type `kDr0Cr0Rr1` is also how the viewer sees it; `docu/Wiring_*.svg` show all eight.
 The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
-The buffer is the sketch's, and so is the length of the chain: `MaxMatrixOf<N>` brings a buffer
-of `MAXMATRIX_BUFFER_SIZE(N)` bytes in a base class, which is made before the `MaxMatrix` it is
-handed to, and `MaxMatrix` takes any buffer and length at run time, as the Arduino IDE passes a
+The buffer is the sketch's, and so is the length of the chain: `MatrixOf<N>` brings a buffer
+of `BufferSize(N)` bytes in a base class, which is made before the `Matrix` it is
+handed to, and `Matrix` takes any buffer and length at run time, as the Arduino IDE passes a
 sketch's defines to no library. So nothing in the library may size an array by the chain: what
 needs the whole panel works in place, a column at a time, or on a pair of modules, as
-`MaxMatrixPanel::ChangeOrientation()` does, and `Send()` hands the chain a column of every
+`internal::Panel::ChangeOrientation()` does, and `Send()` hands the chain a column of every
 module straight from the buffer, a module's columns apart.
 
-Drawing only changes the buffer. `MaxMatrixWired` keeps which columns of a module changed, one
+Drawing only changes the buffer. `internal::Wired` keeps which columns of a module changed, one
 bit each in `changed_columns_`, and `Send()` sends each of them in one frame for all modules:
 eight frames at most for a whole picture. The facade decides when: with `auto_update_`, the
 default, every public function that draws calls `UpdateIfAuto()` before it returns, so that each
 call shows its result; with it off, only `Update()` sends. A new public function that draws
 ends with `UpdateIfAuto()` as well, and nothing below the facade sends. `Clear()` marks every
 column, even one that was empty already, because after power-up the registers hold anything.
-`MaxMatrixBatch` turns `auto_update_` off for the life of a block and puts back what it found, so
+`Batch` turns `auto_update_` off for the life of a block and puts back what it found, so
 that a sketch cannot forget to turn it on again; the sketch-facing docs lead with it.
 
 The facade also keeps the pace of a shifting text: `ShiftTask()` returns at once until
@@ -219,28 +221,28 @@ nothing itself.
 
 #### The parts
 
-Dependencies point one way: `MaxMatrixText` → `MaxMatrixFont` and `MaxMatrixPanel`,
-`MaxMatrixPanel` → `MaxMatrixWired` → `MaxMatrixChain` → `Arduino.h` / `SPI.h`. Each part is a
+Dependencies point one way: `internal::Text` → `Font` and `internal::Panel`,
+`internal::Panel` → `internal::Wired` → `internal::Chain` → `Arduino.h` / `SPI.h`. Each part is a
 member of the one above it, by value and without virtual functions, so that the parts cost no
-RAM of their own; `MaxMatrixText` is handed the panel by every function that draws, rather
+RAM of their own; `internal::Text` is handed the panel by every function that draws, rather
 than keeping a reference, which cost 86 bytes of flash in `ScrollText` (see its header).
 
-`MaxMatrixCommand` sits on top of the facade rather than in it: the sketch owns it beside its
-`MaxMatrix` and hands it the matrix with every char, as the panel is handed to the text. A sketch
+`Command` sits on top of the facade rather than in it: the sketch owns it beside its
+`Matrix` and hands it the matrix with every char, as the panel is handed to the text. A sketch
 that does not use it pays nothing, because the linker drops what no one calls; `Basics` and
 `ScrollText` are the same size with it as without.
 
 #### Two coordinate systems
 
-- **`MaxMatrixPanel`** (`SetColumn`, `SetRow`, `SetDot`, `ShiftLeft`, `DrawLine`, …) takes coordinates as
+- **`internal::Panel`** (`SetColumn`, `SetRow`, `SetDot`, `ShiftLeft`, `DrawLine`, …) takes coordinates as
   the viewer sees them.
-- **`MaxMatrixWired`** works on the buffer and the hardware as wired and knows nothing about
+- **`internal::Wired`** works on the buffer and the hardware as wired and knows nothing about
   orientation. Its functions have the same names; the object says which system is meant.
 
 Between them, `ConvertDotToBuffer()` is the only function that knows the matrix orientation
 and the module type: the matrix orientation (0, 180) turns the whole panel, the module type then
 says which digit register and bit drive a dot within its module, by the three properties
-MD_MAX72XX names its hardware types by (DR, CR, RR), one bit each of `MaxMatrixModuleType`. It
+MD_MAX72XX names its hardware types by (DR, CR, RR), one bit each of `ModuleType`. It
 maps one dot as the viewer sees it to a buffer column and bit. Lines go through
 `GetLine()`/`SetLine()`; shifting and changing the mapping work on the picture in viewer
 coordinates, a column of it at a time.
@@ -257,7 +259,7 @@ disagreed in all but orientation 0.
 
 #### Hardware access
 
-Only `MaxMatrixChain` touches the pins. A transfer to the MAX7219 chain is framed by
+Only `internal::Chain` touches the pins. A transfer to the MAX7219 chain is framed by
 `StartTransmission()` and `StopTransmission()`, which drive chip select and, in SPI mode, begin
 and end the SPI transaction. Every module in the chain gets one address/value pair per frame.
 `WriteRegisterAll()` (one value for every module) and `WriteRegisterEach()` (one value per
@@ -274,10 +276,9 @@ registers are objects that pass every bit on to the pins, so the host tests run 
 ### Code conventions
 
 [docs/CodingStyle.md](docs/CodingStyle.md) is the standard, as in every project made from the
-template; this section says how MaxMatrix's code is written today where it says more or else. Two of
-its conventions go with version 2.0.0, as OIL.md records: the prefix `MaxMatrix`, for a namespace
-`max_matrix` (F-9), and constants as `#define`, for `constexpr`. The file names in `PascalCase` stay
-(F-3). They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
+template; this section says how MaxMatrix's code is written today where it says more or else. Since
+version 2.0.0 the library lies in the namespace `max_matrix` (F-9) and its constants are
+`constexpr`, as OIL.md records. The file names in `PascalCase` stay (F-3). They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
 the library is read beside it. Only the tests in `test/` keep a lighter style, a comment at the top
 and one above each test.
 
@@ -286,25 +287,26 @@ and one above each test.
 Google's names, as in Utl and Wordclock, so that every project names alike; clang-tidy's
 `readability-identifier-naming` checks them, with the options in `.clang-tidy`:
 
-- Types, functions and methods `PascalCase`: `MaxMatrixPanel`, `SetText()`, `GetState()`;
+- Types, functions and methods `PascalCase`: `internal::Panel`, `SetText()`, `GetState()`;
   `Get`/`Set` for accessors, `Convert…`/`Decode…` for conversions.
 - Variables and parameters `snake_case`; private and protected members end in `_`
   (`module_type_`), so that a setter's parameter takes the plain name
-  (`SetModuleType(MaxMatrixModuleType module_type)`). Members of a
+  (`SetModuleType(ModuleType module_type)`). Members of a
   struct whose members are all public have no `_`.
 - Constants, `constexpr` and `const` with static storage, start with `k`: `kErrorTexts`,
   `kDataInPin` in a sketch.
-- Enums are `enum class` with values in the same form: `MaxMatrixState::kReady`,
-  `MaxMatrixError::kOutOfRange`. The indices of a sprite, `kSpriteWidth` and on, are a plain
+- Enums are `enum class` with values in the same form: `State::kReady`,
+  `Error::kOutOfRange`. The indices of a sprite, `kSpriteWidth` and on, are a plain
   enum, as they index an array.
-- Macros upper case and prefixed with the module: `MAXMATRIX_USE_SPI`,
-  `MAX7219_REG_INTENSITY_ADDRESS`. An include guard names the path:
+- Macros upper case and prefixed with the library: `MAXMATRIX_USE_SPI`. An include guard
+  names the path:
   `MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_`.
-- Classes start with `MaxMatrix`. A sketch links every library it includes into one namespace,
-  and a class called `Font` or `Text` would collide with the next library that has one; the
-  mock in `test/mock/` already has a `Max7219Chain`. The simulator is linked with the sketch
-  too, so its classes start with `Simulator`. A type of the library does as well:
-  `MaxMatrixSprite`, `MaxMatrixOf`.
+- The library lies in the namespace `max_matrix` (F-9 of `docs/CodingStyle.md`), so its names
+  carry no prefix: `max_matrix::Matrix`, `max_matrix::Font`. What a sketch does not use, the
+  parts below the facade, lies in `max_matrix::internal`. A test or a program on the host
+  names what it uses with a using-declaration (`using max_matrix::Error;`), never with
+  `using namespace`. The simulator is linked with the sketch and has no namespace yet, so its
+  classes start with `Simulator`.
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
 - Files are named after their class, in `PascalCase`, as Arduino names its own (`Arduino.h`,
@@ -331,7 +333,7 @@ and `setsockopt()` options (`int`); and `size_t` for sizes of containers.
 #### const
 
 `const` stands right of what it qualifies, in every file alike: `char const* Text`,
-`MaxMatrixBatch const&`, `std::string const Name`, `static char const kErrorTextOk[] PROGMEM`,
+`Batch const&`, `std::string const Name`, `static char const kErrorTextOk[] PROGMEM`,
 `struct { … } const Names[]`. Read from right to left, the declaration then says what it is,
 and `char const* const` needs no second rule. The Arduino core writes `const` on the left; the
 mock, which stands in for it, and the examples follow this repository all the same.
@@ -339,25 +341,39 @@ mock, which stands in for it, and the examples follow this repository all the sa
 clang-format puts it there, `QualifierAlignment: Right` of `.clang-format`, and `make lint`
 fails on one left of it.
 
+What a function only reads through a pointer points to `const` (CodingStyle T-5), also where
+it keeps the pointer: `SetTextWithShift()` keeps it in a member, and took a `char*` while it
+read the text only, so that a sketch could not make its text `const`. No check finds that: the
+const checks of clang-tidy take a pointer stored in a member that is not `const` for a write,
+so review does.
+
+A text itself is an array, `char const kText[] = "...";` (T-20): the object is the chars, and
+only an array takes `PROGMEM`. `char const*` is a pointer that picks a text that exists
+already, as `text` of `Message` in `Messages`. Only as a parameter are the two the same, and
+there it is written `char const*`, as the function gets a pointer and no array.
+
 #### Constants and configuration
 
-Constants are `#define`s in the header, grouped under a comment. Configuration switches are
+Constants are `constexpr` in the namespace, grouped under a comment; one that only a `.cpp`
+uses lies in an anonymous namespace there. A macro is left for what a sketch or the build sets
+with `-D` and what `#if` reads: the configuration parameters. Configuration switches are
 `STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. Register addresses
-and values of the MAX7219 get a named macro rather than a literal.
+and values of the MAX7219 get a named constant in `max7219` rather than a literal, as
+`Matrix::RegisterWrite()` takes them: `max7219::kIntensityAddress`.
 
 Every configuration parameter is wrapped in `#ifndef`, because that is how the tests build the
 SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.
 
 #### Return values
 
-A function of the library that can fail says why, in `MaxMatrixError`
-(`src/MaxMatrixError.h`): it returns a `MaxMatrixStatus`, or a getter of a single value a
-`MaxMatrixResult<T>` with the value and the error side by side. Neither converts to `bool`, as
+A function of the library that can fail says why, in `Error`
+(`src/MaxMatrixError.h`): it returns a `Status`, or a getter of a single value a
+`Result<T>` with the value and the error side by side. Neither converts to `bool`, as
 `E_OK` was 0 and `if(matrix.SetText(…))` was true on an error; code asks `IsOk()` or compares
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
 reference). A new reason gets its own value in the enum, a text in `kErrorTexts`
 (`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
-call can fail and that it changes nothing. `MaxMatrixCommand::Feed()` answers a failed line with
+call can fail and that it changes nothing. `Command::Feed()` answers a failed line with
 `GetErrorText()` on the `Print` it is given, and returns the reason as well.
 
 The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
@@ -366,16 +382,16 @@ with every constant not marked `PROGMEM`.
 
 Coordinates and indices are range checked before the buffer is touched. A function that draws
 leaves out what lies off the panel rather than failing, because drawing partly off the panel is
-what a moving sprite or text does all the time (see `MaxMatrixPanel::SetDot()`); `SetDot`,
+what a moving sprite or text does all the time (see `internal::Panel::SetDot()`); `SetDot`,
 `SetColumn` and `SetRow` cannot fail at all and return `void`, while `SetChar` and `SetText`
 still fail on a char the font lacks. A getter or a setting out of range returns
-`MaxMatrixError::kOutOfRange` and changes nothing. `MaxMatrixCommand` checks the coordinates it is
+`Error::kOutOfRange` and changes nothing. `Command` checks the coordinates it is
 sent itself, so that a typed line that would do nothing says so.
 
 With `MAXMATRIX_DEV_ERROR_DETECT`, every function of the facade that fails reports its name and
-the error to `MaxMatrixReportError()`, as the DET of AUTOSAR Classic does. A new function of the
+the error to `ReportError()`, as the DET of AUTOSAR Classic does. A new function of the
 facade that can fail wraps the call of the part below in `MAXMATRIX_REPORT_ERROR("name", …)`,
-which is the bare call when the switch is off; the parts below the facade and `MaxMatrixCommand`
+which is the bare call when the switch is off; the parts below the facade and `Command`
 report nothing. The weak default, which prints on `Serial`, lies in `MaxMatrixErrorReport.cpp`,
 and `library.properties` links the library as an archive (`dot_a_linkage`): linked as loose
 objects, the default pulled `Serial` into a sketch that defines its own report, 175 bytes of RAM
@@ -383,7 +399,7 @@ on the Uno.
 
 Host code whose failures no sketch sees, the simulator and `DocuPictures`, returns `bool`, `true`
 for success: each of its functions fails for one reason, which its `\return` names beside `false`.
-`MaxMatrixError` has no words for a port that is taken, and `std::optional` is C++17, while the
+`Error` has no words for a port that is taken, and `std::optional` is C++17, while the
 simulator is built as `gnu++11` with the library.
 
 #### Layout of a source file
@@ -419,11 +435,11 @@ well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
 
 - **Never compare against a character literal such as `'ä'`.** In a UTF-8 source file it is a
   two-byte multi-character constant that never equals a `char`. Compare against the latin-1
-  code (`0xE4`) and put the character in a comment beside it, as `kMaxMatrixDefaultFont` does.
+  code (`0xE4`) and put the character in a comment beside it, as `kDefaultFont` does.
 - Text goes through `DecodeChar()`, which turns a two-byte UTF-8 sequence into one latin-1
   char before the glyph lookup. A new function that walks a string uses it too.
 - A font holds its chars at their latin-1 codes, a char it lacks as a width of 0: a char added
-  to `kMaxMatrixDefaultFont` takes the place of the 0 at its code.
+  to `kDefaultFont` takes the place of the 0 at its code.
 
 ### Build and check
 
@@ -446,7 +462,7 @@ Arduino core are ignored.
 `make tests` configures into `build/host`, builds the library three times, with bit banging,
 with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on each through
 `ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
-first two only. In `det/`, the test file defines `MaxMatrixReportError()` itself and records into
+first two only. In `det/`, the test file defines `ReportError()` itself and records into
 `Reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
 only the tests are C++17, which GoogleTest needs. A test that loops over the orientations and
 module types is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
@@ -526,9 +542,9 @@ the test names the bug it guards against.
 
 The tests reach private members through `#define private public`, because some of what they
 check has no public path — which frame a change to one buffer column turns into, for instance,
-is checked by storing the bit with `MaxMatrixWired::StoreBit()`, so that the test names the
+is checked by storing the bit with `internal::Wired::StoreBit()`, so that the test names the
 buffer column itself rather than reaching it through an orientation. The parts are private
-members of `MaxMatrix`, so a test reaches the buffer as `matrix_.panel_.wired_.matrix_buffer_`. 
+members of `Matrix`, so a test reaches the buffer as `matrix_.panel_.wired_.matrix_buffer_`. 
 The define comes after the GoogleTest and standard headers, which it would rewrite as well.
 
 #### Hardware

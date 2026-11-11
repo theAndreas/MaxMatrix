@@ -10,7 +10,10 @@
 
 #include "MaxMatrixText.h"
 
-MaxMatrixText::MaxMatrixText() {
+namespace max_matrix {
+namespace internal {
+
+Text::Text() {
   string_ = NULL;
   repeat_from_ = NULL;
   sprite_shift_counter_ = kShiftIdle;
@@ -21,73 +24,69 @@ MaxMatrixText::MaxMatrixText() {
   glyph_.height = 0;
 }
 
-MaxMatrixStatus MaxMatrixText::SetFont(uint8_t const* font, size_t size) {
-  MaxMatrixStatus const status = MaxMatrixFont::CheckFont(font, size);
+Status Text::SetFont(uint8_t const* font, size_t size) {
+  Status const status = Font::CheckFont(font, size);
 
   if (status.IsOk()) font_ = font;
   return status;
 }
 
-MaxMatrixStatus MaxMatrixText::SetChar(MaxMatrixPanel& panel, int16_t x,
-                                       int16_t y, char c) const {
-  MaxMatrixGlyph glyph;
-  MaxMatrixStatus const status = FindGlyph(c, &glyph);
+Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
+  Glyph glyph;
+  Status const status = FindGlyph(c, &glyph);
 
   if (status.IsOk()) SetGlyph(panel, x, y, glyph);
   return status;
 }
 
-MaxMatrixStatus MaxMatrixText::SetCharWithShift(char c) {
-  MaxMatrixStatus const status = FindGlyph(c, &glyph_);
+Status Text::SetCharWithShift(char c) {
+  Status const status = FindGlyph(c, &glyph_);
 
   if (status.IsOk()) sprite_shift_counter_ = kShiftStart;
   return status;
 }
 
-MaxMatrixStatus MaxMatrixText::SetText(MaxMatrixPanel& panel,
-                                       char const* text) const {
+Status Text::SetText(Panel& panel, char const* text) const {
   int16_t char_column = 0;
   char c;
 
-  if (text == NULL) return MaxMatrixError::kNoText;
-  while (*text != STD_NULL_CHARACTER) {
-    text += MaxMatrixFont::DecodeChar(text, &c);
-    MaxMatrixGlyph glyph;
-    MaxMatrixStatus const status = FindGlyph(c, &glyph);
+  if (text == NULL) return Error::kNoText;
+  while (*text != internal::kNullCharacter) {
+    text += Font::DecodeChar(text, &c);
+    Glyph glyph;
+    Status const status = FindGlyph(c, &glyph);
     if (!status.IsOk()) return status;
     SetGlyph(panel, char_column, 0, glyph);
     char_column =
         static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
     if (char_column > panel.GetNumberOfColumns()) break;
   }
-  return MaxMatrixError::kOk;
+  return Error::kOk;
 }
 
-MaxMatrixStatus MaxMatrixText::SetTextWithShift(char* text, bool repeat) {
-  if (text == NULL) return MaxMatrixError::kNoText;
+Status Text::SetTextWithShift(char const* text, bool repeat) {
+  if (text == NULL) return Error::kNoText;
   sprite_shift_counter_ = kShiftIdle;
   string_ = text;
   repeat_from_ = repeat ? text : NULL;
-  return MaxMatrixError::kOk;
+  return Error::kOk;
 }
 
 /*
  * The glyph of `c` in the font that is set, into `glyph`, which stays as it was
  * if the font has none. One place that unpacks the result of
- * MaxMatrixFont::GetGlyph() rather than four: 62 bytes less of flash in
+ * Font::GetGlyph() rather than four: 62 bytes less of flash in
  * SerialControl, which draws through all four.
  */
-MaxMatrixStatus MaxMatrixText::FindGlyph(char c, MaxMatrixGlyph* glyph) const {
-  MaxMatrixResult<MaxMatrixGlyph> const found =
-      MaxMatrixFont::GetGlyph(GetFont(), c);
+Status Text::FindGlyph(char c, Glyph* glyph) const {
+  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
 
   if (found.IsOk()) *glyph = found.GetValue();
   return found.GetError();
 }
 
-void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y,
-                              MaxMatrixSprite const sprite) {
-  // As in MaxMatrixPanel::DrawBitmap(): right of the panel x plus a column
+void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
+  // As in Panel::DrawBitmap(): right of the panel x plus a column
   // could overflow.
   if (x >= panel.GetNumberOfColumns()) return;
   for (byte sprite_column = 0; sprite_column < sprite[kSpriteWidth];
@@ -98,18 +97,17 @@ void MaxMatrixText::SetSprite(MaxMatrixPanel& panel, int16_t x, int16_t y,
   }
 }
 
-void MaxMatrixText::SetGlyph(MaxMatrixPanel& panel, int16_t x, int16_t y,
-                             MaxMatrixGlyph const& glyph) {
+void Text::SetGlyph(Panel& panel, int16_t x, int16_t y, Glyph const& glyph) {
   panel.DrawBitmap(x, y, glyph.columns, glyph.width, glyph.height);
 }
 
-void MaxMatrixText::SetSpaceBetweenChars(byte space_between_chars) {
+void Text::SetSpaceBetweenChars(byte space_between_chars) {
   /* every byte value is a valid number of spaces, so it cannot fail */
   space_between_chars_ = space_between_chars;
 }
 
-bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel) {
-  // An empty column comes in, by the column rather than MaxMatrixShiftFill, so
+bool Text::CharShiftTask(Panel& panel) {
+  // An empty column comes in, by the column rather than ShiftFill, so
   // that a sketch that only shifts text does not link the other fills.
   panel.ShiftLeft(static_cast<byte>(0));
   sprite_shift_counter_++;
@@ -138,23 +136,23 @@ bool MaxMatrixText::CharShiftTask(MaxMatrixPanel& panel) {
  * without a char of the font ends rather than reading itself over and over. At
  * the end of any other text nothing starts.
  */
-void MaxMatrixText::ReadNextChar() {
-  char* start_over_at = repeat_from_;
+void Text::ReadNextChar() {
+  char const* start_over_at = repeat_from_;
   char c;
 
   while (sprite_shift_counter_ == kShiftIdle) {
-    if (*string_ == STD_NULL_CHARACTER) {
+    if (*string_ == internal::kNullCharacter) {
       if (start_over_at == NULL) return;
       string_ = start_over_at;
       start_over_at = NULL;
     } else {
-      string_ += MaxMatrixFont::DecodeChar(string_, &c);
+      string_ += Font::DecodeChar(string_, &c);
       if (FindGlyph(c, &glyph_).IsOk()) sprite_shift_counter_ = kShiftStart;
     }
   }
 }
 
-bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel) {
+bool Text::StringShiftTask(Panel& panel) {
   /* has char shift task finished shifting sprite or char */
   if (sprite_shift_counter_ == kShiftIdle) {
     ReadNextChar();
@@ -170,3 +168,6 @@ bool MaxMatrixText::StringShiftTask(MaxMatrixPanel& panel) {
   }
   return true;
 }
+
+}  // namespace internal
+}  // namespace max_matrix
