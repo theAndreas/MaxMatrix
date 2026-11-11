@@ -15,6 +15,9 @@
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
 
+namespace max_matrix {
+namespace internal {
+
 /* Max7219 Register Address Table */
 /*! No-op: a module that is not addressed in a frame gets it. */
 #define MAX7219_REG_NO_OP_ADDRESS 0x00
@@ -97,7 +100,7 @@
  * A frame carries one address and value per module. Only this class touches the
  * pins; bit banging or SPI is chosen with `MAXMATRIX_USE_SPI`.
  */
-class MaxMatrixChain {
+class Chain {
  private:
   byte data_in_pin_;
   byte chip_select_pin_;
@@ -122,7 +125,7 @@ class MaxMatrixChain {
 
   /*
    * Not const, though they change no member: they change the chain this object
-   * stands for, and a const MaxMatrixChain that still sends would be a lie.
+   * stands for, and a const Chain that still sends would be a lie.
    * transfer() is not static either, though with SPI it uses no member: bit
    * banging needs the pins. clang-tidy reports all three, and each definition
    * answers it with a NOLINT.
@@ -145,8 +148,8 @@ class MaxMatrixChain {
    * \param[in] number_of_modules The MAX7219s in the chain, 1 to
    *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
    */
-  MaxMatrixChain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-                 byte number_of_modules);
+  Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
+        byte number_of_modules);
 
   /*! \brief Returns the MAX7219s in the chain. */
   byte GetNumberOfModules() const { return number_of_modules_; }
@@ -219,5 +222,8 @@ class MaxMatrixChain {
   void WriteRegisterEach(byte register_address, byte const* register_values,
                          byte stride);
 };
+
+}  // namespace internal
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_

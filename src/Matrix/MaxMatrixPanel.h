@@ -6,7 +6,7 @@
  * \brief The matrix as the viewer sees it.
  *
  * Columns, rows and dots in the viewer's coordinates, on top of the matrix as
- * it is wired. Drawing only changes the buffer; MaxMatrix decides when it is
+ * it is wired. Drawing only changes the buffer; Matrix decides when it is
  * sent.
  */
 
@@ -18,14 +18,16 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixWired.h"
 
+namespace max_matrix {
+
 /*! \brief How the whole matrix is turned: by 180 degrees for a board mounted
  * upside down. */
-enum class MaxMatrixMatrixOrientation : uint8_t {
+enum class MatrixOrientation : uint8_t {
   k0,  /*!< The board as it is meant to be mounted. */
   k180 /*!< The board upside down: the module at the input on the left. */
 };
 
-/* the three properties of a MaxMatrixModuleType, one bit each of its value */
+/* the three properties of a ModuleType, one bit each of its value */
 /*! DR1 of MD_MAX72XX's names: the digits of the MAX7219 are the rows. */
 #define MAXMATRIX_MODULE_TYPE_DIGITS_AS_ROWS 0x04u
 /*! CR1 of MD_MAX72XX's names: the columns in reverse order. */
@@ -45,7 +47,7 @@ enum class MaxMatrixMatrixOrientation : uint8_t {
  * their own. Four are mirror images of the others, Parola among them. The value
  * holds the three properties as bits: DR in bit 2, CR in bit 1, RR in bit 0.
  */
-enum class MaxMatrixModuleType : uint8_t {
+enum class ModuleType : uint8_t {
   kDr0Cr0Rr0 = 0, /*!< Digits as columns. */
   /*! Digits as columns, in reverse; the buffer is the picture as the viewer
      sees it. */
@@ -66,25 +68,27 @@ enum class MaxMatrixModuleType : uint8_t {
 };
 
 /*! \brief What comes in at the edge a shift leaves empty. */
-enum class MaxMatrixShiftFill : uint8_t {
+enum class ShiftFill : uint8_t {
   kZero,   /*!< Every LED of the new column or row off. */
   kRotate, /*!< The column or row that falls out at the other edge. */
   kKeep    /*!< The column or row keeps what it held. */
 };
+
+namespace internal {
 
 /*!
  * \brief The matrix as the viewer sees it: columns, rows and dots in the
  *        viewer's coordinates.
  *
  * It turns every coordinate by the matrix orientation and the module type into
- * the buffer of MaxMatrixWired. A sketch reaches it through MaxMatrix, which
+ * the buffer of Wired. A sketch reaches it through Matrix, which
  * takes most of its functions over.
  */
-class MaxMatrixPanel {
+class Panel {
  private:
-  MaxMatrixWired wired_;
-  MaxMatrixModuleType module_type_;
-  MaxMatrixMatrixOrientation matrix_orientation_;
+  Wired wired_;
+  ModuleType module_type_;
+  MatrixOrientation matrix_orientation_;
 
   static byte ReverseByte(byte input);
   void ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
@@ -94,15 +98,15 @@ class MaxMatrixPanel {
   void SetFarDot(int32_t column, int32_t row, bool value);
   void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
                 bool value);
-  void ChangeMapping(MaxMatrixMatrixOrientation matrix_orientation,
-                     MaxMatrixModuleType module_type);
-  byte GetFill(MaxMatrixShiftFill fill, byte rotated_column, byte kept_column);
-  void ShiftRows(bool up, MaxMatrixShiftFill fill);
+  void ChangeMapping(MatrixOrientation matrix_orientation,
+                     ModuleType module_type);
+  byte GetFill(ShiftFill fill, byte rotated_column, byte kept_column);
+  void ShiftRows(bool up, ShiftFill fill);
 
  public:
   /*!
    * \brief Makes the panel of the chain at these pins, of modules
-   *        MaxMatrixModuleType::kDr0Cr0Rr1 in matrix orientation 0.
+   *        ModuleType::kDr0Cr0Rr1 in matrix orientation 0.
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
@@ -112,8 +116,8 @@ class MaxMatrixPanel {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
    */
-  MaxMatrixPanel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-                 byte* buffer, byte number_of_modules);
+  Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
+        byte number_of_modules);
 
   /*! \brief Returns the modules of the chain. */
   byte GetNumberOfModules() const {
@@ -124,38 +128,36 @@ class MaxMatrixPanel {
   byte GetNumberOfColumns() const { return wired_.GetNumberOfColumns(); }
 
   /*! \brief Returns the matrix as it is wired, below this one. */
-  MaxMatrixWired& GetWired() { return wired_; }
+  Wired& GetWired() { return wired_; }
 
   /*! \copydoc GetWired() */
-  MaxMatrixWired const& GetWired() const { return wired_; }
+  Wired const& GetWired() const { return wired_; }
 
   /*! \brief Returns how the LEDs of every module are wired. */
-  MaxMatrixModuleType GetModuleType() const { return module_type_; }
+  ModuleType GetModuleType() const { return module_type_; }
 
   /*! \brief Returns how the whole matrix is turned. */
-  MaxMatrixMatrixOrientation GetMatrixOrientation() const {
-    return matrix_orientation_;
-  }
+  MatrixOrientation GetMatrixOrientation() const { return matrix_orientation_; }
 
   /*!
    * \brief Returns a column of the matrix.
    *
    * \param[in] column The column, from 0 at the left to eight times the
    *                   modules.
-   * \return The column, bit 0 the top row, or MaxMatrixError::kOutOfRange if it
-   *         lies off the panel.
+   * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
+   *         the panel.
    */
-  MaxMatrixResult<byte> GetColumn(int16_t column);
+  Result<byte> GetColumn(int16_t column);
 
   /*!
    * \brief Returns a column of a module.
    *
    * \param[in] module The module, from 0 at the left.
    * \param[in] column The column within the module, 0 to 7.
-   * \return The column, bit 0 the top row, or MaxMatrixError::kOutOfRange if
-   *         the module or the column does not exist.
+   * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
+   *         or the column does not exist.
    */
-  MaxMatrixResult<byte> GetColumn(byte module, byte column);
+  Result<byte> GetColumn(byte module, byte column);
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -164,11 +166,10 @@ class MaxMatrixPanel {
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
    * \param[in] number_of_values The bytes `values` has room for.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the row lies
-   *         off the panel or `values` has room for fewer bytes than there are
-   *         modules.
+   * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
+   *         `values` has room for fewer bytes than there are modules.
    */
-  MaxMatrixStatus GetRow(int16_t row, byte* values, byte number_of_values);
+  Status GetRow(int16_t row, byte* values, byte number_of_values);
 
   /*!
    * \brief Returns a row of a module.
@@ -178,20 +179,20 @@ class MaxMatrixPanel {
    *
    * \param[in] module The module, from 0 at the left.
    * \param[in] row The row within the module, 0 to 7.
-   * \return The row, bit 7 the leftmost column, or MaxMatrixError::kOutOfRange
-   *         if the module or the row does not exist.
+   * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
+   *         module or the row does not exist.
    */
-  MaxMatrixResult<byte> GetRow(byte module, byte row);
+  Result<byte> GetRow(byte module, byte row);
 
   /*!
    * \brief Returns whether a dot is lit.
    *
    * \param[in] column The column, negative to the left of the panel.
    * \param[in] row The row, negative above the panel.
-   * \return Whether the dot is lit, or MaxMatrixError::kOutOfRange if it lies
-   *         off the panel.
+   * \return Whether the dot is lit, or Error::kOutOfRange if it lies off the
+   *         panel.
    */
-  MaxMatrixResult<bool> GetDot(int16_t column, int16_t row);
+  Result<bool> GetDot(int16_t column, int16_t row);
 
   /*!
    * \brief Sets a column of the matrix.
@@ -347,7 +348,7 @@ class MaxMatrixPanel {
    *
    * \param[in] module_type The type of the modules, as MD_MAX72XX names it.
    */
-  void SetModuleType(MaxMatrixModuleType module_type);
+  void SetModuleType(ModuleType module_type);
 
   /*!
    * \brief Sets how the whole matrix is turned.
@@ -358,7 +359,7 @@ class MaxMatrixPanel {
    *
    * \param[in] matrix_orientation 0 or 180 degrees.
    */
-  void SetMatrixOrientation(MaxMatrixMatrixOrientation matrix_orientation);
+  void SetMatrixOrientation(MatrixOrientation matrix_orientation);
 
   /*!
    * \brief Shifts the whole picture one column to the left.
@@ -366,7 +367,7 @@ class MaxMatrixPanel {
    * \param[in] fill What comes in at the right: an empty column, the leftmost
    *                 one, or the rightmost one as it was.
    */
-  void ShiftLeft(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+  void ShiftLeft(ShiftFill fill = ShiftFill::kZero);
 
   /*!
    * \brief Shifts the whole picture one column to the left, with a column of
@@ -387,7 +388,7 @@ class MaxMatrixPanel {
    * \param[in] fill What comes in at the left: an empty column, the rightmost
    *                 one, or the leftmost one as it was.
    */
-  void ShiftRight(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+  void ShiftRight(ShiftFill fill = ShiftFill::kZero);
 
   /*!
    * \brief Shifts the whole picture one column to the right, with a column of
@@ -404,7 +405,7 @@ class MaxMatrixPanel {
    * \param[in] fill What comes in at the bottom: an empty row, the top one, or
    *                 the bottom one as it was.
    */
-  void ShiftUp(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+  void ShiftUp(ShiftFill fill = ShiftFill::kZero);
 
   /*!
    * \brief Shifts the whole picture one row down.
@@ -412,7 +413,10 @@ class MaxMatrixPanel {
    * \param[in] fill What comes in at the top: an empty row, the bottom one, or
    *                 the top one as it was.
    */
-  void ShiftDown(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero);
+  void ShiftDown(ShiftFill fill = ShiftFill::kZero);
 };
+
+}  // namespace internal
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_

@@ -6,7 +6,7 @@
  * \brief The header a sketch includes: the matrix it draws on.
  *
  * MaxMatrix drives a chain of 8x8 LED modules with the MAX7219. The class
- * MaxMatrix is the facade over the parts in the folders beside this file, one
+ * Matrix is the facade over the parts in the folders beside this file, one
  * per subject: `Max7219/` the transfer to the chain, `Matrix/` the buffer as
  * wired and the coordinates as the viewer sees them, `Font/` the sprites of the
  * chars, `Text/` the text that stands or shifts, and `Command/` the lines a
@@ -27,15 +27,17 @@
 #include "MaxMatrixStandardTypes.h"
 #include "Text/MaxMatrixText.h"
 
-/*! \brief What a MaxMatrix is doing, as MaxMatrix::GetState() tells it. */
-enum class MaxMatrixState : uint8_t {
-  kNone, /*!< Constructed; MaxMatrix::Init() not called yet. */
-  kInit, /*!< MaxMatrix::Init() is running. */
+namespace max_matrix {
+
+/*! \brief What a Matrix is doing, as Matrix::GetState() tells it. */
+enum class State : uint8_t {
+  kNone, /*!< Constructed; Matrix::Init() not called yet. */
+  kInit, /*!< Matrix::Init() is running. */
   /*! Nothing to shift: a text or a char shifted in is complete, or stopped. */
   kReady,
-  /*! A text of MaxMatrix::SetTextWithShift() is being shifted in. */
+  /*! A text of Matrix::SetTextWithShift() is being shifted in. */
   kStringShift,
-  /*! A char of MaxMatrix::SetCharWithShift() is being shifted in. */
+  /*! A char of Matrix::SetCharWithShift() is being shifted in. */
   kCharShift
 };
 
@@ -46,15 +48,15 @@ enum class MaxMatrixState : uint8_t {
  * Every function that draws changes the buffer and, with auto update on, the
  * default, sends what changed before it returns: one frame per changed column
  * of a module, eight at most, however much the call drew. A sketch that builds
- * one picture out of many calls holds the sending back with a MaxMatrixBatch,
+ * one picture out of many calls holds the sending back with a Batch,
  * or with SetAutoUpdate() and Update(), so that no half of a picture is ever
  * shown. The intensity and the other registers are sent at once either way:
  * they are not part of the picture.
  *
- * A sketch makes it as a MaxMatrixOf, which brings the buffer for its chain:
+ * A sketch makes it as a MatrixOf, which brings the buffer for its chain:
  *
  * \code{.cpp}
- * MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
  *
  * void setup() {
  *     matrix.Init();
@@ -67,13 +69,13 @@ enum class MaxMatrixState : uint8_t {
  * last one, so that no sketch has to time it.
  *
  * \note With `MAXMATRIX_DEV_ERROR_DETECT` at `STD_ON`, every function here that
- *       fails reports its name and the error to MaxMatrixReportError().
+ *       fails reports its name and the error to ReportError().
  */
-class MaxMatrix {
+class Matrix {
  private:
-  MaxMatrixPanel panel_;
-  MaxMatrixText text_;
-  MaxMatrixState state_;
+  internal::Panel panel_;
+  internal::Text text_;
+  State state_;
   bool auto_update_;
   uint16_t shift_interval_;
   uint32_t last_shift_;
@@ -83,25 +85,25 @@ class MaxMatrix {
   void UpdateIfAuto() {
     if (auto_update_) Update();
   }
-  MaxMatrixStatus UpdateIfAuto(MaxMatrixStatus status) {
+  Status UpdateIfAuto(Status status) {
     UpdateIfAuto();
     return status;
   }
-  void StartShift(MaxMatrixState shift_state);
+  void StartShift(State shift_state);
 
  public:
   /*!
    * \brief Makes a matrix on the chain at these pins, in the buffer given, and
    *        empties it.
    *
-   * Nothing is sent until Init(). MaxMatrixOf brings the buffer itself and
+   * Nothing is sent until Init(). MatrixOf brings the buffer itself and
    * checks the number of modules when the sketch is compiled; this is for a
    * chain whose length is known only at run time, or a buffer that lies
    * elsewhere.
    *
    * \code{.cpp}
    * byte buffer[MAXMATRIX_BUFFER_SIZE(4)];
-   * MaxMatrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer, 4);
+   * Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer, 4);
    * \endcode
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
@@ -112,17 +114,17 @@ class MaxMatrix {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
    */
-  MaxMatrix(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-            byte* buffer, byte number_of_modules);
+  Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
+         byte number_of_modules);
 
   /*! \brief Leaves the LEDs as they are. */
-  ~MaxMatrix();
+  ~Matrix();
 
   /*! \brief Not copyable: the copy would draw into the same buffer. */
-  MaxMatrix(MaxMatrix const&) = delete;
+  Matrix(Matrix const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
-  MaxMatrix& operator=(MaxMatrix const&) = delete;
+  Matrix& operator=(Matrix const&) = delete;
 
   /*! \brief Returns the modules of the chain. */
   byte GetNumberOfModules() const { return panel_.GetNumberOfModules(); }
@@ -130,9 +132,9 @@ class MaxMatrix {
   /*! \brief Returns the columns of the matrix, eight per module. */
   byte GetNumberOfColumns() const { return panel_.GetNumberOfColumns(); }
 
-  /*! \brief Returns what the matrix is doing; MaxMatrixState::kReady once a
+  /*! \brief Returns what the matrix is doing; State::kReady once a
    * shifted text is complete. */
-  MaxMatrixState GetState() const { return state_; }
+  State GetState() const { return state_; }
 
   /*! \brief Returns whether every function that draws sends its result at once;
    * see SetAutoUpdate(). */
@@ -159,24 +161,24 @@ class MaxMatrix {
 
   /*! \brief Returns how the LEDs of every module are wired; see
    * SetModuleType(). */
-  MaxMatrixModuleType GetModuleType() const { return panel_.GetModuleType(); }
+  ModuleType GetModuleType() const { return panel_.GetModuleType(); }
 
   /*! \brief Returns how the whole matrix is turned; see SetMatrixOrientation().
    */
-  MaxMatrixMatrixOrientation GetMatrixOrientation() const {
+  MatrixOrientation GetMatrixOrientation() const {
     return panel_.GetMatrixOrientation();
   }
 
   /*! \brief Returns the empty columns between two chars of a text. */
   byte GetSpaceBetweenChars() const { return text_.GetSpaceBetweenChars(); }
 
-  /*! \copydoc MaxMatrixPanel::GetColumn(int16_t) */
-  MaxMatrixResult<byte> GetColumn(int16_t column) {
+  /*! \copydoc internal::Panel::GetColumn(int16_t) */
+  Result<byte> GetColumn(int16_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
   }
 
-  /*! \copydoc MaxMatrixPanel::GetColumn(byte, byte) */
-  MaxMatrixResult<byte> GetColumn(byte module, byte column) {
+  /*! \copydoc internal::Panel::GetColumn(byte, byte) */
+  Result<byte> GetColumn(byte module, byte column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -193,27 +195,27 @@ class MaxMatrix {
    * \param[in] row The row, from 0 at the top.
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange if the row lies
-   *         off the panel or `values` has fewer bytes than there are modules.
+   * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
+   *         `values` has fewer bytes than there are modules.
    */
   template <size_t NumberOfValues>
-  MaxMatrixStatus GetRow(int16_t row, byte (&values)[NumberOfValues]) {
+  Status GetRow(int16_t row, byte (&values)[NumberOfValues]) {
     return MAXMATRIX_REPORT_ERROR(
         "GetRow", panel_.GetRow(row, values,
                                 NumberOfValues > 0xFF ? 0xFF : NumberOfValues));
   }
 
-  /*! \copydoc MaxMatrixPanel::GetRow(byte, byte) */
-  MaxMatrixResult<byte> GetRow(byte module, byte row) {
+  /*! \copydoc internal::Panel::GetRow(byte, byte) */
+  Result<byte> GetRow(byte module, byte row) {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
-  /*! \copydoc MaxMatrixPanel::GetDot(int16_t, int16_t) */
-  MaxMatrixResult<bool> GetDot(int16_t column, int16_t row) {
+  /*! \copydoc internal::Panel::GetDot(int16_t, int16_t) */
+  Result<bool> GetDot(int16_t column, int16_t row) {
     return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(column, row));
   }
 
-  /*! \copydoc MaxMatrixText::GetFont() */
+  /*! \copydoc internal::Text::GetFont() */
   uint8_t const* GetFont() const { return text_.GetFont(); }
 
   /*!
@@ -248,7 +250,7 @@ class MaxMatrix {
    *
    * On, the default, every function that draws sends its result before it
    * returns. Off, only Update() sends. Turning it on sends what was drawn while
-   * it was off. A MaxMatrixBatch turns it off for a block and back on at its
+   * it was off. A Batch turns it off for a block and back on at its
    * end.
    *
    * \param[in] auto_update True to send after every function that draws.
@@ -271,10 +273,10 @@ class MaxMatrix {
    * Sent at once, whatever auto update is.
    *
    * \param[in] intensity The intensity, 0 to 15.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kOutOfRange above 15; the
-   *         intensity then stays as it was.
+   * \return Error::kOk, or Error::kOutOfRange above 15; the intensity then
+   *         stays as it was.
    */
-  MaxMatrixStatus SetIntensity(byte intensity);
+  Status SetIntensity(byte intensity);
 
   /*!
    * \brief Turns the LEDs of every MAX7219 off, or on again.
@@ -303,13 +305,13 @@ class MaxMatrix {
    */
   void SetDisplayTest(bool display_test);
 
-  /*! \copydoc MaxMatrixPanel::SetColumn(int16_t, byte) */
+  /*! \copydoc internal::Panel::SetColumn(int16_t, byte) */
   void SetColumn(int16_t column, byte value) {
     panel_.SetColumn(column, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::SetColumn(byte, byte, byte) */
+  /*! \copydoc internal::Panel::SetColumn(byte, byte, byte) */
   void SetColumn(byte module, byte column, byte value) {
     panel_.SetColumn(module, column, value);
     UpdateIfAuto();
@@ -332,26 +334,26 @@ class MaxMatrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::SetRow(byte, byte, byte) */
+  /*! \copydoc internal::Panel::SetRow(byte, byte, byte) */
   void SetRow(byte module, byte row, byte value) {
     panel_.SetRow(module, row, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::SetDot(int16_t, int16_t, bool) */
+  /*! \copydoc internal::Panel::SetDot(int16_t, int16_t, bool) */
   void SetDot(int16_t column, int16_t row, bool value) {
     panel_.SetDot(column, row, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::DrawLine(int16_t, int16_t, int16_t, int16_t,
+  /*! \copydoc internal::Panel::DrawLine(int16_t, int16_t, int16_t, int16_t,
    * bool) */
   void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value) {
     panel_.DrawLine(x0, y0, x1, y1, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::DrawRect(int16_t, int16_t, int16_t, int16_t,
+  /*! \copydoc internal::Panel::DrawRect(int16_t, int16_t, int16_t, int16_t,
    * bool) */
   void DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
                 bool value) {
@@ -359,7 +361,7 @@ class MaxMatrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::FillRect(int16_t, int16_t, int16_t, int16_t,
+  /*! \copydoc internal::Panel::FillRect(int16_t, int16_t, int16_t, int16_t,
    * bool) */
   void FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
                 bool value) {
@@ -367,13 +369,13 @@ class MaxMatrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::DrawCircle(int16_t, int16_t, int16_t, bool) */
+  /*! \copydoc internal::Panel::DrawCircle(int16_t, int16_t, int16_t, bool) */
   void DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
     panel_.DrawCircle(x, y, radius, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::DrawBitmap(int16_t, int16_t, byte const*, byte,
+  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, byte const*, byte,
    * byte) */
   void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
                   byte height = MAXMATRIX_ROW_NUMBER_OF_MODULE) {
@@ -389,10 +391,10 @@ class MaxMatrix {
    * \param[in] x The column of the left edge; it may lie off the matrix.
    * \param[in] y The row of the top edge; it may lie off the matrix.
    * \param[in] c The char, latin-1.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font
-   *         has no sprite for the char; nothing is drawn then.
+   * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
+   *         the char; nothing is drawn then.
    */
-  MaxMatrixStatus SetChar(int16_t x, int16_t y, char c) {
+  Status SetChar(int16_t x, int16_t y, char c) {
     return UpdateIfAuto(
         MAXMATRIX_REPORT_ERROR("SetChar", text_.SetChar(panel_, x, y, c)));
   }
@@ -401,24 +403,24 @@ class MaxMatrix {
    * \brief Starts shifting a char in from the right, until it stands at the
    *        right edge.
    *
-   * ShiftTask() takes the steps; GetState() is MaxMatrixState::kCharShift until
+   * ShiftTask() takes the steps; GetState() is State::kCharShift until
    * the char stands.
    *
    * \param[in] c The char, latin-1.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kUnknownChar if the font
-   *         has no sprite for the char; nothing starts then.
+   * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
+   *         the char; nothing starts then.
    */
-  MaxMatrixStatus SetCharWithShift(char c);
+  Status SetCharWithShift(char c);
 
   /*!
    * \brief Draws a text from the left edge, as far as it fits.
    *
    * \param[in] text The text, UTF-8 or latin-1.
-   * \return MaxMatrixError::kOk; MaxMatrixError::kNoText if `text` is null; or
-   *         MaxMatrixError::kUnknownChar if a char of the text is not in the
-   *         font, with the chars before it drawn.
+   * \return Error::kOk; Error::kNoText if `text` is null; or
+   *         Error::kUnknownChar if a char of the text is not in the font, with
+   *         the chars before it drawn.
    */
-  MaxMatrixStatus SetText(char const* text) {
+  Status SetText(char const* text) {
     return UpdateIfAuto(
         MAXMATRIX_REPORT_ERROR("SetText", text_.SetText(panel_, text)));
   }
@@ -427,7 +429,7 @@ class MaxMatrix {
    * \brief Starts shifting a text in from the right, until its last char stands
    *        at the right edge, or over and over.
    *
-   * ShiftTask() takes the steps; GetState() is MaxMatrixState::kStringShift
+   * ShiftTask() takes the steps; GetState() is State::kStringShift
    * until the text stands. A text that repeats goes on with its first char
    * right after its last, so a few spaces at its end keep the two apart; it
    * shifts until StopShift() or the next shift starts.
@@ -435,15 +437,15 @@ class MaxMatrix {
    * \param[in] text The text, UTF-8 or latin-1. It has to live until the text
    *                 stands, or as long as it repeats.
    * \param[in] repeat True to start over after the last char, without end.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNoText if `text` is null;
-   *         nothing starts then.
+   * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
+   *         then.
    */
-  MaxMatrixStatus SetTextWithShift(char* text, bool repeat = false);
+  Status SetTextWithShift(char* text, bool repeat = false);
 
   /*!
    * \brief Stops a shifting text or char where it is.
    *
-   * The picture stays as it is, and GetState() is MaxMatrixState::kReady;
+   * The picture stays as it is, and GetState() is State::kReady;
    * ShiftTask() takes no step until the next shift starts. Without a shift, it
    * does nothing.
    */
@@ -461,9 +463,9 @@ class MaxMatrix {
   /*!
    * \brief Sets the font every char is drawn in from now on.
    *
-   * A font of MD_MAX72XX serves as it is, in its array in flash; MaxMatrixFont
+   * A font of MD_MAX72XX serves as it is, in its array in flash; Font
    * describes the format. Chars drawn already stay as they are, and a char that
-   * shifts in goes on in the font it started in. kMaxMatrixDefaultFont is the
+   * shifts in goes on in the font it started in. kDefaultFont is the
    * font MaxMatrix starts with.
    *
    * \code{.cpp}
@@ -480,12 +482,11 @@ class MaxMatrix {
    * \tparam Size The bytes of `font`, which the array says itself.
    * \param[in] font The font, in flash; it has to live as long as it is set, as
    *                 a `PROGMEM` array does.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if
-   *         MaxMatrixFont::CheckFont() does not take it; the font then stays as
-   *         it was.
+   * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
+   *         it; the font then stays as it was.
    */
   template <size_t Size>
-  MaxMatrixStatus SetFont(uint8_t const (&font)[Size]) {
+  Status SetFont(uint8_t const (&font)[Size]) {
     return SetFont(font, Size);
   }
 
@@ -496,11 +497,10 @@ class MaxMatrix {
    * \param[in] font The font, in flash; it has to live as long as it is set, as
    *                 a `PROGMEM` array does.
    * \param[in] size The length of its array in bytes, `sizeof` of the array.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if
-   *         MaxMatrixFont::CheckFont() does not take it; the font then stays as
-   *         it was.
+   * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
+   *         it; the font then stays as it was.
    */
-  MaxMatrixStatus SetFont(uint8_t const* font, size_t size) {
+  Status SetFont(uint8_t const* font, size_t size) {
     return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font, size));
   }
 
@@ -514,20 +514,20 @@ class MaxMatrix {
    * \param[in] sprite Its width, its height and up to five columns, bit 0 the
    *                   top row.
    */
-  void SetSprite(int16_t x, int16_t y, MaxMatrixSprite const sprite) {
+  void SetSprite(int16_t x, int16_t y, Sprite const sprite) {
     text_.SetSprite(panel_, x, y, sprite);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::SetModuleType(MaxMatrixModuleType) */
-  void SetModuleType(MaxMatrixModuleType module_type) {
+  /*! \copydoc internal::Panel::SetModuleType(ModuleType) */
+  void SetModuleType(ModuleType module_type) {
     panel_.SetModuleType(module_type);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::SetMatrixOrientation(MaxMatrixMatrixOrientation)
+  /*! \copydoc internal::Panel::SetMatrixOrientation(MatrixOrientation)
    */
-  void SetMatrixOrientation(MaxMatrixMatrixOrientation matrix_orientation) {
+  void SetMatrixOrientation(MatrixOrientation matrix_orientation) {
     panel_.SetMatrixOrientation(matrix_orientation);
     UpdateIfAuto();
   }
@@ -545,7 +545,7 @@ class MaxMatrix {
    * \brief Shifts a text or a char one column further, if the shift interval
    *        has passed.
    *
-   * Call it on every `loop()` until GetState() is MaxMatrixState::kReady again.
+   * Call it on every `loop()` until GetState() is State::kReady again.
    * It takes a step only when the shift interval has passed since the last one,
    * and with an interval of 0 on every call. A call that comes late takes one
    * step, not the ones it missed: catching up would make the text jump after
@@ -558,7 +558,7 @@ class MaxMatrix {
   /*!
    * \brief Sends what was drawn since the last update.
    *
-   * Only needed with auto update off; see MaxMatrixBatch.
+   * Only needed with auto update off; see Batch.
    */
   void Update() { panel_.GetWired().Send(); }
 
@@ -580,40 +580,40 @@ class MaxMatrix {
                                                   register_value);
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftLeft(MaxMatrixShiftFill) */
-  void ShiftLeft(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) {
+  /*! \copydoc internal::Panel::ShiftLeft(ShiftFill) */
+  void ShiftLeft(ShiftFill fill = ShiftFill::kZero) {
     panel_.ShiftLeft(fill);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftLeft(byte) */
+  /*! \copydoc internal::Panel::ShiftLeft(byte) */
   byte ShiftLeft(byte column) {
     byte const shifted_out = panel_.ShiftLeft(column);
     UpdateIfAuto();
     return shifted_out;
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftRight(MaxMatrixShiftFill) */
-  void ShiftRight(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) {
+  /*! \copydoc internal::Panel::ShiftRight(ShiftFill) */
+  void ShiftRight(ShiftFill fill = ShiftFill::kZero) {
     panel_.ShiftRight(fill);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftRight(byte) */
+  /*! \copydoc internal::Panel::ShiftRight(byte) */
   byte ShiftRight(byte column) {
     byte const shifted_out = panel_.ShiftRight(column);
     UpdateIfAuto();
     return shifted_out;
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftUp(MaxMatrixShiftFill) */
-  void ShiftUp(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) {
+  /*! \copydoc internal::Panel::ShiftUp(ShiftFill) */
+  void ShiftUp(ShiftFill fill = ShiftFill::kZero) {
     panel_.ShiftUp(fill);
     UpdateIfAuto();
   }
 
-  /*! \copydoc MaxMatrixPanel::ShiftDown(MaxMatrixShiftFill) */
-  void ShiftDown(MaxMatrixShiftFill fill = MaxMatrixShiftFill::kZero) {
+  /*! \copydoc internal::Panel::ShiftDown(ShiftFill) */
+  void ShiftDown(ShiftFill fill = ShiftFill::kZero) {
     panel_.ShiftDown(fill);
     UpdateIfAuto();
   }
@@ -629,21 +629,21 @@ class MaxMatrix {
  *
  * \code{.cpp}
  * {
- *     MaxMatrixBatch batch(matrix);
+ *     Batch batch(matrix);
  *     matrix.Clear();
  *     matrix.SetText("Hi");
  * }  // sent here, at once
  * \endcode
  *
- * \warning It has to be a named variable: an unnamed `MaxMatrixBatch{matrix};`
- *          is destroyed at once and holds nothing back.
+ * \warning It has to be a named variable: an unnamed `Batch{matrix};` is
+ *          destroyed at once and holds nothing back.
  *
  * A picture built over several calls of `loop()` does not fit into a block;
- * that is what MaxMatrix::SetAutoUpdate() and MaxMatrix::Update() are for.
+ * that is what Matrix::SetAutoUpdate() and Matrix::Update() are for.
  */
-class MaxMatrixBatch {
+class Batch {
  private:
-  MaxMatrix& matrix_;
+  Matrix& matrix_;
   bool previous_auto_update_;
 
  public:
@@ -652,53 +652,57 @@ class MaxMatrixBatch {
    *
    * \param[in,out] matrix The matrix; it has to outlive the batch.
    */
-  explicit MaxMatrixBatch(MaxMatrix& matrix) : matrix_(matrix) {
+  explicit Batch(Matrix& matrix) : matrix_(matrix) {
     previous_auto_update_ = matrix_.GetAutoUpdate();
     matrix_.SetAutoUpdate(false);
   }
 
   /*! \brief Puts auto update back as it was, which sends the picture if it was
    * on. */
-  ~MaxMatrixBatch() { matrix_.SetAutoUpdate(previous_auto_update_); }
+  ~Batch() { matrix_.SetAutoUpdate(previous_auto_update_); }
 
   /*! \brief Not copyable: a copy would put auto update back twice. */
-  MaxMatrixBatch(MaxMatrixBatch const&) = delete;
+  Batch(Batch const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
-  MaxMatrixBatch& operator=(MaxMatrixBatch const&) = delete;
+  Batch& operator=(Batch const&) = delete;
 };
 
+namespace internal {
+
 /*!
- * \brief The buffer of a MaxMatrixOf.
+ * \brief The buffer of a MatrixOf.
  *
  * A base class of it rather than a member, as base classes are made first: the
- * buffer then exists when the MaxMatrix it is handed to empties it.
+ * buffer then exists when the Matrix it is handed to empties it.
  *
  * \tparam NumberOfModules The modules of the chain.
  */
 template <byte NumberOfModules>
-class MaxMatrixBuffer {
+class Buffer {
  protected:
   /*! \brief One byte per column. */
   byte buffer_[MAXMATRIX_BUFFER_SIZE(NumberOfModules)];
 };
 
+}  // namespace internal
+
 /*!
- * \brief A MaxMatrix with the buffer for a chain of `NumberOfModules` modules.
+ * \brief A Matrix with the buffer for a chain of `NumberOfModules` modules.
  *
  * What a sketch makes: the length of the chain is part of the type, the buffer
  * takes eight bytes per module, and a length the library cannot drive does not
  * compile.
  *
  * \code{.cpp}
- * MaxMatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
  * \endcode
  *
  * \tparam NumberOfModules The modules of the chain, 1 to
  *                         `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
  */
 template <byte NumberOfModules>
-class MaxMatrixOf : private MaxMatrixBuffer<NumberOfModules>, public MaxMatrix {
+class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
   static_assert(NumberOfModules >= 1 &&
                     NumberOfModules <= MAXMATRIX_MAX_NUMBER_OF_MODULES,
                 "a chain has 1 to MAXMATRIX_MAX_NUMBER_OF_MODULES modules");
@@ -713,10 +717,12 @@ class MaxMatrixOf : private MaxMatrixBuffer<NumberOfModules>, public MaxMatrix {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    */
-  MaxMatrixOf(byte data_in_pin, byte chip_select_pin, byte clock_pin)
-      : MaxMatrixBuffer<NumberOfModules>(),
-        MaxMatrix(data_in_pin, chip_select_pin, clock_pin, this->buffer_,
-                  NumberOfModules) {}
+  MatrixOf(byte data_in_pin, byte chip_select_pin, byte clock_pin)
+      : internal::Buffer<NumberOfModules>(),
+        Matrix(data_in_pin, chip_select_pin, clock_pin, this->buffer_,
+               NumberOfModules) {}
 };
+
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MAXMATRIX_H_

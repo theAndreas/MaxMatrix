@@ -6,7 +6,7 @@
  * \brief The command lines of SerialControl, as the control program sends them,
  *        and the answer to `picture`.
  *
- * The other half of MaxMatrixCommand, which reads them on the board.
+ * The other half of max_matrix::Command, which reads them on the board.
  */
 
 #ifndef MAXMATRIX_CONTROL_CONTROLCOMMAND_H_
@@ -20,8 +20,8 @@
 #include "MaxMatrixConfig.h"
 
 /* ControlCommand Parameter */
-/* the chain SerialControl drives, MaxMatrixOf<4>, and so the panel of the
- * window and the length of a picture */
+/* the chain SerialControl drives, max_matrix::MatrixOf<4>, and so the panel of
+ * the window and the length of a picture */
 #define CONTROL_NUMBER_OF_MODULES 4
 #define CONTROL_NUMBER_OF_COLUMNS \
   (CONTROL_NUMBER_OF_MODULES * MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
@@ -34,7 +34,8 @@
  * MaxMatrix decodes into latin-1 on the board; the old Windows tool sent the
  * code page of Windows instead.
  *
- * It has no state of its own, so every function is static, as in MaxMatrixFont.
+ * It has no state of its own, so every function is static, as in
+ * max_matrix::Font.
  */
 class ControlCommand {
  public:

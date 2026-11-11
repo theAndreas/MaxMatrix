@@ -39,7 +39,7 @@ Each of them once with each transfer path.
       dark when the LEDs come on again, every LED at full brightness in the display test, then the text at its
       intensity.
 
-Optionally, with the board upside down and `SetMatrixOrientation(MaxMatrixMatrixOrientation::k180)` added to
+Optionally, with the board upside down and `SetMatrixOrientation(max_matrix::MatrixOrientation::k180)` added to
 `setup()` of Basics:
 
 - [ ] the text stands upright again.
@@ -57,8 +57,8 @@ Optionally, with the board upside down and `SetMatrixOrientation(MaxMatrixMatrix
 
 | What the matrix does | Where to look |
 |---|---|
-| Dark or garbage with bit banging, right with SPI | The port registers or the pulses being too short for the module, `MaxMatrixChain::ShiftOut()` |
-| Dark with both | The wiring, chip select, `MaxMatrixChain::Init()` |
-| Only the first module right, the others shifted | The frame length, `MaxMatrixChain::WriteRegisterEach()` and its stride |
-| Text turned or mirrored | The module type, `MaxMatrixPanel::ConvertDotToBuffer()` |
+| Dark or garbage with bit banging, right with SPI | The port registers or the pulses being too short for the module, `max_matrix::internal::Chain::ShiftOut()` |
+| Dark with both | The wiring, chip select, `max_matrix::internal::Chain::Init()` |
+| Only the first module right, the others shifted | The frame length, `max_matrix::internal::Chain::WriteRegisterEach()` and its stride |
+| Text turned or mirrored | The module type, `max_matrix::internal::Panel::ConvertDotToBuffer()` |
 | SerialControl loses chars or does not answer | The interrupts held off too long while the pins are written |

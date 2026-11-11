@@ -46,7 +46,7 @@
 #define SIMULATOR_DATA_IN_PIN 11u
 #define SIMULATOR_CHIP_SELECT_PIN 10u
 #define SIMULATOR_CLOCK_PIN 13u
-/* the chain every example has, MaxMatrixOf<4> */
+/* the chain every example has, max_matrix::MatrixOf<4> */
 #define SIMULATOR_NUMBER_OF_MODULES 4u
 
 /* exit codes */

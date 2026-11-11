@@ -17,6 +17,9 @@
 #include "Max7219/MaxMatrixChain.h"
 #include "MaxMatrixConfig.h"
 
+namespace max_matrix {
+namespace internal {
+
 /*!
  * \brief The matrix as it is wired: the buffer of what the LEDs show, and what
  *        of it changed.
@@ -25,11 +28,11 @@
  * row, module 0 first. Drawing only changes the buffer; Send() brings what
  * changed to the chain.
  */
-class MaxMatrixWired {
+class Wired {
  private:
-  MaxMatrixChain chain_;
+  Chain chain_;
   // The sketch's, MAXMATRIX_BUFFER_SIZE() of the chain's modules long;
-  // MaxMatrixOf brings one.
+  // MatrixOf brings one.
   byte* matrix_buffer_;
   /*
    * A frame carries one register of every module, so the same column of all
@@ -51,14 +54,14 @@ class MaxMatrixWired {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
    */
-  MaxMatrixWired(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-                 byte* buffer, byte number_of_modules);
+  Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
+        byte number_of_modules);
 
   /*! \brief Returns the chain the matrix sends to. */
-  MaxMatrixChain& GetChain() { return chain_; }
+  Chain& GetChain() { return chain_; }
 
   /*! \copydoc GetChain() */
-  MaxMatrixChain const& GetChain() const { return chain_; }
+  Chain const& GetChain() const { return chain_; }
 
   /*! \brief Returns the columns of the chain, eight per module. */
   byte GetNumberOfColumns() const {
@@ -69,7 +72,7 @@ class MaxMatrixWired {
   /*!
    * \brief Returns a column of the buffer, unchecked.
    *
-   * For MaxMatrixPanel, whose coordinates are checked and mapped already.
+   * For Panel, whose coordinates are checked and mapped already.
    *
    * \param[in] column The column in the buffer.
    */
@@ -85,8 +88,8 @@ class MaxMatrixWired {
    * \param[in] column The column in the buffer.
    * \param[in] bit The bit in the column, the row as wired.
    * \param[in] value True for a lit LED.
-   * \pre `column` lies within the buffer and `bit` within a byte:
-   *      MaxMatrixPanel has checked and mapped them.
+   * \pre `column` lies within the buffer and `bit` within a byte: Panel has
+   *      checked and mapped them.
    */
   void StoreBit(byte column, byte bit, bool value);
 
@@ -95,7 +98,7 @@ class MaxMatrixWired {
    *        changed.
    *
    * Even a column that was empty already is marked: after power-up the
-   * registers of the MAX7219 hold anything, and MaxMatrix::Init() clears them
+   * registers of the MAX7219 hold anything, and Matrix::Init() clears them
    * this way.
    */
   void Clear();
@@ -108,5 +111,8 @@ class MaxMatrixWired {
    */
   void Send();
 };
+
+}  // namespace internal
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_

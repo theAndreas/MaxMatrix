@@ -15,7 +15,7 @@
 
 uint32_t const kStepIntervalMs = 40;
 
-MaxMatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 
 int16_t ball_x = 0;
 int16_t ball_y = 0;
@@ -26,7 +26,7 @@ uint32_t last_step = 0;
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
   matrix.SetDot(ball_x, ball_y, true);
 }
 
@@ -38,7 +38,7 @@ void loop() {
 
   /* without the batch the matrix would show the frame without a ball in
    * between, as a flicker */
-  MaxMatrixBatch batch(matrix);
+  max_matrix::Batch batch(matrix);
   matrix.SetDot(ball_x, ball_y, false);
   /* turn round at an edge rather than leave the matrix */
   if (ball_x + step_x < 0 || ball_x + step_x >= matrix.GetNumberOfColumns())

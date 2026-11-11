@@ -16,23 +16,25 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 
-/* MaxMatrixFont Parameter */
-/*! The bytes of a MaxMatrixSprite: width, height and five columns. */
+namespace max_matrix {
+
+/* Font Parameter */
+/*! The bytes of a Sprite: width, height and five columns. */
 #define MAXMATRIX_SPRITE_NUMBER_OF_BYTES 7
-/*! The bytes of kMaxMatrixDefaultFont. */
+/*! The bytes of kDefaultFont. */
 #define MAXMATRIX_DEFAULT_FONT_SIZE 614
 
 /*!
  * \brief A sprite of your own: its width, its height and up to five columns,
  *        bit 0 the top row.
  *
- * MaxMatrixSpriteByte names its bytes. A char of a font is a MaxMatrixGlyph
+ * SpriteByte names its bytes. A char of a font is a Glyph
  * instead.
  */
-typedef byte MaxMatrixSprite[MAXMATRIX_SPRITE_NUMBER_OF_BYTES];
+typedef byte Sprite[MAXMATRIX_SPRITE_NUMBER_OF_BYTES];
 
-/*! \brief The bytes of a MaxMatrixSprite. */
-enum MaxMatrixSpriteByte : uint8_t {
+/*! \brief The bytes of a Sprite. */
+enum SpriteByte : uint8_t {
   kSpriteWidth,   /*!< The columns it takes, 1 to 5. */
   kSpriteHeight,  /*!< The rows it takes, 1 to 8. */
   kSpriteColumn1, /*!< Its leftmost column. */
@@ -44,7 +46,7 @@ enum MaxMatrixSpriteByte : uint8_t {
 
 /*! \brief A char of a font, as it lies in flash: where its columns are, and how
  * many. */
-struct MaxMatrixGlyph {
+struct Glyph {
   uint8_t const*
       columns; /*!< Its columns in flash, leftmost first, bit 0 the top row. */
   byte width;  /*!< The columns it takes, 1 to 255. */
@@ -56,12 +58,12 @@ struct MaxMatrixGlyph {
  *        Ö, Ü, ä, ö, ü, ß and the degree sign, 8 rows high and up to 5 columns
  *        wide.
  *
- * In the format of MaxMatrixFont, which MaxMatrix::SetFont() takes. 614 bytes
+ * In the format of Font, which Matrix::SetFont() takes. 614 bytes
  * of flash.
  */
 // Declared here, the constant data in the .cpp: no static initializer to run.
 // NOLINTNEXTLINE(bugprone-dynamic-static-initializers)
-extern uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM;
+extern uint8_t const kDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM;
 
 /*!
  * \brief The format of a font, and the way from a char of a string to its
@@ -94,9 +96,9 @@ extern uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM;
  * char. A shifting text looks a char up once.
  *
  * It keeps no font of its own: every function is handed the font, and
- * MaxMatrixText keeps which one is set.
+ * internal::Text keeps which one is set.
  */
-class MaxMatrixFont {
+class Font {
  public:
   /*!
    * \brief Returns whether `font` is a font of `size` bytes.
@@ -107,22 +109,20 @@ class MaxMatrixFont {
    *
    * \param[in] font The font, in flash.
    * \param[in] size The length of its array in bytes.
-   * \return MaxMatrixError::kOk, or MaxMatrixError::kNotAFont if `font` is
-   *         null, does not start with `'F'`, version 1 or 2, a first char no
-   *         later than the last and a height of 1 to 8, or its chars do not
-   *         fill exactly `size` bytes.
+   * \return Error::kOk, or Error::kNotAFont if `font` is null, does not start
+   *         with `'F'`, version 1 or 2, a first char no later than the last and
+   *         a height of 1 to 8, or its chars do not fill exactly `size` bytes.
    */
-  static MaxMatrixStatus CheckFont(uint8_t const* font, size_t size);
+  static Status CheckFont(uint8_t const* font, size_t size);
 
   /*!
    * \brief Finds the glyph of a char in a font.
    *
    * \param[in] font The font, in flash, one that CheckFont() took.
    * \param[in] c The char, latin-1, as DecodeChar() gives it.
-   * \return The glyph, or MaxMatrixError::kUnknownChar if the font has no char
-   *         for it.
+   * \return The glyph, or Error::kUnknownChar if the font has no char for it.
    */
-  static MaxMatrixResult<MaxMatrixGlyph> GetGlyph(uint8_t const* font, char c);
+  static Result<Glyph> GetGlyph(uint8_t const* font, char c);
 
   /*!
    * \brief Decodes the next char of a string.
@@ -137,5 +137,7 @@ class MaxMatrixFont {
    */
   static byte DecodeChar(char const* text, char* c);
 };
+
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_

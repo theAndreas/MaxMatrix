@@ -13,12 +13,12 @@
  */
 #include <MaxMatrix.h>
 
-MaxMatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
 }
 
 void loop() {

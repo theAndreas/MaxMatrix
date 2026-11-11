@@ -13,7 +13,9 @@
 
 #include "MaxMatrixConfig.h"
 
-/* MaxMatrixFont Parameter, the bytes of a font's header */
+namespace max_matrix {
+
+/* Font Parameter, the bytes of a font's header */
 #define MAXMATRIX_FONT_FILE_INDICATOR 'F'
 #define MAXMATRIX_FONT_VERSION_1 1
 #define MAXMATRIX_FONT_VERSION_2 2
@@ -29,7 +31,7 @@
  * a 0, which the test DefaultFontHasAsciiAndNothingBetween finds, as the chars
  * then no longer end the array.
  */
-uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
+uint8_t const kDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
     // A glyph a line, with its char beside it: laid out by hand, not by
     // clang-format.
     // clang-format off
@@ -159,10 +161,10 @@ uint8_t const kMaxMatrixDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM = {
  * as a pointer more than one past the end of the array would be undefined
  * behaviour already, compared or not.
  */
-MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size) {
+Status Font::CheckFont(uint8_t const* font, size_t size) {
   if (font == NULL || size < MAXMATRIX_FONT_HEADER_LENGTH_1 ||
       pgm_read_byte(font) != MAXMATRIX_FONT_FILE_INDICATOR) {
-    return MaxMatrixError::kNotAFont;
+    return Error::kNotAFont;
   }
 
   byte const version = pgm_read_byte(font + 1);
@@ -185,18 +187,18 @@ MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size) {
     height = pgm_read_byte(font + 6);
     offset = MAXMATRIX_FONT_HEADER_LENGTH_2;
   } else {
-    return MaxMatrixError::kNotAFont;
+    return Error::kNotAFont;
   }
   if (first > last || height < 1 || height > MAXMATRIX_ROW_NUMBER_OF_MODULE)
-    return MaxMatrixError::kNotAFont;
+    return Error::kNotAFont;
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
   for (uint16_t code = first;; code++) {
-    if (offset >= size) return MaxMatrixError::kNotAFont;
+    if (offset >= size) return Error::kNotAFont;
     offset += pgm_read_byte(font + offset) + 1u;
     if (code == last) break;
   }
-  return offset == size ? MaxMatrixError::kOk : MaxMatrixError::kNotAFont;
+  return offset == size ? Error::kOk : Error::kNotAFont;
 }
 
 /*
@@ -204,13 +206,12 @@ MaxMatrixStatus MaxMatrixFont::CheckFont(uint8_t const* font, size_t size) {
  * many columns on. The header is read again on every call rather than kept:
  * five bytes from flash cost less than the RAM to keep them.
  */
-MaxMatrixResult<MaxMatrixGlyph> MaxMatrixFont::GetGlyph(uint8_t const* font,
-                                                        char c) {
+Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
   bool const version_1 = pgm_read_byte(font + 1) == MAXMATRIX_FONT_VERSION_1;
   uint16_t const code = static_cast<byte>(c);
   uint16_t first;
   uint16_t last;
-  MaxMatrixGlyph glyph;
+  Glyph glyph;
 
   if (version_1) {
     first = pgm_read_byte(font + 2);
@@ -225,16 +226,16 @@ MaxMatrixResult<MaxMatrixGlyph> MaxMatrixFont::GetGlyph(uint8_t const* font,
     glyph.height = pgm_read_byte(font + 6);
     font += MAXMATRIX_FONT_HEADER_LENGTH_2;
   }
-  if (code < first || code > last) return MaxMatrixError::kUnknownChar;
+  if (code < first || code > last) return Error::kUnknownChar;
   for (uint16_t skipped = first; skipped < code; skipped++)
     font += pgm_read_byte(font) + 1;
   glyph.width = pgm_read_byte(font);
   glyph.columns = font + 1;
-  if (glyph.width == 0) return MaxMatrixError::kUnknownChar;
+  if (glyph.width == 0) return Error::kUnknownChar;
   return glyph;
 }
 
-byte MaxMatrixFont::DecodeChar(char const* text, char* c) {
+byte Font::DecodeChar(char const* text, char* c) {
   byte const lead_byte{static_cast<byte>(text[0])};
   byte const next_byte{static_cast<byte>(text[1])};
 
@@ -247,3 +248,5 @@ byte MaxMatrixFont::DecodeChar(char const* text, char* c) {
     return 1;
   }
 }
+
+}  // namespace max_matrix

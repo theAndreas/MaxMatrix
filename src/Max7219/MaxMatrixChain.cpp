@@ -17,8 +17,11 @@
 #include "SPI.h"
 #endif
 
-MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin,
-                               byte clock_pin, byte number_of_modules) {
+namespace max_matrix {
+namespace internal {
+
+Chain::Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
+             byte number_of_modules) {
   data_in_pin_ = data_in_pin;
   chip_select_pin_ = chip_select_pin;
   clock_pin_ = clock_pin;
@@ -33,7 +36,7 @@ MaxMatrixChain::MaxMatrixChain(byte data_in_pin, byte chip_select_pin,
 #endif
 }
 
-void MaxMatrixChain::Init() {
+void Chain::Init() {
   pinMode(chip_select_pin_, OUTPUT);
   chip_select_port_ = digitalPinToPort(chip_select_pin_);
   chip_select_mask_ = digitalPinToBitMask(chip_select_pin_);
@@ -65,17 +68,15 @@ void MaxMatrixChain::Init() {
       MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);  // no display test
 }
 
-void MaxMatrixChain::WriteRegisterAll(byte register_address,
-                                      byte register_value) {
+void Chain::WriteRegisterAll(byte register_address, byte register_value) {
   StartTransmission();
   for (byte module = 0; module < number_of_modules_; module++)
     Transfer(register_address, register_value);
   StopTransmission();
 }
 
-void MaxMatrixChain::WriteRegisterEach(byte register_address,
-                                       byte const* register_values,
-                                       byte stride) {
+void Chain::WriteRegisterEach(byte register_address,
+                              byte const* register_values, byte stride) {
   StartTransmission();
   for (byte module = 0; module < number_of_modules_;
        module++, register_values += stride)
@@ -87,7 +88,7 @@ void MaxMatrixChain::WriteRegisterEach(byte register_address,
 // StopTransmission() has to follow once the frame is transferred. Not const: it
 // changes the chain this object stands for, see MaxMatrixChain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
-void MaxMatrixChain::StartTransmission() {
+void Chain::StartTransmission() {
 #if (MAXMATRIX_USE_SPI == STD_ON)
   SPI.beginTransaction(
       SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
@@ -102,7 +103,7 @@ void MaxMatrixChain::StartTransmission() {
  */
 // Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
-void MaxMatrixChain::StopTransmission() {
+void Chain::StopTransmission() {
   WritePin(chip_select_port_, chip_select_mask_, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
   SPI.endTransaction();
@@ -113,7 +114,7 @@ void MaxMatrixChain::StopTransmission() {
 // has to come first. Neither const nor static: it changes the chain, and bit
 // banging needs the pins, see MaxMatrixChain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
-void MaxMatrixChain::Transfer(byte register_address, byte register_value) {
+void Chain::Transfer(byte register_address, byte register_value) {
 #if (MAXMATRIX_USE_SPI == STD_ON)
   SPI.transfer(register_address);
   SPI.transfer(register_value);
@@ -134,7 +135,7 @@ void MaxMatrixChain::Transfer(byte register_address, byte register_value) {
  */
 // Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
-void MaxMatrixChain::ShiftOut(byte value) {
+void Chain::ShiftOut(byte value) {
   /*
    * The core's portOutputRegister() makes the register's address, a number read
    * from flash, a pointer, and SREG is the status register at its fixed
@@ -163,7 +164,7 @@ void MaxMatrixChain::ShiftOut(byte value) {
 
 // Sets the pin of `mask` in `port` high or low, with the interrupts held off,
 // as ShiftOut() does.
-void MaxMatrixChain::WritePin(byte port, byte mask, bool high) {
+void Chain::WritePin(byte port, byte mask, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
   auto const port_register =
       portOutputRegister(port); /* NOLINT(performance-no-int-to-ptr) */
@@ -177,3 +178,6 @@ void MaxMatrixChain::WritePin(byte port, byte mask, bool high) {
     *port_register &= static_cast<byte>(~mask);
   SREG = status_register;
 }
+
+}  // namespace internal
+}  // namespace max_matrix

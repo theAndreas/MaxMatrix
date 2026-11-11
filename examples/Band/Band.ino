@@ -23,7 +23,7 @@ byte const kBeat[] PROGMEM = {
     0x20, 0x20, 0x10, 0x08, 0x08, 0x10, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 };
 
-MaxMatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 
 byte next_column = 0;
 uint32_t last_step = 0;
@@ -31,7 +31,7 @@ uint32_t last_step = 0;
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
 }
 
 void loop() {
