@@ -23,7 +23,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 11 | Wokwi as a complement | – | done | #40 |
 | 12 | Later ideas | 8 | open | |
 | 13 | Split the library into modules | 3 | done | #13 |
-| 14 | Chain length at run time | 13 | in progress | #60 |
+| 14 | Chain length at run time | 13 | done | #60 |
 | 15 | Font format | 13 | done | #42, #58 |
 | 16 | Static analysis in CI | 1 | done | #36 |
 | 17 | Documentation from the Doxygen blocks | – | done | #39 |
