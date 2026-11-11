@@ -86,7 +86,7 @@ Status Matrix::SetCharWithShift(char c) {
   return status;
 }
 
-Status Matrix::SetTextWithShift(char* text, bool repeat) {
+Status Matrix::SetTextWithShift(char const* text, bool repeat) {
   Status status = MAXMATRIX_REPORT_ERROR("SetTextWithShift",
                                          text_.SetTextWithShift(text, repeat));
 

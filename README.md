@@ -67,13 +67,13 @@ max_matrix::Matrix matrix(11, 10, 13, buffer, 6);
 #include <MaxMatrix.h>
 
 max_matrix::MatrixOf<4> matrix(11, 10, 13);   // a chain of 4 modules at DIN, CS, CLK
-char text[] = "Hello World!   ";
+char const kText[] = "Hello World!   ";
 
 void setup()
 {
     matrix.Init();
     matrix.SetModuleType(max_matrix::ModuleType::kFc16);    // see "Module type"
-    matrix.SetTextWithShift(text, true);    // over and over
+    matrix.SetTextWithShift(kText, true);    // over and over
 }
 
 void loop()

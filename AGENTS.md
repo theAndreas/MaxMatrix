@@ -341,6 +341,17 @@ mock, which stands in for it, and the examples follow this repository all the sa
 clang-format puts it there, `QualifierAlignment: Right` of `.clang-format`, and `make lint`
 fails on one left of it.
 
+What a function only reads through a pointer points to `const` (CodingStyle T-5), also where
+it keeps the pointer: `SetTextWithShift()` keeps it in a member, and took a `char*` while it
+read the text only, so that a sketch could not make its text `const`. No check finds that: the
+const checks of clang-tidy take a pointer stored in a member that is not `const` for a write,
+so review does.
+
+A text itself is an array, `char const kText[] = "...";` (T-20): the object is the chars, and
+only an array takes `PROGMEM`. `char const*` is a pointer that picks a text that exists
+already, as `text` of `Message` in `Messages`. Only as a parameter are the two the same, and
+there it is written `char const*`, as the function gets a pointer and no array.
+
 #### Constants and configuration
 
 Constants are `constexpr` in the namespace, grouped under a comment; one that only a `.cpp`
