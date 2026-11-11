@@ -16,8 +16,8 @@ namespace internal {
 
 Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte* buffer, byte number_of_modules)
-    : wired_(data_in_pin, chip_select_pin, clock_pin, buffer,
-             number_of_modules) {
+    : wired_{data_in_pin, chip_select_pin, clock_pin, buffer,
+             number_of_modules} {
   module_type_ = ModuleType::kDr0Cr0Rr1;
   matrix_orientation_ = MatrixOrientation::k0;
 }

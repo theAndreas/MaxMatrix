@@ -83,7 +83,7 @@ class Status {
    */
   Status(  // NOLINT(runtime/explicit)
       Error error = Error::kOk)
-      : error_(error) {}
+      : error_{error} {}
 
   /*! \brief Returns why the call failed, or Error::kOk. */
   Error GetError() const { return error_; }
@@ -146,7 +146,7 @@ class Result {
    * \param[in] value The value.
    */
   Result(ValueType value)  // NOLINT(runtime/explicit)
-      : value_(value), error_(Error::kOk) {}
+      : value_{value}, error_{Error::kOk} {}
 
   /*!
    * \brief Makes a result that holds why there is no value.
@@ -156,7 +156,7 @@ class Result {
    * \param[in] error The error.
    */
   Result(Error error)  // NOLINT(runtime/explicit)
-      : value_(), error_(error) {}
+      : value_{}, error_{error} {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
   ValueType GetValue() const { return value_; }

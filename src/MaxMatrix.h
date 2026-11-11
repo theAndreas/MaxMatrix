@@ -653,7 +653,7 @@ class Batch {
    *
    * \param[in,out] matrix The matrix; it has to outlive the batch.
    */
-  explicit Batch(Matrix& matrix) : matrix_(matrix) {
+  explicit Batch(Matrix& matrix) : matrix_{matrix} {
     previous_auto_update_ = matrix_.GetAutoUpdate();
     matrix_.SetAutoUpdate(false);
   }
@@ -717,9 +717,9 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    */
   MatrixOf(byte data_in_pin, byte chip_select_pin, byte clock_pin)
-      : internal::Buffer<NumberOfModules>(),
-        Matrix(data_in_pin, chip_select_pin, clock_pin, this->buffer_,
-               NumberOfModules) {}
+      : internal::Buffer<NumberOfModules>{},
+        Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_,
+               NumberOfModules} {}
 };
 
 }  // namespace max_matrix
