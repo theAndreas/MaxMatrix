@@ -16,83 +16,92 @@
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
-namespace internal {
 
-/* Max7219 Register Address Table */
+/*!
+ * \brief The registers of the MAX7219 and their values, as
+ *        Matrix::RegisterWrite() takes them.
+ */
+namespace max7219 {
+
+/* the addresses of the registers */
 /*! No-op: a module that is not addressed in a frame gets it. */
-#define MAX7219_REG_NO_OP_ADDRESS 0x00
+constexpr byte kNoOpAddress{0x00};
 /*! Digit 0: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT0_ADDRESS 0x01
+constexpr byte kDigit0Address{0x01};
 /*! Digit 1: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT1_ADDRESS 0x02
+constexpr byte kDigit1Address{0x02};
 /*! Digit 2: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT2_ADDRESS 0x03
+constexpr byte kDigit2Address{0x03};
 /*! Digit 3: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT3_ADDRESS 0x04
+constexpr byte kDigit3Address{0x04};
 /*! Digit 4: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT4_ADDRESS 0x05
+constexpr byte kDigit4Address{0x05};
 /*! Digit 5: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT5_ADDRESS 0x06
+constexpr byte kDigit5Address{0x06};
 /*! Digit 6: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT6_ADDRESS 0x07
+constexpr byte kDigit6Address{0x07};
 /*! Digit 7: the LEDs of one row or column of a module. */
-#define MAX7219_REG_DIGIT7_ADDRESS 0x08
+constexpr byte kDigit7Address{0x08};
 /*! Decode mode: BCD code B per digit, or none. */
-#define MAX7219_REG_DECODE_MODE_ADDRESS 0x09
+constexpr byte kDecodeModeAddress{0x09};
 /*! Intensity: the brightness, 0 to 15. */
-#define MAX7219_REG_INTENSITY_ADDRESS 0x0A
+constexpr byte kIntensityAddress{0x0A};
 /*! Scan limit: how many digits, here rows or columns, are lit. */
-#define MAX7219_REG_SCAN_LIMIT_ADDRESS 0x0B
+constexpr byte kScanLimitAddress{0x0B};
 /*! Shutdown: off, or normal operation. */
-#define MAX7219_REG_SHUTDOWN_ADDRESS 0x0C
+constexpr byte kShutdownAddress{0x0C};
 /*! Display test: every LED on, or normal operation. */
-#define MAX7219_REG_DISPLAY_TEST_ADDRESS 0x0F
+constexpr byte kDisplayTestAddress{0x0F};
 
-/* Content of Max7219 Decode Mode Register */
+/* the values of the decode mode register */
 /*! No digit decoded: each bit is an LED. */
-#define MAX7219_REG_DECODE_MODE_NO_DECODE 0x00
+constexpr byte kDecodeModeNoDecode{0x00};
 /*! Code B for digit 0, none for 7 to 1. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_0 0x01
+constexpr byte kDecodeModeCodeBDecodeDigit0{0x01};
 /*! Code B for digits 3 to 0, none for 7 to 4. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_3_TO_0 0x0F
+constexpr byte kDecodeModeCodeBDecodeDigit3To0{0x0F};
 /*! Code B for every digit. */
-#define MAX7219_REG_DECODE_MODE_CODE_B_DECODE_DIGIT_7_TO_0 0xFF
+constexpr byte kDecodeModeCodeBDecodeDigit7To0{0xFF};
 
-/* Content of Max7219 Intensity Register */
+/* the values of the intensity register */
 /*! The lowest brightness, 1/32 duty cycle. */
-#define MAX7219_REG_INTENSITY_MIN_VALUE 0x00
+constexpr byte kIntensityMinValue{0x00};
 /*! The highest brightness, 31/32 duty cycle. */
-#define MAX7219_REG_INTENSITY_MAX_VALUE 0x0F
+constexpr byte kIntensityMaxValue{0x0F};
 
-/* Content of Max7219 Scan Limit Register */
+/* the values of the scan limit register */
 /*! Digit 0 alone is lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0 0x00
+constexpr byte kScanLimitDisplayDigit0{0x00};
 /*! Digits 0 to 1 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_1 0x01
+constexpr byte kScanLimitDisplayDigit0To1{0x01};
 /*! Digits 0 to 2 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_2 0x02
+constexpr byte kScanLimitDisplayDigit0To2{0x02};
 /*! Digits 0 to 3 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_3 0x03
+constexpr byte kScanLimitDisplayDigit0To3{0x03};
 /*! Digits 0 to 4 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_4 0x04
+constexpr byte kScanLimitDisplayDigit0To4{0x04};
 /*! Digits 0 to 5 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_5 0x05
+constexpr byte kScanLimitDisplayDigit0To5{0x05};
 /*! Digits 0 to 6 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_6 0x06
+constexpr byte kScanLimitDisplayDigit0To6{0x06};
 /*! Digits 0 to 7 are lit. */
-#define MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7 0x07
+constexpr byte kScanLimitDisplayDigit0To7{0x07};
 
-/* Content of Max7219 Shutdown Register */
+/* the values of the shutdown register */
 /*! Shut down: the LEDs off, the registers kept. */
-#define MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE 0x00
+constexpr byte kShutdownModeShutdownMode{0x00};
 /*! Normal operation. */
-#define MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION 0x01
+constexpr byte kShutdownModeNormalOperation{0x01};
 
-/* Content of Max7219 Display Test Register */
+/* the values of the display test register */
 /*! Normal operation. */
-#define MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION 0x00
+constexpr byte kDisplayTestNormalOperation{0x00};
 /*! Display test: every LED on at full brightness. */
-#define MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE 0x01
+constexpr byte kDisplayTestDisplayTestMode{0x01};
+
+}  // namespace max7219
+
+namespace internal {
 
 /*!
  * \brief The chain of MAX7219s: the pins, and the frames sent to them.
@@ -146,7 +155,7 @@ class Chain {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    * \param[in] number_of_modules The MAX7219s in the chain, 1 to
-   *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+   *                              `kMaxNumberOfModules`.
    */
   Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
         byte number_of_modules);

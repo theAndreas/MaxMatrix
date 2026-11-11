@@ -42,8 +42,8 @@ class Text {
    * while no char is shifting, and kShiftStart when one begins. A count rather
    * than a state, so the two values are constants, not an enum.
    */
-  static constexpr uint16_t kShiftIdle = 0;
-  static constexpr uint16_t kShiftStart = 1;
+  static constexpr uint16_t kShiftIdle{0};
+  static constexpr uint16_t kShiftStart{1};
 
   /*
    * The font every char is drawn in, NULL for kDefaultFont: only a

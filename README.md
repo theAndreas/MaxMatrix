@@ -57,7 +57,7 @@ is a matrix of four modules and brings their buffer, eight bytes per module, and
 A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own:
 
 ```cpp
-byte buffer[MAXMATRIX_BUFFER_SIZE(6)];
+byte buffer[max_matrix::BufferSize(6)];
 max_matrix::Matrix matrix(11, 10, 13, buffer, 6);
 ```
 

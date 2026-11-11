@@ -31,7 +31,7 @@ void DrawShape() {
   matrix.Clear();
   if (shape == 0) {
     matrix.DrawRect(0, 0, matrix.GetNumberOfColumns(),
-                    MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+                    max_matrix::kRowNumberOfModule, true);
     matrix.FillRect(3, 2, 4, 4, true);
   } else if (shape == 1) {
     matrix.DrawLine(0, 0, right, 7, true);

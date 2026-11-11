@@ -56,7 +56,7 @@ enum class State : uint8_t {
  * A sketch makes it as a MatrixOf, which brings the buffer for its chain:
  *
  * \code{.cpp}
- * MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
  *
  * void setup() {
  *     matrix.Init();
@@ -102,17 +102,18 @@ class Matrix {
    * elsewhere.
    *
    * \code{.cpp}
-   * byte buffer[MAXMATRIX_BUFFER_SIZE(4)];
-   * Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer, 4);
+   * byte buffer[max_matrix::BufferSize(4)];
+   * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer,
+   * 4);
    * \endcode
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `MAXMATRIX_BUFFER_SIZE(number_of_modules)`
-   *                    bytes, which has to live as long as the matrix.
+   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
+   *                    has to live as long as the matrix.
    * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+   *                              `kMaxNumberOfModules`.
    */
   Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
          byte number_of_modules);
@@ -378,7 +379,7 @@ class Matrix {
   /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, byte const*, byte,
    * byte) */
   void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
-                  byte height = MAXMATRIX_ROW_NUMBER_OF_MODULE) {
+                  byte height = kRowNumberOfModule) {
     panel_.DrawBitmap(x, y, bitmap, width, height);
     UpdateIfAuto();
   }
@@ -629,7 +630,7 @@ class Matrix {
  *
  * \code{.cpp}
  * {
- *     Batch batch(matrix);
+ *     max_matrix::Batch batch(matrix);
  *     matrix.Clear();
  *     matrix.SetText("Hi");
  * }  // sent here, at once
@@ -682,7 +683,7 @@ template <byte NumberOfModules>
 class Buffer {
  protected:
   /*! \brief One byte per column. */
-  byte buffer_[MAXMATRIX_BUFFER_SIZE(NumberOfModules)];
+  byte buffer_[BufferSize(NumberOfModules)];
 };
 
 }  // namespace internal
@@ -695,17 +696,15 @@ class Buffer {
  * compile.
  *
  * \code{.cpp}
- * MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
  * \endcode
  *
- * \tparam NumberOfModules The modules of the chain, 1 to
- *                         `MAXMATRIX_MAX_NUMBER_OF_MODULES`.
+ * \tparam NumberOfModules The modules of the chain, 1 to `kMaxNumberOfModules`.
  */
 template <byte NumberOfModules>
 class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
-  static_assert(NumberOfModules >= 1 &&
-                    NumberOfModules <= MAXMATRIX_MAX_NUMBER_OF_MODULES,
-                "a chain has 1 to MAXMATRIX_MAX_NUMBER_OF_MODULES modules");
+  static_assert(NumberOfModules >= 1 && NumberOfModules <= kMaxNumberOfModules,
+                "a chain has 1 to kMaxNumberOfModules modules");
 
  public:
   /*!

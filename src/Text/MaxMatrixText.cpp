@@ -51,7 +51,7 @@ Status Text::SetText(Panel& panel, char const* text) const {
   char c;
 
   if (text == NULL) return Error::kNoText;
-  while (*text != STD_NULL_CHARACTER) {
+  while (*text != internal::kNullCharacter) {
     text += Font::DecodeChar(text, &c);
     Glyph glyph;
     Status const status = FindGlyph(c, &glyph);
@@ -141,7 +141,7 @@ void Text::ReadNextChar() {
   char c;
 
   while (sprite_shift_counter_ == kShiftIdle) {
-    if (*string_ == STD_NULL_CHARACTER) {
+    if (*string_ == internal::kNullCharacter) {
       if (start_over_at == NULL) return;
       string_ = start_over_at;
       start_over_at = NULL;

@@ -60,22 +60,22 @@ void Matrix::SetAutoUpdate(bool auto_update) {
 }
 
 Status Matrix::SetIntensity(byte intensity) {
-  if (intensity > MAX7219_REG_INTENSITY_MAX_VALUE)
+  if (intensity > max7219::kIntensityMaxValue)
     return MAXMATRIX_REPORT_ERROR("SetIntensity", Status(Error::kOutOfRange));
-  RegisterWrite(MAX7219_REG_INTENSITY_ADDRESS, intensity);
+  RegisterWrite(max7219::kIntensityAddress, intensity);
   return Error::kOk;
 }
 
 void Matrix::SetShutdown(bool shutdown) {
-  RegisterWrite(MAX7219_REG_SHUTDOWN_ADDRESS,
-                shutdown ? MAX7219_REG_SHUTDOWN_MODE_SHUTDOWN_MODE
-                         : MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
+  RegisterWrite(max7219::kShutdownAddress,
+                shutdown ? max7219::kShutdownModeShutdownMode
+                         : max7219::kShutdownModeNormalOperation);
 }
 
 void Matrix::SetDisplayTest(bool display_test) {
-  RegisterWrite(MAX7219_REG_DISPLAY_TEST_ADDRESS,
-                display_test ? MAX7219_REG_DISPLAY_TEST_DISPLAY_TEST_MODE
-                             : MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
+  RegisterWrite(max7219::kDisplayTestAddress,
+                display_test ? max7219::kDisplayTestDisplayTestMode
+                             : max7219::kDisplayTestNormalOperation);
 }
 
 Status Matrix::SetCharWithShift(char c) {

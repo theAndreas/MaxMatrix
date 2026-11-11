@@ -54,18 +54,16 @@ void Chain::Init() {
   WritePin(clock_port_, clock_mask_, false);
 #endif
 
+  WriteRegisterAll(max7219::kScanLimitAddress,
+                   max7219::kScanLimitDisplayDigit0To7);  // display all digits
   WriteRegisterAll(
-      MAX7219_REG_SCAN_LIMIT_ADDRESS,
-      MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);  // display all digits
+      max7219::kDecodeModeAddress,
+      max7219::kDecodeModeNoDecode);  // using an led matrix (not digits)
   WriteRegisterAll(
-      MAX7219_REG_DECODE_MODE_ADDRESS,
-      MAX7219_REG_DECODE_MODE_NO_DECODE);  // using an led matrix (not digits)
-  WriteRegisterAll(
-      MAX7219_REG_SHUTDOWN_ADDRESS,
-      MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);  // normal operation mode
-  WriteRegisterAll(
-      MAX7219_REG_DISPLAY_TEST_ADDRESS,
-      MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);  // no display test
+      max7219::kShutdownAddress,
+      max7219::kShutdownModeNormalOperation);  // normal operation mode
+  WriteRegisterAll(max7219::kDisplayTestAddress,
+                   max7219::kDisplayTestNormalOperation);  // no display test
 }
 
 void Chain::WriteRegisterAll(byte register_address, byte register_value) {

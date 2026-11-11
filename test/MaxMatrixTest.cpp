@@ -52,7 +52,7 @@ static byte const kClockPin = 13;
 /* the chain of the examples; the tests of other lengths make their own */
 static byte const kNumberOfModules = 4;
 static byte const kNumberOfColumns =
-    kNumberOfModules * MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
+    kNumberOfModules * max_matrix::kColumnNumberOfModule;
 /* a row of the whole panel, one byte per module */
 typedef byte PanelRow[kNumberOfModules];
 
@@ -171,7 +171,7 @@ static Max7219 const& ChipOfModule(byte module) {
 static std::vector<byte> Display() {
   std::vector<byte> columns;
   for (byte module = 0; module < mock::chain.chips.size(); module++) {
-    for (byte column = 0; column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE;
+    for (byte column = 0; column < max_matrix::kColumnNumberOfModule;
          column++) {
       columns.push_back(ChipOfModule(module).Segments(column));
     }
@@ -276,7 +276,7 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   for (byte module = 0; module < kNumberOfModules; module++)
     in[module] = 0xA5 ^ (module * 0x3C);
 
-  for (byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+  for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
     matrix_.SetRow(row, in);
     EXPECT_EQ(matrix_.GetRow(row, out).GetError(), Error::kOk);
@@ -329,7 +329,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
   for (auto const& call : calls) {
     int32_t frames_before = mock::frames;
     call.draw(matrix_);
-    EXPECT_LE(mock::frames - frames_before, MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
+    EXPECT_LE(mock::frames - frames_before, max_matrix::kColumnNumberOfModule)
         << call.name;
   }
   matrix_.SetTextWithShift(text);
@@ -337,7 +337,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
        step++) {
     int32_t frames_before = mock::frames;
     matrix_.ShiftTask();
-    ASSERT_LE(mock::frames - frames_before, MAXMATRIX_COLUMN_NUMBER_OF_MODULE)
+    ASSERT_LE(mock::frames - frames_before, max_matrix::kColumnNumberOfModule)
         << "shift step " << step;
   }
 }
@@ -351,7 +351,7 @@ template <typename DotType>
 static std::vector<std::string> Picture(DotType dot,
                                         byte columns = kNumberOfColumns) {
   std::vector<std::string> rows;
-  for (int16_t y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
+  for (int16_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
     std::string row;
     for (int16_t x = 0; x < columns; x++) row += dot(x, y) ? '#' : '.';
     rows.push_back(row);
@@ -370,7 +370,7 @@ static std::vector<std::string> ShownPicture(Matrix& matrix) {
 
 static void DrawPattern(Matrix& matrix) {
   for (byte x = 0; x < matrix.GetNumberOfColumns(); x++) {
-    for (byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++)
+    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++)
       matrix.SetDot(x, y, Pattern(x, y));
   }
 }
@@ -385,8 +385,8 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   matrix_.SetRow(2, row);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
               return y == 2 &&
-                     bitRead(row[x / MAXMATRIX_COLUMN_NUMBER_OF_MODULE],
-                             7 - x % MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+                     bitRead(row[x / max_matrix::kColumnNumberOfModule],
+                             7 - x % max_matrix::kColumnNumberOfModule);
             }));
 
   matrix_.Clear();
@@ -394,7 +394,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x == 5 && bitRead(0xA3, y);
             }));
-  for (byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
+  for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
     Result<byte> value = matrix_.GetRow(0, y);
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(value.GetValue(), bitRead(0xA3, y) ? 1 << (7 - 5) : 0)
@@ -436,7 +436,7 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
        -1, ShiftFill::kKeep},
   };
   int16_t const width = kNumberOfColumns,
-                height = MAXMATRIX_ROW_NUMBER_OF_MODULE;
+                height = max_matrix::kRowNumberOfModule;
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
@@ -524,7 +524,7 @@ TEST_P(MaxMatrixMappingTest, PictureStaysWhenTheMappingChanges) {
 
 TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
   for (byte column = 0; column < kNumberOfColumns; column++) {
-    for (byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+    for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
@@ -580,11 +580,11 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
                                            : MatrixOrientation::k0);
   matrix_.SetModuleType(module_type);
   for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++)
+    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++)
       matrix_.SetDot(x, y, pattern(x, y));
   }
   for (uint16_t x = 0; x < kNumberOfColumns; x++) {
-    for (uint8_t y = 0; y < MAXMATRIX_ROW_NUMBER_OF_MODULE; y++) {
+    for (uint8_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
       EXPECT_EQ(mock::chain.IsLit(wiring, x, y, upside_down), pattern(x, y))
           << "X " << x << ", Y " << y;
     }
@@ -596,19 +596,22 @@ TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
     SCOPED_TRACE(::testing::Message()
                  << "Module " << static_cast<uint16_t>(module));
     Max7219 const& chip = ChipOfModule(module);
-    EXPECT_EQ(chip.shutdown, MAX7219_REG_SHUTDOWN_MODE_NORMAL_OPERATION);
-    EXPECT_EQ(chip.display_test, MAX7219_REG_DISPLAY_TEST_NORMAL_OPERATION);
-    EXPECT_EQ(chip.scan_limit, MAX7219_REG_SCAN_LIMIT_DISPLAY_DIGIT_0_TO_7);
-    EXPECT_EQ(chip.decode_mode, MAX7219_REG_DECODE_MODE_NO_DECODE);
+    EXPECT_EQ(chip.shutdown, max_matrix::max7219::kShutdownModeNormalOperation);
+    EXPECT_EQ(chip.display_test,
+              max_matrix::max7219::kDisplayTestNormalOperation);
+    EXPECT_EQ(chip.scan_limit, max_matrix::max7219::kScanLimitDisplayDigit0To7);
+    EXPECT_EQ(chip.decode_mode, max_matrix::max7219::kDecodeModeNoDecode);
     EXPECT_EQ(chip.intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
   }
 }
 
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
-  EXPECT_EQ(matrix_.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE).GetError(),
-            Error::kOk);
+  EXPECT_EQ(
+      matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue).GetError(),
+      Error::kOk);
   for (byte module = 0; module < kNumberOfModules; module++) {
-    EXPECT_EQ(ChipOfModule(module).intensity, MAX7219_REG_INTENSITY_MAX_VALUE)
+    EXPECT_EQ(ChipOfModule(module).intensity,
+              max_matrix::max7219::kIntensityMaxValue)
         << "Module " << static_cast<uint16_t>(module);
   }
 }
@@ -618,9 +621,9 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
       Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
   int32_t frames_before = mock::frames;
 
-  EXPECT_EQ(
-      matrix_.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).GetError(),
-      Error::kOutOfRange);
+  EXPECT_EQ(matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
+                .GetError(),
+            Error::kOutOfRange);
   EXPECT_EQ(Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns),
             before);
   EXPECT_EQ(mock::frames, frames_before);
@@ -652,7 +655,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn off its module",
        [](Matrix& m) {
-         return m.GetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE).GetError();
+         return m.GetColumn(0, max_matrix::kColumnNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetColumn"},
       {"GetRow above",
@@ -664,7 +667,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"GetRow below",
        [](Matrix& m) {
          PanelRow row;
-         return m.GetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, row).GetError();
+         return m.GetRow(max_matrix::kRowNumberOfModule, row).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetRow no module",
@@ -672,7 +675,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetRow"},
       {"GetRow off its module",
        [](Matrix& m) {
-         return m.GetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError();
+         return m.GetRow(0, max_matrix::kRowNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetDot left", [](Matrix& m) { return m.GetDot(-1, 0).GetError(); },
@@ -684,14 +687,15 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetDot"},
       {"GetDot below",
        [](Matrix& m) {
-         return m.GetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE).GetError();
+         return m.GetDot(0, max_matrix::kRowNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetDot"},
       {"SetFont", [](Matrix& m) { return m.SetFont(kNoFont).GetError(); },
        Error::kNotAFont, "SetFont"},
       {"SetIntensity",
        [](Matrix& m) {
-         return m.SetIntensity(MAX7219_REG_INTENSITY_MAX_VALUE + 1).GetError();
+         return m.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
+             .GetError();
        },
        Error::kOutOfRange, "SetIntensity"},
       {"SetChar", [](Matrix& m) { return m.SetChar(0, 0, '\x01').GetError(); },
@@ -800,7 +804,7 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
        [](Matrix& m, PanelRow const&) { m.SetDot(0, -1, true); }},
       {"SetDot below",
        [](Matrix& m, PanelRow const&) {
-         m.SetDot(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+         m.SetDot(0, max_matrix::kRowNumberOfModule, true);
        }},
       {"SetColumn left",
        [](Matrix& m, PanelRow const&) { m.SetColumn(-1, 0xFF); }},
@@ -812,18 +816,18 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
        }},
       {"SetColumn off its module",
        [](Matrix& m, PanelRow const&) {
-         m.SetColumn(0, MAXMATRIX_COLUMN_NUMBER_OF_MODULE, 0xFF);
+         m.SetColumn(0, max_matrix::kColumnNumberOfModule, 0xFF);
        }},
       {"SetRow above", [](Matrix& m, PanelRow const& r) { m.SetRow(-1, r); }},
       {"SetRow below",
        [](Matrix& m, PanelRow const& r) {
-         m.SetRow(MAXMATRIX_ROW_NUMBER_OF_MODULE, r);
+         m.SetRow(max_matrix::kRowNumberOfModule, r);
        }},
       {"SetRow no module",
        [](Matrix& m, PanelRow const&) { m.SetRow(kNumberOfModules, 0, 0xFF); }},
       {"SetRow off its module",
        [](Matrix& m, PanelRow const&) {
-         m.SetRow(0, MAXMATRIX_ROW_NUMBER_OF_MODULE, 0xFF);
+         m.SetRow(0, max_matrix::kRowNumberOfModule, 0xFF);
        }},
   };
 
@@ -873,14 +877,15 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   byte const module = kNumberOfModules - 2;
   int32_t frames_before = mock::frames;
 
-  matrix_.panel_.wired_.StoreBit(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE + 3,
+  matrix_.panel_.wired_.StoreBit(module * max_matrix::kColumnNumberOfModule + 3,
                                  1, true);
   matrix_.Update();
   EXPECT_EQ(mock::frames - frames_before, 1);
   ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (byte i = 0; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
-    EXPECT_EQ(mock::last_frame[size_t{2} * i], MAX7219_REG_DIGIT3_ADDRESS);
+    EXPECT_EQ(mock::last_frame[size_t{2} * i],
+              max_matrix::max7219::kDigit3Address);
     EXPECT_EQ(mock::last_frame[size_t{2} * i + 1], i == module ? 0x02 : 0x00);
   }
 }
@@ -916,7 +921,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
 
   for (byte column = 0; column < kNumberOfColumns; column++)
     matrix_.SetDot(
-        column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+        column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
   EXPECT_EQ(mock::frames - frames_before, kNumberOfColumns);
   drawn = Display();
@@ -926,14 +931,14 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   frames_before = mock::frames;
   for (byte column = 0; column < kNumberOfColumns; column++)
     matrix_.SetDot(
-        column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+        column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
   EXPECT_EQ(mock::frames, frames_before);
   EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
       << "shown before Update()";
 
   matrix_.Update();
-  EXPECT_EQ(mock::frames - frames_before, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+  EXPECT_EQ(mock::frames - frames_before, max_matrix::kColumnNumberOfModule);
   EXPECT_EQ(Display(), drawn);
 }
 
@@ -953,7 +958,7 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
     Batch batch(matrix_);
     for (byte column = 0; column < kNumberOfColumns; column++)
       matrix_.SetDot(
-          column, static_cast<int16_t>(column % MAXMATRIX_ROW_NUMBER_OF_MODULE),
+          column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
           true);
     EXPECT_FALSE(matrix_.GetAutoUpdate());
     EXPECT_EQ(mock::frames, frames_before);
@@ -961,7 +966,7 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
         << "shown inside the block";
   }
   EXPECT_TRUE(matrix_.GetAutoUpdate());
-  EXPECT_EQ(mock::frames - frames_before, MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+  EXPECT_EQ(mock::frames - frames_before, max_matrix::kColumnNumberOfModule);
 }
 
 /* the inner batch puts back the state it found, which the outer one had turned
@@ -1635,9 +1640,9 @@ static void ExpectLine(Matrix& matrix, int16_t x0, int16_t y0, int16_t x1,
                        int16_t y1) {
   bool const steep = std::abs(y1 - y0) > std::abs(x1 - x0);
   int16_t const length =
-      steep ? MAXMATRIX_ROW_NUMBER_OF_MODULE : matrix.GetNumberOfColumns();
+      steep ? max_matrix::kRowNumberOfModule : matrix.GetNumberOfColumns();
   int16_t const breadth =
-      steep ? matrix.GetNumberOfColumns() : MAXMATRIX_ROW_NUMBER_OF_MODULE;
+      steep ? matrix.GetNumberOfColumns() : max_matrix::kRowNumberOfModule;
   double const along_0 = steep ? y0 : x0, along_1 = steep ? y1 : x1;
   double const across_0 = steep ? x0 : y0, across_1 = steep ? x1 : y1;
 
@@ -1846,9 +1851,9 @@ class MaxMatrixChainLengthTest
  protected:
   byte number_of_modules_ = std::get<0>(GetParam());
   byte number_of_columns_ =
-      static_cast<byte>(number_of_modules_ * MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
-  std::vector<byte> buffer_ = std::vector<byte>(
-      static_cast<size_t>(MAXMATRIX_BUFFER_SIZE(number_of_modules_)), 0xAA);
+      static_cast<byte>(number_of_modules_ * max_matrix::kColumnNumberOfModule);
+  std::vector<byte> buffer_ =
+      std::vector<byte>(max_matrix::BufferSize(number_of_modules_), 0xAA);
   Matrix matrix_{kDataInPin, kChipSelectPin, kClockPin, buffer_.data(),
                  number_of_modules_};
 

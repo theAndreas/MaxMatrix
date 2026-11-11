@@ -63,7 +63,7 @@ class SimulatorPanel {
   /*! \brief Returns the columns of the model's chain, eight per module. */
   static uint8_t GetNumberOfColumns() {
     return static_cast<uint8_t>(GetNumberOfModules() *
-                                MAXMATRIX_COLUMN_NUMBER_OF_MODULE);
+                                max_matrix::kColumnNumberOfModule);
   }
 
   /*!

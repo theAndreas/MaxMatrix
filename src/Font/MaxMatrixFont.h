@@ -18,11 +18,10 @@
 
 namespace max_matrix {
 
-/* Font Parameter */
 /*! The bytes of a Sprite: width, height and five columns. */
-#define MAXMATRIX_SPRITE_NUMBER_OF_BYTES 7
+constexpr uint8_t kSpriteNumberOfBytes{7};
 /*! The bytes of kDefaultFont. */
-#define MAXMATRIX_DEFAULT_FONT_SIZE 614
+constexpr uint16_t kDefaultFontSize{614};
 
 /*!
  * \brief A sprite of your own: its width, its height and up to five columns,
@@ -31,7 +30,7 @@ namespace max_matrix {
  * SpriteByte names its bytes. A char of a font is a Glyph
  * instead.
  */
-typedef byte Sprite[MAXMATRIX_SPRITE_NUMBER_OF_BYTES];
+typedef byte Sprite[kSpriteNumberOfBytes];
 
 /*! \brief The bytes of a Sprite. */
 enum SpriteByte : uint8_t {
@@ -63,7 +62,7 @@ struct Glyph {
  */
 // Declared here, the constant data in the .cpp: no static initializer to run.
 // NOLINTNEXTLINE(bugprone-dynamic-static-initializers)
-extern uint8_t const kDefaultFont[MAXMATRIX_DEFAULT_FONT_SIZE] PROGMEM;
+extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
 
 /*!
  * \brief The format of a font, and the way from a char of a string to its

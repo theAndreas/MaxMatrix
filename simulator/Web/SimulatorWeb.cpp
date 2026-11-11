@@ -129,8 +129,8 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
   json << "{\"wiring\":\"" << panel.GetWiringName()
        << "\",\"upsideDown\":" << (panel.IsUpsideDown() ? "true" : "false")
        << ",\"columns\":" << static_cast<uint16_t>(panel.GetNumberOfColumns())
-       << ",\"rows\":" << MAXMATRIX_ROW_NUMBER_OF_MODULE << ",\"dots\":\""
-       << panel.GetText("1", "0", "") << "\""
+       << ",\"rows\":" << static_cast<uint16_t>(max_matrix::kRowNumberOfModule)
+       << ",\"dots\":\"" << panel.GetText("1", "0", "") << "\""
        << ",\"intensity\":[" << GetIntensities(panel) << "]"
        << ",\"frames\":" << mock::frames << ",\"errors\":" << mock::errors
        << ",\"log\":[" << GetLog() << "]"

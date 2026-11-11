@@ -31,7 +31,7 @@ void loop() {
   /* Draw a diagonal line dot by dot */
   matrix.Clear();
   for (byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
-    matrix.SetDot(column, column % MAXMATRIX_ROW_NUMBER_OF_MODULE, true);
+    matrix.SetDot(column, column % max_matrix::kRowNumberOfModule, true);
     delay(30);
   }
   delay(1000);
@@ -49,9 +49,9 @@ void loop() {
     matrix.Clear();
     for (byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
       matrix.SetDot(column, 0, true);
-      matrix.SetDot(column, MAXMATRIX_ROW_NUMBER_OF_MODULE - 1, true);
+      matrix.SetDot(column, max_matrix::kRowNumberOfModule - 1, true);
     }
-    for (byte row = 0; row < MAXMATRIX_ROW_NUMBER_OF_MODULE; row++) {
+    for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
       matrix.SetDot(0, row, true);
       matrix.SetDot(matrix.GetNumberOfColumns() - 1, row, true);
     }
