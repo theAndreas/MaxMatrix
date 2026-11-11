@@ -9,7 +9,7 @@
  * wired by the matrix orientation and the module type.
  */
 
-#include "MaxMatrixPanel.h"
+#include "Panel.h"
 
 namespace max_matrix {
 namespace internal {

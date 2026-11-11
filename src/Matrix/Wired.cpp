@@ -10,7 +10,7 @@
  * hardware updates the buffer as well, because the MAX7219 cannot be read back.
  */
 
-#include "MaxMatrixWired.h"
+#include "Wired.h"
 
 namespace max_matrix {
 namespace internal {

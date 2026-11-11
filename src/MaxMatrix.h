@@ -18,14 +18,14 @@
 #define MAXMATRIX_SRC_MAXMATRIX_H_
 
 #include "Arduino.h"
-#include "Command/MaxMatrixCommand.h"
-#include "Font/MaxMatrixFont.h"
-#include "Matrix/MaxMatrixPanel.h"
-#include "Max7219/MaxMatrixChain.h"
+#include "Command/Command.h"
+#include "Font/Font.h"
+#include "Matrix/Panel.h"
+#include "Max7219/Chain.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
-#include "Text/MaxMatrixText.h"
+#include "Text/Text.h"
 
 namespace max_matrix {
 

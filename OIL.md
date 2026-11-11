@@ -46,6 +46,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
 | 36 | The template's checks, one group at a time | 35 | in progress | #73, #74 |
+| 37 | Files named as their class | 35 | in progress | #77 |
 
 ### 1 Build with CMake
 
@@ -811,6 +812,17 @@ and `readability-*` ask for. Some 510 of the places of `cppcoreguidelines-macro-
 `modernize-macro-to-enum` lie in `test/mock/binary.h`, the stand-in for the core's `B00000001`
 and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reaches
 through the tests' header filter; that is a question for the template before those groups.
+
+### 37 Files named as their class
+
+35 put the classes into `max_matrix` without the prefix, and left the files as they were:
+`internal::Panel` lay in `Matrix/MaxMatrixPanel.h`, which F-3 of CodingStyle.md does not allow.
+The files in the folders of `src/` now take the name of their class, `Matrix/Panel.h`,
+`Font/Font.h` and so on. Those at the root keep the prefix: `MaxMatrix.h`, as a sketch includes
+it by the library's name, and the others because Arduino puts `src/` on the include path of
+every sketch and library built with MaxMatrix, where an `Error.h` or `Config.h` would meet
+another library's; a file in a folder is included with the folder's name. A sketch notices
+nothing, as it includes `MaxMatrix.h` only.
 
 ## Decisions
 

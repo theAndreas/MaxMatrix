@@ -8,7 +8,7 @@
  * Chars and strings on the matrix, standing or shifting in from the right.
  */
 
-#include "MaxMatrixText.h"
+#include "Text.h"
 
 namespace max_matrix {
 namespace internal {

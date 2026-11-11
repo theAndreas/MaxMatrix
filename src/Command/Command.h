@@ -10,8 +10,8 @@
  * where the chars come from.
  */
 
-#ifndef MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
-#define MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
+#ifndef MAXMATRIX_SRC_COMMAND_COMMAND_H_
+#define MAXMATRIX_SRC_COMMAND_COMMAND_H_
 
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
@@ -118,4 +118,4 @@ class Command {
 
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
+#endif  // MAXMATRIX_SRC_COMMAND_COMMAND_H_

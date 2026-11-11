@@ -9,8 +9,8 @@
  * nothing of the matrix.
  */
 
-#ifndef MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_
-#define MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_
+#ifndef MAXMATRIX_SRC_FONT_FONT_H_
+#define MAXMATRIX_SRC_FONT_FONT_H_
 
 #include "Arduino.h"
 #include "MaxMatrixError.h"
@@ -139,4 +139,4 @@ class Font {
 
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_FONT_MAXMATRIXFONT_H_
+#endif  // MAXMATRIX_SRC_FONT_FONT_H_

@@ -10,11 +10,11 @@
  * changes to the chain.
  */
 
-#ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
-#define MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
+#ifndef MAXMATRIX_SRC_MATRIX_WIRED_H_
+#define MAXMATRIX_SRC_MATRIX_WIRED_H_
 
 #include "Arduino.h"
-#include "Max7219/MaxMatrixChain.h"
+#include "Max7219/Chain.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -115,4 +115,4 @@ class Wired {
 }  // namespace internal
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXWIRED_H_
+#endif  // MAXMATRIX_SRC_MATRIX_WIRED_H_
