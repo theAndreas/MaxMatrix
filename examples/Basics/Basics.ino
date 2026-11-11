@@ -13,13 +13,13 @@
 #include <MaxMatrix.h>
 
 /* a chain of four modules, with the buffer for them; one of eight is
- * MaxMatrixOf<8> */
-MaxMatrixOf<4> matrix(11, 10, 13);
+ * max_matrix::MatrixOf<8> */
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
 }
 
 void loop() {
@@ -44,7 +44,7 @@ void loop() {
 
   /* Draw a frame from many dots and show it at once, rather than dot by dot */
   {
-    MaxMatrixBatch batch(
+    max_matrix::Batch batch(
         matrix);  // nothing is sent until the end of this block
     matrix.Clear();
     for (byte column = 0; column < matrix.GetNumberOfColumns(); column++) {

@@ -24,7 +24,8 @@
  * \brief What the simulator's hosts do with a socket: listen on loopback, never
  *        wait, send all.
  *
- * It has no state of its own, so every function is static, as in MaxMatrixFont.
+ * It has no state of its own, so every function is static, as in
+ * max_matrix::Font.
  */
 class SimulatorSocket {
  public:

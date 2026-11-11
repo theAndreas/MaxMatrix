@@ -16,6 +16,8 @@
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
 
+namespace max_matrix {
+
 /*!
  * \brief Passes on what `Call` returns, after reporting its error, if it has
  *        one, under `Api`.
@@ -24,20 +26,20 @@
  * report, no name in flash, no `Serial`.
  *
  * \param Api The name of the facade function, as a string literal.
- * \param Call The call of the part below, which returns a MaxMatrixStatus or a
- *             MaxMatrixResult.
+ * \param Call The call of the part below, which returns a Status or a Result.
  *
- * \see MaxMatrixReportError()
+ * \see ReportError()
  */
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
-#define MAXMATRIX_REPORT_ERROR(Api, Call) MaxMatrixReportIfError(F(Api), Call)
+#define MAXMATRIX_REPORT_ERROR(Api, Call) \
+  ::max_matrix::internal::ReportIfError(F(Api), Call)
 #else
 #define MAXMATRIX_REPORT_ERROR(Api, Call) (Call)
 #endif
 
 /*! \brief Why a call did not do what it was asked; one byte, so that it returns
  * in a register. */
-enum class MaxMatrixError : uint8_t {
+enum class Error : uint8_t {
   kOk = 0, /*!< No error. */
   /*! A coordinate, module, intensity or number beyond its range. */
   kOutOfRange,
@@ -48,7 +50,7 @@ enum class MaxMatrixError : uint8_t {
   kUnknownCommand, /*!< No command has this name. */
   /*! A command line did not fit into `MAXMATRIX_COMMAND_LINE_LENGTH`. */
   kLineTooLong,
-  /*! The font is null, does not start as MaxMatrixFont says, or its chars do
+  /*! The font is null, does not start as Font says, or its chars do
      not fill its array. */
   kNotAFont
 };
@@ -59,17 +61,17 @@ enum class MaxMatrixError : uint8_t {
  * A sketch asks IsOk(), or compares with an error:
  *
  * \code{.cpp}
- * if(matrix.SetText(text) == MaxMatrixError::kUnknownChar) { ... }
+ * if(matrix.SetText(text) == Error::kUnknownChar) { ... }
  * \endcode
  *
  * \note It has no conversion to `bool`, on purpose: with `stdReturnType`,
  *       `E_OK` was 0, so `if(matrix.SetText(...))` was true on an error.
  */
-class MaxMatrixStatus {
+class Status {
  private:
   // A sketch reaches the error only through this class, so that it could carry
   // more than the enum one day without a sketch changing.
-  MaxMatrixError error_;
+  Error error_;
 
  public:
   /*!
@@ -77,19 +79,19 @@ class MaxMatrixStatus {
    *
    * Implicit, so that a function returns an error as it is.
    *
-   * \param[in] error The error, or MaxMatrixError::kOk.
+   * \param[in] error The error, or Error::kOk.
    */
-  MaxMatrixStatus(  // NOLINT(runtime/explicit)
-      MaxMatrixError error = MaxMatrixError::kOk)
+  Status(  // NOLINT(runtime/explicit)
+      Error error = Error::kOk)
       : error_(error) {}
 
-  /*! \brief Returns why the call failed, or MaxMatrixError::kOk. */
-  MaxMatrixError GetError() const { return error_; }
+  /*! \brief Returns why the call failed, or Error::kOk. */
+  Error GetError() const { return error_; }
 
   /*!
    * \brief Returns the error in a few words, in flash, for `Serial.print()`.
    *
-   * `"out of range"` for MaxMatrixError::kOutOfRange. `Serial.print()` reads a
+   * `"out of range"` for Error::kOutOfRange. `Serial.print()` reads a
    * `__FlashStringHelper` from flash, so the text needs no RAM. A sketch that
    * never calls it pays nothing, as the linker drops it with its texts.
    *
@@ -99,21 +101,21 @@ class MaxMatrixStatus {
   __FlashStringHelper const* GetErrorText() const;
 
   /*! \brief Returns whether the call did what it was asked. */
-  bool IsOk() const { return error_ == MaxMatrixError::kOk; }
+  bool IsOk() const { return error_ == Error::kOk; }
 
   /*!
    * \brief Returns whether the call failed for this reason.
    *
    * \param[in] other The error to compare with.
    */
-  bool operator==(MaxMatrixError other) const { return error_ == other; }
+  bool operator==(Error other) const { return error_ == other; }
 
   /*!
    * \brief Returns whether the call did not fail for this reason.
    *
    * \param[in] other The error to compare with.
    */
-  bool operator!=(MaxMatrixError other) const { return error_ != other; }
+  bool operator!=(Error other) const { return error_ != other; }
 };
 
 /*!
@@ -123,17 +125,17 @@ class MaxMatrixStatus {
  * Instead of the value through a pointer beside a status. After an error the
  * value is 0, or what `ValueType()` is, never undefined. An array cannot be
  * returned, so GetRow() of the whole panel keeps its parameter and returns a
- * MaxMatrixStatus.
+ * Status.
  *
  * \tparam ValueType The type of the value.
  */
 template <typename ValueType>
-class MaxMatrixResult {
+class Result {
  private:
   // Side by side rather than in a union: a byte and its error still return in
   // registers on the AVR, and the value is never left undefined.
   ValueType value_;
-  MaxMatrixError error_;
+  Error error_;
 
  public:
   /*!
@@ -143,8 +145,8 @@ class MaxMatrixResult {
    *
    * \param[in] value The value.
    */
-  MaxMatrixResult(ValueType value)  // NOLINT(runtime/explicit)
-      : value_(value), error_(MaxMatrixError::kOk) {}
+  Result(ValueType value)  // NOLINT(runtime/explicit)
+      : value_(value), error_(Error::kOk) {}
 
   /*!
    * \brief Makes a result that holds why there is no value.
@@ -153,28 +155,28 @@ class MaxMatrixResult {
    *
    * \param[in] error The error.
    */
-  MaxMatrixResult(MaxMatrixError error)  // NOLINT(runtime/explicit)
+  Result(Error error)  // NOLINT(runtime/explicit)
       : value_(), error_(error) {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
   ValueType GetValue() const { return value_; }
 
-  /*! \brief Returns why there is no value, or MaxMatrixError::kOk. */
-  MaxMatrixError GetError() const { return error_; }
+  /*! \brief Returns why there is no value, or Error::kOk. */
+  Error GetError() const { return error_; }
 
-  /*! \copydoc MaxMatrixStatus::GetErrorText() */
+  /*! \copydoc Status::GetErrorText() */
   __FlashStringHelper const* GetErrorText() const {
-    return MaxMatrixStatus(error_).GetErrorText();
+    return Status(error_).GetErrorText();
   }
 
   /*! \brief Returns whether there is a value. */
-  bool IsOk() const { return error_ == MaxMatrixError::kOk; }
+  bool IsOk() const { return error_ == Error::kOk; }
 
-  /*! \copydoc MaxMatrixStatus::operator==(MaxMatrixError) const */
-  bool operator==(MaxMatrixError other) const { return error_ == other; }
+  /*! \copydoc Status::operator==(Error) const */
+  bool operator==(Error other) const { return error_ == other; }
 
-  /*! \copydoc MaxMatrixStatus::operator!=(MaxMatrixError) const */
-  bool operator!=(MaxMatrixError other) const { return error_ != other; }
+  /*! \copydoc Status::operator!=(Error) const */
+  bool operator!=(Error other) const { return error_ != other; }
 };
 
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
@@ -184,7 +186,7 @@ class MaxMatrixResult {
  * With `MAXMATRIX_DEV_ERROR_DETECT` at `STD_ON`, as the DET of AUTOSAR Classic,
  * every function of MaxMatrix that fails reports its name and the error here,
  * so that a sketch which checks no return value still learns where it went
- * wrong. The default prints with MaxMatrixPrintError() on `Serial`. It is weak:
+ * wrong. The default prints with PrintError() on `Serial`. It is weak:
  * a sketch whose `Serial` carries something else, or which wants to halt or
  * blink instead, defines its own, and the default is left out.
  *
@@ -192,11 +194,10 @@ class MaxMatrixResult {
  * \param[in] error Why it failed.
  * \pre For the default, the sketch has called `Serial.begin()`.
  */
-void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error);
+void ReportError(__FlashStringHelper const* api, Error error);
 
 /*!
- * \brief Prints a report on `Serial`, as the default MaxMatrixReportError()
- *        does.
+ * \brief Prints a report on `Serial`, as the default ReportError() does.
  *
  * One line, `MaxMatrix SetText: unknown char`; for a report of a sketch's own
  * that prints as well.
@@ -205,18 +206,23 @@ void MaxMatrixReportError(__FlashStringHelper const* api, MaxMatrixError error);
  * \param[in] error Why it failed.
  * \pre The sketch has called `Serial.begin()`.
  */
-void MaxMatrixPrintError(__FlashStringHelper const* api, MaxMatrixError error);
+void PrintError(__FlashStringHelper const* api, Error error);
 
 /*! \cond */
-// Passes a MaxMatrixStatus or MaxMatrixResult<T> on, after reporting its error,
+namespace internal {
+
+// Passes a Status or Result<T> on, after reporting its error,
 // if it has one; what MAXMATRIX_REPORT_ERROR() calls.
 template <typename ResultType>
-ResultType MaxMatrixReportIfError(__FlashStringHelper const* api,
-                                  ResultType result) {
-  if (!result.IsOk()) MaxMatrixReportError(api, result.GetError());
+ResultType ReportIfError(__FlashStringHelper const* api, ResultType result) {
+  if (!result.IsOk()) ReportError(api, result.GetError());
   return result;
 }
+
+}  // namespace internal
 /*! \endcond */
 #endif
+
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_MAXMATRIXERROR_H_

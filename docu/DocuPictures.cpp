@@ -85,9 +85,9 @@ typedef struct {
   byte bit;
 } DocuLed;
 
-static MaxMatrixOf<DOCU_NUMBER_OF_MODULES> matrix(DOCU_DATA_IN_PIN,
-                                                  DOCU_CHIP_SELECT_PIN,
-                                                  DOCU_CLOCK_PIN);
+static max_matrix::MatrixOf<DOCU_NUMBER_OF_MODULES> matrix(DOCU_DATA_IN_PIN,
+                                                           DOCU_CHIP_SELECT_PIN,
+                                                           DOCU_CLOCK_PIN);
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them
  */
@@ -325,7 +325,7 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
  * \return The SVG text, or an empty text if a dot did not light exactly one
  *         LED.
  */
-static std::string DrawWiring(MaxMatrixModuleType module_type) {
+static std::string DrawWiring(max_matrix::ModuleType module_type) {
   DocuSvg svg(GetPictureWidth(), GetPictureHeight());
   DocuLed leds[DOCU_NUMBER_OF_COLUMNS][MAXMATRIX_ROW_NUMBER_OF_MODULE];
   int32_t const inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
@@ -403,7 +403,7 @@ static std::string DrawCoordinates() {
 
   // The coordinates are the same for every module once the module type fits it,
   // so the picture is drawn for FC-16 boards.
-  matrix.SetModuleType(MaxMatrixModuleType::kFc16);
+  matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   for (byte bit = 0; bit < 8; bit++) {
     matrix.Clear();
     matrix.SetColumn(DOCU_EXAMPLE_COLUMN, static_cast<byte>(1 << bit));
@@ -499,7 +499,7 @@ int main(int argc, char** argv) {
        type < sizeof(kMax7219Wirings) / sizeof(kMax7219Wirings[0]); type++) {
     pictures.push_back(std::make_pair(
         std::string("Wiring_") + kMax7219Wirings[type].name + ".svg",
-        DrawWiring(static_cast<MaxMatrixModuleType>(type))));
+        DrawWiring(static_cast<max_matrix::ModuleType>(type))));
   }
 
   for (auto const& picture : pictures) {

@@ -28,7 +28,8 @@
 /*!
  * \brief The WebSocket protocol of the simulator's web page.
  *
- * It has no state of its own, so every function is static, as in MaxMatrixFont.
+ * It has no state of its own, so every function is static, as in
+ * max_matrix::Font.
  */
 class SimulatorWebSocket {
  private:

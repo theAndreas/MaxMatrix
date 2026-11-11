@@ -35,17 +35,17 @@
 #endif
 
 /*! \brief The empty columns between two chars of a text, until
- * MaxMatrix::SetSpaceBetweenChars(). */
+ * Matrix::SetSpaceBetweenChars(). */
 #ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE 1
 #endif
 
-/*! \brief The intensity MaxMatrix::Init() sets, 0 to 15. */
+/*! \brief The intensity Matrix::Init() sets, 0 to 15. */
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 #define MAXMATRIX_INTENSITY_INIT_VALUE 5
 #endif
 
-/*! \brief The chars of a line MaxMatrixCommand takes; it costs twice as many
+/*! \brief The chars of a line Command takes; it costs twice as many
  * bytes of RAM. */
 #ifndef MAXMATRIX_COMMAND_LINE_LENGTH
 #define MAXMATRIX_COMMAND_LINE_LENGTH 64
@@ -53,13 +53,13 @@
 
 /*!
  * \brief The milliseconds per column of a shifting text, until
- *        MaxMatrix::SetShiftInterval(); 0 for a step on every call.
+ *        Matrix::SetShiftInterval(); 0 for a step on every call.
  */
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
 #define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE 50
 #endif
 
-// STD_ON reports every error to MaxMatrixReportError(), see MaxMatrixError.h.
+// STD_ON reports every error to ReportError(), see MaxMatrixError.h.
 // Not a block: the Doxyfile sets it, so that the report is in the reference,
 // and the README's table has it.
 #ifndef MAXMATRIX_DEV_ERROR_DETECT

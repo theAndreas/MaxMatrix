@@ -10,6 +10,8 @@
 
 #include "MaxMatrixError.h"
 
+namespace max_matrix {
+
 /*
  * The texts and the table of them lie in flash. A switch that returned F("…")
  * for each error was turned by avr-gcc into a table of pointers in .rodata,
@@ -25,17 +27,17 @@ static char const kErrorTextLineTooLong[] PROGMEM = "line too long";
 static char const kErrorTextNotAFont[] PROGMEM = "not a font";
 static char const kErrorTextUnknownError[] PROGMEM = "unknown error";
 
-/* in the order of MaxMatrixError */
+/* in the order of Error */
 static char const* const kErrorTexts[] PROGMEM = {
     kErrorTextOk,          kErrorTextOutOfRange, kErrorTextUnknownChar,
     kErrorTextNoText,      kErrorTextNotANumber, kErrorTextUnknownCommand,
     kErrorTextLineTooLong, kErrorTextNotAFont};
 
 static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) ==
-                  static_cast<uint8_t>(MaxMatrixError::kNotAFont) + 1,
+                  static_cast<uint8_t>(Error::kNotAFont) + 1,
               "every error needs a text");
 
-__FlashStringHelper const* MaxMatrixStatus::GetErrorText() const {
+__FlashStringHelper const* Status::GetErrorText() const {
   char const* text = kErrorTextUnknownError;
   uint8_t const index = static_cast<uint8_t>(error_);
 
@@ -43,3 +45,5 @@ __FlashStringHelper const* MaxMatrixStatus::GetErrorText() const {
     text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));
   return reinterpret_cast<__FlashStringHelper const*>(text);
 }
+
+}  // namespace max_matrix

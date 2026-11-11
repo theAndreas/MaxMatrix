@@ -11,38 +11,40 @@
 
 #include "MaxMatrixPanel.h"
 
-MaxMatrixPanel::MaxMatrixPanel(byte data_in_pin, byte chip_select_pin,
-                               byte clock_pin, byte* buffer,
-                               byte number_of_modules)
+namespace max_matrix {
+namespace internal {
+
+Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
+             byte* buffer, byte number_of_modules)
     : wired_(data_in_pin, chip_select_pin, clock_pin, buffer,
              number_of_modules) {
-  module_type_ = MaxMatrixModuleType::kDr0Cr0Rr1;
-  matrix_orientation_ = MaxMatrixMatrixOrientation::k0;
+  module_type_ = ModuleType::kDr0Cr0Rr1;
+  matrix_orientation_ = MatrixOrientation::k0;
 }
 
-MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(int16_t column) {
+Result<byte> Panel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns())
     return GetLine(static_cast<byte>(column), 0, true);
   else
-    return MaxMatrixError::kOutOfRange;
+    return Error::kOutOfRange;
 }
 
-MaxMatrixResult<byte> MaxMatrixPanel::GetColumn(byte module, byte column) {
+Result<byte> Panel::GetColumn(byte module, byte column) {
   if (module < GetNumberOfModules() &&
       column < MAXMATRIX_COLUMN_NUMBER_OF_MODULE) {
     return GetColumn(static_cast<int16_t>(
         (module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE) + column));
   } else {
-    return MaxMatrixError::kOutOfRange;
+    return Error::kOutOfRange;
   }
 }
 
-void MaxMatrixPanel::SetColumn(int16_t column, byte value) {
+void Panel::SetColumn(int16_t column, byte value) {
   if (column >= 0 && column < GetNumberOfColumns())
     SetLine(static_cast<byte>(column), 0, true, value);
 }
 
-void MaxMatrixPanel::SetColumn(byte module, byte column, byte value) {
+void Panel::SetColumn(byte module, byte column, byte value) {
   // The column is checked against the module, not the panel, or column 8 of
   // module 0 would be drawn on module 1.
   if (module < GetNumberOfModules() &&
@@ -55,30 +57,28 @@ void MaxMatrixPanel::SetColumn(byte module, byte column, byte value) {
 
 // The row is taken by reference rather than as a pointer: GetRow(module, 0)
 // would otherwise be ambiguous, as a literal 0 is a null pointer as well.
-MaxMatrixStatus MaxMatrixPanel::GetRow(int16_t row, byte* values,
-                                       byte number_of_values) {
+Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
   if (row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE &&
       number_of_values >= GetNumberOfModules()) {
     byte const modules = GetNumberOfModules();
     for (byte module = 0; module < modules; module++)
       values[module] = GetRow(module, static_cast<byte>(row)).GetValue();
-    return MaxMatrixError::kOk;
+    return Error::kOk;
   } else {
-    return MaxMatrixError::kOutOfRange;
+    return Error::kOutOfRange;
   }
 }
 
-MaxMatrixResult<byte> MaxMatrixPanel::GetRow(byte module, byte row) {
+Result<byte> Panel::GetRow(byte module, byte row) {
   if (module < GetNumberOfModules() && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
     return ReverseByte(
         GetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false));
   } else {
-    return MaxMatrixError::kOutOfRange;
+    return Error::kOutOfRange;
   }
 }
 
-void MaxMatrixPanel::SetRow(int16_t row, byte const* values,
-                            byte number_of_values) {
+void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
   if (row >= 0 && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
     byte const modules = GetNumberOfModules() < number_of_values
                              ? GetNumberOfModules()
@@ -88,14 +88,14 @@ void MaxMatrixPanel::SetRow(int16_t row, byte const* values,
   }
 }
 
-void MaxMatrixPanel::SetRow(byte module, byte row, byte value) {
+void Panel::SetRow(byte module, byte row, byte value) {
   if (module < GetNumberOfModules() && row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
     SetLine(module * MAXMATRIX_COLUMN_NUMBER_OF_MODULE, row, false,
             ReverseByte(value));
   }
 }
 
-MaxMatrixResult<bool> MaxMatrixPanel::GetDot(int16_t column, int16_t row) {
+Result<bool> Panel::GetDot(int16_t column, int16_t row) {
   byte buffer_column, buffer_bit;
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
@@ -105,11 +105,11 @@ MaxMatrixResult<bool> MaxMatrixPanel::GetDot(int16_t column, int16_t row) {
     return static_cast<bool>(
         bitRead(wired_.GetColumn(buffer_column), buffer_bit));
   } else {
-    return MaxMatrixError::kOutOfRange;
+    return Error::kOutOfRange;
   }
 }
 
-void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value) {
+void Panel::SetDot(int16_t column, int16_t row, bool value) {
   byte buffer_column, buffer_bit;
 
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
@@ -126,8 +126,8 @@ void MaxMatrixPanel::SetDot(int16_t column, int16_t row, bool value) {
  * keeps it small. The sums are int32_t, as the ends may lie further apart than
  * an int16_t holds, and an int is 16 bits on the Uno.
  */
-void MaxMatrixPanel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
-                              bool value) {
+void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                     bool value) {
   int32_t const width =
       x1 > x0 ? static_cast<int32_t>(x1) - x0 : static_cast<int32_t>(x0) - x1;
   int32_t const height =
@@ -153,8 +153,8 @@ void MaxMatrixPanel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
   }
 }
 
-void MaxMatrixPanel::DrawRect(int16_t x, int16_t y, int16_t width,
-                              int16_t height, bool value) {
+void Panel::DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
+                     bool value) {
   if (width <= 0 || height <= 0) return;
   int32_t const right = static_cast<int32_t>(x) + width - 1;
   int32_t const bottom = static_cast<int32_t>(y) + height - 1;
@@ -165,8 +165,8 @@ void MaxMatrixPanel::DrawRect(int16_t x, int16_t y, int16_t width,
   FillArea(right, y, right, bottom, value);
 }
 
-void MaxMatrixPanel::FillRect(int16_t x, int16_t y, int16_t width,
-                              int16_t height, bool value) {
+void Panel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
+                     bool value) {
   if (width <= 0 || height <= 0) return;
   FillArea(x, y, static_cast<int32_t>(x) + width - 1,
            static_cast<int32_t>(y) + height - 1, value);
@@ -178,8 +178,7 @@ void MaxMatrixPanel::FillRect(int16_t x, int16_t y, int16_t width,
  * says whether the next dot lies inside the true circle, and so whether the
  * step goes inwards as well.
  */
-void MaxMatrixPanel::DrawCircle(int16_t x, int16_t y, int16_t radius,
-                                bool value) {
+void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
   if (radius < 0) return;
   int32_t outer = radius;
   int32_t inner = 0;
@@ -206,8 +205,8 @@ void MaxMatrixPanel::DrawCircle(int16_t x, int16_t y, int16_t radius,
 
 // Right of the panel nothing is drawn, and left of its right edge x plus a
 // column cannot overflow.
-void MaxMatrixPanel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap,
-                                byte width, byte height) {
+void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
+                       byte height) {
   if (x >= GetNumberOfColumns()) return;
   for (byte column = 0; column < width; column++)
     DrawColumn(static_cast<int16_t>(x + column), y, height,
@@ -219,7 +218,7 @@ void MaxMatrixPanel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap,
  * outside it are not its own. A column that starts eight rows or more off the
  * panel draws nothing, and one that starts nearer cannot overflow y plus a row.
  */
-void MaxMatrixPanel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
+void Panel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
   if (height == MAXMATRIX_ROW_NUMBER_OF_MODULE && y == 0) {
     SetColumn(x, value);
   } else if (y > -MAXMATRIX_ROW_NUMBER_OF_MODULE &&
@@ -231,7 +230,7 @@ void MaxMatrixPanel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
 
 // SetDot() for a dot whose coordinates were added up past what an int16_t
 // holds.
-void MaxMatrixPanel::SetFarDot(int32_t column, int32_t row, bool value) {
+void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < MAXMATRIX_ROW_NUMBER_OF_MODULE) {
     SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
@@ -240,8 +239,8 @@ void MaxMatrixPanel::SetFarDot(int32_t column, int32_t row, bool value) {
 
 // Sets every dot from `left`, `top` to `right`, `bottom`, both included, that
 // lies on the panel.
-void MaxMatrixPanel::FillArea(int32_t left, int32_t top, int32_t right,
-                              int32_t bottom, bool value) {
+void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
+                     bool value) {
   if (left < 0) left = 0;
   if (top < 0) top = 0;
   if (right >= GetNumberOfColumns()) right = GetNumberOfColumns() - 1;
@@ -258,11 +257,11 @@ void MaxMatrixPanel::FillArea(int32_t left, int32_t top, int32_t right,
  * that they are the same for every module type and orientation; in place, as a
  * copy of the whole picture would need its length at compile time.
  */
-void MaxMatrixPanel::ShiftLeft(MaxMatrixShiftFill fill) {
+void Panel::ShiftLeft(ShiftFill fill) {
   ShiftLeft(GetFill(fill, 0, static_cast<byte>(GetNumberOfColumns() - 1)));
 }
 
-byte MaxMatrixPanel::ShiftLeft(byte column) {
+byte Panel::ShiftLeft(byte column) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(0, 0, true);
 
@@ -272,11 +271,11 @@ byte MaxMatrixPanel::ShiftLeft(byte column) {
   return shifted_out;
 }
 
-void MaxMatrixPanel::ShiftRight(MaxMatrixShiftFill fill) {
+void Panel::ShiftRight(ShiftFill fill) {
   ShiftRight(GetFill(fill, static_cast<byte>(GetNumberOfColumns() - 1), 0));
 }
 
-byte MaxMatrixPanel::ShiftRight(byte column) {
+byte Panel::ShiftRight(byte column) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(last, 0, true);
 
@@ -286,22 +285,18 @@ byte MaxMatrixPanel::ShiftRight(byte column) {
   return shifted_out;
 }
 
-void MaxMatrixPanel::ShiftUp(MaxMatrixShiftFill fill) { ShiftRows(true, fill); }
+void Panel::ShiftUp(ShiftFill fill) { ShiftRows(true, fill); }
 
-void MaxMatrixPanel::ShiftDown(MaxMatrixShiftFill fill) {
-  ShiftRows(false, fill);
-}
+void Panel::ShiftDown(ShiftFill fill) { ShiftRows(false, fill); }
 
 /*
  * The column a shift to the left or right takes in for `fill`: none lit, the
  * column at the edge it leaves, which falls out, or the one at the edge it
  * comes in at, as it is.
  */
-byte MaxMatrixPanel::GetFill(MaxMatrixShiftFill fill, byte rotated_column,
-                             byte kept_column) {
-  if (fill == MaxMatrixShiftFill::kRotate)
-    return GetLine(rotated_column, 0, true);
-  if (fill == MaxMatrixShiftFill::kKeep) return GetLine(kept_column, 0, true);
+byte Panel::GetFill(ShiftFill fill, byte rotated_column, byte kept_column) {
+  if (fill == ShiftFill::kRotate) return GetLine(rotated_column, 0, true);
+  if (fill == ShiftFill::kKeep) return GetLine(kept_column, 0, true);
   return 0;
 }
 
@@ -310,7 +305,7 @@ byte MaxMatrixPanel::GetFill(MaxMatrixShiftFill fill, byte rotated_column,
  * comes in at the other for kRotate, and the row at the edge that is left keeps
  * its dot for kKeep.
  */
-void MaxMatrixPanel::ShiftRows(bool up, MaxMatrixShiftFill fill) {
+void Panel::ShiftRows(bool up, ShiftFill fill) {
   byte const columns = GetNumberOfColumns();
   byte const top = 0;
   byte const bottom = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1;
@@ -318,10 +313,10 @@ void MaxMatrixPanel::ShiftRows(bool up, MaxMatrixShiftFill fill) {
   for (byte column = 0; column < columns; column++) {
     byte const value = GetLine(column, 0, true);
     byte const fill_row = up ? bottom : top;
-    bool const fill_dot =
-        fill == MaxMatrixShiftFill::kRotate ? bitRead(value, up ? top : bottom)
-        : fill == MaxMatrixShiftFill::kKeep ? bitRead(value, fill_row)
-                                            : false;
+    bool const fill_dot = fill == ShiftFill::kRotate
+                              ? bitRead(value, up ? top : bottom)
+                          : fill == ShiftFill::kKeep ? bitRead(value, fill_row)
+                                                     : false;
     byte shifted =
         up ? static_cast<byte>(value >> 1) : static_cast<byte>(value << 1);
     bitWrite(shifted, fill_row, fill_dot);
@@ -329,12 +324,11 @@ void MaxMatrixPanel::ShiftRows(bool up, MaxMatrixShiftFill fill) {
   }
 }
 
-void MaxMatrixPanel::SetModuleType(MaxMatrixModuleType module_type) {
+void Panel::SetModuleType(ModuleType module_type) {
   ChangeMapping(matrix_orientation_, module_type);
 }
 
-void MaxMatrixPanel::SetMatrixOrientation(
-    MaxMatrixMatrixOrientation matrix_orientation) {
+void Panel::SetMatrixOrientation(MatrixOrientation matrix_orientation) {
   ChangeMapping(matrix_orientation, module_type_);
 }
 
@@ -348,11 +342,10 @@ void MaxMatrixPanel::SetMatrixOrientation(
  * bytes do for any chain, where a copy of the whole picture would need its
  * length at compile time.
  */
-void MaxMatrixPanel::ChangeMapping(
-    MaxMatrixMatrixOrientation matrix_orientation,
-    MaxMatrixModuleType module_type) {
-  MaxMatrixMatrixOrientation const old_matrix_orientation = matrix_orientation_;
-  MaxMatrixModuleType const old_module_type = module_type_;
+void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
+                          ModuleType module_type) {
+  MatrixOrientation const old_matrix_orientation = matrix_orientation_;
+  ModuleType const old_module_type = module_type_;
 
   for (int16_t left = 0, right = static_cast<int16_t>(GetNumberOfModules() - 1);
        left <= right; left++, right--) {
@@ -382,7 +375,7 @@ void MaxMatrixPanel::ChangeMapping(
 }
 
 // Returns `input` with its bits in the opposite order.
-byte MaxMatrixPanel::ReverseByte(byte input) {
+byte Panel::ReverseByte(byte input) {
   input = static_cast<byte>((input & 0xF0) >> 4 | (input & 0x0F) << 4);
   input = static_cast<byte>((input & 0xCC) >> 2 | (input & 0x33) << 2);
   input = static_cast<byte>((input & 0xAA) >> 1 | (input & 0x55) << 1);
@@ -404,9 +397,9 @@ byte MaxMatrixPanel::ReverseByte(byte input) {
  * than a case for each of the eight types, so that a mirrored module costs no
  * code of its own.
  */
-void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row,
-                                        byte* buffer_column, byte* buffer_bit) {
-  if (matrix_orientation_ == MaxMatrixMatrixOrientation::k180) {
+void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
+                               byte* buffer_bit) {
+  if (matrix_orientation_ == MatrixOrientation::k180) {
     column = static_cast<byte>(GetNumberOfColumns() - 1 - column);
     row = MAXMATRIX_ROW_NUMBER_OF_MODULE - 1 - row;
   }
@@ -434,7 +427,7 @@ void MaxMatrixPanel::ConvertDotToBuffer(byte column, byte row,
  * right, or downwards if `vertical`; the first in bit 0. The line has to lie
  * within the matrix.
  */
-byte MaxMatrixPanel::GetLine(byte column, byte row, bool vertical) {
+byte Panel::GetLine(byte column, byte row, bool vertical) {
   byte buffer_column, buffer_bit;
   byte value = 0;
 
@@ -451,7 +444,7 @@ byte MaxMatrixPanel::GetLine(byte column, byte row, bool vertical) {
  * right, or downwards if `vertical`; the first in bit 0 of `value`. The line
  * has to lie within one module.
  */
-void MaxMatrixPanel::SetLine(byte column, byte row, bool vertical, byte value) {
+void Panel::SetLine(byte column, byte row, bool vertical, byte value) {
   byte buffer_column, buffer_bit;
 
   for (byte dot = 0; dot < 8; dot++) {
@@ -460,3 +453,6 @@ void MaxMatrixPanel::SetLine(byte column, byte row, bool vertical, byte value) {
     wired_.StoreBit(buffer_column, buffer_bit, bitRead(value, dot));
   }
 }
+
+}  // namespace internal
+}  // namespace max_matrix

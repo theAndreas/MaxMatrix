@@ -19,7 +19,8 @@
 /*!
  * \brief The simulator's panel in the terminal.
  *
- * It has no state of its own, so every function is static, as in MaxMatrixFont.
+ * It has no state of its own, so every function is static, as in
+ * max_matrix::Font.
  */
 class SimulatorTerminal {
  private:

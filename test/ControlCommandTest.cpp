@@ -1,8 +1,8 @@
 // Copyright 2026 Andreas Burnickl
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/* Tests of the lines the control program sends, which MaxMatrixCommand reads on
- * the board. */
+/* Tests of the lines the control program sends, which max_matrix::Command reads
+ * on the board. */
 #include "ControlCommand.h"
 
 #include <gtest/gtest.h>
@@ -12,7 +12,7 @@
 
 #include "MaxMatrixConfig.h"
 
-// every command SerialControl knows, spelled as MaxMatrixCommand reads it
+// every command SerialControl knows, spelled as max_matrix::Command reads it
 TEST(ControlCommandTest, MakesTheLinesOfSerialControl) {
   EXPECT_EQ(ControlCommand::MakeText("Hello", false), "text=Hello");
   EXPECT_EQ(ControlCommand::MakeText("Hello", true), "textShift=Hello");
@@ -61,8 +61,8 @@ TEST(ControlCommandTest, FitsRefusesALineBreak) {
   EXPECT_FALSE(ControlCommand::Fits(ControlCommand::MakeText("one\r", false)));
 }
 
-// the answer to picture, as MaxMatrixCommand prints it: "Hi" from the left edge
-// and the empty columns after it
+// the answer to picture, as max_matrix::Command prints it: "Hi" from the left
+// edge and the empty columns after it
 TEST(ControlCommandTest, DecodesThePicture) {
   std::vector<uint8_t> columns;
   std::vector<uint8_t> expected = {0x7F, 0x08, 0x08, 0x7F,

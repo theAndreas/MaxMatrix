@@ -34,7 +34,7 @@ Message const kMessages[] = {
 };
 byte const kNumberOfMessages = sizeof(kMessages) / sizeof(kMessages[0]);
 
-MaxMatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix(11, 10, 13);
 byte current = 0;
 
 void Show(Message const& message) {
@@ -45,7 +45,7 @@ void Show(Message const& message) {
 void setup() {
   matrix.Init();
   matrix.SetModuleType(
-      MaxMatrixModuleType::kFc16);  // see the README for other modules
+      max_matrix::ModuleType::kFc16);  // see the README for other modules
   matrix.SetIntensity(2);
   Show(kMessages[current]);
 }
@@ -54,7 +54,7 @@ void loop() {
   /* takes a step only when the interval of the current text has passed */
   matrix.ShiftTask();
   /* the text has been shifted in completely: on to the next one */
-  if (matrix.GetState() == MaxMatrixState::kReady) {
+  if (matrix.GetState() == max_matrix::State::kReady) {
     current = static_cast<byte>((current + 1) % kNumberOfMessages);
     Show(kMessages[current]);
   }

@@ -6,7 +6,7 @@
  * \brief Commands for the matrix, one per line of text.
  *
  * The lines a control page or program sends to a board over Serial, read char
- * by char, carried out on a MaxMatrix and answered on a Print. Knows nothing of
+ * by char, carried out on a Matrix and answered on a Print. Knows nothing of
  * where the chars come from.
  */
 
@@ -18,21 +18,23 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 
+namespace max_matrix {
+
 /*!
- * \brief What MaxMatrixCommand::Feed() says about the char it was given, when
- *        the line did not fail; why it failed is the error beside it.
+ * \brief What Command::Feed() says about the char it was given, when the line
+ *        did not fail; why it failed is the error beside it.
  */
-enum class MaxMatrixCommandState : uint8_t {
+enum class CommandState : uint8_t {
   kPending, /*!< The line goes on, or was empty. */
   kDone,    /*!< The line was a command, and it is carried out. */
   kAnswered /*!< The line asked for something, and the answer is printed. */
 };
 
-class MaxMatrix;
+class Matrix;
 
 /*!
  * \brief The lines of text a control page or program sends, carried out on a
- *        MaxMatrix.
+ *        Matrix.
  *
  * One command per line, as the Windows tool in AndreasBur/Led-Matrix sends
  * them:
@@ -54,7 +56,7 @@ class MaxMatrix;
  * over; a board cannot be told what it shows otherwise.
  *
  * \code{.cpp}
- * MaxMatrixCommand command;
+ * Command command;
  *
  * void loop() {
  *     while(Serial.available() > 0) command.Feed(matrix, Serial.read(),
@@ -64,13 +66,13 @@ class MaxMatrix;
  *
  * A sketch that does not use it pays nothing. It costs twice
  * `MAXMATRIX_COMMAND_LINE_LENGTH` bytes of RAM: the line, and the text of
- * `textShift=`, which MaxMatrix::SetTextWithShift() reads for as long as it
+ * `textShift=`, which Matrix::SetTextWithShift() reads for as long as it
  * shifts while the next line fills the line buffer.
  */
-class MaxMatrixCommand {
+class Command {
  private:
   /*
-   * As MaxMatrixText is, the class is handed the matrix by every call rather
+   * As internal::Text is, the class is handed the matrix by every call rather
    * than keeping a reference to it.
    */
   char line_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
@@ -78,21 +80,19 @@ class MaxMatrixCommand {
   byte line_length_;
   bool line_too_long_;
 
-  MaxMatrixResult<MaxMatrixCommandState> Execute(MaxMatrix& matrix, char* text,
-                                                 Print& answer);
-  MaxMatrixStatus ExecuteTextShift(MaxMatrix& matrix, char const* value);
-  static MaxMatrixStatus ExecuteText(MaxMatrix& matrix, char const* value);
-  static MaxMatrixStatus ExecuteDot(MaxMatrix& matrix, char* value);
-  static MaxMatrixStatus ExecuteSetting(MaxMatrix& matrix, char const* name,
-                                        char const* value);
-  static void AnswerPicture(MaxMatrix& matrix, Print& answer);
-  static MaxMatrixResult<uint16_t> ConvertToNumber(char const* text,
-                                                   uint16_t maximum);
+  Result<CommandState> Execute(Matrix& matrix, char* text, Print& answer);
+  Status ExecuteTextShift(Matrix& matrix, char const* value);
+  static Status ExecuteText(Matrix& matrix, char const* value);
+  static Status ExecuteDot(Matrix& matrix, char* value);
+  static Status ExecuteSetting(Matrix& matrix, char const* name,
+                               char const* value);
+  static void AnswerPicture(Matrix& matrix, Print& answer);
+  static Result<uint16_t> ConvertToNumber(char const* text, uint16_t maximum);
   static char ConvertToHexDigit(byte value);
 
  public:
   /*! \brief Makes a reader at the start of an empty line. */
-  MaxMatrixCommand();
+  Command();
 
   /*!
    * \brief Takes the next char of a command line, and carries the line out and
@@ -106,16 +106,16 @@ class MaxMatrixCommand {
    * \param[in,out] matrix The matrix the command acts on.
    * \param[in] c The next char, as `Serial.read()` gives it.
    * \param[out] answer Where the answer to a line goes, as a rule `Serial`.
-   * \return MaxMatrixCommandState::kPending while the line goes on or after an
-   *         empty line, MaxMatrixCommandState::kDone once it was carried out,
-   *         or MaxMatrixCommandState::kAnswered once the answer to `picture` is
-   *         printed. MaxMatrixError::kLineTooLong if the line did not fit and
-   *         is dropped; MaxMatrixError::kUnknownCommand if no command has its
-   *         name; or why the command failed: kNoText, kNotANumber, kOutOfRange
-   *         or kUnknownChar.
+   * \return CommandState::kPending while the line goes on or after an empty
+   *         line, CommandState::kDone once it was carried out, or
+   *         CommandState::kAnswered once the answer to `picture` is printed.
+   *         Error::kLineTooLong if the line did not fit and is dropped;
+   *         Error::kUnknownCommand if no command has its name; or why the
+   *         command failed: kNoText, kNotANumber, kOutOfRange or kUnknownChar.
    */
-  MaxMatrixResult<MaxMatrixCommandState> Feed(MaxMatrix& matrix, char c,
-                                              Print& answer);
+  Result<CommandState> Feed(Matrix& matrix, char c, Print& answer);
 };
+
+}  // namespace max_matrix
 
 #endif  // MAXMATRIX_SRC_COMMAND_MAXMATRIXCOMMAND_H_
