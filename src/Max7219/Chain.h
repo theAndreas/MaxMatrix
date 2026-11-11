@@ -9,8 +9,8 @@
  * Knows nothing of LEDs.
  */
 
-#ifndef MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_
-#define MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_
+#ifndef MAXMATRIX_SRC_MAX7219_CHAIN_H_
+#define MAXMATRIX_SRC_MAX7219_CHAIN_H_
 
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
@@ -235,4 +235,4 @@ class Chain {
 }  // namespace internal
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_MAX7219_MAXMATRIXCHAIN_H_
+#endif  // MAXMATRIX_SRC_MAX7219_CHAIN_H_

@@ -9,12 +9,12 @@
  * standing or shifting in.
  */
 
-#ifndef MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
-#define MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
+#ifndef MAXMATRIX_SRC_TEXT_TEXT_H_
+#define MAXMATRIX_SRC_TEXT_TEXT_H_
 
 #include "Arduino.h"
-#include "Font/MaxMatrixFont.h"
-#include "Matrix/MaxMatrixPanel.h"
+#include "Font/Font.h"
+#include "Matrix/Panel.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -196,4 +196,4 @@ class Text {
 }  // namespace internal
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_TEXT_MAXMATRIXTEXT_H_
+#endif  // MAXMATRIX_SRC_TEXT_TEXT_H_

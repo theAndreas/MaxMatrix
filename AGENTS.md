@@ -278,7 +278,7 @@ registers are objects that pass every bit on to the pins, so the host tests run 
 [docs/CodingStyle.md](docs/CodingStyle.md) is the standard, as in every project made from the
 template; this section says how MaxMatrix's code is written today where it says more or else. Since
 version 2.0.0 the library lies in the namespace `max_matrix` (F-9) and its constants are
-`constexpr`, as OIL.md records. The file names in `PascalCase` stay (F-3). They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
+`constexpr`, as OIL.md records. They hold for `simulator/` and `control/` as much as for `src/`: host code that runs beside
 the library is read beside it. Only the tests in `test/` keep a lighter style, a comment at the top
 and one above each test.
 
@@ -300,7 +300,7 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   enum, as they index an array.
 - Macros upper case and prefixed with the library: `MAXMATRIX_USE_SPI`. An include guard
   names the path:
-  `MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_`.
+  `MAXMATRIX_SRC_MATRIX_PANEL_H_`.
 - The library lies in the namespace `max_matrix` (F-9 of `docs/CodingStyle.md`), so its names
   carry no prefix: `max_matrix::Matrix`, `max_matrix::Font`. What a sketch does not use, the
   parts below the facade, lies in `max_matrix::internal`. A test or a program on the host
@@ -309,10 +309,15 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   classes start with `Simulator`.
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
-- Files are named after their class, in `PascalCase`, as Arduino names its own (`Arduino.h`,
-  `HardwareSerial.h`, `Servo.h`): `Matrix/MaxMatrixPanel.h`, `simulator/Host/SimulatorWebHost.cpp`.
-  `src/MaxMatrix.h` has to keep that form, as a sketch includes it by the library's name. Google's
-  `snake_case` for files was tried and dropped (#45); Utl keeps it, as it stands in for the STL.
+- Files are named exactly as the class they hold (F-3), in `PascalCase`, as Arduino names its own
+  (`Arduino.h`, `HardwareSerial.h`, `Servo.h`): `Matrix/Panel.h` for `internal::Panel`,
+  `simulator/Host/SimulatorWebHost.cpp`. Google's `snake_case` for files was tried and dropped
+  (#45); Utl keeps it, as it stands in for the STL. The files at the root of `src/` keep the
+  prefix, against F-3: `src/MaxMatrix.h`, as a sketch includes it by the library's name, and
+  `MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixErrorReport.cpp` and
+  `MaxMatrixStandardTypes.h`, as Arduino puts `src/` on the include path of every sketch and
+  library it builds with MaxMatrix, where an `Error.h` or `Config.h` would meet another's. In a
+  folder, the folder's name in the path keeps them apart.
 
 #### Integer types
 
@@ -414,7 +419,7 @@ implementation, `//` for one or two lines and `/* ... */` from three, where the 
 is; what a sketch reads documented whole, and how `make docs` and clang's `-Wdocumentation`
 check it.
 
-An include in `src/` names a header by its path from `src/` (`"Font/MaxMatrixFont.h"`), or a
+An include in `src/` names a header by its path from `src/` (`"Font/Font.h"`), or a
 header in the same folder by its name alone, never with `../`. Both builds put `src/` on the
 include path: `arduino-cli` for a library in format 1.5, and `CMakeLists.txt`. The simulator
 does the same from `simulator/` (`"Host/SimulatorSerialHost.h"`), in its own files and in the

@@ -9,7 +9,7 @@
  * Uno, they would take their length again for nothing.
  */
 
-#include "MaxMatrixCommand.h"
+#include "Command.h"
 
 #include "MaxMatrix.h"
 

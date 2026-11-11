@@ -10,13 +10,13 @@
  * sent.
  */
 
-#ifndef MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
-#define MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
+#ifndef MAXMATRIX_SRC_MATRIX_PANEL_H_
+#define MAXMATRIX_SRC_MATRIX_PANEL_H_
 
 #include "Arduino.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
-#include "MaxMatrixWired.h"
+#include "Wired.h"
 
 namespace max_matrix {
 
@@ -423,4 +423,4 @@ class Panel {
 }  // namespace internal
 }  // namespace max_matrix
 
-#endif  // MAXMATRIX_SRC_MATRIX_MAXMATRIXPANEL_H_
+#endif  // MAXMATRIX_SRC_MATRIX_PANEL_H_

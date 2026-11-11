@@ -9,7 +9,7 @@
  * latin-1 chars.
  */
 
-#include "MaxMatrixFont.h"
+#include "Font.h"
 
 #include "MaxMatrixConfig.h"
 

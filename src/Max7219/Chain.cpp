@@ -12,7 +12,7 @@
  * loop with its own \#if.
  */
 
-#include "MaxMatrixChain.h"
+#include "Chain.h"
 #if (MAXMATRIX_USE_SPI == STD_ON)
 #include "SPI.h"
 #endif
@@ -84,7 +84,7 @@ void Chain::WriteRegisterEach(byte register_address,
 
 // Starts a frame: pulls chip select low, and in SPI mode reserves the bus.
 // StopTransmission() has to follow once the frame is transferred. Not const: it
-// changes the chain this object stands for, see MaxMatrixChain.h.
+// changes the chain this object stands for, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::StartTransmission() {
 #if (MAXMATRIX_USE_SPI == STD_ON)
@@ -99,7 +99,7 @@ void Chain::StartTransmission() {
  * was sent, and in SPI mode releases the bus for other devices.
  * StartTransmission() has to come first.
  */
-// Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
+// Not const: it changes the chain this object stands for, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::StopTransmission() {
   WritePin(chip_select_port_, chip_select_mask_, true);
@@ -110,7 +110,7 @@ void Chain::StopTransmission() {
 
 // Sends the address and value of one module within a frame; StartTransmission()
 // has to come first. Neither const nor static: it changes the chain, and bit
-// banging needs the pins, see MaxMatrixChain.h.
+// banging needs the pins, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
 void Chain::Transfer(byte register_address, byte register_value) {
 #if (MAXMATRIX_USE_SPI == STD_ON)
@@ -131,7 +131,7 @@ void Chain::Transfer(byte register_address, byte register_value) {
  * write of |= would be undone. A byte takes about 320 cycles, 20 us, in simavr,
  * against about 1500 through shiftOut().
  */
-// Not const: it changes the chain this object stands for, see MaxMatrixChain.h.
+// Not const: it changes the chain this object stands for, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::ShiftOut(byte value) {
   /*
