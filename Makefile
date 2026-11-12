@@ -19,6 +19,11 @@ SHELL := bash
 # One tool at a time: several of them configure the same build directory, and each runs its
 # compiler or analyser on every core already.
 .NOTPARALLEL:
+# ctest runs one test at a time unless told otherwise, and a project's tests wait on the clock
+# and on ports as much as on a core; side by side they take the time of the longest. A test that
+# needs something to itself, as a port, says so with RESOURCE_LOCK. A value from the
+# environment wins.
+export CTEST_PARALLEL_LEVEL ?= $(shell nproc)
 
 STRICT ?= $(CI)
 PRESET = $(if $(STRICT),ci-)
