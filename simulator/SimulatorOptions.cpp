@@ -52,32 +52,45 @@ void SimulatorOptions::PrintUsage(char const* program) {
 bool SimulatorOptions::ParseOption(std::vector<char const*> const& arguments,
                                    size_t* index) {
   std::string const option = arguments[*index];
-  bool const has_value = *index + 1 < arguments.size();
 
   if (option == "--upside-down") {
     upside_down_ = true;
-  } else if (option == "--web") {
+    return true;
+  }
+  if (option == "--web") {
     web_ = true;
-  } else if (option == "--wiring" && has_value) {
-    wiring_name_ = arguments[++*index];
-  } else if (option == "--port" && has_value) {
-    if (!ConvertToPort(arguments[++*index], &port_)) {
-      return false;
-    }
-  } else if (option == "--tcp" && has_value) {
-    if (!ConvertToPort(arguments[++*index], &tcp_port_)) {
-      return false;
-    }
-  } else if (option == "--for" && has_value) {
-    if (!ConvertToRunFor(arguments[++*index], &run_for_)) {
-      return false;
-    }
-  } else if (option == "--expect" && has_value) {
-    expect_file_ = arguments[++*index];
-  } else if (option == "--elf" && has_value) {
-    elf_file_ = arguments[++*index];
-  } else if (option == "--serial" && has_value) {
-    serial_input_ += std::string(arguments[++*index]) + "\n";
+    return true;
+  }
+  if (*index + 1 >= arguments.size()) {
+    return false;
+  }
+  ++*index;
+  return ParseValue(option, arguments[*index]);
+}
+
+/*
+ * Takes `value` for `option`, one that has a value. Returns false if the option
+ * is unknown or cannot take the value.
+ */
+bool SimulatorOptions::ParseValue(std::string const& option,
+                                  char const* value) {
+  if (option == "--port") {
+    return ConvertToPort(value, &port_);
+  }
+  if (option == "--tcp") {
+    return ConvertToPort(value, &tcp_port_);
+  }
+  if (option == "--for") {
+    return ConvertToRunFor(value, &run_for_);
+  }
+  if (option == "--wiring") {
+    wiring_name_ = value;
+  } else if (option == "--expect") {
+    expect_file_ = value;
+  } else if (option == "--elf") {
+    elf_file_ = value;
+  } else if (option == "--serial") {
+    serial_input_ += std::string(value) + "\n";
   } else {
     return false;
   }

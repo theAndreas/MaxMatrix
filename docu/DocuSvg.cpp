@@ -25,7 +25,7 @@ constexpr int32_t kArrowHeadHalfWidth{6};
 
 DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top)
     : width_{width}, height_{height}, top_{top} {
-  AddRect(0, top_, width_, height_, "#ffffff");
+  AddRect({0, top_}, {width_, height_}, {"#ffffff", "none", 0});
 }
 
 std::string DocuSvg::GetDocument() const {
@@ -39,26 +39,25 @@ std::string DocuSvg::GetDocument() const {
   return document.str();
 }
 
-void DocuSvg::AddRect(int32_t x, int32_t y, uint16_t rect_width,
-                      uint16_t rect_height, char const* fill,
-                      char const* stroke, uint8_t radius) {
-  body_ << "  <rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << rect_width
-        << "\" height=\"" << rect_height << "\" rx=\""
-        << static_cast<uint16_t>(radius) << "\" fill=\"" << fill
-        << "\" stroke=\"" << stroke << "\" stroke-width=\"2\"/>\n";
+void DocuSvg::AddRect(DocuPoint corner, DocuSize size, DocuPaint paint) {
+  body_ << "  <rect x=\"" << corner.x << "\" y=\"" << corner.y << "\" width=\""
+        << size.width << "\" height=\"" << size.height << "\" rx=\""
+        << static_cast<uint16_t>(paint.radius) << "\" fill=\"" << paint.fill
+        << "\" stroke=\"" << paint.stroke << "\" stroke-width=\"2\"/>\n";
 }
 
-void DocuSvg::AddText(int32_t x, int32_t y, std::string const& text,
-                      uint8_t size, char const* fill, char const* anchor,
-                      bool bold) {
-  body_ << "  <text x=\"" << x << "\" y=\"" << y << "\" font-size=\""
-        << static_cast<uint16_t>(size) << "\" fill=\"" << fill
-        << "\" text-anchor=\"" << anchor << "\""
-        << (bold ? " font-weight=\"bold\"" : "") << ">" << text << "</text>\n";
+void DocuSvg::AddText(DocuPoint at, std::string const& text, DocuFont font) {
+  body_ << "  <text x=\"" << at.x << "\" y=\"" << at.y << "\" font-size=\""
+        << static_cast<uint16_t>(font.size) << "\" fill=\"" << font.fill
+        << "\" text-anchor=\"" << font.anchor << "\""
+        << (font.bold ? " font-weight=\"bold\"" : "") << ">" << text
+        << "</text>\n";
 }
 
-void DocuSvg::AddArrow(int32_t from_x, int32_t to_x, int32_t y,
-                       int32_t thickness, char const* colour) {
+void DocuSvg::AddArrow(DocuPoint from, int32_t to_x, int32_t thickness,
+                       char const* colour) {
+  int32_t const from_x = from.x;
+  int32_t const y = from.y;
   int32_t const direction = to_x < from_x ? 1 : -1;
   int32_t const head_base{to_x + (direction * kArrowHeadLength)};
 

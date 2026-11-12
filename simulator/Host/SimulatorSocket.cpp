@@ -24,6 +24,10 @@ namespace {
 /* SimulatorSocket Parameter */
 constexpr int kBacklog{4};
 
+/* a timeout in seconds and microseconds, as setsockopt() takes it */
+constexpr uint32_t kMillisecondsPerSecond{1000};
+constexpr uint32_t kMicrosecondsPerMillisecond{1000};
+
 }  // namespace
 
 int SimulatorSocket::OpenListener(uint16_t port) {
@@ -63,8 +67,10 @@ void SimulatorSocket::SetNonBlocking(int socket) {
 void SimulatorSocket::SetReceiveTimeout(int socket, uint32_t milliseconds) {
   timeval timeout = timeval();
 
-  timeout.tv_sec = static_cast<time_t>(milliseconds / 1000);
-  timeout.tv_usec = static_cast<suseconds_t>((milliseconds % 1000) * 1000);
+  timeout.tv_sec = static_cast<time_t>(milliseconds / kMillisecondsPerSecond);
+  auto const remainder =
+      static_cast<suseconds_t>(milliseconds % kMillisecondsPerSecond);
+  timeout.tv_usec = remainder * kMicrosecondsPerMillisecond;
   setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 }
 

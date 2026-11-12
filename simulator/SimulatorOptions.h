@@ -44,6 +44,7 @@ class SimulatorOptions {
   std::string serial_input_;
 
   bool ParseOption(std::vector<char const*> const& arguments, size_t* index);
+  bool ParseValue(std::string const& option, char const* value);
   static bool ConvertToPort(char const* text, uint16_t* port);
   static bool ConvertToRunFor(char const* text, uint32_t* run_for);
 

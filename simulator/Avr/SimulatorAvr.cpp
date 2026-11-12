@@ -33,6 +33,11 @@ constexpr uint8_t kClockBit{5U};
 /* Serial is the first and only UART of the ATmega328P */
 constexpr char kUart{'0'};
 
+/* the bits of a byte on the wire, and the clock's microseconds per millisecond
+ */
+constexpr uint8_t kBitsPerByte{8};
+constexpr uint32_t kMicrosecondsPerMillisecond{1000};
+
 /*!
  * \brief Passes on simavr's log, errors only.
  *
@@ -66,7 +71,7 @@ uint32_t SimulatorAvr::GetMillis() const {
   if (avr_ == nullptr) {
     return 0;
   }
-  return (avr_cycles_to_usec(avr_, avr_->cycle) / 1000);
+  return (avr_cycles_to_usec(avr_, avr_->cycle) / kMicrosecondsPerMillisecond);
 }
 
 bool SimulatorAvr::Load(char const* elf_file) {
@@ -81,7 +86,13 @@ bool SimulatorAvr::Load(char const* elf_file) {
   avr_init(avr_);
   avr_->frequency = kSimulatorAvrFrequency;
   avr_load_firmware(avr_, &firmware_);
+  ConnectPins();
+  ConnectUart();
+  return true;
+}
 
+// The pins the library drives and the SPI's output go to the model.
+void SimulatorAvr::ConnectPins() {
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kDataInBit), OnDataIn,
       this);
@@ -94,9 +105,12 @@ bool SimulatorAvr::Load(char const* elf_file) {
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), OnSpiByte,
       this);
+}
 
-  // The UART would print every line on the console itself, between the panel
-  // and the command line.
+// The UART is Serial: what the sketch sends goes to the mock, and simavr says
+// when its receive buffer has room. It would print every line on the console
+// itself, between the panel and the command line.
+void SimulatorAvr::ConnectUart() {
   uint32_t flags = 0;
   avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags);
   flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
@@ -110,11 +124,11 @@ bool SimulatorAvr::Load(char const* elf_file) {
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XOFF),
       OnReceiveFull, this);
-  return true;
 }
 
 bool SimulatorAvr::Run(uint32_t milliseconds) {
-  avr_cycle_count_t const end = avr_usec_to_cycles(avr_, milliseconds * 1000U);
+  avr_cycle_count_t const end =
+      avr_usec_to_cycles(avr_, milliseconds * kMicrosecondsPerMillisecond);
 
   ReceiveSerial();
   while (avr_->cycle < end) {
@@ -174,7 +188,7 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
   uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1U)};
   simulator->bits_ =
       static_cast<uint8_t>(shifted | (simulator->data_in_ ? 1U : 0U));
-  if (++simulator->bit_count_ == 8) {
+  if (++simulator->bit_count_ == kBitsPerByte) {
     simulator->TakeByte(simulator->bits_);
     simulator->bit_count_ = 0;
   }

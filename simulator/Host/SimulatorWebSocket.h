@@ -37,7 +37,8 @@ using SimulatorSha1Digest = std::array<uint8_t, kSimulatorWebSocketSha1Length>;
 class SimulatorWebSocket {
  private:
   /* the five words of the hash while SHA-1 runs, FIPS 180-4 */
-  using Sha1State = std::array<uint32_t, 5>;
+  static constexpr uint8_t kSha1StateWords{5};
+  using Sha1State = std::array<uint32_t, kSha1StateWords>;
 
   static bool GetKey(std::string const& request, std::string* key);
   static std::string PadSha1Message(std::string const& message);
