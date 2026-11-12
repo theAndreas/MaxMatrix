@@ -58,10 +58,11 @@ void SimulatorFrontEnd::Follow(SimulatorPanel& panel, uint32_t now) {
   serial_host_.Task(&mock::serial_input);
 
   if (panel.IsDrawDue(now)) {
-    if (web_on_)
+    if (web_on_) {
       web_.Send(panel);
-    else if (terminal_on_)
+    } else if (terminal_on_) {
       SimulatorTerminal::Draw(panel);
+    }
     panel.SetDrawn(now);
   }
 }

@@ -48,8 +48,9 @@ void ControlLink::AskForPicture(uint32_t now) {
   if (!IsReady()) return;
   if (picture_timed_ &&
       waited < (picture_asked_ ? CONTROL_LINK_PICTURE_TIMEOUT_MS
-                               : CONTROL_LINK_PICTURE_INTERVAL_MS))
+                               : CONTROL_LINK_PICTURE_INTERVAL_MS)) {
     return;
+  }
   if (!port_.Write(ControlCommand::MakePicture() + "\n")) return;
   picture_asked_ = true;
   picture_stale_ = false;

@@ -90,8 +90,9 @@ void SimulatorWeb::LogFrame() {
     line += pair;
   }
   frame_log_.push_back(line);
-  if (frame_log_.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH)
+  if (frame_log_.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH) {
     frame_log_.erase(frame_log_.begin());
+  }
   logged_frames_ = mock::frames;
 }
 
@@ -106,14 +107,15 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message) {
   std::string const wiring_command = SIMULATOR_WEB_COMMAND_WIRING;
   std::string const serial_command = SIMULATOR_WEB_COMMAND_SERIAL;
 
-  if (message.compare(0, wiring_command.size(), wiring_command) == 0)
+  if (message.compare(0, wiring_command.size(), wiring_command) == 0) {
     panel.SetWiring(message.substr(wiring_command.size()));
-  else if (message.compare(0, serial_command.size(), serial_command) == 0)
+  } else if (message.compare(0, serial_command.size(), serial_command) == 0) {
     mock::serial_input += message.substr(serial_command.size()) + "\n";
-  else if (message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN)
+  } else if (message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) {
     panel.SetUpsideDown(true);
-  else if (message == SIMULATOR_WEB_COMMAND_UPRIGHT)
+  } else if (message == SIMULATOR_WEB_COMMAND_UPRIGHT) {
     panel.SetUpsideDown(false);
+  }
   panel.RequestDraw();
 }
 
@@ -144,8 +146,9 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
 std::string SimulatorWeb::GetLog() const {
   std::string log;
 
-  for (size_t i = 0; i < frame_log_.size(); i++)
+  for (size_t i = 0; i < frame_log_.size(); i++) {
     log += (i > 0 ? ",\"" : "\"") + frame_log_[i] + "\"";
+  }
   return log;
 }
 

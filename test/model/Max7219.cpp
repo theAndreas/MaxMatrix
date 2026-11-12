@@ -34,18 +34,19 @@ void Max7219::Reset() {
  * the no-op */
 void Max7219::Latch(uint8_t address, uint8_t data) {
   address &= 0x0FU;
-  if (address >= 0x01 && address <= 0x08)
+  if (address >= 0x01 && address <= 0x08) {
     digit[address - 1] = data;
-  else if (address == 0x09)
+  } else if (address == 0x09) {
     decode_mode = data;
-  else if (address == 0x0A)
+  } else if (address == 0x0A) {
     intensity = data & 0x0FU;
-  else if (address == 0x0B)
+  } else if (address == 0x0B) {
     scan_limit = data & 0x07U;
-  else if (address == 0x0C)
+  } else if (address == 0x0C) {
     shutdown = data & 0x01U;
-  else if (address == 0x0F)
+  } else if (address == 0x0F) {
     display_test = data & 0x01U;
+  }
 }
 
 /* lit segments of a digit, laid out as in no-decode mode: bit 7 is DP, bit 6
@@ -61,8 +62,9 @@ uint8_t Max7219::Segments(uint8_t digit_index) const {
 
   if (display_test) return 0xFF;
   if (!shutdown || digit_index > scan_limit) return 0x00;
-  if (decode_mode & (1U << digit_index))
+  if (decode_mode & (1U << digit_index)) {
     return (digit[digit_index] & 0x80U) | kCodeB[digit[digit_index] & 0x0FU];
+  }
   return digit[digit_index];
 }
 
@@ -73,8 +75,9 @@ void Max7219Chain::Reset(uint8_t number_of_chips) {
 
 /* a byte as the wire carries it, most significant bit first */
 void Max7219Chain::Shift(uint8_t value) {
-  for (uint8_t mask{0x80U}; mask != 0U; mask >>= 1U)
+  for (uint8_t mask{0x80U}; mask != 0U; mask >>= 1U) {
     ShiftBit((value & mask) != 0U);
+  }
 }
 
 /* The MAX7219 shifts one bit on every rising clock edge, whatever chip select
@@ -98,8 +101,9 @@ void Max7219Chain::ShiftBit(bool value) {
  * select - after a frame that was too short, that is part of the frame before
  */
 void Max7219Chain::Latch() {
-  for (size_t chip = 0; chip < chips.size(); chip++)
+  for (size_t chip = 0; chip < chips.size(); chip++) {
     chips[chip].Latch(shift_register_[2 * chip + 1], shift_register_[2 * chip]);
+  }
 }
 
 /* whether the LED at X, Y of the panel is lit, X from the left across all

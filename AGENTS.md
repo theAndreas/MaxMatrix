@@ -334,8 +334,9 @@ or it prints as a char.
 The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
 into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as
 the Arduino core declares them (a value from `millis()` is kept in a `uint32_t`, which is what
-it is on the Uno); the result of `strtoul()` until its range is checked; POSIX file descriptors
-and `setsockopt()` options (`int`); and `size_t` for sizes of containers.
+it is on the Uno); POSIX file descriptors and `setsockopt()` options (`int`); and `size_t` for
+sizes of containers. What `strtoul()` returns is kept in a `uint64_t`, which holds it on every
+host, until its range is checked.
 
 #### const
 

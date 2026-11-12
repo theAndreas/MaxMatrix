@@ -34,8 +34,9 @@ static bool Parse(SimulatorOptions& options,
  * so that an order shows */
 static void ResetChainWithDistinctIntensities() {
   mock::Reset(11, 10, 13, kNumberOfModules);
-  for (size_t chip = 0; chip < mock::chain.chips.size(); chip++)
+  for (size_t chip = 0; chip < mock::chain.chips.size(); chip++) {
     mock::chain.chips[chip].intensity = static_cast<uint8_t>(chip);
+  }
 }
 
 TEST(SimulatorTest, PortInRangeIsTaken) {

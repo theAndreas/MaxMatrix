@@ -48,8 +48,9 @@ static std::string ClientFrame(std::string const& payload) {
     frame += static_cast<char>(payload.size() & 0xFFU);
   }
   frame.append(reinterpret_cast<char const*>(mask), sizeof(mask));
-  for (size_t i = 0; i < payload.size(); i++)
+  for (size_t i = 0; i < payload.size(); i++) {
     frame += static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask[i % 4]);
+  }
   return frame;
 }
 

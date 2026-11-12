@@ -205,8 +205,9 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
   } else {
     return Error::kNotAFont;
   }
-  if (first > last || height < 1 || height > kRowNumberOfModule)
+  if (first > last || height < 1 || height > kRowNumberOfModule) {
     return Error::kNotAFont;
+  }
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
   for (uint16_t code = first;; code++) {
@@ -241,8 +242,9 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
     font += kHeaderLength2;
   }
   if (code < first || code > last) return Error::kUnknownChar;
-  for (uint16_t skipped = first; skipped < code; skipped++)
+  for (uint16_t skipped = first; skipped < code; skipped++) {
     font += pgm_read_byte(font) + 1;
+  }
   glyph.width = pgm_read_byte(font);
   glyph.columns = font + 1;
   if (glyph.width == 0) return Error::kUnknownChar;

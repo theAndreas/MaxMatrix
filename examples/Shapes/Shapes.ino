@@ -38,11 +38,13 @@ void DrawShape() {
     matrix.DrawLine(0, 7, right, 0, true);
   } else if (shape == 2) {
     /* the radius grows from 0 to the 3 that fills the height of the matrix */
-    for (int16_t radius = 0; radius <= 3; radius++)
+    for (int16_t radius = 0; radius <= 3; radius++) {
       matrix.DrawCircle(static_cast<int16_t>(4 + 8 * radius), 3, radius, true);
+    }
   } else {
-    for (int16_t x = 0; x < matrix.GetNumberOfColumns(); x += 8)
+    for (int16_t x = 0; x < matrix.GetNumberOfColumns(); x += 8) {
       matrix.DrawBitmap(x, 1, kHeart, sizeof(kHeart));
+    }
   }
 }
 

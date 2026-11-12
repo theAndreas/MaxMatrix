@@ -23,10 +23,11 @@ Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
 }
 
 Result<byte> Panel::GetColumn(int16_t column) {
-  if (column >= 0 && column < GetNumberOfColumns())
+  if (column >= 0 && column < GetNumberOfColumns()) {
     return GetLine(static_cast<byte>(column), 0, true);
-  else
+  } else {
     return Error::kOutOfRange;
+  }
 }
 
 Result<byte> Panel::GetColumn(byte module, byte column) {
@@ -39,8 +40,9 @@ Result<byte> Panel::GetColumn(byte module, byte column) {
 }
 
 void Panel::SetColumn(int16_t column, byte value) {
-  if (column >= 0 && column < GetNumberOfColumns())
+  if (column >= 0 && column < GetNumberOfColumns()) {
     SetLine(static_cast<byte>(column), 0, true, value);
+  }
 }
 
 void Panel::SetColumn(byte module, byte column, byte value) {
@@ -58,8 +60,9 @@ Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
   if (row >= 0 && row < kRowNumberOfModule &&
       number_of_values >= GetNumberOfModules()) {
     byte const modules = GetNumberOfModules();
-    for (byte module = 0; module < modules; module++)
+    for (byte module = 0; module < modules; module++) {
       values[module] = GetRow(module, static_cast<byte>(row)).GetValue();
+    }
     return Error::kOk;
   } else {
     return Error::kOutOfRange;
@@ -79,8 +82,9 @@ void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
     byte const modules = GetNumberOfModules() < number_of_values
                              ? GetNumberOfModules()
                              : number_of_values;
-    for (byte module = 0; module < modules; module++)
+    for (byte module = 0; module < modules; module++) {
       SetRow(module, static_cast<byte>(row), values[module]);
+    }
   }
 }
 
@@ -203,9 +207,10 @@ void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
 void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
                        byte height) {
   if (x >= GetNumberOfColumns()) return;
-  for (byte column = 0; column < width; column++)
+  for (byte column = 0; column < width; column++) {
     DrawColumn(static_cast<int16_t>(x + column), y, height,
                pgm_read_byte(bitmap + column));
+  }
 }
 
 /*
@@ -217,8 +222,9 @@ void Panel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
   if (height == kRowNumberOfModule && y == 0) {
     SetColumn(x, value);
   } else if (y > -kRowNumberOfModule && y < kRowNumberOfModule) {
-    for (byte row = 0; row < height; row++)
+    for (byte row = 0; row < height; row++) {
       SetDot(x, static_cast<int16_t>(y + row), bitRead(value, row));
+    }
   }
 }
 
@@ -240,8 +246,9 @@ void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
   if (right >= GetNumberOfColumns()) right = GetNumberOfColumns() - 1;
   if (bottom >= kRowNumberOfModule) bottom = kRowNumberOfModule - 1;
   for (int32_t column = left; column <= right; column++) {
-    for (int32_t row = top; row <= bottom; row++)
+    for (int32_t row = top; row <= bottom; row++) {
       SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
+    }
   }
 }
 
@@ -258,8 +265,9 @@ byte Panel::ShiftLeft(byte column) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(0, 0, true);
 
-  for (byte panel_column = 0; panel_column < last; panel_column++)
+  for (byte panel_column = 0; panel_column < last; panel_column++) {
     SetLine(panel_column, 0, true, GetLine(panel_column + 1, 0, true));
+  }
   SetLine(last, 0, true, column);
   return shifted_out;
 }
@@ -272,8 +280,9 @@ byte Panel::ShiftRight(byte column) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(last, 0, true);
 
-  for (byte panel_column = last; panel_column > 0; panel_column--)
+  for (byte panel_column = last; panel_column > 0; panel_column--) {
     SetLine(panel_column, 0, true, GetLine(panel_column - 1, 0, true));
+  }
   SetLine(0, 0, true, column);
   return shifted_out;
 }
@@ -402,10 +411,12 @@ void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
   byte digit = digits_as_rows ? row : column_from_right;
   byte segment = digits_as_rows ? column_from_right : row;
 
-  if ((type & internal::kModuleTypeReversedRows) != 0)
+  if ((type & internal::kModuleTypeReversedRows) != 0) {
     digit = kColumnNumberOfModule - 1 - digit;
-  if ((type & internal::kModuleTypeReversedColumns) != 0)
+  }
+  if ((type & internal::kModuleTypeReversedColumns) != 0) {
     segment = kRowNumberOfModule - 1 - segment;
+  }
   *buffer_column = static_cast<byte>((module * kColumnNumberOfModule) + digit);
   *buffer_bit = segment;
 }

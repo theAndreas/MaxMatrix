@@ -99,10 +99,11 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
 
   payload->assign(frame, offset + mask_length, length);
   if (mask_length > 0) {
-    for (size_t i = 0; i < length; i++)
+    for (size_t i = 0; i < length; i++) {
       (*payload)[i] = static_cast<char>(
           static_cast<uint8_t>((*payload)[i]) ^
           static_cast<uint8_t>(frame[offset + i % mask_length]));
+    }
   }
   *opcode = static_cast<uint8_t>(frame[0]) & SIMULATOR_WEB_SOCKET_OPCODE_MASK;
   buffer->erase(0, offset + mask_length + length);
@@ -132,9 +133,10 @@ void SimulatorWebSocket::CalculateSha1(std::string const& message,
   }
   for (uint8_t word = 0; word < SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH;
        word++) {
-    for (uint8_t part = 0; part < 4; part++)
+    for (uint8_t part = 0; part < 4; part++) {
       digest[word * 4 + part] =
           static_cast<uint8_t>(state[word] >> (24U - 8U * part));
+    }
   }
 }
 
@@ -168,8 +170,9 @@ std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes,
 bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   std::string lowered(request);
 
-  for (size_t i = 0; i < lowered.size(); i++)
+  for (size_t i = 0; i < lowered.size(); i++) {
     lowered[i] = static_cast<char>(tolower(static_cast<uint8_t>(lowered[i])));
+  }
   size_t const found = lowered.find(SIMULATOR_WEB_SOCKET_KEY_HEADER);
   if (found == std::string::npos) return false;
 
@@ -194,8 +197,9 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
 
   padded.push_back(static_cast<char>(0x80));
   while (padded.size() % SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH !=
-         SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION)
+         SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION) {
     padded.push_back('\0');
+  }
   for (uint8_t i = 1; i <= 8; i++) {
     uint8_t const shift = static_cast<uint8_t>(64U - 8U * i);
     padded.push_back(static_cast<char>((bits >> shift) & 0xFFU));
@@ -247,14 +251,15 @@ void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block,
  */
 uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c,
                                      uint32_t d) {
-  if (round < 20)
+  if (round < 20) {
     return ((b & c) | (~b & d)) + 0x5A827999u;
-  else if (round < 40)
+  } else if (round < 40) {
     return (b ^ c ^ d) + 0x6ED9EBA1u;
-  else if (round < 60)
+  } else if (round < 60) {
     return ((b & c) | (b & d) | (c & d)) + 0x8F1BBCDCu;
-  else
+  } else {
     return (b ^ c ^ d) + 0xCA62C1D6u;
+  }
 }
 
 // Returns `value` rotated to the left by `bits`, 1 to 31: the bits shifted out

@@ -274,12 +274,13 @@ void ControlWindow::OnSend(wxCommandEvent& /* event */) {
   std::string const line = ControlCommand::MakeText(
       std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
 
-  if (ControlCommand::Fits(line))
+  if (ControlCommand::Fits(line)) {
     Broadcast(line);
-  else
+  } else {
     Log(wxString::Format(
         "Not sent: the line takes %zu bytes, SerialControl takes %u.\n",
         line.size(), MAXMATRIX_COMMAND_LINE_LENGTH));
+  }
 }
 
 // Turns every LED off, on the board and in the window at once.
@@ -349,12 +350,14 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
   wxString const typed = serial_port_name_->GetValue();
 
   serial_port_name_->Clear();
-  for (std::string const& port : ControlSerialPort::List())
+  for (std::string const& port : ControlSerialPort::List()) {
     serial_port_name_->Append(wxString::FromUTF8(port));
-  if (!typed.empty())
+  }
+  if (!typed.empty()) {
     serial_port_name_->SetValue(typed);
-  else if (serial_port_name_->GetCount() > 0)
+  } else if (serial_port_name_->GetCount() > 0) {
     serial_port_name_->SetSelection(0);
+  }
 }
 
 /*
@@ -497,11 +500,12 @@ void ControlWindow::ShowBytesLeft() {
       std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
   int32_t const left = ControlCommand::GetBytesLeft(line);
 
-  if (left >= 0)
+  if (left >= 0) {
     bytes_left_->SetLabel(wxString::Format("%" PRId32 " bytes left", left));
-  else
+  } else {
     bytes_left_->SetLabel(
         wxString::Format("%" PRId32 " bytes too long", -left));
+  }
   bytes_left_->SetForegroundColour(
       left >= 0 ? wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)
                 : CONTROL_WINDOW_TOO_LONG);

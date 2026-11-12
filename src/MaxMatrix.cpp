@@ -60,8 +60,9 @@ void Matrix::SetAutoUpdate(bool auto_update) {
 }
 
 Status Matrix::SetIntensity(byte intensity) {
-  if (intensity > max7219::kIntensityMaxValue)
+  if (intensity > max7219::kIntensityMaxValue) {
     return MAXMATRIX_REPORT_ERROR("SetIntensity", Status(Error::kOutOfRange));
+  }
   RegisterWrite(max7219::kIntensityAddress, intensity);
   return Error::kOk;
 }
@@ -97,8 +98,9 @@ Status Matrix::SetTextWithShift(char const* text, bool repeat) {
 void Matrix::StopShift() {
   // Only a shift ends here: before Init() the state says the chain is not set
   // up.
-  if (state_ == State::kStringShift || state_ == State::kCharShift)
+  if (state_ == State::kStringShift || state_ == State::kCharShift) {
     state_ = State::kReady;
+  }
 }
 
 /*

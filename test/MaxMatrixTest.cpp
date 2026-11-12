@@ -89,10 +89,11 @@ namespace max_matrix {
 
 /* GoogleTest would print an error as its number */
 void PrintTo(Error error, std::ostream* out) {
-  if (static_cast<uint8_t>(error) < kNumberOfErrors)
+  if (static_cast<uint8_t>(error) < kNumberOfErrors) {
     *out << kErrorNames[static_cast<uint8_t>(error)];
-  else
+  } else {
     *out << "error " << static_cast<uint16_t>(error);
+  }
 }
 
 /* what Feed() returns, compared with a state as with an error: a line is done
@@ -102,14 +103,15 @@ bool operator==(Result<CommandState> const& result, CommandState state) {
 }
 
 void PrintTo(Result<CommandState> const& result, std::ostream* out) {
-  if (!result.IsOk())
+  if (!result.IsOk()) {
     PrintTo(result.GetError(), out);
-  else if (result.GetValue() == CommandState::kDone)
+  } else if (result.GetValue() == CommandState::kDone) {
     *out << "CommandState::kDone";
-  else if (result.GetValue() == CommandState::kAnswered)
+  } else if (result.GetValue() == CommandState::kAnswered) {
     *out << "CommandState::kAnswered";
-  else
+  } else {
     *out << "CommandState::kPending";
+  }
 }
 
 }  // namespace max_matrix
@@ -216,8 +218,9 @@ class MaxMatrixTest : public ::testing::Test {
     matrix_.SetTextWithShift(text);
     for (shift_calls_ = 0;
          shift_calls_ < 1000 && matrix_.GetState() != State::kReady;
-         shift_calls_++)
+         shift_calls_++) {
       matrix_.ShiftTask();
+    }
     return mock::frames - frames_before;
   }
 };
@@ -273,8 +276,9 @@ INSTANTIATE_TEST_SUITE_P(
  */
 TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in, out;
-  for (byte module = 0; module < kNumberOfModules; module++)
+  for (byte module = 0; module < kNumberOfModules; module++) {
     in[module] = static_cast<byte>(0xA5U ^ (module * 0x3CU));
+  }
 
   for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
@@ -370,8 +374,9 @@ static std::vector<std::string> ShownPicture(Matrix& matrix) {
 
 static void DrawPattern(Matrix& matrix) {
   for (byte x = 0; x < matrix.GetNumberOfColumns(); x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++)
+    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
       matrix.SetDot(x, y, Pattern(x, y));
+    }
   }
 }
 
@@ -379,8 +384,9 @@ static void DrawPattern(Matrix& matrix) {
  * turned the whole panel while SetRow turned each module */
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
-  for (byte module = 0; module < kNumberOfModules; module++)
+  for (byte module = 0; module < kNumberOfModules; module++) {
     row[module] = static_cast<byte>(0x81U ^ (module * 0x16U));
+  }
 
   matrix_.SetRow(2, row);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
@@ -484,8 +490,9 @@ TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
 TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   std::vector<byte> band;
   band.reserve(size_t{3} * kNumberOfColumns);
-  for (uint16_t index = 0; index < 3 * kNumberOfColumns; index++)
+  for (uint16_t index = 0; index < 3 * kNumberOfColumns; index++) {
     band.push_back(static_cast<byte>(index * 37 + 11));
+  }
   std::vector<byte> out;
   out.reserve(band.size());
 
@@ -580,8 +587,9 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
                                            : MatrixOrientation::k0);
   matrix_.SetModuleType(module_type);
   for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++)
+    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
       matrix_.SetDot(x, y, pattern(x, y));
+    }
   }
   for (uint16_t x = 0; x < kNumberOfColumns; x++) {
     for (uint8_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
@@ -750,8 +758,9 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << test_case.name;
     EXPECT_EQ(matrix_.GetState(), State::kReady) << test_case.name;
     std::vector<Report> expected;
-    if (kDevErrorDetect && test_case.api != NULL)
+    if (kDevErrorDetect && test_case.api != NULL) {
       expected.push_back(Report(test_case.api, test_case.expected));
+    }
     EXPECT_EQ(reports, expected) << test_case.name;
   }
 }
@@ -896,8 +905,9 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
 TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   for (Max7219& chip : mock::chain.chips) {
-    for (byte digit = 0; digit < Max7219::kNumberOfDigits; digit++)
+    for (byte digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
       chip.digit[digit] = 0xA5;
+    }
   }
   matrix_.Init();
   EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0));
@@ -919,20 +929,22 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   std::vector<byte> drawn;
   int32_t frames_before = mock::frames;
 
-  for (byte column = 0; column < kNumberOfColumns; column++)
+  for (byte column = 0; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
+  }
   EXPECT_EQ(mock::frames - frames_before, kNumberOfColumns);
   drawn = Display();
 
   matrix_.Clear();
   matrix_.SetAutoUpdate(false);
   frames_before = mock::frames;
-  for (byte column = 0; column < kNumberOfColumns; column++)
+  for (byte column = 0; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
+  }
   EXPECT_EQ(mock::frames, frames_before);
   EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
       << "shown before Update()";
@@ -956,10 +968,11 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
 
   {
     Batch batch(matrix_);
-    for (byte column = 0; column < kNumberOfColumns; column++)
+    for (byte column = 0; column < kNumberOfColumns; column++) {
       matrix_.SetDot(
           column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
           true);
+    }
     EXPECT_FALSE(matrix_.GetAutoUpdate());
     EXPECT_EQ(mock::frames, frames_before);
     EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
@@ -1392,8 +1405,9 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
       {"text=a\x01\n", Error::kUnknownChar},
   };
 
-  for (auto const& test_case : cases)
+  for (auto const& test_case : cases) {
     EXPECT_EQ(FeedLine(test_case.line), test_case.error) << test_case.line;
+  }
   EXPECT_EQ(matrix_.GetShiftInterval(), 0) << "changed by a refused speed=";
 }
 
@@ -1514,9 +1528,10 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   EXPECT_EQ(matrix_.GetFont(), kDigitFont);
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
-  for (byte column = 0; column < sizeof(expected); column++)
+  for (byte column = 0; column < sizeof(expected); column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
         << "column " << static_cast<uint16_t>(column);
+  }
   EXPECT_EQ(matrix_.SetText("2").GetError(), Error::kUnknownChar);
   EXPECT_EQ(matrix_.SetText("A").GetError(), Error::kUnknownChar);
 
@@ -1531,9 +1546,10 @@ TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
 
   ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
-  for (byte column = 0; column < sizeof(expected); column++)
+  for (byte column = 0; column < sizeof(expected); column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
         << "column " << static_cast<uint16_t>(column);
+  }
 }
 
 /* a sprite has five columns at most; a char of a font may have more, standing
@@ -1543,14 +1559,16 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
 
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
-  for (byte column = 0; column < 8; column++)
+  for (byte column = 0; column < 8; column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1u << column)
         << "standing, column " << static_cast<uint16_t>(column);
+  }
 
   matrix_.Clear();
   ASSERT_EQ(matrix_.SetCharWithShift('W').GetError(), Error::kOk);
-  for (; steps < 100 && matrix_.GetState() != State::kReady; steps++)
+  for (; steps < 100 && matrix_.GetState() != State::kReady; steps++) {
     matrix_.ShiftTask();
+  }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
   for (byte column = 0; column < 8; column++) {
     EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue(),
@@ -1629,8 +1647,9 @@ TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting) {
 
   matrix_.SetSpaceBetweenChars(255);
   ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);
-  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++)
+  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++) {
     matrix_.ShiftTask();
+  }
   EXPECT_EQ(steps, 4 + 255);
 }
 
@@ -1659,8 +1678,9 @@ static void ExpectLine(Matrix& matrix, int16_t x0, int16_t y0, int16_t x1,
     uint16_t lit = 0;
     for (int16_t across = 0; across < breadth; across++) {
       if (!(steep ? matrix.GetDot(across, along) : matrix.GetDot(along, across))
-               .GetValue())
+               .GetValue()) {
         continue;
+      }
       lit++;
       EXPECT_TRUE(inside) << "a dot beyond the ends at " << along;
       EXPECT_LE(std::abs(across - ideal), 0.5)
@@ -1702,10 +1722,11 @@ TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
                    << "(" << line.x0 << ", " << line.y0 << ") to (" << line.x1
                    << ", " << line.y1 << ")" << (reverse ? " reversed" : ""));
       matrix_.Clear();
-      if (reverse)
+      if (reverse) {
         matrix_.DrawLine(line.x1, line.y1, line.x0, line.y0, true);
-      else
+      } else {
         matrix_.DrawLine(line.x0, line.y0, line.x1, line.y1, true);
+      }
       ExpectLine(matrix_, line.x0, line.y0, line.x1, line.y1);
     }
   }
@@ -1995,8 +2016,9 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
   uint16_t steps = 0;
 
   ASSERT_EQ(matrix_.SetTextWithShift(text).GetError(), Error::kOk);
-  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++)
+  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++) {
     matrix_.ShiftTask();
+  }
   EXPECT_LT(steps, 1000);
   EXPECT_NE(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }, number_of_columns_))

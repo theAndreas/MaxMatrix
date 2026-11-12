@@ -68,8 +68,9 @@ void Chain::Init() {
 
 void Chain::WriteRegisterAll(byte register_address, byte register_value) {
   StartTransmission();
-  for (byte module = 0; module < number_of_modules_; module++)
+  for (byte module = 0; module < number_of_modules_; module++) {
     Transfer(register_address, register_value);
+  }
   StopTransmission();
 }
 
@@ -77,8 +78,9 @@ void Chain::WriteRegisterEach(byte register_address,
                               byte const* register_values, byte stride) {
   StartTransmission();
   for (byte module = 0; module < number_of_modules_;
-       module++, register_values += stride)
+       module++, register_values += stride) {
     Transfer(register_address, *register_values);
+  }
   StopTransmission();
 }
 
@@ -149,10 +151,11 @@ void Chain::ShiftOut(byte value) {
 
   cli();
   for (byte bit = 0x80U; bit != 0U; bit >>= 1U) {
-    if ((value & bit) != 0)
+    if ((value & bit) != 0) {
       *data_in_register |= data_in_mask_;
-    else
+    } else {
       *data_in_register &= static_cast<byte>(~data_in_mask_);
+    }
     *clock_register |= clock_mask_;
     *clock_register &= static_cast<byte>(~clock_mask_);
   }
@@ -170,10 +173,11 @@ void Chain::WritePin(byte port, byte mask, bool high) {
       SREG; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  if (high)
+  if (high) {
     *port_register |= mask;
-  else
+  } else {
     *port_register &= static_cast<byte>(~mask);
+  }
   SREG = status_register;
 }
 

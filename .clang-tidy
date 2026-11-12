@@ -48,7 +48,6 @@ Checks: >
   -cert-err58-cpp,
   -bugprone-throwing-static-initialization,
   -cppcoreguidelines-*,
-  -google-*,
   -misc-*,
   -modernize-*,
   -readability-*,
@@ -71,7 +70,7 @@ Checks: >
 #   the simulator's static objects, which a sketch has as well: a static
 #   object whose constructor could throw. Nothing here throws, and the library is built without
 #   exceptions on the board.
-# MaxMatrix's own, for now: cppcoreguidelines-*, google-*, misc-*, modernize-* and
+# MaxMatrix's own, for now: cppcoreguidelines-*, misc-*, modernize-* and
 #   readability-* but the three it had before it came onto the template. The
 #   template's checks found some 670 places in src/ alone, most of them the macros that version
 #   2.0.0 turned into constants of a namespace (OIL 35); the groups come on one at a time now,

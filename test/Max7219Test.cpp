@@ -67,8 +67,9 @@ TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
   Max7219Chain chain = ChainInNormalOperation(1);
   uint16_t const pair = 0x0222;
 
-  for (uint8_t bit = 15; bit >= 1; bit--)
+  for (uint8_t bit = 15; bit >= 1; bit--) {
     chain.ShiftBit((pair & (1U << bit)) != 0U);
+  }
   chain.Latch();
   EXPECT_EQ(chain.chips[0].digit[0], 0x11);
   EXPECT_EQ(chain.chips[0].digit[1], 0x00);
@@ -131,8 +132,9 @@ TEST(Max7219Test, DisplayTestLightsEverythingEvenInShutdown) {
   chain.Reset(1);
 
   SendFrame(chain, {{0x0F, 0x01}});
-  for (uint8_t digit = 0; digit < Max7219::kNumberOfDigits; digit++)
+  for (uint8_t digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
     EXPECT_EQ(chain.chips[0].Segments(digit), 0xFF);
+  }
   SendFrame(chain, {{0x0F, 0x00}});
   EXPECT_EQ(chain.chips[0].Segments(0), 0x00);
 }

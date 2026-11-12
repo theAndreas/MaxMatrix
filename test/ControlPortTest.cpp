@@ -33,8 +33,9 @@ static std::string Receive(int descriptor) {
 static std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
-  for (int16_t i = 0; i < 50 && received.empty() && port.Read(&received); i++)
+  for (int16_t i = 0; i < 50 && received.empty() && port.Read(&received); i++) {
     usleep(10000);
+  }
   return received;
 }
 
