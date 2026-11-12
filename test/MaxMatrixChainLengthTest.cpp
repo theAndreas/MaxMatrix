@@ -78,7 +78,7 @@ TEST_P(MaxMatrixChainLengthTest, EmptiesItsBufferAndFramesEveryModule) {
   EXPECT_EQ(matrix_.GetNumberOfModules(), number_of_modules_);
   EXPECT_EQ(matrix_.GetNumberOfColumns(), number_of_columns_);
   EXPECT_EQ(buffer_, std::vector<byte>(number_of_columns_, 0x00));
-  EXPECT_EQ(mock::last_frame.size(), 2u * number_of_modules_);
+  EXPECT_EQ(mock::last_frame.size(), 2U * number_of_modules_);
 }
 
 TEST_P(MaxMatrixChainLengthTest, DotsRoundTrip) {
@@ -187,7 +187,7 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
   for (char const c : std::string("picture\n")) {
     command.Feed(matrix_, c, answer);
   }
-  EXPECT_EQ(answer.text.size(), 8 + 2u * number_of_columns_ + 2);
+  EXPECT_EQ(answer.text.size(), 8 + (2U * number_of_columns_) + 2);
 }
 
 }  // namespace

@@ -20,11 +20,11 @@
 #include <string>
 
 /* SimulatorWebSocket opcodes, RFC 6455 section 5.2 */
-constexpr uint8_t kSimulatorWebSocketOpcodeText{0x1u};
-constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8u};
+constexpr uint8_t kSimulatorWebSocketOpcodeText{0x1U};
+constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8U};
 
 /* SimulatorWebSocket Parameter */
-constexpr size_t kSimulatorWebSocketSha1Length{20u};
+constexpr size_t kSimulatorWebSocketSha1Length{20U};
 /* the hash of SHA-1 */
 using SimulatorSha1Digest = std::array<uint8_t, kSimulatorWebSocketSha1Length>;
 

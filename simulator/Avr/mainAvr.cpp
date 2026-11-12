@@ -35,11 +35,11 @@
 namespace {
 
 /* the pins every example puts the chain on */
-constexpr uint8_t kDataInPin{11u};
-constexpr uint8_t kChipSelectPin{10u};
-constexpr uint8_t kClockPin{13u};
+constexpr uint8_t kDataInPin{11U};
+constexpr uint8_t kChipSelectPin{10U};
+constexpr uint8_t kClockPin{13U};
 /* the chain every example has, max_matrix::MatrixOf<4> */
-constexpr uint8_t kNumberOfModules{4u};
+constexpr uint8_t kNumberOfModules{4U};
 
 /* exit codes, as in main.cpp */
 constexpr int kExitOk{0};
@@ -86,7 +86,9 @@ int main(int argc, char** argv) {
               << kSimulatorAvrMcu << '\n';
     return kExitFailed;
   }
-  if (!front_end.Begin(options)) return kExitFailed;
+  if (!front_end.Begin(options)) {
+    return kExitFailed;
+  }
 
   /* a page or the control program, and whoever is in front of it, speaks in
    * real time */

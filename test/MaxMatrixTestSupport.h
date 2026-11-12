@@ -192,7 +192,9 @@ std::vector<std::string> Picture(DotType dot, byte columns = kNumberOfColumns) {
   std::vector<std::string> rows;
   for (int16_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
     std::string row;
-    for (int16_t x = 0; x < columns; x++) row += dot(x, y) ? '#' : '.';
+    for (int16_t x = 0; x < columns; x++) {
+      row += dot(x, y) ? '#' : '.';
+    }
     rows.push_back(row);
   }
   return rows;

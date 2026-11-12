@@ -44,10 +44,11 @@ ControlDotPanel::ControlDotPanel(
     : wxPanel{parent},
       columns_(static_cast<size_t>(kControlNumberOfColumns), 0x00),
       on_switch_{std::move(on_switch)} {
-  wxCoord const width = kControlNumberOfColumns * kCell +
-                        (kControlNumberOfModules - 1) * kModuleGap +
-                        2 * kMargin;
-  wxCoord const height = max_matrix::kRowNumberOfModule * kCell + 2 * kMargin;
+  wxCoord const width = (kControlNumberOfColumns * kCell) +
+                        ((kControlNumberOfModules - 1) * kModuleGap) +
+                        (2 * kMargin);
+  wxCoord const height =
+      (max_matrix::kRowNumberOfModule * kCell) + (2 * kMargin);
 
   // the background is painted whole by OnPaint(), which the buffered DC needs
   // to know
@@ -61,7 +62,9 @@ ControlDotPanel::ControlDotPanel(
 }
 
 void ControlDotPanel::SetPicture(std::vector<uint8_t> const& columns) {
-  if (columns.size() != columns_.size() || columns == columns_) return;
+  if (columns.size() != columns_.size() || columns == columns_) {
+    return;
+  }
   columns_ = columns;
   Refresh();
 }
@@ -86,10 +89,10 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
   for (uint8_t row = 0; row < max_matrix::kRowNumberOfModule; row++) {
     for (uint8_t column = 0; column < kControlNumberOfColumns; column++) {
       bool const lit = IsLit(column, row);
-      wxCoord const x = margin + column * cell +
-                        (column / max_matrix::kColumnNumberOfModule) * gap +
-                        (cell - led) / 2;
-      wxCoord const y = margin + row * cell + (cell - led) / 2;
+      wxCoord const x = margin + (column * cell) +
+                        ((column / max_matrix::kColumnNumberOfModule) * gap) +
+                        ((cell - led) / 2);
+      wxCoord const y = margin + (row * cell) + ((cell - led) / 2);
       if (!IsEnabled()) {
         dc.SetBrush(wxBrush(CONTROL_DOT_PANEL_DISABLED));
       } else {
@@ -111,13 +114,17 @@ void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
   uint8_t column = 0;
   uint8_t row = 0;
 
-  if (!GetDotAt(event.GetPosition(), &column, &row)) return;
+  if (!GetDotAt(event.GetPosition(), &column, &row)) {
+    return;
+  }
   painting_ = true;
   paint_lit_ = !IsLit(column, row);
   on_dot_ = true;
   last_column_ = column;
   last_row_ = row;
-  if (!HasCapture()) CaptureMouse();
+  if (!HasCapture()) {
+    CaptureMouse();
+  }
   PaintDot(column, row);
 }
 
@@ -131,7 +138,9 @@ void ControlDotPanel::OnMotion(wxMouseEvent& event) {
   uint8_t column = 0;
   uint8_t row = 0;
 
-  if (!painting_ || !event.LeftIsDown()) return;
+  if (!painting_ || !event.LeftIsDown()) {
+    return;
+  }
   if (!GetDotAt(event.GetPosition(), &column, &row)) {
     on_dot_ = false;
     return;
@@ -158,7 +167,9 @@ void ControlDotPanel::OnMotion(wxMouseEvent& event) {
 
 void ControlDotPanel::OnLeftUp(wxMouseEvent& /* event */) {
   painting_ = false;
-  if (HasCapture()) ReleaseMouse();
+  if (HasCapture()) {
+    ReleaseMouse();
+  }
 }
 
 // Another window took the mouse, a dialog say; the stroke ends there.
@@ -168,8 +179,10 @@ void ControlDotPanel::OnCaptureLost(wxMouseCaptureLostEvent& /* event */) {
 
 // Gives the LED the stroke's state, and says so, unless it has it already.
 void ControlDotPanel::PaintDot(uint8_t column, uint8_t row) {
-  if (IsLit(column, row) == paint_lit_) return;
-  columns_[column] ^= static_cast<uint8_t>(1u << row);
+  if (IsLit(column, row) == paint_lit_) {
+    return;
+  }
+  columns_[column] ^= static_cast<uint8_t>(1U << row);
   Refresh();
   on_switch_(column, row, paint_lit_);
 }
@@ -187,7 +200,7 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
                                uint8_t* row) const {
   wxCoord const cell = FromDIP(kCell);
   wxCoord const module_width =
-      max_matrix::kColumnNumberOfModule * cell + FromDIP(kModuleGap);
+      (max_matrix::kColumnNumberOfModule * cell) + FromDIP(kModuleGap);
   wxCoord const x = point.x - FromDIP(kMargin);
   wxCoord const y = point.y - FromDIP(kMargin);
   wxCoord const in_module = x % module_width;
@@ -196,7 +209,8 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
     return false;
   }
   wxCoord const found_column =
-      x / module_width * max_matrix::kColumnNumberOfModule + in_module / cell;
+      (x / module_width * max_matrix::kColumnNumberOfModule) +
+      (in_module / cell);
   wxCoord const found_row = y / cell;
   if (found_column >= kControlNumberOfColumns ||
       found_row >= max_matrix::kRowNumberOfModule) {

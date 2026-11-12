@@ -19,8 +19,8 @@
 #include "SimulatorPanel.h"
 
 /* SimulatorOptions Parameter */
-constexpr uint16_t kSimulatorOptionsDefaultPort{8080u};
-constexpr uint16_t kSimulatorOptionsMaxPort{65535u};
+constexpr uint16_t kSimulatorOptionsDefaultPort{8080U};
+constexpr uint16_t kSimulatorOptionsMaxPort{65535U};
 constexpr uint32_t kSimulatorOptionsMaxRunFor{UINT32_MAX}; /* milliseconds */
 
 /*!

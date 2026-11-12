@@ -37,7 +37,9 @@ void setup() {
 void loop() {
   /* a step only every kStepIntervalMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_step < kStepIntervalMs) return;
+  if (millis() - last_step < kStepIntervalMs) {
+    return;
+  }
   last_step = millis();
 
   /* the column that falls out at the left comes back, for a sketch that passes

@@ -60,7 +60,7 @@ void DocuSvg::AddText(int32_t x, int32_t y, std::string const& text,
 void DocuSvg::AddArrow(int32_t from_x, int32_t to_x, int32_t y,
                        int32_t thickness, char const* colour) {
   int32_t const direction = to_x < from_x ? 1 : -1;
-  int32_t const head_base{to_x + direction * kArrowHeadLength};
+  int32_t const head_base{to_x + (direction * kArrowHeadLength)};
 
   body_ << "  <line x1=\"" << from_x << "\" y1=\"" << y << "\" x2=\""
         << head_base << "\" y2=\"" << y << "\" stroke=\"" << colour

@@ -36,7 +36,7 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   matrix_.Clear();
   matrix_.SetDot(0, 0, true);
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
-  for (uint16_t step = 0; step < kNumberOfColumns + 3 * pass; step++) {
+  for (uint16_t step = 0; step < kNumberOfColumns + (3 * pass); step++) {
     matrix_.ShiftTask();
     pictures.push_back(ShownPicture(matrix_));
   }
@@ -65,12 +65,16 @@ TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
   char const text[] = "Hello ";
 
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
-  for (byte step = 0; step < 20; step++) matrix_.ShiftTask();
+  for (byte step = 0; step < 20; step++) {
+    matrix_.ShiftTask();
+  }
   std::vector<std::string> const stopped = ShownPicture(matrix_);
 
   matrix_.StopShift();
   EXPECT_EQ(matrix_.GetState(), State::kReady);
-  for (byte step = 0; step < 20; step++) matrix_.ShiftTask();
+  for (byte step = 0; step < 20; step++) {
+    matrix_.ShiftTask();
+  }
   EXPECT_EQ(ShownPicture(matrix_), stopped);
   matrix_.StopShift();
   EXPECT_EQ(matrix_.GetState(), State::kReady) << "stopped twice";

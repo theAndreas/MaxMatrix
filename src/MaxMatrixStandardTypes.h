@@ -11,10 +11,10 @@
 
 // T-6: #if reads it
 // NOLINTNEXTLINE(modernize-macro-to-enum,cppcoreguidelines-macro-usage)
-#define STD_ON 1u /*!< A switch of the configuration turned on. */
+#define STD_ON 1U /*!< A switch of the configuration turned on. */
 // T-6: #if reads it
 // NOLINTNEXTLINE(modernize-macro-to-enum,cppcoreguidelines-macro-usage)
-#define STD_OFF 0u /*!< A switch of the configuration turned off. */
+#define STD_OFF 0U /*!< A switch of the configuration turned off. */
 
 namespace max_matrix {
 namespace internal {

@@ -66,9 +66,13 @@ uint8_t Max7219::Segments(uint8_t digit_index) const {
       {0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x01, 0x4F,
        0x37, 0x0E, 0x67, 0x00}};
 
-  if (display_test) return 0xFF;
-  if (!shutdown || digit_index > scan_limit) return 0x00;
-  if (decode_mode & (1U << digit_index)) {
+  if (display_test != 0U) {
+    return 0xFF;
+  }
+  if ((shutdown == 0U) || digit_index > scan_limit) {
+    return 0x00;
+  }
+  if ((decode_mode & (1U << digit_index)) != 0U) {
     return (digit[digit_index] & 0x80U) | kCodeB[digit[digit_index] & 0x0FU];
   }
   return digit[digit_index];
@@ -93,7 +97,9 @@ void Max7219Chain::Shift(uint8_t value) {
  * by byte, so that a frame that is not a whole number of bytes, which bit
  * banging can send, latches what the hardware would. */
 void Max7219Chain::ShiftBit(bool value) {
-  if (shift_register_.empty()) return;
+  if (shift_register_.empty()) {
+    return;
+  }
   for (size_t i = shift_register_.size() - 1; i > 0; i--) {
     uint8_t const shifted{static_cast<uint8_t>(shift_register_[i] << 1U)};
     uint8_t const carry{static_cast<uint8_t>(shift_register_[i - 1] >> 7U)};
@@ -108,7 +114,8 @@ void Max7219Chain::ShiftBit(bool value) {
  */
 void Max7219Chain::Latch() {
   for (size_t chip = 0; chip < chips.size(); chip++) {
-    chips[chip].Latch(shift_register_[2 * chip + 1], shift_register_[2 * chip]);
+    chips[chip].Latch(shift_register_[(2 * chip) + 1],
+                      shift_register_[2 * chip]);
   }
 }
 
@@ -120,18 +127,23 @@ void Max7219Chain::Latch() {
 bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
                          bool upside_down) const {
   if (upside_down) {
-    x = static_cast<uint16_t>(chips.size() * Max7219::kNumberOfDigits - 1 - x);
+    x = static_cast<uint16_t>((chips.size() * Max7219::kNumberOfDigits) - 1 -
+                              x);
     y = Max7219::kNumberOfDigits - 1 - y;
   }
 
   Max7219 const& chip{ChipAt(x)};
   uint8_t const column{static_cast<uint8_t>(Max7219::kNumberOfDigits - 1 -
-                                            x % Max7219::kNumberOfDigits)};
+                                            (x % Max7219::kNumberOfDigits))};
   uint8_t digit = wiring.digits_as_rows ? y : column;
   uint8_t segment = wiring.digits_as_rows ? column : y;
 
-  if (wiring.reversed_rows) digit = Max7219::kNumberOfDigits - 1 - digit;
-  if (wiring.reversed_columns) segment = Max7219::kNumberOfDigits - 1 - segment;
+  if (wiring.reversed_rows) {
+    digit = Max7219::kNumberOfDigits - 1 - digit;
+  }
+  if (wiring.reversed_columns) {
+    segment = Max7219::kNumberOfDigits - 1 - segment;
+  }
   return (chip.Segments(digit) & (1U << segment)) != 0U;
 }
 
@@ -139,7 +151,8 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
  * as IsLit() */
 Max7219 const& Max7219Chain::ChipAt(uint16_t x, bool upside_down) const {
   if (upside_down) {
-    x = static_cast<uint16_t>(chips.size() * Max7219::kNumberOfDigits - 1 - x);
+    x = static_cast<uint16_t>((chips.size() * Max7219::kNumberOfDigits) - 1 -
+                              x);
   }
   size_t const module{static_cast<size_t>(x / Max7219::kNumberOfDigits)};
   return chips[chips.size() - 1 - module];

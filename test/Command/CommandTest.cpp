@@ -171,7 +171,7 @@ TEST_F(MaxMatrixCommandTest, PictureIsAnsweredWithTheColumns) {
   std::vector<byte> const shown = Display();
 
   EXPECT_EQ(FeedLine("picture\n"), CommandState::kAnswered);
-  ASSERT_EQ(answer_.text.size(), 8 + 2 * kNumberOfColumns + 2);
+  ASSERT_EQ(answer_.text.size(), 8 + (2 * kNumberOfColumns) + 2);
   EXPECT_EQ(answer_.text.substr(0, 8), "picture=");
   EXPECT_EQ(answer_.text.substr(answer_.text.size() - 2), "\r\n");
   EXPECT_EQ(Display(), shown);
@@ -200,12 +200,13 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   for (char const c : std::string("picture\n")) {
     command.Feed(matrix_, c, answer);
   }
-  for (byte column = 0; column < kNumberOfColumns; column++) {
-    expected += column == 0    ? "01"
-                : column == 9  ? "02"
-                : column == 16 ? "10"
-                : column == 31 ? "80"
-                               : "00";
+  std::vector<std::string> columns(kNumberOfColumns, "00");
+  columns[0] = "01";
+  columns[9] = "02";
+  columns[16] = "10";
+  columns[31] = "80";
+  for (std::string const& column : columns) {
+    expected += column;
   }
   EXPECT_EQ(answer.text, expected + "\r\n");
 }

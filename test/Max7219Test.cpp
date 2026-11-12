@@ -174,7 +174,9 @@ std::vector<Led> LitLeds(Max7219Chain const& chain, Max7219Wiring const& wiring,
   std::vector<Led> leds;
   for (uint16_t x = 0; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
     for (uint8_t y = 0; y < Max7219::kNumberOfDigits; y++) {
-      if (chain.IsLit(wiring, x, y, upside_down)) leds.emplace_back(x, y);
+      if (chain.IsLit(wiring, x, y, upside_down)) {
+        leds.emplace_back(x, y);
+      }
     }
   }
   return leds;
@@ -189,7 +191,7 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce) {
       for (uint8_t segment = 0; segment < 8; segment++) {
         std::vector<Led> leds =
             LitLeds(ChainWithOneSegment(1, 0, digit, segment), wiring);
-        ASSERT_EQ(leds.size(), 1u);
+        ASSERT_EQ(leds.size(), 1U);
         seen.push_back(leds[0]);
       }
     }
@@ -212,7 +214,7 @@ TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
     SCOPED_TRACE(test_case.first->name);
     std::vector<Led> leds =
         LitLeds(ChainWithOneSegment(1, 0, 0, 0), *test_case.first);
-    ASSERT_EQ(leds.size(), 1u);
+    ASSERT_EQ(leds.size(), 1U);
     EXPECT_EQ(leds[0], test_case.second);
   }
 }
@@ -221,18 +223,18 @@ TEST(Max7219Test, ChainRunsFromRightToLeft) {
   Max7219Chain chain = ChainWithOneSegment(2, 0, 0, 0);
 
   std::vector<Led> leds = LitLeds(chain, kMaX7219WiringFC16);
-  ASSERT_EQ(leds.size(), 1u);
+  ASSERT_EQ(leds.size(), 1U);
   EXPECT_EQ(leds[0], Led(15, 0));
 
   /* upside down, the chain starts on the left and the LED is in the opposite
    * corner of its module */
   leds = LitLeds(chain, kMaX7219WiringFC16, true);
-  ASSERT_EQ(leds.size(), 1u);
+  ASSERT_EQ(leds.size(), 1U);
   EXPECT_EQ(leds[0], Led(0, 7));
 
   EXPECT_EQ(&chain.ChipAt(0), &chain.chips[1]);
-  EXPECT_EQ(&chain.ChipAt(15), &chain.chips[0]);
-  EXPECT_EQ(&chain.ChipAt(0, true), &chain.chips[0]);
+  EXPECT_EQ(&chain.ChipAt(15), chain.chips.data());
+  EXPECT_EQ(&chain.ChipAt(0, true), chain.chips.data());
 }
 
 }  // namespace

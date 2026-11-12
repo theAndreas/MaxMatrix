@@ -39,15 +39,17 @@ std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
   std::ostringstream line;
 
   line << panel.GetWiringName() << ", "
-       << static_cast<uint16_t>(panel.GetNumberOfModules()) << " modules"
-       << (panel.IsUpsideDown() ? ", upside down" : "") << ", intensity";
+       << static_cast<uint16_t>(SimulatorPanel::GetNumberOfModules())
+       << " modules" << (panel.IsUpsideDown() ? ", upside down" : "")
+       << ", intensity";
   // The modules are counted from the left, as on the page: counting the chips
   // along the chain, as before, had them backwards on a board upside down.
-  for (uint8_t module = 0; module < panel.GetNumberOfModules(); module++) {
+  for (uint8_t module = 0; module < SimulatorPanel::GetNumberOfModules();
+       module++) {
     line << ' ' << static_cast<uint16_t>(panel.GetIntensity(module));
   }
   line << ", " << mock::frames << " frames"
-       << (mock::errors ? ", TRANSFER ERRORS" : "");
+       << ((mock::errors != 0) ? ", TRANSFER ERRORS" : "");
   return line.str();
 }
 
@@ -65,14 +67,15 @@ bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
   std::string expected;
 
   std::cout << result;
-  if (expect_file == nullptr) return true;
+  if (expect_file == nullptr) {
+    return true;
+  }
 
   if (!ReadFile(expect_file, &expected) || expected != result) {
     std::cerr << "differs from " << expect_file << ":\n" << expected;
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 // Reads the whole file at `path` into `text`. Returns false if it cannot be

@@ -71,11 +71,11 @@ TEST(ControlCommandTest, DecodesThePicture) {
   expected.resize(static_cast<size_t>(kControlNumberOfColumns), 0x00);
   ASSERT_TRUE(ControlCommand::DecodePicture(
       "picture=7F08087F00447D40" +
-          std::string(2 * kControlNumberOfColumns - 16, '0'),
+          std::string((2 * kControlNumberOfColumns) - 16, '0'),
       &columns));
   EXPECT_EQ(columns, expected);
   ASSERT_TRUE(ControlCommand::DecodePicture(
-      "picture=ff" + std::string(2 * kControlNumberOfColumns - 2, '0'),
+      "picture=ff" + std::string((2 * kControlNumberOfColumns) - 2, '0'),
       &columns));
   EXPECT_EQ(columns[0], 0xFF);
 }
@@ -86,11 +86,11 @@ TEST(ControlCommandTest, DecodesAPictureItCannotDrawAsEmpty) {
   std::vector<uint8_t> columns = {1, 2, 3};
 
   EXPECT_TRUE(ControlCommand::DecodePicture(
-      "picture=" + std::string(2 * kControlNumberOfColumns + 2, '0'),
+      "picture=" + std::string((2 * kControlNumberOfColumns) + 2, '0'),
       &columns));
   EXPECT_TRUE(columns.empty());
   EXPECT_TRUE(ControlCommand::DecodePicture(
-      "picture=" + std::string(2 * kControlNumberOfColumns - 1, '0') + "x",
+      "picture=" + std::string((2 * kControlNumberOfColumns) - 1, '0') + "x",
       &columns));
   EXPECT_TRUE(columns.empty());
   EXPECT_FALSE(ControlCommand::DecodePicture("ok", &columns));

@@ -39,7 +39,8 @@ void DrawShape() {
   } else if (shape == 2) {
     /* the radius grows from 0 to the 3 that fills the height of the matrix */
     for (int16_t radius = 0; radius <= 3; radius++) {
-      matrix.DrawCircle(static_cast<int16_t>(4 + 8 * radius), 3, radius, true);
+      matrix.DrawCircle(static_cast<int16_t>(4 + (8 * radius)), 3, radius,
+                        true);
     }
   } else {
     for (int16_t x = 0; x < matrix.GetNumberOfColumns(); x += 8) {
@@ -58,7 +59,9 @@ void setup() {
 void loop() {
   /* the next shape only every kShowMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_shape < kShowMs) return;
+  if (millis() - last_shape < kShowMs) {
+    return;
+  }
   last_shape = millis();
 
   shape = static_cast<byte>((shape + 1) % kNumberOfShapes);

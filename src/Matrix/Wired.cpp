@@ -15,6 +15,15 @@
 namespace max_matrix {
 namespace internal {
 
+namespace {
+
+/* a bit for each column of a module, all set */
+constexpr byte kAllColumnsChanged{0xFF};
+
+}  // namespace
+
+// FN-3: the three pins, the buffer and its length, as a sketch hands them
+// NOLINTNEXTLINE(readability-function-size)
 Wired::Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte* buffer, byte number_of_modules)
     : chain_{data_in_pin, chip_select_pin, clock_pin, number_of_modules},
@@ -34,7 +43,7 @@ void Wired::StoreBit(byte column, byte bit, bool value) {
 
 void Wired::Clear() {
   memset(matrix_buffer_, 0, GetNumberOfColumns());
-  changed_columns_ = 0xFF;
+  changed_columns_ = kAllColumnsChanged;
 }
 
 // The values of a column lie a module's columns apart in the buffer, and go out

@@ -211,9 +211,13 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
   for (uint16_t code = first;; code++) {
-    if (offset >= size) return Error::kNotAFont;
-    offset += pgm_read_byte(font + offset) + 1u;
-    if (code == last) break;
+    if (offset >= size) {
+      return Error::kNotAFont;
+    }
+    offset += pgm_read_byte(font + offset) + 1U;
+    if (code == last) {
+      break;
+    }
   }
   return offset == size ? Error::kOk : Error::kNotAFont;
 }
@@ -241,13 +245,17 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
     glyph.height = pgm_read_byte(font + 6);
     font += kHeaderLength2;
   }
-  if (code < first || code > last) return Error::kUnknownChar;
+  if (code < first || code > last) {
+    return Error::kUnknownChar;
+  }
   for (uint16_t skipped = first; skipped < code; skipped++) {
     font += pgm_read_byte(font) + 1;
   }
   glyph.width = pgm_read_byte(font);
   glyph.columns = font + 1;
-  if (glyph.width == 0) return Error::kUnknownChar;
+  if (glyph.width == 0) {
+    return Error::kUnknownChar;
+  }
   return glyph;
 }
 
@@ -265,9 +273,8 @@ DecodedChar Font::DecodeChar(char const* text) {
     byte const latin_1{static_cast<byte>(
         static_cast<byte>(high_bits << kUtf8ContinuationWidth) | low_bits)};
     return {static_cast<char>(latin_1), 2};
-  } else {
-    return {static_cast<char>(lead_byte), 1};
   }
+  return {static_cast<char>(lead_byte), 1};
 }
 
 }  // namespace max_matrix

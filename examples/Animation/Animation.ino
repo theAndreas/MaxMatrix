@@ -33,7 +33,9 @@ void setup() {
 void loop() {
   /* a step only every kStepIntervalMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_step < kStepIntervalMs) return;
+  if (millis() - last_step < kStepIntervalMs) {
+    return;
+  }
   last_step = millis();
 
   /* without the batch the matrix would show the frame without a ball in

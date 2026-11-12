@@ -109,7 +109,7 @@ TEST(SimulatorWebSocketTest, EncodeUsesTheShortLengthUpTo125Bytes) {
   std::string const frame =
       SimulatorWebSocket::EncodeFrame(std::string(125, 'x'));
 
-  ASSERT_EQ(frame.size(), 2u + 125u);
+  ASSERT_EQ(frame.size(), 2U + 125U);
   EXPECT_EQ(static_cast<uint8_t>(frame[0]), 0x81);
   EXPECT_EQ(static_cast<uint8_t>(frame[1]), 125);
 }
@@ -118,7 +118,7 @@ TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes) {
   std::string const frame =
       SimulatorWebSocket::EncodeFrame(std::string(300, 'x'));
 
-  ASSERT_EQ(frame.size(), 4u + 300u);
+  ASSERT_EQ(frame.size(), 4U + 300U);
   EXPECT_EQ(static_cast<uint8_t>(frame[1]), 126);
   EXPECT_EQ(static_cast<uint8_t>(frame[2]), 300U >> 8U);
   EXPECT_EQ(static_cast<uint8_t>(frame[3]), 300U & 0xFFU);

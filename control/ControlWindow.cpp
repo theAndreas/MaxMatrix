@@ -38,7 +38,7 @@ namespace {
 
 /* ControlWindow Parameter */
 /* what SerialControl opens its Serial with */
-constexpr uint32_t kBaudRate{115200u};
+constexpr uint32_t kBaudRate{115200U};
 /* the port the README starts the simulator with, beside the page's 8080 */
 constexpr int kTcpPort{8081};
 constexpr int kPollMs{20};
@@ -371,7 +371,9 @@ void ControlWindow::OnTimer(wxTimerEvent& /* event */) {
   Follow(board_link_, "board");
   Follow(simulator_link_, "simulator");
   ControlLink* const shown = GetShownLink();
-  if (shown == nullptr) return;
+  if (shown == nullptr) {
+    return;
+  }
   shown->AskForPicture(now);
   dots_->SetPicture(shown->GetPicture());
 }
@@ -402,7 +404,9 @@ void ControlWindow::Broadcast(std::string const& line) {
 // Sends a slider's `line` unless it is the one sent last: GTK reports a click
 // on a slider twice.
 void ControlWindow::BroadcastSetting(std::string const& line) {
-  if (line == last_setting_) return;
+  if (line == last_setting_) {
+    return;
+  }
   last_setting_ = line;
   Broadcast(line);
 }
@@ -435,23 +439,35 @@ void ControlWindow::SendSettings(ControlLink& link, char const* name) {
 void ControlWindow::Follow(ControlLink& link, char const* name) {
   std::vector<std::string> lines;
 
-  if (!link.IsOpen()) return;
+  if (!link.IsOpen()) {
+    return;
+  }
   bool const was_ready = link.IsReady();
   bool const open = link.Task(&lines);
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": " + ConvertToText(line) + "\n");
-    if (line == kControlLinkReady) SendSettings(link, name);
+    if (line == kControlLinkReady) {
+      SendSettings(link, name);
+    }
   }
-  if (!open) Log(wxString(name) + ": the connection has closed\n");
-  if (!open || was_ready != link.IsReady()) ShowState();
+  if (!open) {
+    Log(wxString(name) + ": the connection has closed\n");
+  }
+  if (!open || was_ready != link.IsReady()) {
+    ShowState();
+  }
 }
 
 // The board while it is ready, as that is what the window is for; the simulator
 // otherwise.
 ControlLink* ControlWindow::GetShownLink() {
-  if (board_link_.IsReady()) return &board_link_;
-  if (simulator_link_.IsReady()) return &simulator_link_;
+  if (board_link_.IsReady()) {
+    return &board_link_;
+  }
+  if (simulator_link_.IsReady()) {
+    return &simulator_link_;
+  }
   return nullptr;
 }
 
@@ -465,14 +481,17 @@ void ControlWindow::ShowState() {
 
   board_button_->SetLabel(serial_port_.IsOpen() ? "Close" : "Open");
   serial_port_name_->Enable(!serial_port_.IsOpen());
-  board_status_->SetLabel(board_link_.IsReady()   ? "ready"
-                          : serial_port_.IsOpen() ? "waiting for ready"
-                                                  : "closed");
-  board_status_->SetForegroundColour(
-      board_link_.IsReady() ? CONTROL_WINDOW_READY
-      : serial_port_.IsOpen()
-          ? CONTROL_WINDOW_WAITING
-          : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+  if (board_link_.IsReady()) {
+    board_status_->SetLabel("ready");
+    board_status_->SetForegroundColour(CONTROL_WINDOW_READY);
+  } else if (serial_port_.IsOpen()) {
+    board_status_->SetLabel("waiting for ready");
+    board_status_->SetForegroundColour(CONTROL_WINDOW_WAITING);
+  } else {
+    board_status_->SetLabel("closed");
+    board_status_->SetForegroundColour(
+        wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+  }
   simulator_button_->SetLabel(tcp_port_.IsOpen() ? "Disconnect" : "Connect");
   tcp_port_number_->Enable(!tcp_port_.IsOpen());
   simulator_status_->SetLabel(simulator_link_.IsReady() ? "ready"

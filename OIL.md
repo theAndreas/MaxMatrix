@@ -823,6 +823,11 @@ stay, as clangd reads a header of the mock open in the editor as a file of its o
 lies in `test/model/` instead, included as every header of the tests and checked as they are;
 its source, which `tools/tidy.sh` left out with the mock until then, had 19 places to fix.
 
+`readability-*` came on last. In the host code, `simulator/`, `control/` and `docu/`, its
+`function-size`, `function-cognitive-complexity` and `magic-numbers` stay off for now, each
+folder's `.clang-tidy` says why: some 19 layout and drawing functions to split and 66 sizes and
+ports to name, which a pull request of their own does before 36 is done.
+
 ### 37 Files named as their class
 
 35 put the classes into `max_matrix` without the prefix, and left the files as they were:

@@ -29,7 +29,9 @@ void ControlLink::Begin(bool wait_for_ready) {
 bool ControlLink::IsReady() const { return ready_ && port_.get().IsOpen(); }
 
 bool ControlLink::Send(std::string const& line) {
-  if (!IsReady()) return false;
+  if (!IsReady()) {
+    return false;
+  }
   picture_stale_ = picture_asked_;
   return port_.get().Write(line + "\n");
 }
@@ -39,13 +41,17 @@ bool ControlLink::Send(std::string const& line) {
 void ControlLink::AskForPicture(uint32_t now) {
   uint32_t const waited = now - picture_asked_at_;
 
-  if (!IsReady()) return;
+  if (!IsReady()) {
+    return;
+  }
   if (picture_timed_ &&
       waited < (picture_asked_ ? kControlLinkPictureTimeoutMs
                                : kControlLinkPictureIntervalMs)) {
     return;
   }
-  if (!port_.get().Write(ControlCommand::MakePicture() + "\n")) return;
+  if (!port_.get().Write(ControlCommand::MakePicture() + "\n")) {
+    return;
+  }
   picture_asked_ = true;
   picture_stale_ = false;
   picture_timed_ = true;
@@ -55,7 +61,9 @@ void ControlLink::AskForPicture(uint32_t now) {
 bool ControlLink::Task(std::vector<std::string>* lines) {
   size_t end = 0;
 
-  if (!port_.get().IsOpen()) return false;
+  if (!port_.get().IsOpen()) {
+    return false;
+  }
   bool const open = port_.get().Read(&received_);
 
   while ((end = received_.find('\n')) != std::string::npos ||
@@ -64,7 +72,9 @@ bool ControlLink::Task(std::vector<std::string>* lines) {
         end != std::string::npos ? end : kControlLinkMaxLineLength;
     std::string line = received_.substr(0, length);
     received_.erase(0, end != std::string::npos ? end + 1 : length);
-    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
     Take(std::move(line), lines);
   }
   return open;
@@ -87,6 +97,8 @@ void ControlLink::Take(std::string line, std::vector<std::string>* lines) {
     lines->push_back(std::move(line));
     return;
   }
-  if (picture_asked_ && !picture_stale_) picture_ = std::move(picture);
+  if (picture_asked_ && !picture_stale_) {
+    picture_ = std::move(picture);
+  }
   picture_asked_ = false;
 }

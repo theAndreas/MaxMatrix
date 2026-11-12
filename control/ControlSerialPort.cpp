@@ -32,7 +32,7 @@
 namespace {
 
 /* ControlSerialPort Parameter */
-constexpr size_t kChunkLength{256u};
+constexpr size_t kChunkLength{256U};
 constexpr int kWriteTimeoutMs{1000};
 
 // Whether the port takes `baud_rate`: the rates of the Arduino IDE's serial
@@ -167,10 +167,14 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   termios settings = termios();
 
   Close();
-  if (!IsBaudRate(baud_rate)) return false;
+  if (!IsBaudRate(baud_rate)) {
+    return false;
+  }
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's open()
   descriptor_ = open(name.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
-  if (descriptor_ < 0) return false;
+  if (descriptor_ < 0) {
+    return false;
+  }
 
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
   bool opened = ioctl(descriptor_, TIOCEXCL) == 0 &&
@@ -219,7 +223,9 @@ bool ControlSerialPort::IsOpen() const { return descriptor_ >= 0; }
 bool ControlSerialPort::Write(std::string const& data) {
   size_t sent = 0;
 
-  if (!IsOpen()) return false;
+  if (!IsOpen()) {
+    return false;
+  }
   while (sent < data.size()) {
     ssize_t const written = write(descriptor_, &data[sent], data.size() - sent);
     pollfd writable = {descriptor_, POLLOUT, 0};
@@ -239,7 +245,9 @@ bool ControlSerialPort::Write(std::string const& data) {
 bool ControlSerialPort::Read(std::string* data) {
   std::array<char, kChunkLength> chunk{};
 
-  if (!IsOpen()) return false;
+  if (!IsOpen()) {
+    return false;
+  }
   for (;;) {
     ssize_t const length = read(descriptor_, chunk.data(), chunk.size());
     if (length > 0) {
@@ -254,7 +262,9 @@ bool ControlSerialPort::Read(std::string* data) {
 }
 
 void ControlSerialPort::Close() {
-  if (descriptor_ >= 0) close(descriptor_);
+  if (descriptor_ >= 0) {
+    close(descriptor_);
+  }
   descriptor_ = -1;
 }
 

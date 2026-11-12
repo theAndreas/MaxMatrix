@@ -38,7 +38,9 @@ bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
     std::cout << "Serial on localhost:" << options.GetTcpPort() << '\n';
   }
   std::cout.flush();
-  if (terminal_on_) SimulatorTerminal::Clear();
+  if (terminal_on_) {
+    SimulatorTerminal::Clear();
+  }
   return true;
 }
 
@@ -49,7 +51,9 @@ void SimulatorFrontEnd::Follow(SimulatorPanel& panel, uint32_t now) {
   std::string const printed = mock::serial_output;
   mock::serial_output.clear();
 
-  if (web_on_) web_.Task(panel, printed);
+  if (web_on_) {
+    web_.Task(panel, printed);
+  }
   serial_host_.Send(printed);
   serial_host_.Task(&mock::serial_input);
 

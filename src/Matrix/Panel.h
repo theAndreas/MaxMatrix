@@ -386,10 +386,10 @@ class Panel {
    * flash, a sensor or a calculation, and what falls out at the left, to keep
    * or pass on.
    *
-   * \param[in] column The column that comes in, bit 0 the top row.
+   * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the left, bit 0 the top row.
    */
-  byte ShiftLeft(byte column);
+  byte ShiftLeft(byte shifted_in);
 
   /*!
    * \brief Shifts the whole picture one column to the right.
@@ -403,10 +403,10 @@ class Panel {
    * \brief Shifts the whole picture one column to the right, with a column of
    *        the sketch coming in at the left.
    *
-   * \param[in] column The column that comes in, bit 0 the top row.
+   * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the right, bit 0 the top row.
    */
-  byte ShiftRight(byte column);
+  byte ShiftRight(byte shifted_in);
 
   /*!
    * \brief Shifts the whole picture one row up.

@@ -31,7 +31,9 @@ int SimulatorSocket::OpenListener(uint16_t port) {
   int const reuse = 1;
   sockaddr_in address = sockaddr_in();
 
-  if (listening < 0) return kSimulatorSocketNone;
+  if (listening < 0) {
+    return kSimulatorSocketNone;
+  }
 
   // so that a restart does not wait out the last connection's TIME_WAIT
   setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));

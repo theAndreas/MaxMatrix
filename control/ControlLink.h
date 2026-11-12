@@ -23,13 +23,13 @@
 constexpr char kControlLinkReady[] = "ready";
 /* the longest line kept whole; a sketch that never ends a line is shown in
  * pieces of this length */
-constexpr size_t kControlLinkMaxLineLength{256u};
+constexpr size_t kControlLinkMaxLineLength{256U};
 /* how often the picture is asked for at most: 20 times a second, whose answers
  * take an eighth of 115200 baud */
-constexpr uint32_t kControlLinkPictureIntervalMs{50u};
+constexpr uint32_t kControlLinkPictureIntervalMs{50U};
 /* how long an answer to picture is waited for before it is taken as lost and
  * asked for again */
-constexpr uint32_t kControlLinkPictureTimeoutMs{1000u};
+constexpr uint32_t kControlLinkPictureTimeoutMs{1000U};
 
 /*!
  * \brief The lines between the control program and one SerialControl, on a

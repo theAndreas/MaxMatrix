@@ -26,7 +26,9 @@ bool SimulatorOptions::Parse(int argc, char** argv) {
   std::vector<char const*> const arguments(argv, argv + argc);
 
   for (size_t i = 1; i < arguments.size(); i++) {
-    if (!ParseOption(arguments, &i)) return false;
+    if (!ParseOption(arguments, &i)) {
+      return false;
+    }
   }
   return expect_file_ == nullptr || run_for_ != 0;
 }
@@ -59,11 +61,17 @@ bool SimulatorOptions::ParseOption(std::vector<char const*> const& arguments,
   } else if (option == "--wiring" && has_value) {
     wiring_name_ = arguments[++*index];
   } else if (option == "--port" && has_value) {
-    if (!ConvertToPort(arguments[++*index], &port_)) return false;
+    if (!ConvertToPort(arguments[++*index], &port_)) {
+      return false;
+    }
   } else if (option == "--tcp" && has_value) {
-    if (!ConvertToPort(arguments[++*index], &tcp_port_)) return false;
+    if (!ConvertToPort(arguments[++*index], &tcp_port_)) {
+      return false;
+    }
   } else if (option == "--for" && has_value) {
-    if (!ConvertToRunFor(arguments[++*index], &run_for_)) return false;
+    if (!ConvertToRunFor(arguments[++*index], &run_for_)) {
+      return false;
+    }
   } else if (option == "--expect" && has_value) {
     expect_file_ = arguments[++*index];
   } else if (option == "--elf" && has_value) {
@@ -113,10 +121,11 @@ bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
   char* end = nullptr;
   double const milliseconds = strtod(text, &end) * 1000;
 
-  /* written so that NaN, which compares false with everything, is refused as
-   * well */
-  if (end == text || *end != '\0' ||
-      !(milliseconds >= 1 && milliseconds <= kSimulatorOptionsMaxRunFor)) {
+  /* asked as whether it lies in the range, so that NaN, which compares false
+   * with everything, is refused as well */
+  bool const in_range =
+      milliseconds >= 1 && milliseconds <= kSimulatorOptionsMaxRunFor;
+  if (end == text || *end != '\0' || !in_range) {
     return false;
   }
   *run_for = static_cast<uint32_t>(milliseconds);

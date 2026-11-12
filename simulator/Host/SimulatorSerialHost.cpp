@@ -21,7 +21,7 @@
 namespace {
 
 /* SimulatorSerialHost Parameter */
-constexpr size_t kChunkLength{256u};
+constexpr size_t kChunkLength{256U};
 
 }  // namespace
 
@@ -29,8 +29,12 @@ SimulatorSerialHost::SimulatorSerialHost()
     : listener_{kSimulatorSocketNone}, client_{kSimulatorSocketNone} {}
 
 SimulatorSerialHost::~SimulatorSerialHost() {
-  if (client_ != kSimulatorSocketNone) close(client_);
-  if (listener_ != kSimulatorSocketNone) close(listener_);
+  if (client_ != kSimulatorSocketNone) {
+    close(client_);
+  }
+  if (listener_ != kSimulatorSocketNone) {
+    close(listener_);
+  }
 }
 
 bool SimulatorSerialHost::Begin(uint16_t port) {
@@ -41,7 +45,9 @@ bool SimulatorSerialHost::Begin(uint16_t port) {
 void SimulatorSerialHost::Task(std::string* received) {
   std::array<char, kChunkLength> chunk{};
 
-  if (listener_ == kSimulatorSocketNone) return;
+  if (listener_ == kSimulatorSocketNone) {
+    return;
+  }
 
   // The client first, so that one which has gone frees the port for the next in
   // the same call.

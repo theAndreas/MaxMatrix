@@ -44,7 +44,8 @@ INSTANTIATE_TEST_SUITE_P(
 /* the bit position used to run on across modules, so only module 0 got its row
  */
 TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
-  PanelRow in, out;
+  PanelRow in;
+  PanelRow out;
   for (byte module = 0; module < kNumberOfModules; module++) {
     in[module] = static_cast<byte>(0xA5U ^ (module * 0x3CU));
   }
@@ -177,8 +178,8 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
       {"ShiftDown keeping", [](Matrix& m) { m.ShiftDown(ShiftFill::kKeep); }, 0,
        -1, ShiftFill::kKeep},
   }};
-  int16_t const width = kNumberOfColumns,
-                height = max_matrix::kRowNumberOfModule;
+  int16_t const width = kNumberOfColumns;
+  int16_t const height = max_matrix::kRowNumberOfModule;
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
@@ -227,12 +228,14 @@ TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   std::vector<byte> band;
   band.reserve(size_t{3} * kNumberOfColumns);
   for (uint16_t index = 0; index < 3 * kNumberOfColumns; index++) {
-    band.push_back(static_cast<byte>(index * 37 + 11));
+    band.push_back(static_cast<byte>((index * 37) + 11));
   }
   std::vector<byte> out;
   out.reserve(band.size());
 
-  for (byte const column : band) out.push_back(matrix_.ShiftLeft(column));
+  for (byte const column : band) {
+    out.push_back(matrix_.ShiftLeft(column));
+  }
   for (byte column = 0; column < kNumberOfColumns; column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(),
               band[band.size() - kNumberOfColumns + column])
@@ -271,7 +274,7 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
-      bool const expected{((column * 3U + row) & 1U) != 0U};
+      bool const expected{(((column * 3U) + row) & 1U) != 0U};
       matrix_.SetDot(column, row, expected);
       Result<bool> const value{matrix_.GetDot(column, row)};
       EXPECT_EQ(value.GetError(), Error::kOk);
@@ -315,7 +318,7 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
   Max7219Wiring const& wiring =
       kMax7219Wirings[static_cast<uint8_t>(module_type)];
   auto const pattern = [](uint16_t x, uint8_t y) {
-    return (x * x + 3 * y + x * y) % 3 == 0;
+    return ((x * x) + (3 * y) + (x * y)) % 3 == 0;
   };
 
   matrix_.SetMatrixOrientation(upside_down ? MatrixOrientation::k180
@@ -396,8 +399,8 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
 TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
   Result<Glyph> const glyph = Font::GetGlyph(kDefaultFont, 'A');
   ASSERT_EQ(glyph.GetError(), Error::kOk);
-  int16_t const width = glyph.GetValue().width,
-                height = glyph.GetValue().height;
+  int16_t const width = glyph.GetValue().width;
+  int16_t const height = glyph.GetValue().height;
   uint8_t const* const columns = glyph.GetValue().columns;
   struct Place {
     int16_t x, y;
@@ -424,44 +427,65 @@ TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
         << "X " << place.x << ", Y " << place.y;
   }
 }
-/* Whether a line drawn from (x0, y0) to (x1, y1) is the line on the panel:
- * along its longer axis it has exactly one dot in each column or row between
- * the ends, at most half a dot from the true line, and nothing beyond the ends.
- */
-void ExpectLine(Matrix& matrix, int16_t x0, int16_t y0, int16_t x1,
-                int16_t y1) {
-  bool const steep = std::abs(y1 - y0) > std::abs(x1 - x0);
+/* a line from (x0, y0) to (x1, y1) */
+struct Line {
+  int16_t x0, y0, x1, y1;
+};
+
+/* a line as seen along its longer axis: from along_0 to along_1, at across_0
+ * and across_1 on the other axis; steep if the longer axis is the rows */
+struct Axes {
+  bool steep;
+  double along_0, along_1, across_0, across_1;
+};
+
+/* Whether the dots across the line at `along` are the line's: exactly one
+ * between the ends, at most half a dot from the true line, none beyond them. */
+void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
+                  int16_t breadth) {
+  bool const inside = along >= std::min(axes.along_0, axes.along_1) &&
+                      along <= std::max(axes.along_0, axes.along_1);
+  double const ideal = axes.along_0 == axes.along_1
+                           ? axes.across_0
+                           : axes.across_0 + ((axes.across_1 - axes.across_0) *
+                                              (along - axes.along_0) /
+                                              (axes.along_1 - axes.along_0));
+  uint16_t lit = 0;
+
+  for (int16_t across = 0; across < breadth; across++) {
+    bool const dot = (axes.steep ? matrix.GetDot(across, along)
+                                 : matrix.GetDot(along, across))
+                         .GetValue();
+    if (!dot) {
+      continue;
+    }
+    lit++;
+    EXPECT_TRUE(inside) << "a dot beyond the ends at " << along;
+    EXPECT_LE(std::abs(across - ideal), 0.5)
+        << "at " << along << ", " << across << " off the line";
+  }
+  bool const ideal_on_panel =
+      std::round(ideal) >= 0 && std::round(ideal) < breadth;
+  if (inside && ideal_on_panel) {
+    EXPECT_EQ(lit, 1U) << "at " << along;
+  }
+}
+
+/* Whether `line`, drawn, is the line on the panel: along its longer axis the
+ * dots of every column or row are the line's. */
+void ExpectLine(Matrix& matrix, Line const& line) {
+  bool const steep = std::abs(line.y1 - line.y0) > std::abs(line.x1 - line.x0);
+  Axes const axes{steep, static_cast<double>(steep ? line.y0 : line.x0),
+                  static_cast<double>(steep ? line.y1 : line.x1),
+                  static_cast<double>(steep ? line.x0 : line.y0),
+                  static_cast<double>(steep ? line.x1 : line.y1)};
   int16_t const length =
       steep ? max_matrix::kRowNumberOfModule : matrix.GetNumberOfColumns();
   int16_t const breadth =
       steep ? matrix.GetNumberOfColumns() : max_matrix::kRowNumberOfModule;
-  double const along_0 = steep ? y0 : x0, along_1 = steep ? y1 : x1;
-  double const across_0 = steep ? x0 : y0, across_1 = steep ? x1 : y1;
 
   for (int16_t along = 0; along < length; along++) {
-    bool const inside = along >= std::min(along_0, along_1) &&
-                        along <= std::max(along_0, along_1);
-    double const ideal = along_0 == along_1
-                             ? across_0
-                             : across_0 + (across_1 - across_0) *
-                                              (along - along_0) /
-                                              (along_1 - along_0);
-    uint16_t lit = 0;
-    for (int16_t across = 0; across < breadth; across++) {
-      if (!(steep ? matrix.GetDot(across, along) : matrix.GetDot(along, across))
-               .GetValue()) {
-        continue;
-      }
-      lit++;
-      EXPECT_TRUE(inside) << "a dot beyond the ends at " << along;
-      EXPECT_LE(std::abs(across - ideal), 0.5)
-          << "at " << along << ", " << across << " off the line";
-    }
-    bool const ideal_on_panel =
-        std::round(ideal) >= 0 && std::round(ideal) < breadth;
-    if (inside && ideal_on_panel) {
-      EXPECT_EQ(lit, 1u) << "at " << along;
-    }
+    ExpectDotsAt(matrix, axes, along, breadth);
   }
 }
 
@@ -469,9 +493,6 @@ void ExpectLine(Matrix& matrix, int16_t x0, int16_t y0, int16_t x1,
  * lie off the panel, as far as an int16_t reaches: the sum of their differences
  * does not fit in an int, which has 16 bits on the Uno */
 TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
-  struct Line {
-    int16_t x0, y0, x1, y1;
-  };
   std::array<Line, 13> const lines{{
       {2, 3, 20, 3},
       {7, 0, 7, 7},
@@ -499,7 +520,7 @@ TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
       } else {
         matrix_.DrawLine(line.x0, line.y0, line.x1, line.y1, true);
       }
-      ExpectLine(matrix_, line.x0, line.y0, line.x1, line.y1);
+      ExpectLine(matrix_, line);
     }
   }
   matrix_.Clear();
@@ -530,8 +551,8 @@ TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
   for (auto const& r : rectangles) {
     SCOPED_TRACE(::testing::Message()
                  << r.x << ", " << r.y << ", " << r.width << " x " << r.height);
-    int32_t const right = static_cast<int32_t>(r.x) + r.width - 1,
-                  bottom = static_cast<int32_t>(r.y) + r.height - 1;
+    int32_t const right = static_cast<int32_t>(r.x) + r.width - 1;
+    int32_t const bottom = static_cast<int32_t>(r.y) + r.height - 1;
     auto inside = [&](int16_t x, int16_t y) {
       return x >= r.x && x <= right && y >= r.y && y <= bottom;
     };
@@ -553,7 +574,7 @@ TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
   matrix_.DrawRect(5, 0, 0, 8, false);
   matrix_.FillRect(5, 0, 8, -1, false);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return !(x >= 1 && x <= 3 && y >= 1 && y <= 2);
+              return x < 1 || x > 3 || y < 1 || y > 2;
             }))
       << "turned off, and nothing drawn without a width or height";
 }

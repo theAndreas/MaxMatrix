@@ -26,15 +26,21 @@ class FakePort : public ControlPort {
 
   bool IsOpen() const override { return open; }
   bool Write(std::string const& data) override {
-    if (!open) return false;
+    if (!open) {
+      return false;
+    }
     written += data;
     return true;
   }
   bool Read(std::string* data) override {
-    if (!open) return false;
+    if (!open) {
+      return false;
+    }
     *data += incoming;
     incoming.clear();
-    if (gone) open = false;
+    if (gone) {
+      open = false;
+    }
     return open;
   }
   void Close() override { open = false; }
@@ -97,7 +103,7 @@ TEST(ControlLinkTest, CutsALineThatNeverEnds) {
   link.Begin(false);
   port.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
   link.Task(&lines);
-  ASSERT_EQ(lines.size(), 1u);
+  ASSERT_EQ(lines.size(), 1U);
   EXPECT_EQ(lines[0].size(), kControlLinkMaxLineLength);
 }
 
@@ -138,7 +144,7 @@ TEST(ControlLinkTest, BeginForgetsHalfALine) {
 // SerialControl prints it.
 std::string Picture(char const* first) {
   return std::string("picture=") + first +
-         std::string(2 * kControlNumberOfColumns - 2, '0') + "\r\n";
+         std::string((2 * kControlNumberOfColumns) - 2, '0') + "\r\n";
 }
 
 // the picture is asked for once per interval, and its answer is kept rather
