@@ -49,7 +49,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 37 | Files named as their class | 35 | done | #77 |
 | 38 | Results that must not be ignored | 36 | open | |
 | 39 | MC/DC coverage | 34 | open | |
-| 40 | Braced initialization checked | 34 | open | |
+| 40 | Braced initialization checked | 34 | done | #93 |
 
 ### 1 Build with CMake
 
@@ -866,18 +866,19 @@ goes into embedded-cpp-template first and reaches MaxMatrix, Utl and Wordclock b
 ### 40 Braced initialization checked
 
 T-3 of CodingStyle.md has every variable initialized in braces, `int count{0};`, which refuses a
-narrowing conversion. Only the member initializer list is checked, by `house-braced-member-init`;
-a variable is left to review, and some 240 are initialized with `=`, 50 of them in `src/`. The
-fixes of `cppcoreguidelines-init-variables` write `= 0` themselves, and were taken as they came
-in 36.
+narrowing conversion. Only the member initializer list was checked, by `house-braced-member-init`;
+a variable was left to review.
 
-A second check of the template's own, for variables, as the one for members: a fix-it where
-braces mean the same, none where an argument narrows or a `std::initializer_list` constructor
-would win. `auto x{1}` was a `std::initializer_list` in C++11 as published; whether avr-gcc 7.3
-in gnu++11 takes it as the `int` of N3922 decides whether the check may rewrite an `auto`.
-`tools/` is the template's, so the check goes into embedded-cpp-template first and reaches
-MaxMatrix, Utl and Wordclock by `copier update`; the places here are fixed in a pull request
-of their own after it.
+The template's second check, `house-braced-var-init` of embedded-cpp-template v0.6.0, checks
+variables and a data member's default as well, with a fix-it where braces mean the same and none
+where an argument narrows or an explicit constructor would be considered. It reported some 570
+places here; most took the fix-it, and where braces would refuse a narrowing the conversion is
+written out. An `auto` takes braces too: avr-gcc 7.3 in gnu++11 deduces `auto x{1}` as the `int` of
+N3922, as `MaxMatrixError.cpp` compiles for the board. v0.6.0 also rewrote a text in a C array, `char const kName[] = "font";`, which
+`modernize-avoid-c-arrays` then reported, as it allows a text only with `=` (T-20); found on
+this update, the template leaves such a text alone since v0.6.1. The fix-its were taken with the
+board's flags, where an `int` has 16 bits; one in `Shapes` narrowed on the host, which only the
+simulator's build showed.
 
 ## Decisions
 
