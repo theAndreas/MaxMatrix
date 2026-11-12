@@ -119,7 +119,8 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
   }
 
   Max7219 const& chip{ChipAt(x)};
-  uint8_t column = Max7219::kNumberOfDigits - 1 - x % Max7219::kNumberOfDigits;
+  uint8_t const column{static_cast<uint8_t>(Max7219::kNumberOfDigits - 1 -
+                                            x % Max7219::kNumberOfDigits)};
   uint8_t digit = wiring.digits_as_rows ? y : column;
   uint8_t segment = wiring.digits_as_rows ? column : y;
 

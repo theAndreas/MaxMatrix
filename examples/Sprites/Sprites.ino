@@ -42,7 +42,7 @@ void loop() {
     {
       /* cleared and drawn again as one picture, so that the column it left goes
        * dark without a flicker */
-      max_matrix::Batch batch(matrix);
+      max_matrix::Batch const batch{matrix};
       matrix.Clear();
       matrix.SetSprite(x, kSpriteY,
                        x % 2 != 0 ? kInvaderLegsOut : kInvaderLegsIn);

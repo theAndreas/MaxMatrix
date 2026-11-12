@@ -115,8 +115,8 @@ TEST_F(MaxMatrixTest, UnknownChars) {
   EXPECT_EQ(matrix_.SetText("a\x01").GetError(), Error::kUnknownChar);
 
   char known[] = "ab";
-  int32_t frames = ShiftWholeText(known);
-  uint16_t calls = shift_calls_;
+  int32_t const frames{ShiftWholeText(known)};
+  uint16_t const calls{shift_calls_};
 
   char in_the_middle[] =
       "a\x01\x02"

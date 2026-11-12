@@ -11,11 +11,16 @@
 # readability-function-cognitive-complexity.IgnoreMacros: GoogleTest's
 #   EXPECT_ and ASSERT_ expand to an if and an else each, so a test without a
 #   branch of its own counted 20; its own branches still count.
+# MaxMatrix's own: misc-non-private-member-variables-in-classes: a fixture
+#   hands its state to the tests, which GoogleTest derives from it, so it is
+#   protected; the model of the MAX7219 shows its chips to the tests that read
+#   them.
 InheritParentConfig: true
 Checks: >
   -readability-magic-numbers,
   -cppcoreguidelines-pro-type-reinterpret-cast,
-  -cppcoreguidelines-avoid-non-const-global-variables
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -misc-non-private-member-variables-in-classes
 CheckOptions:
   readability-function-size.LineThreshold: none
   readability-function-cognitive-complexity.IgnoreMacros: true

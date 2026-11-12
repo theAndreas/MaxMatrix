@@ -38,7 +38,7 @@ void loop() {
 
   /* without the batch the matrix would show the frame without a ball in
    * between, as a flicker */
-  max_matrix::Batch batch(matrix);
+  max_matrix::Batch const batch{matrix};
   matrix.SetDot(ball_x, ball_y, false);
   /* turn round at an edge rather than leave the matrix */
   if (ball_x + step_x < 0 || ball_x + step_x >= matrix.GetNumberOfColumns()) {

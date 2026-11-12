@@ -83,7 +83,7 @@ bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
 // read; `text` then holds what was read even so, so that the caller can show
 // it.
 bool SimulatorTerminal::ReadFile(char const* path, std::string* text) {
-  std::ifstream file(path);
+  std::ifstream const file{path};
   std::stringstream content;
 
   content << file.rdbuf();

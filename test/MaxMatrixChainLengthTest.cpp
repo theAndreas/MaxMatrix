@@ -17,11 +17,13 @@ using max_matrix::ModuleType;
 using max_matrix::ShiftFill;
 using max_matrix::State;
 
+namespace {
+
 /* Chains of other lengths than the examples\', in every orientation: one
  * module, which is a pair of itself when the orientation changes, three, with
  * one module in the middle, and six. The buffer is the test's, filled with a
  * pattern that the matrix has to empty. */
-static byte const kChainLengths[] = {1, 3, 6};
+byte const kChainLengths[] = {1, 3, 6};
 typedef std::tuple<byte, MatrixOrientation, ModuleType> ChainParameter;
 
 class MaxMatrixChainLengthTest
@@ -56,8 +58,7 @@ class MaxMatrixChainLengthTest
   }
 };
 
-static std::string ChainName(
-    ::testing::TestParamInfo<ChainParameter> const& info) {
+std::string ChainName(::testing::TestParamInfo<ChainParameter> const& info) {
   return std::to_string(std::get<0>(info.param)) + "modules_matrix" +
          (std::get<1>(info.param) == MatrixOrientation::k180 ? "180" : "0") +
          "_" + ModuleTypeName(std::get<2>(info.param));
@@ -178,6 +179,10 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
   EXPECT_NE(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }, number_of_columns_))
       << "nothing shifted in";
-  for (char c : std::string("picture\n")) command.Feed(matrix_, c, answer);
+  for (char const c : std::string("picture\n")) {
+    command.Feed(matrix_, c, answer);
+  }
   EXPECT_EQ(answer.text.size(), 8 + 2u * number_of_columns_ + 2);
 }
+
+}  // namespace

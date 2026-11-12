@@ -11,7 +11,7 @@
  * every other module */
 TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   byte const module = kNumberOfModules - 2;
-  int32_t frames_before = mock::frames;
+  int32_t const frames_before{mock::frames};
 
   matrix_.panel_.wired_.StoreBit(module * max_matrix::kColumnNumberOfModule + 3,
                                  1, true);
@@ -42,7 +42,7 @@ TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft) {
 
 TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {
   matrix_.SetText("Hi!");
-  int32_t frames_before = mock::frames;
+  int32_t const frames_before{mock::frames};
 
   matrix_.SetText("Hi!");
   matrix_.SetDot(0, 0, (matrix_.panel_.wired_.GetColumn(0) & 1U) != 0U);

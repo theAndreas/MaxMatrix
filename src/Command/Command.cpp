@@ -126,7 +126,7 @@ Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
 // text=TEXT clears the matrix first and sends clear and text as one picture; an
 // empty text only clears it.
 Status Command::ExecuteText(Matrix& matrix, char const* value) {
-  Batch batch(matrix);
+  Batch const batch{matrix};
 
   matrix.Clear();
   return matrix.SetText(value);
@@ -144,12 +144,14 @@ Status Command::ExecuteDot(Matrix& matrix, char* value) {
       row_text == NULL ? NULL : strchr(row_text + 1, kListSeparator);
 
   if (lit_text == NULL) return Error::kNotANumber;
-  *row_text++ = internal::kNullCharacter;
-  *lit_text++ = internal::kNullCharacter;
-  Result<uint16_t> column =
-      ConvertToNumber(value, matrix.GetNumberOfColumns() - 1);
-  Result<uint16_t> row = ConvertToNumber(row_text, kRowNumberOfModule - 1);
-  Result<uint16_t> lit = ConvertToNumber(lit_text, 1);
+  *row_text = internal::kNullCharacter;
+  row_text++;
+  *lit_text = internal::kNullCharacter;
+  lit_text++;
+  Result<uint16_t> const column{
+      ConvertToNumber(value, matrix.GetNumberOfColumns() - 1)};
+  Result<uint16_t> const row{ConvertToNumber(row_text, kRowNumberOfModule - 1)};
+  Result<uint16_t> const lit{ConvertToNumber(lit_text, 1)};
   if (!column.IsOk()) return column.GetError();
   if (!row.IsOk()) return row.GetError();
   if (!lit.IsOk()) return lit.GetError();
@@ -163,17 +165,17 @@ Status Command::ExecuteDot(Matrix& matrix, char* value) {
 Status Command::ExecuteSetting(Matrix& matrix, char const* name,
                                char const* value) {
   if (0 == strcmp_P(name, PSTR("intensity"))) {
-    Result<uint16_t> number =
-        ConvertToNumber(value, max7219::kIntensityMaxValue);
+    Result<uint16_t> const number{
+        ConvertToNumber(value, max7219::kIntensityMaxValue)};
     if (!number.IsOk()) return number.GetError();
     // ConvertToNumber() held it to the intensity's 15.
     matrix.SetIntensity(static_cast<byte>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
-    Result<uint16_t> number = ConvertToNumber(value, kMaxInterval);
+    Result<uint16_t> const number{ConvertToNumber(value, kMaxInterval)};
     if (!number.IsOk()) return number.GetError();
     matrix.SetShiftInterval(number.GetValue());
   } else if (0 == strcmp_P(name, PSTR("space"))) {
-    Result<uint16_t> number = ConvertToNumber(value, kMaxByte);
+    Result<uint16_t> const number{ConvertToNumber(value, kMaxByte)};
     if (!number.IsOk()) return number.GetError();
     // ConvertToNumber() held it to a byte.
     matrix.SetSpaceBetweenChars(static_cast<byte>(number.GetValue()));

@@ -140,7 +140,7 @@ class MaxMatrixTest : public ::testing::Test {
   /* returns the number of frames the shift sent to the chain */
   int32_t ShiftWholeText(char const* text) {
     matrix_.Clear();
-    int32_t frames_before = mock::frames;
+    int32_t const frames_before{mock::frames};
     matrix_.SetTextWithShift(text);
     for (shift_calls_ = 0;
          shift_calls_ < 1000 && matrix_.GetState() != max_matrix::State::kReady;

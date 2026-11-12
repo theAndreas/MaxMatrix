@@ -26,7 +26,7 @@ uint32_t last_shape = 0;
 
 void DrawShape() {
   int16_t const right = matrix.GetNumberOfColumns() - 1;
-  max_matrix::Batch batch(matrix);
+  max_matrix::Batch const batch{matrix};
 
   matrix.Clear();
   if (shape == 0) {

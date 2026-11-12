@@ -32,6 +32,8 @@
 /* Serial is the first and only UART of the ATmega328P */
 #define SIMULATOR_AVR_UART '0'
 
+namespace {
+
 /*!
  * \brief Passes on simavr's log, errors only.
  *
@@ -40,15 +42,16 @@
  * \param[in] format As for `printf()`.
  * \param[in] arguments As for `vprintf()`.
  */
-__attribute__((format(printf, 3, 0))) static void LogSimavr(avr_t* avr,
-                                                            int const level,
-                                                            char const* format,
-                                                            va_list arguments) {
+__attribute__((format(printf, 3, 0))) void LogSimavr(
+    avr_t* avr,  // NOLINT(misc-const-correctness): as avr_logger_p has it
+    int const level, char const* format, va_list arguments) {
   (void)avr;
   // simavr also reports every section of the .elf it loads, which would stand
   // between the panel and the command line.
   if (level <= LOG_ERROR) vfprintf(stderr, format, arguments);
 }
+
+}  // namespace
 
 SimulatorAvr::SimulatorAvr() {
   avr_ = nullptr;

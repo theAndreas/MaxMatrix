@@ -15,11 +15,13 @@
 #include <utility>
 #include <vector>
 
+namespace {
+
 typedef std::pair<uint8_t, uint8_t> Pair;
 
 /* one frame: every pair shifted in, address first, then the rising edge of chip
  * select */
-static void SendFrame(Max7219Chain& chain, std::initializer_list<Pair> pairs) {
+void SendFrame(Max7219Chain& chain, std::initializer_list<Pair> pairs) {
   for (Pair const& pair : pairs) {
     chain.Shift(pair.first);
     chain.Shift(pair.second);
@@ -27,7 +29,7 @@ static void SendFrame(Max7219Chain& chain, std::initializer_list<Pair> pairs) {
   chain.Latch();
 }
 
-static Max7219Chain ChainInNormalOperation(uint8_t number_of_chips) {
+Max7219Chain ChainInNormalOperation(uint8_t number_of_chips) {
   Max7219Chain chain;
   chain.Reset(number_of_chips);
   for (uint8_t i = 0; i < number_of_chips; i++) {
@@ -156,8 +158,8 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
   EXPECT_EQ(chain.chips[0].intensity, 0x07);
 }
 
-static Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
-                                        uint8_t digit, uint8_t segment) {
+Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
+                                 uint8_t digit, uint8_t segment) {
   Max7219Chain chain = ChainInNormalOperation(number_of_chips);
   chain.chips[chip].digit[digit] = static_cast<uint8_t>(1U << segment);
   return chain;
@@ -166,9 +168,8 @@ static Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
 /* an LED as the viewer sees it, column X and row Y */
 typedef std::pair<uint16_t, uint16_t> Led;
 
-static std::vector<Led> LitLeds(Max7219Chain const& chain,
-                                Max7219Wiring const& wiring,
-                                bool upside_down = false) {
+std::vector<Led> LitLeds(Max7219Chain const& chain, Max7219Wiring const& wiring,
+                         bool upside_down = false) {
   std::vector<Led> leds;
   for (uint16_t x = 0; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
     for (uint8_t y = 0; y < Max7219::kNumberOfDigits; y++) {
@@ -232,3 +233,5 @@ TEST(Max7219Test, ChainRunsFromRightToLeft) {
   EXPECT_EQ(&chain.ChipAt(15), &chain.chips[0]);
   EXPECT_EQ(&chain.ChipAt(0, true), &chain.chips[0]);
 }
+
+}  // namespace

@@ -44,8 +44,8 @@ void loop() {
 
   /* Draw a frame from many dots and show it at once, rather than dot by dot */
   {
-    max_matrix::Batch batch(
-        matrix);  // nothing is sent until the end of this block
+    // nothing is sent until the end of this block
+    max_matrix::Batch const batch{matrix};
     matrix.Clear();
     for (byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
       matrix.SetDot(column, 0, true);
