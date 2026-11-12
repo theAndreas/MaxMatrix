@@ -45,8 +45,10 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 33 | A font checked against its length | 15 | done | #67 |
 | 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
-| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78, #79, #80, #82, #85, #87 |
-| 37 | Files named as their class | 35 | in progress | #77 |
+| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78, #79, #80, #82, #85, #87, #88 |
+| 37 | Files named as their class | 35 | done | #77 |
+| 38 | Results that must not be ignored | 36 | open | |
+| 39 | MC/DC coverage | 34 | open | |
 
 ### 1 Build with CMake
 
@@ -831,6 +833,27 @@ it by the library's name, and the others because Arduino puts `src/` on the incl
 every sketch and library built with MaxMatrix, where an `Error.h` or `Config.h` would meet
 another library's; a file in a folder is included with the folder's name. A sketch notices
 nothing, as it includes `MaxMatrix.h` only.
+
+### 38 Results that must not be ignored
+
+FN-10 of CodingStyle.md marks a result that must not be dropped, as an error, with
+`MAXMATRIX_NODISCARD`: `[[nodiscard]]` from C++17, GCC's `warn_unused_result` before it, chosen by
+`__cplusplus` in a header of the library's own; a result dropped on purpose goes to `Discard()` of
+that header, with the reason in a comment. MaxMatrix has neither yet, so `Status` and
+`Result<T>`, the reasons a call failed, can be dropped without a word, and
+`modernize-use-nodiscard` is off: it would write `[[nodiscard]]`, which does not compile as
+gnu++11. With the header, the library's results that say why a call failed are marked, the
+host code's as the check finds them, and the check comes on with `ReplacementString` naming the
+macro. `make examples` alone sees what avr-gcc 7 reports through a cast (Testing.md).
+
+### 39 MC/DC coverage
+
+`make coverage` measures lines, functions and gcov's branches of `src/`, and fails at no figure:
+TS-4 asks for every line and branch, which the review checks. GCC 14 and later measure MC/DC
+with `-fcondition-coverage`, whether each condition of a decision alone turns its outcome, and
+gcovr 8 reads it. The coverage preset and `tools/coverage.sh` are the template's, so this
+goes into embedded-cpp-template first and reaches MaxMatrix, Utl and Wordclock by
+`copier update`; whether a figure then fails the build is decided there as well.
 
 ## Decisions
 

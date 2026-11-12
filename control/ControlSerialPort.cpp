@@ -23,6 +23,7 @@
 #include <unistd.h>
 #endif
 #include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -128,16 +129,17 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  char chunk[kChunkLength];
-  DWORD length = sizeof(chunk);
+  std::array<char, kChunkLength> chunk;
+  DWORD const size = static_cast<DWORD>(chunk.size());
+  DWORD length = size;
 
   if (!IsOpen()) return false;
-  while (length == sizeof(chunk)) {
-    if (ReadFile(handle_, chunk, sizeof(chunk), &length, nullptr) == 0) {
+  while (length == size) {
+    if (ReadFile(handle_, chunk.data(), size, &length, nullptr) == 0) {
       Close();
       return false;
     }
-    data->append(chunk, length);
+    data->append(chunk.data(), length);
   }
   return true;
 }
@@ -190,13 +192,13 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
 
 std::vector<std::string> ControlSerialPort::List() {
   std::vector<std::string> ports;
-  char const* const patterns[] = {"/dev/ttyACM*", "/dev/ttyUSB*"};
+  std::array<char const*, 2> const patterns{{"/dev/ttyACM*", "/dev/ttyUSB*"}};
 
   for (char const* const pattern : patterns) {
     glob_t found = glob_t();
     if (glob(pattern, 0, nullptr, &found) == 0) {
       for (size_t i = 0; i < found.gl_pathc; i++) {
-        ports.push_back(found.gl_pathv[i]);
+        ports.emplace_back(found.gl_pathv[i]);
       }
     }
     globfree(&found);
@@ -232,13 +234,13 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  char chunk[kChunkLength];
+  std::array<char, kChunkLength> chunk;
 
   if (!IsOpen()) return false;
   for (;;) {
-    ssize_t const length = read(descriptor_, chunk, sizeof(chunk));
+    ssize_t const length = read(descriptor_, chunk.data(), chunk.size());
     if (length > 0) {
-      data->append(chunk, static_cast<size_t>(length));
+      data->append(chunk.data(), static_cast<size_t>(length));
     } else if (length < 0 && errno == EAGAIN) {
       return true;
     } else {

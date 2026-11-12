@@ -25,6 +25,7 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 
+#include <array>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -62,9 +63,9 @@ ControlWindow::ControlWindow()
       board_link_{serial_port_},
       simulator_link_{tcp_port_},
       timer_{this} {
-  wxPanel* const content = new wxPanel(this);
-  wxBoxSizer* const columns = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer* const controls = new wxBoxSizer(wxVERTICAL);
+  auto* const content = new wxPanel(this);
+  auto* const columns = new wxBoxSizer(wxHORIZONTAL);
+  auto* const controls = new wxBoxSizer(wxVERTICAL);
 
   MakeMenu();
   controls_ = new wxPanel(content);
@@ -87,9 +88,9 @@ ControlWindow::ControlWindow()
 
 // File and Help, as the old tool had them.
 void ControlWindow::MakeMenu() {
-  wxMenuBar* const bar = new wxMenuBar();
-  wxMenu* const file = new wxMenu();
-  wxMenu* const help = new wxMenu();
+  auto* const bar = new wxMenuBar();
+  auto* const file = new wxMenu();
+  auto* const help = new wxMenu();
 
   file->Append(wxID_EXIT);
   help->Append(wxID_ABOUT);
@@ -106,17 +107,17 @@ void ControlWindow::MakeMenu() {
  * space between the chars, Clear and Send. Enter in the field sends as well.
  */
 wxWindow* ControlWindow::MakeText(wxWindow* parent) {
-  wxPanel* const page = new wxPanel(parent);
-  wxBoxSizer* const rows = new wxBoxSizer(wxVERTICAL);
-  wxBoxSizer* const settings = new wxBoxSizer(wxHORIZONTAL);
-  wxStaticBoxSizer* const intensity_box =
+  auto* const page = new wxPanel(parent);
+  auto* const rows = new wxBoxSizer(wxVERTICAL);
+  auto* const settings = new wxBoxSizer(wxHORIZONTAL);
+  auto* const intensity_box =
       new wxStaticBoxSizer(wxVERTICAL, page, "Intensity");
-  wxStaticBoxSizer* const speed_box =
+  auto* const speed_box =
       new wxStaticBoxSizer(wxVERTICAL, page, "Speed, ms per column");
-  wxBoxSizer* const actions = new wxBoxSizer(wxVERTICAL);
-  wxBoxSizer* const space_row = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer* const text_row = new wxBoxSizer(wxHORIZONTAL);
-  wxButton* const clear = new wxButton(page, wxID_ANY, "Clear");
+  auto* const actions = new wxBoxSizer(wxVERTICAL);
+  auto* const space_row = new wxBoxSizer(wxHORIZONTAL);
+  auto* const text_row = new wxBoxSizer(wxHORIZONTAL);
+  auto* const clear = new wxButton(page, wxID_ANY, "Clear");
   wxCoord const border = FromDIP(kBorder);
 
   send_ = new wxButton(page, wxID_ANY, "Send");
@@ -181,9 +182,8 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
 // The whole panel as the matrix shows it, to click on; Clear below it turns
 // every LED off.
 wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
-  wxPanel* const panel = new wxPanel(parent);
-  wxStaticBoxSizer* const box =
-      new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix");
+  auto* const panel = new wxPanel(parent);
+  auto* const box = new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix");
 
   dots_ = new ControlDotPanel(
       box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) {
@@ -199,18 +199,16 @@ wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
  * each with a button and its state, and the log below them.
  */
 wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
-  wxPanel* const column = new wxPanel(parent);
-  wxBoxSizer* const rows = new wxBoxSizer(wxVERTICAL);
-  wxStaticBoxSizer* const board_box =
-      new wxStaticBoxSizer(wxVERTICAL, column, "Board");
-  wxStaticBoxSizer* const simulator_box =
+  auto* const column = new wxPanel(parent);
+  auto* const rows = new wxBoxSizer(wxVERTICAL);
+  auto* const board_box = new wxStaticBoxSizer(wxVERTICAL, column, "Board");
+  auto* const simulator_box =
       new wxStaticBoxSizer(wxVERTICAL, column, "Simulator");
-  wxStaticBoxSizer* const log_box =
-      new wxStaticBoxSizer(wxVERTICAL, column, "Log");
-  wxBoxSizer* const board_row = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer* const simulator_row = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer* const port_row = new wxBoxSizer(wxHORIZONTAL);
-  wxButton* const clear_log =
+  auto* const log_box = new wxStaticBoxSizer(wxVERTICAL, column, "Log");
+  auto* const board_row = new wxBoxSizer(wxHORIZONTAL);
+  auto* const simulator_row = new wxBoxSizer(wxHORIZONTAL);
+  auto* const port_row = new wxBoxSizer(wxHORIZONTAL);
+  auto* const clear_log =
       new wxButton(log_box->GetStaticBox(), wxID_ANY, "Clear log");
   wxCoord const border = FromDIP(kBorder);
 
@@ -327,7 +325,7 @@ void ControlWindow::OnBoard(wxCommandEvent& /* event */) {
 
 // Connects to the simulator on the port in the box, or ends the connection.
 void ControlWindow::OnSimulator(wxCommandEvent& /* event */) {
-  uint16_t const port = static_cast<uint16_t>(tcp_port_number_->GetValue());
+  auto const port = static_cast<uint16_t>(tcp_port_number_->GetValue());
 
   if (tcp_port_.IsOpen()) {
     tcp_port_.Close();
@@ -415,11 +413,11 @@ void ControlWindow::BroadcastSetting(std::string const& line) {
  * simulator's has been set by another program before.
  */
 void ControlWindow::SendSettings(ControlLink& link, char const* name) {
-  std::string const lines[] = {
-      ControlCommand::MakeIntensity(
-          static_cast<uint8_t>(intensity_->GetValue())),
-      ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue())),
-      ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()))};
+  std::array<std::string, 3> const lines{
+      {ControlCommand::MakeIntensity(
+           static_cast<uint8_t>(intensity_->GetValue())),
+       ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue())),
+       ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()))}};
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": > " + ConvertToText(line) + "\n");

@@ -3,14 +3,20 @@
 
 #include "Max7219.h"
 
-#include <string.h>
+#include <stddef.h>
 
-Max7219Wiring const kMax7219Wirings[8] = {
-    {"DR0CR0RR0", false, false, false}, {"DR0CR0RR1", false, false, true},
-    {"DR0CR1RR0", false, true, false},  {"DR0CR1RR1", false, true, true},
-    {"DR1CR0RR0", true, false, false},  {"DR1CR0RR1", true, false, true},
-    {"DR1CR1RR0", true, true, false},   {"DR1CR1RR1", true, true, true},
-};
+#include <array>
+
+std::array<Max7219Wiring, 8> const kMax7219Wirings{{
+    {"DR0CR0RR0", false, false, false},
+    {"DR0CR0RR1", false, false, true},
+    {"DR0CR1RR0", false, true, false},
+    {"DR0CR1RR1", false, true, true},
+    {"DR1CR0RR0", true, false, false},
+    {"DR1CR0RR1", true, false, true},
+    {"DR1CR1RR0", true, true, false},
+    {"DR1CR1RR1", true, true, true},
+}};
 
 Max7219Wiring const kMaX7219WiringGeneric = kMax7219Wirings[2];
 Max7219Wiring const kMaX7219WiringFC16 = kMax7219Wirings[4];
@@ -21,7 +27,7 @@ Max7219Wiring const kMaX7219WiringIcstation = kMax7219Wirings[7];
  * down, one digit scanned, no decode and minimum intensity; the digit registers
  * are undefined there and zero here */
 void Max7219::Reset() {
-  memset(digit, 0, sizeof(digit));
+  digit.fill(0);
   decode_mode = 0;
   intensity = 0;
   scan_limit = 0;
@@ -56,9 +62,9 @@ void Max7219::Latch(uint8_t address, uint8_t data) {
 uint8_t Max7219::Segments(uint8_t digit_index) const {
   /* Code B font, segments A to G in bits 6 to 0: 0-9, '-', 'E', 'H', 'L', 'P',
    * blank */
-  static uint8_t const kCodeB[16] = {0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B,
-                                     0x5F, 0x70, 0x7F, 0x7B, 0x01, 0x4F,
-                                     0x37, 0x0E, 0x67, 0x00};
+  static std::array<uint8_t, 16> const kCodeB{
+      {0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x01, 0x4F,
+       0x37, 0x0E, 0x67, 0x00}};
 
   if (display_test) return 0xFF;
   if (!shutdown || digit_index > scan_limit) return 0x00;

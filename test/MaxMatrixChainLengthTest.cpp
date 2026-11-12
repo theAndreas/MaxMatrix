@@ -3,6 +3,7 @@
 
 /* Chains of other lengths than the examples'. */
 
+#include <array>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -23,8 +24,8 @@ namespace {
  * module, which is a pair of itself when the orientation changes, three, with
  * one module in the middle, and six. The buffer is the test's, filled with a
  * pattern that the matrix has to empty. */
-byte const kChainLengths[] = {1, 3, 6};
-typedef std::tuple<byte, MatrixOrientation, ModuleType> ChainParameter;
+std::array<byte, 3> const kChainLengths{{1, 3, 6}};
+using ChainParameter = std::tuple<byte, MatrixOrientation, ModuleType>;
 
 class MaxMatrixChainLengthTest
     : public ::testing::TestWithParam<ChainParameter> {
@@ -140,9 +141,13 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
  * chain is taken up to the chain, one shorter is refused by GetRow() and drawn
  * as far as it reaches by SetRow() */
 TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
   byte const values[6] = {0x81, 0x42, 0x24, 0x18, 0xF0, 0x0F};
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
   byte read[6] = {0};
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
   byte read_one[1] = {0};
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
   byte const one[1] = {0xFF};
 
   matrix_.SetRow(2, values);

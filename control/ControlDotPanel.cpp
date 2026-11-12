@@ -142,8 +142,8 @@ void ControlDotPanel::OnMotion(wxMouseEvent& event) {
     return;
   }
   if (on_dot_) {
-    int16_t const delta_column = static_cast<int16_t>(column - last_column_);
-    int16_t const delta_row = static_cast<int16_t>(row - last_row_);
+    auto const delta_column = static_cast<int16_t>(column - last_column_);
+    auto const delta_row = static_cast<int16_t>(row - last_row_);
     int16_t const steps =
         static_cast<int16_t>(std::max(abs(delta_column), abs(delta_row)));
     for (int16_t step = 1; step < steps; step++) {

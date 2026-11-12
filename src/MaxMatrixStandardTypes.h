@@ -9,7 +9,9 @@
 #ifndef MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
 #define MAXMATRIX_SRC_MAXMATRIXSTANDARDTYPES_H_
 
-#define STD_ON 1u  /*!< A switch of the configuration turned on. */
+// NOLINTNEXTLINE(modernize-macro-to-enum): T-6, #if reads it
+#define STD_ON 1u /*!< A switch of the configuration turned on. */
+// NOLINTNEXTLINE(modernize-macro-to-enum): T-6, #if reads it
 #define STD_OFF 0u /*!< A switch of the configuration turned off. */
 
 namespace max_matrix {

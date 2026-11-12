@@ -10,6 +10,7 @@
 #include <pty.h>
 #include <unistd.h>
 
+#include <array>
 #include <string>
 
 #include "ControlSerialPort.h"
@@ -23,11 +24,12 @@ uint16_t const kPort = 18086;
 // What arrives on `descriptor` within half a second.
 std::string Receive(int descriptor) {
   pollfd ready = {descriptor, POLLIN, 0};
-  char chunk[256];
+  std::array<char, 256> chunk;
 
   if (poll(&ready, 1, 500) <= 0) return "";
-  ssize_t const length = read(descriptor, chunk, sizeof(chunk));
-  return length > 0 ? std::string(chunk, static_cast<size_t>(length)) : "";
+  ssize_t const length = read(descriptor, chunk.data(), chunk.size());
+  return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
+                    : "";
 }
 
 // Reads `port` until something arrives or half a second has passed, as the
@@ -50,9 +52,9 @@ class ControlSerialPortTest : public testing::Test {
   std::string name_;
 
   void SetUp() override {
-    char path[64];
-    ASSERT_EQ(openpty(&board_, &port_end_, path, nullptr, nullptr), 0);
-    name_ = path;
+    std::array<char, 64> path;
+    ASSERT_EQ(openpty(&board_, &port_end_, path.data(), nullptr, nullptr), 0);
+    name_ = path.data();
   }
   void TearDown() override {
     if (port_end_ >= 0) close(port_end_);

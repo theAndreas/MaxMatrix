@@ -13,19 +13,20 @@
 #include <gtest/gtest.h>
 #include <stdio.h>
 
+#include <array>
 #include <string>
 
 namespace {
 
 std::string Sha1Hex(std::string const& message) {
-  uint8_t digest[kSimulatorWebSocketSha1Length];
-  char hex[3];
+  std::array<uint8_t, kSimulatorWebSocketSha1Length> digest;
+  std::array<char, 3> hex;
   std::string text;
 
-  SimulatorWebSocket::CalculateSha1(message, digest);
+  SimulatorWebSocket::CalculateSha1(message, digest.data());
   for (uint8_t const part : digest) {
-    snprintf(hex, sizeof(hex), "%02x", part);
-    text += hex;
+    snprintf(hex.data(), hex.size(), "%02x", part);
+    text += hex.data();
   }
   return text;
 }
@@ -38,7 +39,7 @@ std::string Base64(std::string const& text) {
 /* a text frame as a browser sends it: final, masked, and with a mask that is
  * not zeros, which would leave a decoder that unmasks wrongly undetected */
 std::string ClientFrame(std::string const& payload) {
-  uint8_t const mask[4] = {0x12, 0x34, 0x56, 0x78};
+  std::array<uint8_t, 4> const mask{{0x12, 0x34, 0x56, 0x78}};
   std::string frame;
 
   frame += static_cast<char>(0x81);
@@ -49,7 +50,7 @@ std::string ClientFrame(std::string const& payload) {
     frame += static_cast<char>(payload.size() >> 8U);
     frame += static_cast<char>(payload.size() & 0xFFU);
   }
-  frame.append(reinterpret_cast<char const*>(mask), sizeof(mask));
+  frame.append(reinterpret_cast<char const*>(mask.data()), mask.size());
   for (size_t i = 0; i < payload.size(); i++) {
     frame += static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask[i % 4]);
   }

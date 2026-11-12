@@ -33,7 +33,7 @@ DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top) {
 std::string DocuSvg::GetDocument() const {
   std::ostringstream document;
 
-  document << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width_
+  document << R"(<svg xmlns="http://www.w3.org/2000/svg" width=")" << width_
            << "\" height=\"" << height_ << "\" viewBox=\"0 " << top_ << " "
            << width_ << " " << height_ << "\" font-family=\"" << kFont
            << "\">\n"

@@ -133,7 +133,7 @@ void SimulatorAvr::ReceiveSerial() {
       avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_INPUT);
 
   while (receive_ready_ && !mock::serial_input.empty()) {
-    uint8_t const received = static_cast<uint8_t>(mock::serial_input[0]);
+    auto const received = static_cast<uint8_t>(mock::serial_input[0]);
     mock::serial_input.erase(0, 1);
     avr_raise_irq(input, received);
   }
@@ -162,7 +162,7 @@ void SimulatorAvr::OnDataIn(avr_irq_t* irq, uint32_t value, void* object) {
  * pin; the SPI peripheral of simavr reports its byte without it.
  */
 void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
-  SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
+  auto* const simulator = static_cast<SimulatorAvr*>(object);
   bool const rising = value != 0 && !simulator->clock_;
 
   (void)irq;
@@ -184,7 +184,7 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
  * the chain does; a frame that ends within a byte is an error.
  */
 void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
-  SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
+  auto* const simulator = static_cast<SimulatorAvr*>(object);
   bool const high = value != 0;
 
   (void)irq;
@@ -203,7 +203,7 @@ void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
 // The SPI peripheral sent a byte: `irq` is the SPI output, `value` the byte,
 // `object` the SimulatorAvr.
 void SimulatorAvr::OnSpiByte(avr_irq_t* irq, uint32_t value, void* object) {
-  uint8_t const data = static_cast<uint8_t>(value);
+  auto const data = static_cast<uint8_t>(value);
 
   (void)irq;
   mock::chain.Shift(data);
@@ -226,7 +226,7 @@ void SimulatorAvr::OnSerialByte(avr_irq_t* irq, uint32_t value, void* object) {
  */
 void SimulatorAvr::OnReceiveReady(avr_irq_t* irq, uint32_t value,
                                   void* object) {
-  SimulatorAvr* const simulator = static_cast<SimulatorAvr*>(object);
+  auto* const simulator = static_cast<SimulatorAvr*>(object);
 
   (void)irq;
   (void)value;

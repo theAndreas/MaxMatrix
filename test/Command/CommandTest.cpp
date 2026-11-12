@@ -3,6 +3,7 @@
 
 /* The lines a control page or program sends, carried out on a matrix. */
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -91,10 +92,11 @@ TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow) {
 }
 
 TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
-  struct {
+  struct Refused {
     char const* line;
     Error error;
-  } const cases[] = {
+  };
+  std::array<Refused, 15> const cases{{
       {"blink\n", Error::kUnknownCommand},
       {"clear=1\n", Error::kUnknownCommand},
       {"intensity=16\n", Error::kOutOfRange},
@@ -112,7 +114,7 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
       {"setDot=1,2,2\n", Error::kOutOfRange},
       {"textShift=\n", Error::kNoText},
       {"text=a\x01\n", Error::kUnknownChar},
-  };
+  }};
 
   for (auto const& test_case : cases) {
     EXPECT_EQ(FeedLine(test_case.line), test_case.error) << test_case.line;
@@ -142,17 +144,18 @@ TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole) {
 /* a program pairs every line it sent with one line back, so each line is
  * answered once, an empty line not at all */
 TEST_F(MaxMatrixCommandTest, EveryLineIsAnsweredOnce) {
-  struct {
+  struct Answered {
     char const* line;
     char const* answer;
-  } const cases[] = {
+  };
+  std::array<Answered, 6> const cases{{
       {"intensity=8\n", "ok\r\n"},
       {"clear\r\n", "ok\r\n"},
       {"intensity=16\n", "error: out of range\r\n"},
       {"blink\n", "error: unknown command\r\n"},
       {"\n", ""},
       {"\r\n", ""},
-  };
+  }};
 
   for (auto const& test_case : cases) {
     FeedLine(test_case.line);

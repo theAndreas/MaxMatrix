@@ -5,6 +5,7 @@
  * dots, rows, columns and shifts, and the shapes drawn on it. */
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <string>
 #include <tuple>
@@ -26,6 +27,7 @@ using max_matrix::State;
 namespace {
 
 /* a picture in flash, a column per byte, for DrawBitmap() */
+// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, as a sketch has one
 byte const kBitmap[] PROGMEM = {0x01, 0x82, 0xFF, 0x00, 0x3C};
 
 std::string MappingName(::testing::TestParamInfo<MappingPair> const& info) {
@@ -74,10 +76,11 @@ TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
  * most. Every dot and column used to be a frame of its own: SetText("Hi!") on
  * FC-16 modules sent 64, and each step of a shifting text nine. */
 TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
-  struct {
+  struct Call {
     char const* name;
     void (*draw)(Matrix&);
-  } const calls[] = {
+  };
+  std::array<Call, 11> const calls{{
       {"SetText", [](Matrix& m) { m.SetText("Hi!"); }},
       {"SetChar off the top row", [](Matrix& m) { m.SetChar(9, 1, 'A'); }},
       {"SetRow",
@@ -94,7 +97,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
       {"DrawCircle", [](Matrix& m) { m.DrawCircle(15, 3, 9, true); }},
       {"DrawBitmap",
        [](Matrix& m) { m.DrawBitmap(3, 1, kBitmap, sizeof(kBitmap)); }},
-  };
+  }};
   char const text[] = "Hi \xC4!";
 
   for (auto const& call : calls) {
@@ -144,12 +147,13 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
  * the modules, and fills the edge it leaves as it is told: with nothing, with
  * what fell out at the other edge, or with what the edge held */
 TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
-  struct {
+  struct Shift {
     char const* name;
     void (*shift)(Matrix&);
     int16_t source_x, source_y;
     ShiftFill fill;
-  } const cases[] = {
+  };
+  std::array<Shift, 12> const cases{{
       {"ShiftLeft", [](Matrix& m) { m.ShiftLeft(); }, 1, 0, ShiftFill::kZero},
       {"ShiftLeft rotating", [](Matrix& m) { m.ShiftLeft(ShiftFill::kRotate); },
        1, 0, ShiftFill::kRotate},
@@ -172,7 +176,7 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
        0, -1, ShiftFill::kRotate},
       {"ShiftDown keeping", [](Matrix& m) { m.ShiftDown(ShiftFill::kKeep); }, 0,
        -1, ShiftFill::kKeep},
-  };
+  }};
   int16_t const width = kNumberOfColumns,
                 height = max_matrix::kRowNumberOfModule;
 
@@ -280,7 +284,7 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
  * the README tells a user. Four of the eight are mirror images of the others,
  * which the module orientation of 0 to 270 degrees did not reach (OIL item 9);
  * the named four have to be the wirings MD_MAX72XX gives those names. */
-typedef std::tuple<ModuleType, bool> Module;
+using Module = std::tuple<ModuleType, bool>;
 
 class MaxMatrixModuleTest : public MaxMatrixTest,
                             public ::testing::WithParamInterface<Module> {};
@@ -334,10 +338,11 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
  * drawn it on module 1 */
 TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
   PanelRow const row{0xFF, 0xFF, 0xFF, 0xFF};
-  struct {
+  struct OffPanel {
     char const* name;
     void (*draw)(Matrix&, PanelRow const&);
-  } const cases[] = {
+  };
+  std::array<OffPanel, 12> const cases{{
       {"SetDot left",
        [](Matrix& m, PanelRow const&) { m.SetDot(-1, 0, true); }},
       {"SetDot right",
@@ -371,7 +376,7 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
        [](Matrix& m, PanelRow const&) {
          m.SetRow(0, max_matrix::kRowNumberOfModule, 0xFF);
        }},
-  };
+  }};
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
@@ -394,10 +399,13 @@ TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
   int16_t const width = glyph.GetValue().width,
                 height = glyph.GetValue().height;
   uint8_t const* const columns = glyph.GetValue().columns;
-  struct {
+  struct Place {
     int16_t x, y;
-  } const places[] = {
-      {-2, 0}, {kNumberOfColumns - 2, 0}, {-2, -3}, {kNumberOfColumns - 2, 5}};
+  };
+  std::array<Place, 4> const places{{{-2, 0},
+                                     {kNumberOfColumns - 2, 0},
+                                     {-2, -3},
+                                     {kNumberOfColumns - 2, 5}}};
 
   for (auto const& place : places) {
     matrix_.Clear();
@@ -458,9 +466,10 @@ void ExpectLine(Matrix& matrix, int16_t x0, int16_t y0, int16_t x1,
  * lie off the panel, as far as an int16_t reaches: the sum of their differences
  * does not fit in an int, which has 16 bits on the Uno */
 TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
-  struct {
+  struct Line {
     int16_t x0, y0, x1, y1;
-  } const lines[] = {
+  };
+  std::array<Line, 13> const lines{{
       {2, 3, 20, 3},
       {7, 0, 7, 7},
       {0, 0, 7, 7},
@@ -474,7 +483,7 @@ TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
       {-32768, 0, 32767, 7},
       {-32768, -32768, 32767, 32767},
       {16, -32768, 17, 32767},
-  };
+  }};
 
   for (auto const& line : lines) {
     for (bool const reverse : {false, true}) {
@@ -501,14 +510,19 @@ TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
 /* a rectangle on the panel, one partly off it and one as large as an int16_t
  * allows; the outline is what the filled one has more than its inside */
 TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
-  struct {
+  struct Rectangle {
     int16_t x, y, width, height;
-  } const rectangles[] = {
-      {2, 1, 5, 4},         {10, 0, 1, 8},
-      {20, 6, 4, 1},        {-3, -2, 6, 5},
-      {29, 5, 10, 10},      {-32768, -32768, 32767, 32767},
-      {0, 0, 32767, 32767}, {32767, 0, 32767, 8},
   };
+  std::array<Rectangle, 8> const rectangles{{
+      {2, 1, 5, 4},
+      {10, 0, 1, 8},
+      {20, 6, 4, 1},
+      {-3, -2, 6, 5},
+      {29, 5, 10, 10},
+      {-32768, -32768, 32767, 32767},
+      {0, 0, 32767, 32767},
+      {32767, 0, 32767, 8},
+  }};
 
   for (auto const& r : rectangles) {
     SCOPED_TRACE(::testing::Message()

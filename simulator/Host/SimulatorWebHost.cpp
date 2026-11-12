@@ -37,8 +37,8 @@ constexpr char kWebSocketPath[] = "/ws";
 SimulatorWebHost::SimulatorWebHost() {
   listener_ = kSimulatorSocketNone;
   page_path_ = nullptr;
-  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
-    clients_[slot] = kSimulatorSocketNone;
+  for (int& client : clients_) {
+    client = kSimulatorSocketNone;
   }
 }
 
@@ -94,8 +94,8 @@ void SimulatorWebHost::AcceptClients() {
  */
 void SimulatorWebHost::ReadClient(uint8_t slot,
                                   std::vector<std::string>* messages) {
-  char chunk[kFrameChunkLength];
-  ssize_t const received = recv(clients_[slot], chunk, sizeof(chunk), 0);
+  std::array<char, kFrameChunkLength> chunk;
+  ssize_t const received = recv(clients_[slot], chunk.data(), chunk.size(), 0);
   uint8_t opcode;
   std::string payload;
 
@@ -104,7 +104,9 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
     DropClient(slot);
     return;
   }
-  if (received > 0) pending_[slot].append(chunk, static_cast<size_t>(received));
+  if (received > 0) {
+    pending_[slot].append(chunk.data(), static_cast<size_t>(received));
+  }
 
   while (SimulatorWebSocket::DecodeFrame(&pending_[slot], &opcode, &payload)) {
     if (opcode == kSimulatorWebSocketOpcodeClose) {
@@ -192,14 +194,14 @@ void SimulatorWebHost::DropClient(uint8_t slot) {
  */
 std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
-  char chunk[kRequestChunkLength];
+  std::array<char, kRequestChunkLength> chunk;
 
   SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeoutMs);
 
   while (request.find("\r\n\r\n") == std::string::npos) {
-    ssize_t const received = recv(socket, chunk, sizeof(chunk), 0);
+    ssize_t const received = recv(socket, chunk.data(), chunk.size(), 0);
     if (received <= 0) break;
-    request.append(chunk, static_cast<size_t>(received));
+    request.append(chunk.data(), static_cast<size_t>(received));
   }
   return request;
 }

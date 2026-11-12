@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <array>
 #include <string>
 
 namespace {
@@ -43,11 +44,12 @@ int Connect() {
 // connection or sent nothing.
 std::string Receive(int client) {
   pollfd ready = {client, POLLIN, 0};
-  char chunk[256];
+  std::array<char, 256> chunk;
 
   if (poll(&ready, 1, 500) <= 0) return "";
-  ssize_t const length = recv(client, chunk, sizeof(chunk), 0);
-  return length > 0 ? std::string(chunk, static_cast<size_t>(length)) : "";
+  ssize_t const length = recv(client, chunk.data(), chunk.size(), 0);
+  return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
+                    : "";
 }
 
 // Whether the host has closed the connection of `client` within half a second:

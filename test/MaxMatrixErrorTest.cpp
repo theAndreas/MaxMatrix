@@ -4,6 +4,7 @@
 /* Errors: every way a call can fail, that it changes nothing, and what the
  * report and the texts say. */
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -51,12 +52,13 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
  * was wrong; only a line that fails in a function of Matrix, text= with a
  * char the font lacks, is reported by that function. */
 TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
-  struct {
+  struct Case {
     char const* name;
     Error (*call)(Matrix&);
     Error expected;
     char const* api;
-  } const cases[] = {
+  };
+  std::array<Case, 26> const cases{{
       {"GetColumn left", [](Matrix& m) { return m.GetColumn(-1).GetError(); },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn right",
@@ -115,39 +117,39 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"SetText unknown char",
        [](Matrix& m) { return m.SetText("\x01").GetError(); },
        Error::kUnknownChar, "SetText"},
-      {"SetText NULL", [](Matrix& m) { return m.SetText(NULL).GetError(); },
+      {"SetText NULL", [](Matrix& m) { return m.SetText(nullptr).GetError(); },
        Error::kNoText, "SetText"},
       {"SetCharWithShift",
        [](Matrix& m) { return m.SetCharWithShift('\x01').GetError(); },
        Error::kUnknownChar, "SetCharWithShift"},
       {"SetTextWithShift NULL",
-       [](Matrix& m) { return m.SetTextWithShift(NULL).GetError(); },
+       [](Matrix& m) { return m.SetTextWithShift(nullptr).GetError(); },
        Error::kNoText, "SetTextWithShift"},
       {"SetTextWithShift NULL repeating",
-       [](Matrix& m) { return m.SetTextWithShift(NULL, true).GetError(); },
+       [](Matrix& m) { return m.SetTextWithShift(nullptr, true).GetError(); },
        Error::kNoText, "SetTextWithShift"},
       {"number empty",
        [](Matrix&) { return Command::ConvertToNumber("", 255).GetError(); },
-       Error::kNotANumber, NULL},
+       Error::kNotANumber, nullptr},
       {"number with a letter",
        [](Matrix&) { return Command::ConvertToNumber("12a", 255).GetError(); },
-       Error::kNotANumber, NULL},
+       Error::kNotANumber, nullptr},
       {"number too large",
        [](Matrix&) { return Command::ConvertToNumber("256", 255).GetError(); },
-       Error::kOutOfRange, NULL},
+       Error::kOutOfRange, nullptr},
       {"number too large, then a letter",
        [](Matrix&) { return Command::ConvertToNumber("999x", 255).GetError(); },
-       Error::kNotANumber, NULL},
+       Error::kNotANumber, nullptr},
       {"unknown command", [](Matrix& m) { return FeedText(m, "blink\n"); },
-       Error::kUnknownCommand, NULL},
+       Error::kUnknownCommand, nullptr},
       {"line too long",
        [](Matrix& m) {
          return FeedText(
              m,
              "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
        },
-       Error::kLineTooLong, NULL},
-  };
+       Error::kLineTooLong, nullptr},
+  }};
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
@@ -162,8 +164,8 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << test_case.name;
     EXPECT_EQ(matrix_.GetState(), State::kReady) << test_case.name;
     std::vector<Report> expected;
-    if (kDevErrorDetect && test_case.api != NULL) {
-      expected.push_back(Report(test_case.api, test_case.expected));
+    if (kDevErrorDetect && test_case.api != nullptr) {
+      expected.emplace_back(test_case.api, test_case.expected);
     }
     EXPECT_EQ(reports, expected) << test_case.name;
   }
@@ -173,10 +175,10 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
  * the enum gets one as well; the texts lie in a table of their own, so one
  * moved by a place would give every error after it the text of the next */
 TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
-  char const* const texts[] = {
-      "ok",           "out of range",    "unknown char",  "no text",
-      "not a number", "unknown command", "line too long", "not a font"};
-  ASSERT_EQ(sizeof(texts) / sizeof(texts[0]), kNumberOfErrors);
+  std::array<char const*, 8> const texts{
+      {"ok", "out of range", "unknown char", "no text", "not a number",
+       "unknown command", "line too long", "not a font"}};
+  ASSERT_EQ(texts.size(), kNumberOfErrors);
 
   for (uint8_t error = 0; error < kNumberOfErrors; error++) {
     EXPECT_EQ(Text(Status(static_cast<Error>(error)).GetErrorText()),

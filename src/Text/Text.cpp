@@ -14,12 +14,12 @@ namespace max_matrix {
 namespace internal {
 
 Text::Text() {
-  string_ = NULL;
-  repeat_from_ = NULL;
+  string_ = nullptr;
+  repeat_from_ = nullptr;
   sprite_shift_counter_ = kShiftIdle;
   space_between_chars_ = MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE;
-  font_ = NULL;
-  glyph_.columns = NULL;
+  font_ = nullptr;
+  glyph_.columns = nullptr;
   glyph_.width = 0;
   glyph_.height = 0;
 }
@@ -50,7 +50,7 @@ Status Text::SetText(Panel& panel, char const* text) const {
   int16_t char_column = 0;
   char c;
 
-  if (text == NULL) return Error::kNoText;
+  if (text == nullptr) return Error::kNoText;
   while (*text != internal::kNullCharacter) {
     text += Font::DecodeChar(text, &c);
     Glyph glyph;
@@ -65,10 +65,10 @@ Status Text::SetText(Panel& panel, char const* text) const {
 }
 
 Status Text::SetTextWithShift(char const* text, bool repeat) {
-  if (text == NULL) return Error::kNoText;
+  if (text == nullptr) return Error::kNoText;
   sprite_shift_counter_ = kShiftIdle;
   string_ = text;
-  repeat_from_ = repeat ? text : NULL;
+  repeat_from_ = repeat ? text : nullptr;
   return Error::kOk;
 }
 
@@ -142,9 +142,9 @@ void Text::ReadNextChar() {
 
   while (sprite_shift_counter_ == kShiftIdle) {
     if (*string_ == internal::kNullCharacter) {
-      if (start_over_at == NULL) return;
+      if (start_over_at == nullptr) return;
       string_ = start_over_at;
-      start_over_at = NULL;
+      start_over_at = nullptr;
     } else {
       string_ += Font::DecodeChar(string_, &c);
       if (FindGlyph(c, &glyph_).IsOk()) sprite_shift_counter_ = kShiftStart;

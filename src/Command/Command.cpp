@@ -82,7 +82,7 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
   char* value = strchr(text, kValueSeparator);
   Status status = Error::kOk;
 
-  if (value == NULL) {
+  if (value == nullptr) {
     if (0 == strcmp_P(text, PSTR("picture"))) {
       AnswerPicture(matrix, answer);
       return CommandState::kAnswered;
@@ -141,9 +141,9 @@ Status Command::ExecuteText(Matrix& matrix, char const* value) {
 Status Command::ExecuteDot(Matrix& matrix, char* value) {
   char* row_text = strchr(value, kListSeparator);
   char* lit_text =
-      row_text == NULL ? NULL : strchr(row_text + 1, kListSeparator);
+      row_text == nullptr ? nullptr : strchr(row_text + 1, kListSeparator);
 
-  if (lit_text == NULL) return Error::kNotANumber;
+  if (lit_text == nullptr) return Error::kNotANumber;
   *row_text = internal::kNullCharacter;
   row_text++;
   *lit_text = internal::kNullCharacter;

@@ -11,13 +11,14 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <initializer_list>
 #include <utility>
 #include <vector>
 
 namespace {
 
-typedef std::pair<uint8_t, uint8_t> Pair;
+using Pair = std::pair<uint8_t, uint8_t>;
 
 /* one frame: every pair shifted in, address first, then the rising edge of chip
  * select */
@@ -166,14 +167,14 @@ Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
 }
 
 /* an LED as the viewer sees it, column X and row Y */
-typedef std::pair<uint16_t, uint16_t> Led;
+using Led = std::pair<uint16_t, uint16_t>;
 
 std::vector<Led> LitLeds(Max7219Chain const& chain, Max7219Wiring const& wiring,
                          bool upside_down = false) {
   std::vector<Led> leds;
   for (uint16_t x = 0; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
     for (uint8_t y = 0; y < Max7219::kNumberOfDigits; y++) {
-      if (chain.IsLit(wiring, x, y, upside_down)) leds.push_back(Led(x, y));
+      if (chain.IsLit(wiring, x, y, upside_down)) leds.emplace_back(x, y);
     }
   }
   return leds;
@@ -200,12 +201,12 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce) {
 /* digit 0, segment bit 0 - where MD_MAX72XX's setPoint() puts it, with its
  * column 0 on the right */
 TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
-  std::pair<Max7219Wiring const*, Led> const expected[] = {
+  std::array<std::pair<Max7219Wiring const*, Led>, 4> const expected{{
       {&kMaX7219WiringFC16, Led(7, 0)},
       {&kMaX7219WiringGeneric, Led(7, 7)},
       {&kMaX7219WiringParola, Led(0, 0)},
       {&kMaX7219WiringIcstation, Led(0, 7)},
-  };
+  }};
 
   for (auto const& test_case : expected) {
     SCOPED_TRACE(test_case.first->name);
