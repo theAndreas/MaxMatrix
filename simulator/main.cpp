@@ -10,9 +10,9 @@
  * LINE]... [--web
  * [--port PORT]] [--tcp PORT] [--for SECONDS [--expect FILE]].
  *
- * The sketch is compiled unchanged against the Arduino stand-in and the MAX7219
- * model in test/mock/: setup() runs once, loop() over and over, millis() and
- * delay() on the host clock.
+ * The sketch is compiled unchanged against the Arduino stand-in in test/mock/
+ * and the MAX7219 model in test/model/: setup() runs once, loop() over and
+ * over, millis() and delay() on the host clock.
  *
  * Without --for it runs until Ctrl+C and redraws the panel in the terminal.
  * With --for it runs that long, prints the panel once and exits; --expect then

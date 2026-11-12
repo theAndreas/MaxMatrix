@@ -44,7 +44,7 @@ orientation 180 turns the whole panel on top of them. There is one per module ty
 ## Where the pictures come from
 
 `DocuPictures.cpp` draws them, with `DocuSvg` for the SVG. It places every LED by calling the library and asking the
-MAX7219 model in `test/mock/` which register bit of which chip it latched; the module types in the titles are the
+MAX7219 model in `test/model/` which register bit of which chip it latched; the module types in the titles are the
 wirings of the model on which a pattern drawn with that module type appears upright. So no picture is drawn by hand,
 and none can say what the library does not do.
 
