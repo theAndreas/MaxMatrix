@@ -22,9 +22,9 @@
 /* ControlCommand Parameter */
 /* the chain SerialControl drives, max_matrix::MatrixOf<4>, and so the panel of
  * the window and the length of a picture */
-#define CONTROL_NUMBER_OF_MODULES 4
-#define CONTROL_NUMBER_OF_COLUMNS \
-  (CONTROL_NUMBER_OF_MODULES * max_matrix::kColumnNumberOfModule)
+constexpr uint8_t kControlNumberOfModules{4};
+constexpr uint8_t kControlNumberOfColumns{kControlNumberOfModules *
+                                          max_matrix::kColumnNumberOfModule};
 
 /*!
  * \brief The command lines of SerialControl, as the control program sends them,
@@ -104,7 +104,7 @@ class ControlCommand {
    * \param[in] line A line SerialControl answered with, without its line end.
    * \param[out] columns One byte per column as the viewer sees it, from the
    *                     left, bit 0 the top row; empty if the picture is not
-   *                     one of `CONTROL_NUMBER_OF_COLUMNS` columns in hex, as
+   *                     one of `kControlNumberOfColumns` columns in hex, as
    *                     from a sketch built for another chain.
    * \return True if `line` answers `picture`, false for any other line.
    */

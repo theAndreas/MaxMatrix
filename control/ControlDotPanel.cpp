@@ -6,7 +6,7 @@
  * \brief The LEDs of the whole panel, as the matrix shows them, to switch one
  *        by a click.
  *
- * As many modules as `CONTROL_NUMBER_OF_MODULES`, the chain SerialControl
+ * As many modules as `kControlNumberOfModules`, the chain SerialControl
  * drives; the picture of a sketch built for another chain is not drawn.
  */
 
@@ -22,11 +22,15 @@
 #include "ControlCommand.h"
 #include "MaxMatrixConfig.h"
 
+namespace {
+
 /* ControlDotPanel Parameter, in pixels at 96 dpi */
-#define CONTROL_DOT_PANEL_CELL 18
-#define CONTROL_DOT_PANEL_LED 14
-#define CONTROL_DOT_PANEL_MODULE_GAP 8
-#define CONTROL_DOT_PANEL_MARGIN 6
+constexpr int kCell{18};
+constexpr int kLed{14};
+constexpr int kModuleGap{8};
+constexpr int kMargin{6};
+
+}  // namespace
 
 /* ControlDotPanel colours: the red of the common modules, and the board behind
  * them */
@@ -38,20 +42,17 @@
 ControlDotPanel::ControlDotPanel(
     wxWindow* parent, std::function<void(uint8_t, uint8_t, bool)> on_switch)
     : wxPanel{parent},
-      columns_(static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS), 0x00),
+      columns_(static_cast<size_t>(kControlNumberOfColumns), 0x00),
       on_switch_{std::move(on_switch)} {
   painting_ = false;
   paint_lit_ = false;
   on_dot_ = false;
   last_column_ = 0;
   last_row_ = 0;
-  wxCoord const width =
-      CONTROL_NUMBER_OF_COLUMNS * CONTROL_DOT_PANEL_CELL +
-      (CONTROL_NUMBER_OF_MODULES - 1) * CONTROL_DOT_PANEL_MODULE_GAP +
-      2 * CONTROL_DOT_PANEL_MARGIN;
-  wxCoord const height =
-      max_matrix::kRowNumberOfModule * CONTROL_DOT_PANEL_CELL +
-      2 * CONTROL_DOT_PANEL_MARGIN;
+  wxCoord const width = kControlNumberOfColumns * kCell +
+                        (kControlNumberOfModules - 1) * kModuleGap +
+                        2 * kMargin;
+  wxCoord const height = max_matrix::kRowNumberOfModule * kCell + 2 * kMargin;
 
   // the background is painted whole by OnPaint(), which the buffered DC needs
   // to know
@@ -79,16 +80,16 @@ void ControlDotPanel::Clear() {
 // there is nothing to switch.
 void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
   wxAutoBufferedPaintDC dc(this);
-  wxCoord const cell = FromDIP(CONTROL_DOT_PANEL_CELL);
-  wxCoord const led = FromDIP(CONTROL_DOT_PANEL_LED);
-  wxCoord const gap = FromDIP(CONTROL_DOT_PANEL_MODULE_GAP);
-  wxCoord const margin = FromDIP(CONTROL_DOT_PANEL_MARGIN);
+  wxCoord const cell = FromDIP(kCell);
+  wxCoord const led = FromDIP(kLed);
+  wxCoord const gap = FromDIP(kModuleGap);
+  wxCoord const margin = FromDIP(kMargin);
 
   dc.SetBackground(wxBrush(CONTROL_DOT_PANEL_BOARD));
   dc.Clear();
   dc.SetPen(*wxTRANSPARENT_PEN);
   for (uint8_t row = 0; row < max_matrix::kRowNumberOfModule; row++) {
-    for (uint8_t column = 0; column < CONTROL_NUMBER_OF_COLUMNS; column++) {
+    for (uint8_t column = 0; column < kControlNumberOfColumns; column++) {
       bool const lit = IsLit(column, row);
       wxCoord const x = margin + column * cell +
                         (column / max_matrix::kColumnNumberOfModule) * gap +
@@ -189,11 +190,11 @@ bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
  */
 bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
                                uint8_t* row) const {
-  wxCoord const cell = FromDIP(CONTROL_DOT_PANEL_CELL);
-  wxCoord const module_width = max_matrix::kColumnNumberOfModule * cell +
-                               FromDIP(CONTROL_DOT_PANEL_MODULE_GAP);
-  wxCoord const x = point.x - FromDIP(CONTROL_DOT_PANEL_MARGIN);
-  wxCoord const y = point.y - FromDIP(CONTROL_DOT_PANEL_MARGIN);
+  wxCoord const cell = FromDIP(kCell);
+  wxCoord const module_width =
+      max_matrix::kColumnNumberOfModule * cell + FromDIP(kModuleGap);
+  wxCoord const x = point.x - FromDIP(kMargin);
+  wxCoord const y = point.y - FromDIP(kMargin);
   wxCoord const in_module = x % module_width;
 
   if (x < 0 || y < 0 || in_module >= max_matrix::kColumnNumberOfModule * cell) {
@@ -202,7 +203,7 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
   wxCoord const found_column =
       x / module_width * max_matrix::kColumnNumberOfModule + in_module / cell;
   wxCoord const found_row = y / cell;
-  if (found_column >= CONTROL_NUMBER_OF_COLUMNS ||
+  if (found_column >= kControlNumberOfColumns ||
       found_row >= max_matrix::kRowNumberOfModule) {
     return false;
   }

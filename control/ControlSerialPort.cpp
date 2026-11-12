@@ -28,11 +28,11 @@
 
 #include "ControlSerialPort.h"
 
-/* ControlSerialPort Parameter */
-#define CONTROL_SERIAL_PORT_CHUNK_LENGTH 256u
-#define CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS 1000
-
 namespace {
+
+/* ControlSerialPort Parameter */
+constexpr size_t kChunkLength{256u};
+constexpr int kWriteTimeoutMs{1000};
 
 // Whether the port takes `baud_rate`: the rates of the Arduino IDE's serial
 // monitor that termios names on every system, up to the 115200 of
@@ -54,7 +54,7 @@ ControlSerialPort::~ControlSerialPort() { Close(); }
 /*
  * A read returns at once with what has arrived, as ReadIntervalTimeout MAXDWORD
  * with no total timeout says; a write gives up after
- * CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS. DTR on, as the Arduino IDE has it,
+ * kWriteTimeoutMs. DTR on, as the Arduino IDE has it,
  * which resets an Uno.
  */
 bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
@@ -83,7 +83,7 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   settings.fDtrControl = DTR_CONTROL_ENABLE;
   settings.fRtsControl = RTS_CONTROL_ENABLE;
   timeouts.ReadIntervalTimeout = MAXDWORD;
-  timeouts.WriteTotalTimeoutConstant = CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS;
+  timeouts.WriteTotalTimeoutConstant = kWriteTimeoutMs;
   opened = opened && SetCommState(handle_, &settings) != 0 &&
            SetCommTimeouts(handle_, &timeouts) != 0;
   if (!opened) Close();
@@ -128,7 +128,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  char chunk[CONTROL_SERIAL_PORT_CHUNK_LENGTH];
+  char chunk[kChunkLength];
   DWORD length = sizeof(chunk);
 
   if (!IsOpen()) return false;
@@ -208,7 +208,7 @@ std::vector<std::string> ControlSerialPort::List() {
 bool ControlSerialPort::IsOpen() const { return descriptor_ >= 0; }
 
 // A full output buffer is waited for, up to
-// CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS: a line is a few bytes, and a port that
+// kWriteTimeoutMs: a line is a few bytes, and a port that
 // takes none for that long has no board behind it.
 bool ControlSerialPort::Write(std::string const& data) {
   size_t sent = 0;
@@ -221,7 +221,7 @@ bool ControlSerialPort::Write(std::string const& data) {
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && errno == EAGAIN &&
-               poll(&writable, 1, CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS) > 0) {
+               poll(&writable, 1, kWriteTimeoutMs) > 0) {
       continue;
     } else {
       Close();
@@ -232,7 +232,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  char chunk[CONTROL_SERIAL_PORT_CHUNK_LENGTH];
+  char chunk[kChunkLength];
 
   if (!IsOpen()) return false;
   for (;;) {

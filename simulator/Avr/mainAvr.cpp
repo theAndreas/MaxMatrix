@@ -33,19 +33,19 @@
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
 
+namespace {
+
 /* the pins every example puts the chain on */
-#define SIMULATOR_DATA_IN_PIN 11u
-#define SIMULATOR_CHIP_SELECT_PIN 10u
-#define SIMULATOR_CLOCK_PIN 13u
+constexpr uint8_t kDataInPin{11u};
+constexpr uint8_t kChipSelectPin{10u};
+constexpr uint8_t kClockPin{13u};
 /* the chain every example has, max_matrix::MatrixOf<4> */
-#define SIMULATOR_NUMBER_OF_MODULES 4u
+constexpr uint8_t kNumberOfModules{4u};
 
 /* exit codes, as in main.cpp */
-#define SIMULATOR_EXIT_OK 0
-#define SIMULATOR_EXIT_FAILED 1
-#define SIMULATOR_EXIT_USAGE 2
-
-namespace {
+constexpr int kExitOk{0};
+constexpr int kExitFailed{1};
+constexpr int kExitUsage{2};
 
 SimulatorOptions options;
 SimulatorPanel panel;
@@ -61,28 +61,27 @@ SimulatorAvr avr;
  *
  * \param[in] argc The number of arguments, the program's name included.
  * \param[in] argv The arguments.
- * \return `SIMULATOR_EXIT_OK` if the run with `--for` ended with the panel
- *         expected and no transfer error; `SIMULATOR_EXIT_FAILED` if the .elf
- *         cannot be read, the port is taken, the AVR stopped, or the run with
- *         `--for` ended with another panel or a transfer error; or
- *         `SIMULATOR_EXIT_USAGE` if the command line is wrong.
+ * \return `kExitOk` if the run with `--for` ended with the panel expected and
+ *         no transfer error; `kExitFailed` if the .elf cannot be read, the port
+ *         is taken, the AVR stopped, or the run with `--for` ended with another
+ *         panel or a transfer error; or `kExitUsage` if the command line is
+ *         wrong.
  */
 int main(int argc, char** argv) {
   if (!options.Parse(argc, argv) || options.GetElfFile() == nullptr ||
       !panel.SetWiring(options.GetWiringName())) {
     SimulatorOptions::PrintUsage(argv[0]);
-    return SIMULATOR_EXIT_USAGE;
+    return kExitUsage;
   }
   panel.SetUpsideDown(options.IsUpsideDown());
-  mock::Reset(SIMULATOR_DATA_IN_PIN, SIMULATOR_CHIP_SELECT_PIN,
-              SIMULATOR_CLOCK_PIN, SIMULATOR_NUMBER_OF_MODULES);
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   mock::serial_input = options.GetSerialInput();
   if (!avr.Load(options.GetElfFile())) {
     fprintf(stderr, "%s is no .elf for the %s\n", options.GetElfFile(),
-            SIMULATOR_AVR_MCU);
-    return SIMULATOR_EXIT_FAILED;
+            kSimulatorAvrMcu);
+    return kExitFailed;
   }
-  if (!front_end.Begin(options)) return SIMULATOR_EXIT_FAILED;
+  if (!front_end.Begin(options)) return kExitFailed;
 
   /* a page or the control program, and whoever is in front of it, speaks in
    * real time */
@@ -94,7 +93,7 @@ int main(int argc, char** argv) {
        now++) {
     if (!avr.Run(now)) {
       fprintf(stderr, "the AVR stopped after %u ms\n", now);
-      return SIMULATOR_EXIT_FAILED;
+      return kExitFailed;
     }
     front_end.Follow(panel, now);
     // simavr runs faster than the Uno, so in real time it waits for the host's
@@ -106,5 +105,5 @@ int main(int argc, char** argv) {
   bool const passed =
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
       mock::errors == 0;
-  return passed ? SIMULATOR_EXIT_OK : SIMULATOR_EXIT_FAILED;
+  return passed ? kExitOk : kExitFailed;
 }

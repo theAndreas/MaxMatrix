@@ -14,10 +14,14 @@
 
 #include <string>
 
+namespace {
+
 /* DocuSvg Parameter */
-#define DOCU_SVG_FONT "Helvetica, Arial, sans-serif"
-#define DOCU_SVG_ARROW_HEAD_LENGTH 10
-#define DOCU_SVG_ARROW_HEAD_HALF_WIDTH 6
+constexpr char kFont[] = "Helvetica, Arial, sans-serif";
+constexpr int32_t kArrowHeadLength{10};
+constexpr int32_t kArrowHeadHalfWidth{6};
+
+}  // namespace
 
 DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top) {
   width_ = width;
@@ -31,7 +35,7 @@ std::string DocuSvg::GetDocument() const {
 
   document << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width_
            << "\" height=\"" << height_ << "\" viewBox=\"0 " << top_ << " "
-           << width_ << " " << height_ << "\" font-family=\"" << DOCU_SVG_FONT
+           << width_ << " " << height_ << "\" font-family=\"" << kFont
            << "\">\n"
            << body_.str() << "</svg>\n";
   return document.str();
@@ -58,13 +62,12 @@ void DocuSvg::AddText(int32_t x, int32_t y, std::string const& text,
 void DocuSvg::AddArrow(int32_t from_x, int32_t to_x, int32_t y,
                        int32_t thickness, char const* colour) {
   int32_t const direction = to_x < from_x ? 1 : -1;
-  int32_t const head_base{to_x + direction * DOCU_SVG_ARROW_HEAD_LENGTH};
+  int32_t const head_base{to_x + direction * kArrowHeadLength};
 
   body_ << "  <line x1=\"" << from_x << "\" y1=\"" << y << "\" x2=\""
         << head_base << "\" y2=\"" << y << "\" stroke=\"" << colour
         << "\" stroke-width=\"" << thickness << "\"/>\n";
   body_ << "  <polygon points=\"" << to_x << "," << y << " " << head_base << ","
-        << y - DOCU_SVG_ARROW_HEAD_HALF_WIDTH << " " << head_base << ","
-        << y + DOCU_SVG_ARROW_HEAD_HALF_WIDTH << "\" fill=\"" << colour
-        << "\"/>\n";
+        << y - kArrowHeadHalfWidth << " " << head_base << ","
+        << y + kArrowHeadHalfWidth << "\" fill=\"" << colour << "\"/>\n";
 }

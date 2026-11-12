@@ -19,16 +19,16 @@
 
 /* ControlLink Parameter */
 /* what SerialControl says at the end of setup() */
-#define CONTROL_LINK_READY "ready"
+constexpr char kControlLinkReady[] = "ready";
 /* the longest line kept whole; a sketch that never ends a line is shown in
  * pieces of this length */
-#define CONTROL_LINK_MAX_LINE_LENGTH 256u
+constexpr size_t kControlLinkMaxLineLength{256u};
 /* how often the picture is asked for at most: 20 times a second, whose answers
  * take an eighth of 115200 baud */
-#define CONTROL_LINK_PICTURE_INTERVAL_MS 50u
+constexpr uint32_t kControlLinkPictureIntervalMs{50u};
 /* how long an answer to picture is waited for before it is taken as lost and
  * asked for again */
-#define CONTROL_LINK_PICTURE_TIMEOUT_MS 1000u
+constexpr uint32_t kControlLinkPictureTimeoutMs{1000u};
 
 /*!
  * \brief The lines between the control program and one SerialControl, on a
@@ -103,8 +103,8 @@ class ControlLink {
    * \brief Asks SerialControl what the matrix shows, if it is time to.
    *
    * Call it often, from a timer: it asks at most every
-   * `CONTROL_LINK_PICTURE_INTERVAL_MS`, and not again while an answer is due,
-   * unless it has not come for `CONTROL_LINK_PICTURE_TIMEOUT_MS`.
+   * `kControlLinkPictureIntervalMs`, and not again while an answer is due,
+   * unless it has not come for `kControlLinkPictureTimeoutMs`.
    *
    * \param[in] now The time in milliseconds, from any clock that does not jump.
    */

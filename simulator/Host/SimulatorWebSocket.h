@@ -19,11 +19,11 @@
 #include <string>
 
 /* SimulatorWebSocket opcodes, RFC 6455 section 5.2 */
-#define SIMULATOR_WEB_SOCKET_OPCODE_TEXT 0x1u
-#define SIMULATOR_WEB_SOCKET_OPCODE_CLOSE 0x8u
+constexpr uint8_t kSimulatorWebSocketOpcodeText{0x1u};
+constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8u};
 
 /* SimulatorWebSocket Parameter */
-#define SIMULATOR_WEB_SOCKET_SHA1_LENGTH 20u
+constexpr size_t kSimulatorWebSocketSha1Length{20u};
 
 /*!
  * \brief The WebSocket protocol of the simulator's web page.
@@ -93,7 +93,7 @@ class SimulatorWebSocket {
    * \brief Calculates the SHA-1 of a message.
    *
    * \param[in] message The bytes to hash.
-   * \param[out] digest The hash, SIMULATOR_WEB_SOCKET_SHA1_LENGTH bytes.
+   * \param[out] digest The hash, kSimulatorWebSocketSha1Length bytes.
    */
   static void CalculateSha1(std::string const& message, uint8_t* digest);
 

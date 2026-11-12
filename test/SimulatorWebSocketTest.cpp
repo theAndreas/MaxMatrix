@@ -18,7 +18,7 @@
 namespace {
 
 std::string Sha1Hex(std::string const& message) {
-  uint8_t digest[SIMULATOR_WEB_SOCKET_SHA1_LENGTH];
+  uint8_t digest[kSimulatorWebSocketSha1Length];
   char hex[3];
   std::string text;
 
@@ -133,7 +133,7 @@ TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends) {
   uint8_t opcode = 0;
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
-  EXPECT_EQ(opcode, SIMULATOR_WEB_SOCKET_OPCODE_TEXT);
+  EXPECT_EQ(opcode, kSimulatorWebSocketOpcodeText);
   EXPECT_EQ(payload, "wiring GENERIC");
   EXPECT_TRUE(buffer.empty());
 }
@@ -196,7 +196,7 @@ TEST(SimulatorWebSocketTest, DecodeReadsWhatEncodeWrites) {
   uint8_t opcode = 0;
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
-  EXPECT_EQ(opcode, SIMULATOR_WEB_SOCKET_OPCODE_TEXT);
+  EXPECT_EQ(opcode, kSimulatorWebSocketOpcodeText);
   EXPECT_EQ(payload, std::string(300, 'y'));
 }
 

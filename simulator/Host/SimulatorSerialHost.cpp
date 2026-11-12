@@ -17,32 +17,36 @@
 
 #include "SimulatorSocket.h"
 
+namespace {
+
 /* SimulatorSerialHost Parameter */
-#define SIMULATOR_SERIAL_HOST_CHUNK_LENGTH 256u
+constexpr size_t kChunkLength{256u};
+
+}  // namespace
 
 SimulatorSerialHost::SimulatorSerialHost() {
-  listener_ = SIMULATOR_SOCKET_NONE;
-  client_ = SIMULATOR_SOCKET_NONE;
+  listener_ = kSimulatorSocketNone;
+  client_ = kSimulatorSocketNone;
 }
 
 SimulatorSerialHost::~SimulatorSerialHost() {
-  if (client_ != SIMULATOR_SOCKET_NONE) close(client_);
-  if (listener_ != SIMULATOR_SOCKET_NONE) close(listener_);
+  if (client_ != kSimulatorSocketNone) close(client_);
+  if (listener_ != kSimulatorSocketNone) close(listener_);
 }
 
 bool SimulatorSerialHost::Begin(uint16_t port) {
   listener_ = SimulatorSocket::OpenListener(port);
-  return listener_ != SIMULATOR_SOCKET_NONE;
+  return listener_ != kSimulatorSocketNone;
 }
 
 void SimulatorSerialHost::Task(std::string* received) {
-  char chunk[SIMULATOR_SERIAL_HOST_CHUNK_LENGTH];
+  char chunk[kChunkLength];
 
-  if (listener_ == SIMULATOR_SOCKET_NONE) return;
+  if (listener_ == kSimulatorSocketNone) return;
 
   // The client first, so that one which has gone frees the port for the next in
   // the same call.
-  while (client_ != SIMULATOR_SOCKET_NONE) {
+  while (client_ != kSimulatorSocketNone) {
     ssize_t const length = recv(client_, chunk, sizeof(chunk), 0);
     if (length > 0) {
       received->append(chunk, static_cast<size_t>(length));
@@ -57,7 +61,7 @@ void SimulatorSerialHost::Task(std::string* received) {
 }
 
 void SimulatorSerialHost::Send(std::string const& text) {
-  if (client_ != SIMULATOR_SOCKET_NONE && !text.empty() &&
+  if (client_ != kSimulatorSocketNone && !text.empty() &&
       !SimulatorSocket::SendAll(client_, text)) {
     DropClient();
   }
@@ -72,7 +76,7 @@ void SimulatorSerialHost::AcceptClient() {
   int accepted;
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
-    if (client_ == SIMULATOR_SOCKET_NONE) {
+    if (client_ == kSimulatorSocketNone) {
       SimulatorSocket::SetNonBlocking(accepted);
       client_ = accepted;
     } else {
@@ -84,5 +88,5 @@ void SimulatorSerialHost::AcceptClient() {
 // Closes the client's connection, so that the next one may connect.
 void SimulatorSerialHost::DropClient() {
   close(client_);
-  client_ = SIMULATOR_SOCKET_NONE;
+  client_ = kSimulatorSocketNone;
 }

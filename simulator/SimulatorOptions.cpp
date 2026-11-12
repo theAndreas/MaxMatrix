@@ -17,10 +17,10 @@
 #include <string>
 
 SimulatorOptions::SimulatorOptions() {
-  wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
+  wiring_name_ = kSimulatorPanelDefaultWiring;
   upside_down_ = false;
   web_ = false;
-  port_ = SIMULATOR_OPTIONS_DEFAULT_PORT;
+  port_ = kSimulatorOptionsDefaultPort;
   tcp_port_ = 0;
   run_for_ = 0;
   expect_file_ = nullptr;
@@ -98,7 +98,7 @@ bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
   /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
    * check then refuses */
   if (end == text || *end != '\0' || value == 0 ||
-      value > SIMULATOR_OPTIONS_MAX_PORT) {
+      value > kSimulatorOptionsMaxPort) {
     return false;
   }
   *port = static_cast<uint16_t>(value);
@@ -121,7 +121,7 @@ bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
   /* written so that NaN, which compares false with everything, is refused as
    * well */
   if (end == text || *end != '\0' ||
-      !(milliseconds >= 1 && milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) {
+      !(milliseconds >= 1 && milliseconds <= kSimulatorOptionsMaxRunFor)) {
     return false;
   }
   *run_for = static_cast<uint32_t>(milliseconds);

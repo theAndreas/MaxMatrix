@@ -18,9 +18,9 @@
 #include "SimulatorPanel.h"
 
 /* SimulatorOptions Parameter */
-#define SIMULATOR_OPTIONS_DEFAULT_PORT 8080u
-#define SIMULATOR_OPTIONS_MAX_PORT 65535u
-#define SIMULATOR_OPTIONS_MAX_RUN_FOR UINT32_MAX /* milliseconds */
+constexpr uint16_t kSimulatorOptionsDefaultPort{8080u};
+constexpr uint16_t kSimulatorOptionsMaxPort{65535u};
+constexpr uint32_t kSimulatorOptionsMaxRunFor{UINT32_MAX}; /* milliseconds */
 
 /*!
  * \brief The command line of the simulator.
@@ -55,7 +55,7 @@ class SimulatorOptions {
    */
   SimulatorOptions();
 
-  /*! \brief Returns the name of `--wiring`, or `SIMULATOR_PANEL_DEFAULT_WIRING`
+  /*! \brief Returns the name of `--wiring`, or `kSimulatorPanelDefaultWiring`
    * without it. */
   std::string const& GetWiringName() const { return wiring_name_; }
 
@@ -65,7 +65,7 @@ class SimulatorOptions {
   /*! \brief Returns whether `--web` was given. */
   bool IsWeb() const { return web_; }
 
-  /*! \brief Returns the port of `--port`, or `SIMULATOR_OPTIONS_DEFAULT_PORT`
+  /*! \brief Returns the port of `--port`, or `kSimulatorOptionsDefaultPort`
    * without it. */
   uint16_t GetPort() const { return port_; }
 

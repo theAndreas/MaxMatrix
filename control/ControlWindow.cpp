@@ -33,20 +33,24 @@
 #include "ControlDotPanel.h"
 #include "MaxMatrixConfig.h"
 
+namespace {
+
 /* ControlWindow Parameter */
 /* what SerialControl opens its Serial with */
-#define CONTROL_WINDOW_BAUD_RATE 115200u
+constexpr uint32_t kBaudRate{115200u};
 /* the port the README starts the simulator with, beside the page's 8080 */
-#define CONTROL_WINDOW_TCP_PORT 8081
-#define CONTROL_WINDOW_POLL_MS 20
-#define CONTROL_WINDOW_MAX_INTENSITY 15
-#define CONTROL_WINDOW_MIN_SPEED 10
-#define CONTROL_WINDOW_MAX_SPEED 500
-#define CONTROL_WINDOW_MAX_SPACE 255
-#define CONTROL_WINDOW_CONNECTIONS_WIDTH 220
+constexpr int kTcpPort{8081};
+constexpr int kPollMs{20};
+constexpr int kMaxIntensity{15};
+constexpr int kMinSpeed{10};
+constexpr int kMaxSpeed{500};
+constexpr int kMaxSpace{255};
+constexpr int kConnectionsWidth{220};
 /* a dozen lines of the log, which makes the window as tall as the old tool's */
-#define CONTROL_WINDOW_LOG_HEIGHT 200
-#define CONTROL_WINDOW_BORDER 8
+constexpr int kLogHeight{200};
+constexpr int kBorder{8};
+
+}  // namespace
 
 /* ControlWindow colours of a connection's state */
 #define CONTROL_WINDOW_READY wxColour(0x00, 0x80, 0x00)
@@ -67,17 +71,17 @@ ControlWindow::ControlWindow()
   controls->Add(MakeMatrix(controls_), 0, wxEXPAND);
   controls->Add(MakeText(controls_), 1, wxEXPAND);
   controls_->SetSizer(controls);
-  columns->Add(controls_, 1, wxEXPAND | wxALL, FromDIP(CONTROL_WINDOW_BORDER));
+  columns->Add(controls_, 1, wxEXPAND | wxALL, FromDIP(kBorder));
   columns->Add(
       MakeConnections(content), 0,
       // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-      wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(CONTROL_WINDOW_BORDER));
+      wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(kBorder));
   content->SetSizer(columns);
   SetClientSize(content->GetBestSize());
   SetMinClientSize(content->GetBestSize());
 
   Bind(wxEVT_TIMER, &ControlWindow::OnTimer, this);
-  timer_.Start(CONTROL_WINDOW_POLL_MS);
+  timer_.Start(kPollMs);
   ShowState();
 }
 
@@ -113,7 +117,7 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   wxBoxSizer* const space_row = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer* const text_row = new wxBoxSizer(wxHORIZONTAL);
   wxButton* const clear = new wxButton(page, wxID_ANY, "Clear");
-  wxCoord const border = FromDIP(CONTROL_WINDOW_BORDER);
+  wxCoord const border = FromDIP(kBorder);
 
   send_ = new wxButton(page, wxID_ANY, "Send");
   text_ = new wxTextCtrl(page, wxID_ANY, "Hello", wxDefaultPosition,
@@ -126,19 +130,16 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   // as one types
   bytes_left_->SetMinSize(bytes_left_->GetTextExtent("000 bytes too long"));
   intensity_ = new wxSlider(intensity_box->GetStaticBox(), wxID_ANY,
-                            MAXMATRIX_INTENSITY_INIT_VALUE, 0,
-                            CONTROL_WINDOW_MAX_INTENSITY, wxDefaultPosition,
-                            FromDIP(wxSize(-1, 140)),
+                            MAXMATRIX_INTENSITY_INIT_VALUE, 0, kMaxIntensity,
+                            wxDefaultPosition, FromDIP(wxSize(-1, 140)),
                             wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
   speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
-                        MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE,
-                        CONTROL_WINDOW_MIN_SPEED, CONTROL_WINDOW_MAX_SPEED,
-                        wxDefaultPosition, FromDIP(wxSize(-1, 140)),
+                        MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed,
+                        kMaxSpeed, wxDefaultPosition, FromDIP(wxSize(-1, 140)),
                         wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
   shift_ = new wxCheckBox(page, wxID_ANY, "Shift in");
   space_ = new wxSpinCtrl(page, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                          wxDefaultSize, wxSP_ARROW_KEYS, 0,
-                          CONTROL_WINDOW_MAX_SPACE,
+                          wxDefaultSize, wxSP_ARROW_KEYS, 0, kMaxSpace,
                           MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
 
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
@@ -188,7 +189,7 @@ wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
       box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) {
         Broadcast(ControlCommand::MakeDot(column, row, lit));
       });
-  box->Add(dots_, 0, wxALL, FromDIP(CONTROL_WINDOW_BORDER));
+  box->Add(dots_, 0, wxALL, FromDIP(kBorder));
   panel->SetSizer(box);
   return panel;
 }
@@ -211,7 +212,7 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
   wxBoxSizer* const port_row = new wxBoxSizer(wxHORIZONTAL);
   wxButton* const clear_log =
       new wxButton(log_box->GetStaticBox(), wxID_ANY, "Clear log");
-  wxCoord const border = FromDIP(CONTROL_WINDOW_BORDER);
+  wxCoord const border = FromDIP(kBorder);
 
   serial_port_name_ = new wxComboBox(board_box->GetStaticBox(), wxID_ANY);
   board_button_ = new wxButton(board_box->GetStaticBox(), wxID_ANY, "Open");
@@ -219,7 +220,7 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
       new wxStaticText(board_box->GetStaticBox(), wxID_ANY, wxEmptyString);
   tcp_port_number_ = new wxSpinCtrl(
       simulator_box->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition,
-      wxDefaultSize, wxSP_ARROW_KEYS, 1, UINT16_MAX, CONTROL_WINDOW_TCP_PORT);
+      wxDefaultSize, wxSP_ARROW_KEYS, 1, UINT16_MAX, kTcpPort);
   simulator_button_ =
       new wxButton(simulator_box->GetStaticBox(), wxID_ANY, "Connect");
   simulator_status_ =
@@ -244,14 +245,14 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   simulator_box->Add(simulator_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM,
                      border);
-  log_->SetMinSize(FromDIP(wxSize(-1, CONTROL_WINDOW_LOG_HEIGHT)));
+  log_->SetMinSize(FromDIP(wxSize(-1, kLogHeight)));
   log_box->Add(log_, 1, wxEXPAND | wxALL, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   log_box->Add(clear_log, 0, wxLEFT | wxRIGHT | wxBOTTOM, border);
   rows->Add(board_box, 0, wxEXPAND | wxBOTTOM, border);
   rows->Add(simulator_box, 0, wxEXPAND | wxBOTTOM, border);
   rows->Add(log_box, 1, wxEXPAND);
-  rows->SetMinSize(FromDIP(wxSize(CONTROL_WINDOW_CONNECTIONS_WIDTH, -1)));
+  rows->SetMinSize(FromDIP(wxSize(kConnectionsWidth, -1)));
   column->SetSizer(rows);
 
   board_button_->Bind(wxEVT_BUTTON, &ControlWindow::OnBoard, this);
@@ -315,8 +316,7 @@ void ControlWindow::OnBoard(wxCommandEvent& /* event */) {
   if (serial_port_.IsOpen()) {
     serial_port_.Close();
     Log("board: closed\n");
-  } else if (serial_port_.Open(std::string(name.ToUTF8()),
-                               CONTROL_WINDOW_BAUD_RATE)) {
+  } else if (serial_port_.Open(std::string(name.ToUTF8()), kBaudRate)) {
     board_link_.Begin(true);
     Log("board: " + name + " open, waiting for SerialControl to say ready\n");
   } else {
@@ -443,7 +443,7 @@ void ControlWindow::Follow(ControlLink& link, char const* name) {
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": " + ConvertToText(line) + "\n");
-    if (line == CONTROL_LINK_READY) SendSettings(link, name);
+    if (line == kControlLinkReady) SendSettings(link, name);
   }
   if (!open) Log(wxString(name) + ": the connection has closed\n");
   if (!open || was_ready != link.IsReady()) ShowState();
