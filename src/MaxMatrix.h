@@ -688,6 +688,10 @@ class Buffer {
 
 }  // namespace internal
 
+// misc-multiple-inheritance, suppressed below: the buffer is a base of its own,
+// so that it is made before the Matrix it is handed to (internal::Buffer); it
+// is private and has no virtual function, so that nothing but the constructor
+// reaches it.
 /*!
  * \brief A Matrix with the buffer for a chain of `NumberOfModules` modules.
  *
@@ -701,7 +705,7 @@ class Buffer {
  *
  * \tparam NumberOfModules The modules of the chain, 1 to `kMaxNumberOfModules`.
  */
-template <byte NumberOfModules>
+template <byte NumberOfModules>  // NOLINTNEXTLINE(misc-multiple-inheritance)
 class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
   static_assert(NumberOfModules >= 1 && NumberOfModules <= kMaxNumberOfModules,
                 "a chain has 1 to kMaxNumberOfModules modules");

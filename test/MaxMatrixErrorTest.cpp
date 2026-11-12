@@ -17,19 +17,21 @@ using max_matrix::Result;
 using max_matrix::State;
 using max_matrix::Status;
 
+namespace {
+
 /* a whole line to a command of its own, and why it failed */
-static Error FeedText(Matrix& matrix, std::string const& text) {
+Error FeedText(Matrix& matrix, std::string const& text) {
   Command command;
   TextPrint answer;
   Result<CommandState> result = CommandState::kPending;
 
-  for (char c : text) result = command.Feed(matrix, c, answer);
+  for (char const c : text) result = command.Feed(matrix, c, answer);
   return result.GetError();
 }
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
-  std::vector<byte> before =
-      Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
-  int32_t frames_before = mock::frames;
+  std::vector<byte> const before{
+      Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns)};
+  int32_t const frames_before{mock::frames};
 
   EXPECT_EQ(matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
                 .GetError(),
@@ -149,8 +151,8 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
-    int32_t frames_before = mock::frames;
-    byte intensity_before = ChipOfModule(0).intensity;
+    int32_t const frames_before{mock::frames};
+    byte const intensity_before{ChipOfModule(0).intensity};
     reports.clear();
     EXPECT_EQ(test_case.call(matrix_), test_case.expected) << test_case.name;
     EXPECT_EQ(ShownPicture(matrix_),
@@ -197,3 +199,5 @@ TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError) {
   EXPECT_EQ(mock::serial_output, "MaxMatrix SetText: unknown char\r\n");
 }
 #endif
+
+}  // namespace

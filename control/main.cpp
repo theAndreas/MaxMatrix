@@ -20,7 +20,9 @@
 /*!
  * \brief The control program: one window.
  */
-class ControlApp : public wxApp {
+class ControlApp : public wxApp {  // NOLINT(misc-use-internal-linkage): the
+  // wxGetApp() of wxIMPLEMENT_APP would go unused in an anonymous namespace.
+
  public:
   /*!
    * \brief Opens the window.

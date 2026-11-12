@@ -45,10 +45,14 @@
 #define SIMULATOR_EXIT_FAILED 1
 #define SIMULATOR_EXIT_USAGE 2
 
-static SimulatorOptions options;
-static SimulatorPanel panel;
-static SimulatorFrontEnd front_end;
-static SimulatorAvr avr;
+namespace {
+
+SimulatorOptions options;
+SimulatorPanel panel;
+SimulatorFrontEnd front_end;
+SimulatorAvr avr;
+
+}  // namespace
 
 /*!
  * \brief Runs the example.

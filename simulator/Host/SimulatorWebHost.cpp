@@ -141,7 +141,7 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
 // Sends the page on the connection `socket`, read from its path every time, so
 // that the browser always gets the current one.
 void SimulatorWebHost::SendPage(int socket) {
-  std::ifstream file(page_path_);
+  std::ifstream const file{page_path_};
   std::stringstream body;
 
   body << file.rdbuf();

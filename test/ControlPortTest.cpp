@@ -16,10 +16,12 @@
 #include "ControlTcpPort.h"
 #include "Host/SimulatorSerialHost.h"
 
-static uint16_t const kPort = 18086;
+namespace {
+
+uint16_t const kPort = 18086;
 
 // What arrives on `descriptor` within half a second.
-static std::string Receive(int descriptor) {
+std::string Receive(int descriptor) {
   pollfd ready = {descriptor, POLLIN, 0};
   char chunk[256];
 
@@ -30,7 +32,7 @@ static std::string Receive(int descriptor) {
 
 // Reads `port` until something arrives or half a second has passed, as the
 // window's timer would.
-static std::string ReadUntilReceived(ControlPort& port) {
+std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
   for (int16_t i = 0; i < 50 && received.empty() && port.Read(&received); i++) {
@@ -158,3 +160,5 @@ TEST(ControlTcpPortTest, OpenFailsWithoutASimulator) {
   EXPECT_FALSE(port.Open(kPort));
   EXPECT_FALSE(port.IsOpen());
 }
+
+}  // namespace

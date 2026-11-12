@@ -75,6 +75,8 @@
 #define DOCU_EXAMPLE_ROW_MODULE 2
 #define DOCU_EXAMPLE_ROW 2
 
+namespace {
+
 /*!
  * \brief Where the LED of one dot is driven: the chip in the chain, 0 at DIN,
  *        its digit register and the bit in it.
@@ -85,13 +87,13 @@ typedef struct {
   byte bit;
 } DocuLed;
 
-static max_matrix::MatrixOf<DOCU_NUMBER_OF_MODULES> matrix(DOCU_DATA_IN_PIN,
-                                                           DOCU_CHIP_SELECT_PIN,
-                                                           DOCU_CLOCK_PIN);
+max_matrix::MatrixOf<DOCU_NUMBER_OF_MODULES> matrix(DOCU_DATA_IN_PIN,
+                                                    DOCU_CHIP_SELECT_PIN,
+                                                    DOCU_CLOCK_PIN);
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them
  */
-static struct {
+struct {
   Max7219Wiring const* wiring;
   char const* name;
 } const kModuleNames[] = {
@@ -108,7 +110,7 @@ static struct {
  * \param[out] led The chip, digit and bit of the lit LED.
  * \return True if exactly one LED is lit, or false if none or more than one is.
  */
-static bool FindLed(DocuLed* led) {
+bool FindLed(DocuLed* led) {
   byte lit = 0;
 
   for (byte chip = 0; chip < mock::chain.chips.size(); chip++) {
@@ -137,7 +139,7 @@ static bool FindLed(DocuLed* led) {
  * \param[out] led The chip, digit and bit.
  * \return True if the dot lit exactly one LED, or false if it did not.
  */
-static bool FindLedOfDot(byte x, byte y, DocuLed* led) {
+bool FindLedOfDot(byte x, byte y, DocuLed* led) {
   matrix.Clear();
   matrix.SetDot(x, y, true);
   return FindLed(led);
@@ -152,7 +154,7 @@ static bool FindLedOfDot(byte x, byte y, DocuLed* led) {
  * \param[in] wiring The wiring of the modules.
  * \return True if every dot is lit where it was set.
  */
-static bool IsUpright(Max7219Wiring const& wiring) {
+bool IsUpright(Max7219Wiring const& wiring) {
   bool upright = true;
 
   matrix.Clear();
@@ -180,7 +182,7 @@ static bool IsUpright(Max7219Wiring const& wiring) {
  *
  * \return The names, separated by commas, or `"no module"`.
  */
-static std::string GetModules() {
+std::string GetModules() {
   std::string modules;
 
   for (Max7219Wiring const& wiring : kMax7219Wirings) {
@@ -205,7 +207,7 @@ static std::string GetModules() {
  * \param[in] x The column, as the viewer sees it.
  * \return The pixels from the left.
  */
-static int32_t GetCellX(byte x) {
+int32_t GetCellX(byte x) {
   return DOCU_LEFT +
          (x / max_matrix::kColumnNumberOfModule) *
              (max_matrix::kColumnNumberOfModule * DOCU_CELL + DOCU_MODULE_GAP) +
@@ -219,7 +221,7 @@ static int32_t GetCellX(byte x) {
  * \param[in] y The row, as the viewer sees it.
  * \return The pixels from the top.
  */
-static int32_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
+int32_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
 
 /*!
  * \brief Returns the width of a picture of the whole panel.
@@ -228,7 +230,7 @@ static int32_t GetCellY(byte y) { return DOCU_TOP + y * DOCU_CELL; }
  *
  * \return The width in pixels.
  */
-static uint16_t GetPictureWidth() {
+uint16_t GetPictureWidth() {
   return static_cast<uint16_t>(GetCellX(DOCU_NUMBER_OF_COLUMNS - 1) +
                                DOCU_CELL + DOCU_RIGHT);
 }
@@ -240,7 +242,7 @@ static uint16_t GetPictureWidth() {
  *
  * \return The height in pixels.
  */
-static uint16_t GetPictureHeight() {
+uint16_t GetPictureHeight() {
   return static_cast<uint16_t>(GetCellY(max_matrix::kRowNumberOfModule - 1) +
                                DOCU_CELL + DOCU_BOTTOM);
 }
@@ -255,8 +257,8 @@ static uint16_t GetPictureHeight() {
  * \param[in] colour The fill colour.
  * \param[in] label The text in the LED, or empty.
  */
-static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
-                    std::string const& label) {
+void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
+             std::string const& label) {
   int32_t const inset = (DOCU_CELL - DOCU_LED) / 2;
 
   svg->AddRect(GetCellX(x) + inset, GetCellY(y) + inset, DOCU_LED, DOCU_LED,
@@ -277,7 +279,7 @@ static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
  * \param[in,out] svg The picture.
  * \param[in] title The line above the panel, or empty for none.
  */
-static void DrawPanel(DocuSvg* svg, std::string const& title) {
+void DrawPanel(DocuSvg* svg, std::string const& title) {
   int32_t const module_width = max_matrix::kColumnNumberOfModule * DOCU_CELL;
   int32_t const module_height = max_matrix::kRowNumberOfModule * DOCU_CELL;
   DocuLed led;
@@ -331,7 +333,7 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
  * \return The SVG text, or an empty text if a dot did not light exactly one
  *         LED.
  */
-static std::string DrawWiring(max_matrix::ModuleType module_type) {
+std::string DrawWiring(max_matrix::ModuleType module_type) {
   DocuSvg svg(GetPictureWidth(), GetPictureHeight());
   DocuLed leds[DOCU_NUMBER_OF_COLUMNS][max_matrix::kRowNumberOfModule];
   int32_t const inset = (DOCU_CELL - DOCU_LED) / 2 - 2;
@@ -397,7 +399,7 @@ static std::string DrawWiring(max_matrix::ModuleType module_type) {
  *
  * \return The SVG text.
  */
-static std::string DrawCoordinates() {
+std::string DrawCoordinates() {
   int32_t const panel_height = max_matrix::kRowNumberOfModule * DOCU_CELL;
   DocuSvg svg(GetPictureWidth(),
               DOCU_COORDINATES_ABOVE + panel_height + DOCU_COORDINATES_BELOW,
@@ -467,13 +469,15 @@ static std::string DrawCoordinates() {
  * \return What it holds, or an empty text if it cannot be read, which no
  *         picture equals.
  */
-static std::string ReadFile(std::string const& path) {
-  std::ifstream file(path);
+std::string ReadFile(std::string const& path) {
+  std::ifstream const file{path};
   std::stringstream content;
 
   content << file.rdbuf();
   return content.str();
 }
+
+}  // namespace
 
 /*!
  * \brief Writes or checks the pictures.
@@ -486,7 +490,8 @@ static std::string ReadFile(std::string const& path) {
  * \return 0 when all is written or up to date, 1 when a picture differs or
  *         cannot be drawn, 2 on a wrong command line.
  */
-int main(int argc, char** argv) {
+int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
+  // takes argv as the standard declares it, whatever reads it.
   if (argc != 3 ||
       (strcmp(argv[1], "--write") != 0 && strcmp(argv[1], "--check") != 0)) {
     fprintf(stderr, "usage: %s --write|--check FOLDER\n", argv[0]);

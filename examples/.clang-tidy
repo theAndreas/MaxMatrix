@@ -4,7 +4,11 @@
 # cppcoreguidelines-avoid-non-const-global-variables: a sketch shares its
 # state between setup(), loop() and its interrupts through globals; the
 # Arduino core gives it no other place.
+# MaxMatrix's own: misc-use-internal-linkage: a sketch is a program of its own,
+# which nothing links against, and reads as the Arduino examples do, its
+# globals and functions without static or an anonymous namespace.
 InheritParentConfig: true
 Checks: >
   -readability-magic-numbers,
-  -cppcoreguidelines-avoid-non-const-global-variables
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -misc-use-internal-linkage

@@ -14,6 +14,8 @@ using max_matrix::Error;
 using max_matrix::Result;
 using max_matrix::State;
 
+namespace {
+
 class MaxMatrixCommandTest : public MaxMatrixTest {
  protected:
   Command command_;
@@ -192,7 +194,9 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   matrix_.SetDot(9, 1, true);
   matrix_.SetDot(16, 4, true);
   matrix_.SetDot(31, 7, true);
-  for (char c : std::string("picture\n")) command.Feed(matrix_, c, answer);
+  for (char const c : std::string("picture\n")) {
+    command.Feed(matrix_, c, answer);
+  }
   for (byte column = 0; column < kNumberOfColumns; column++) {
     expected += column == 0    ? "01"
                 : column == 9  ? "02"
@@ -202,3 +206,5 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   }
   EXPECT_EQ(answer.text, expected + "\r\n");
 }
+
+}  // namespace

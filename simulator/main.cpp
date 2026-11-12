@@ -58,11 +58,13 @@
 void setup();  // NOLINT(readability-identifier-naming): Arduino's name
 void loop();   // NOLINT(readability-identifier-naming): Arduino's name
 
+namespace {
+
 // mock::tick is a plain function pointer, so what Tick() works on has to be
 // reachable without an object.
-static SimulatorOptions options;
-static SimulatorPanel panel;
-static SimulatorFrontEnd front_end;
+SimulatorOptions options;
+SimulatorPanel panel;
+SimulatorFrontEnd front_end;
 
 /*!
  * \brief Ends a run with `--for`.
@@ -70,7 +72,7 @@ static SimulatorFrontEnd front_end;
  * It prints the panel and exits, from within the sketch's loop() or delay(),
  * which never return on their own.
  */
-[[noreturn]] static void Finish() {
+[[noreturn]] void Finish() {
   bool const passed =
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
       mock::errors == 0;
@@ -85,12 +87,14 @@ static SimulatorFrontEnd front_end;
  * panel is drawn while a sketch blocks. In a run with `--for` the terminal
  * draws only at the end.
  */
-static void Tick() {
+void Tick() {
   uint32_t const now = millis();
 
   front_end.Follow(panel, now);
   if (options.GetRunFor() != 0 && now >= options.GetRunFor()) Finish();
 }
+
+}  // namespace
 
 /*!
  * \brief Runs the sketch.

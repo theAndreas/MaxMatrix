@@ -18,10 +18,12 @@
 
 #include <string>
 
-static uint16_t const kPort = 18087;
+namespace {
+
+uint16_t const kPort = 18087;
 
 // A client connected to the host on loopback, or -1 if the connection failed.
-static int Connect() {
+int Connect() {
   int const client = socket(AF_INET, SOCK_STREAM, 0);
   if (client < 0) return -1;
   sockaddr_in address = sockaddr_in();
@@ -39,7 +41,7 @@ static int Connect() {
 
 // What arrives at `client` within half a second; "" if the host closed the
 // connection or sent nothing.
-static std::string Receive(int client) {
+std::string Receive(int client) {
   pollfd ready = {client, POLLIN, 0};
   char chunk[256];
 
@@ -50,7 +52,7 @@ static std::string Receive(int client) {
 
 // Whether the host has closed the connection of `client` within half a second:
 // a read then returns 0.
-static bool IsClosedByHost(int client) {
+bool IsClosedByHost(int client) {
   pollfd ready = {client, POLLIN, 0};
   char c;
 
@@ -59,7 +61,7 @@ static bool IsClosedByHost(int client) {
 
 // Calls Task() until something arrives or a second has passed, as the tick
 // would.
-static std::string TaskUntilReceived(SimulatorSerialHost& host) {
+std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
   for (int16_t i = 0; i < 100 && received.empty(); i++) {
@@ -137,3 +139,5 @@ TEST(SimulatorSerialHostTest, LetsGoOfThePortWhenDestroyed) {
   SimulatorSerialHost host;
   EXPECT_TRUE(host.Begin(kPort));
 }
+
+}  // namespace

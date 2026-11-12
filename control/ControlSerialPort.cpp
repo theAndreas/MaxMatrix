@@ -32,13 +32,17 @@
 #define CONTROL_SERIAL_PORT_CHUNK_LENGTH 256u
 #define CONTROL_SERIAL_PORT_WRITE_TIMEOUT_MS 1000
 
+namespace {
+
 // Whether the port takes `baud_rate`: the rates of the Arduino IDE's serial
 // monitor that termios names on every system, up to the 115200 of
 // SerialControl.
-static bool IsBaudRate(uint32_t baud_rate) {
+bool IsBaudRate(uint32_t baud_rate) {
   return baud_rate == 9600 || baud_rate == 19200 || baud_rate == 38400 ||
          baud_rate == 57600 || baud_rate == 115200;
 }
+
+}  // namespace
 
 #ifdef _WIN32
 

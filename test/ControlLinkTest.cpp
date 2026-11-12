@@ -12,6 +12,8 @@
 
 #include "ControlCommand.h"
 
+namespace {
+
 // A port whose other end is the test: what the link writes collects in
 // `written`, what the test puts into `incoming` arrives at the next Read(), and
 // `gone` ends the connection as a pulled cable would.
@@ -134,7 +136,7 @@ TEST(ControlLinkTest, BeginForgetsHalfALine) {
 
 // The answer to picture with the first column `first` and the rest dark, as
 // SerialControl prints it.
-static std::string Picture(char const* first) {
+std::string Picture(char const* first) {
   return std::string("picture=") + first +
          std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 2, '0') + "\r\n";
 }
@@ -225,3 +227,5 @@ TEST(ControlLinkTest, AsksNothingBeforeReady) {
   link.AskForPicture(1000);
   EXPECT_EQ(port.written, "");
 }
+
+}  // namespace

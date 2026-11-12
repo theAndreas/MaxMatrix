@@ -17,11 +17,12 @@
 #include "SimulatorTerminal.h"
 #include "Web/SimulatorWeb.h"
 
-/* the chain the examples have */
-static uint8_t const kNumberOfModules = 4;
+namespace {
 
-static bool Parse(SimulatorOptions& options,
-                  std::vector<std::string> arguments) {
+/* the chain the examples have */
+uint8_t const kNumberOfModules = 4;
+
+bool Parse(SimulatorOptions& options, std::vector<std::string> arguments) {
   std::vector<char*> argv;
 
   arguments.insert(arguments.begin(), "Simulator");
@@ -32,7 +33,7 @@ static bool Parse(SimulatorOptions& options,
 
 /* a chain whose chips each have their own intensity, Chips[i] the intensity i,
  * so that an order shows */
-static void ResetChainWithDistinctIntensities() {
+void ResetChainWithDistinctIntensities() {
   mock::Reset(11, 10, 13, kNumberOfModules);
   for (size_t chip = 0; chip < mock::chain.chips.size(); chip++) {
     mock::chain.chips[chip].intensity = static_cast<uint8_t>(chip);
@@ -94,7 +95,7 @@ TEST(SimulatorTest, IntensityIsCountedFromTheLeft) {
 }
 
 TEST(SimulatorTest, StatusLineListsTheIntensitiesFromTheLeft) {
-  SimulatorPanel panel;
+  SimulatorPanel const panel;
 
   ResetChainWithDistinctIntensities();
   EXPECT_EQ(SimulatorTerminal::GetStatusLine(panel),
@@ -126,3 +127,5 @@ TEST(SimulatorTest, SerialOutputIsEscapedForJson) {
   EXPECT_EQ(SimulatorWeb::ConvertToJsonString(std::string("\x00\x1F\x7F", 3)),
             "\\u0000\\u001F\\u007F");
 }
+
+}  // namespace

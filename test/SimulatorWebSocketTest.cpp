@@ -15,27 +15,29 @@
 
 #include <string>
 
-static std::string Sha1Hex(std::string const& message) {
+namespace {
+
+std::string Sha1Hex(std::string const& message) {
   uint8_t digest[SIMULATOR_WEB_SOCKET_SHA1_LENGTH];
   char hex[3];
   std::string text;
 
   SimulatorWebSocket::CalculateSha1(message, digest);
-  for (uint8_t part : digest) {
+  for (uint8_t const part : digest) {
     snprintf(hex, sizeof(hex), "%02x", part);
     text += hex;
   }
   return text;
 }
 
-static std::string Base64(std::string const& text) {
+std::string Base64(std::string const& text) {
   return SimulatorWebSocket::ConvertToBase64(
       reinterpret_cast<uint8_t const*>(text.data()), text.size());
 }
 
 /* a text frame as a browser sends it: final, masked, and with a mask that is
  * not zeros, which would leave a decoder that unmasks wrongly undetected */
-static std::string ClientFrame(std::string const& payload) {
+std::string ClientFrame(std::string const& payload) {
   uint8_t const mask[4] = {0x12, 0x34, 0x56, 0x78};
   std::string frame;
 
@@ -197,3 +199,5 @@ TEST(SimulatorWebSocketTest, DecodeReadsWhatEncodeWrites) {
   EXPECT_EQ(opcode, SIMULATOR_WEB_SOCKET_OPCODE_TEXT);
   EXPECT_EQ(payload, std::string(300, 'y'));
 }
+
+}  // namespace

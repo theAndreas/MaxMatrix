@@ -78,7 +78,7 @@ TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn) {
 }
 
 TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
-  int32_t frames_before = mock::frames;
+  int32_t const frames_before{mock::frames};
 
   {
     Batch batch(matrix_);
@@ -99,7 +99,7 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
 /* the inner batch puts back the state it found, which the outer one had turned
  * off */
 TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost) {
-  int32_t frames_before = mock::frames;
+  int32_t const frames_before{mock::frames};
 
   {
     Batch outer(matrix_);
@@ -117,7 +117,7 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost) {
 /* a batch inside a sketch that sends with Update() itself leaves it that way */
 TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
   matrix_.SetAutoUpdate(false);
-  int32_t frames_before = mock::frames;
+  int32_t const frames_before{mock::frames};
 
   {
     Batch batch(matrix_);
@@ -129,7 +129,7 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
 }
 
 TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue) {
-  MatrixOf<kNumberOfModules> fresh(kDataInPin, kChipSelectPin, kClockPin);
+  MatrixOf<kNumberOfModules> const fresh{kDataInPin, kChipSelectPin, kClockPin};
 
   EXPECT_EQ(fresh.GetShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
 }
