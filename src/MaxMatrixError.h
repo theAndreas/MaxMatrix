@@ -81,8 +81,7 @@ class Status {
    *
    * \param[in] error The error, or Error::kOk.
    */
-  Status(  // NOLINT(runtime/explicit)
-      Error error = Error::kOk)
+  Status(Error error = Error::kOk)  // NOLINT(runtime/explicit): returns Error
       : error_{error} {}
 
   /*! \brief Returns why the call failed, or Error::kOk. */
@@ -145,7 +144,7 @@ class Result {
    *
    * \param[in] value The value.
    */
-  Result(ValueType value)  // NOLINT(runtime/explicit)
+  Result(ValueType value)  // NOLINT(runtime/explicit): returns the value
       : value_{value}, error_{Error::kOk} {}
 
   /*!
@@ -155,7 +154,7 @@ class Result {
    *
    * \param[in] error The error.
    */
-  Result(Error error)  // NOLINT(runtime/explicit)
+  Result(Error error)  // NOLINT(runtime/explicit): returns Error
       : value_{}, error_{error} {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
