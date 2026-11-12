@@ -18,7 +18,7 @@
 #include <string>
 
 /* SimulatorSocket Parameter */
-#define SIMULATOR_SOCKET_NONE (-1)
+constexpr int kSimulatorSocketNone{(-1)};
 
 /*!
  * \brief What the simulator's hosts do with a socket: listen on loopback, never
@@ -37,7 +37,7 @@ class SimulatorSocket {
    * nobody is waiting.
    *
    * \param[in] port The port to listen on.
-   * \return The socket, or `SIMULATOR_SOCKET_NONE` if the port is taken.
+   * \return The socket, or `kSimulatorSocketNone` if the port is taken.
    */
   static int OpenListener(uint16_t port);
 

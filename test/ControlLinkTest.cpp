@@ -95,10 +95,10 @@ TEST(ControlLinkTest, CutsALineThatNeverEnds) {
   std::vector<std::string> lines;
 
   link.Begin(false);
-  port.incoming = std::string(CONTROL_LINK_MAX_LINE_LENGTH + 10, 'x');
+  port.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
   link.Task(&lines);
   ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0].size(), CONTROL_LINK_MAX_LINE_LENGTH);
+  EXPECT_EQ(lines[0].size(), kControlLinkMaxLineLength);
 }
 
 // a board unplugged: the link says so, with the lines that came before, and
@@ -138,7 +138,7 @@ TEST(ControlLinkTest, BeginForgetsHalfALine) {
 // SerialControl prints it.
 std::string Picture(char const* first) {
   return std::string("picture=") + first +
-         std::string(2 * CONTROL_NUMBER_OF_COLUMNS - 2, '0') + "\r\n";
+         std::string(2 * kControlNumberOfColumns - 2, '0') + "\r\n";
 }
 
 // the picture is asked for once per interval, and its answer is kept rather
@@ -157,11 +157,11 @@ TEST(ControlLinkTest, AsksForThePictureOncePerInterval) {
   link.Task(&lines);
   EXPECT_TRUE(lines.empty());
   ASSERT_EQ(link.GetPicture().size(),
-            static_cast<size_t>(CONTROL_NUMBER_OF_COLUMNS));
+            static_cast<size_t>(kControlNumberOfColumns));
   EXPECT_EQ(link.GetPicture()[0], 0x81);
-  link.AskForPicture(1000 + CONTROL_LINK_PICTURE_INTERVAL_MS - 1);
+  link.AskForPicture(1000 + kControlLinkPictureIntervalMs - 1);
   EXPECT_EQ(port.written, "picture\n");
-  link.AskForPicture(1000 + CONTROL_LINK_PICTURE_INTERVAL_MS);
+  link.AskForPicture(1000 + kControlLinkPictureIntervalMs);
   EXPECT_EQ(port.written, "picture\npicture\n");
 }
 
@@ -173,9 +173,9 @@ TEST(ControlLinkTest, AsksAgainWhenAnAnswerIsLost) {
 
   link.Begin(false);
   link.AskForPicture(0);
-  link.AskForPicture(CONTROL_LINK_PICTURE_TIMEOUT_MS - 1);
+  link.AskForPicture(kControlLinkPictureTimeoutMs - 1);
   EXPECT_EQ(port.written, "picture\n");
-  link.AskForPicture(CONTROL_LINK_PICTURE_TIMEOUT_MS);
+  link.AskForPicture(kControlLinkPictureTimeoutMs);
   EXPECT_EQ(port.written, "picture\npicture\n");
 }
 
@@ -194,7 +194,7 @@ TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
   link.Task(&lines);
   EXPECT_TRUE(link.GetPicture().empty());
   EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
-  link.AskForPicture(CONTROL_LINK_PICTURE_INTERVAL_MS);
+  link.AskForPicture(kControlLinkPictureIntervalMs);
   port.incoming = Picture("01");
   link.Task(&lines);
   ASSERT_FALSE(link.GetPicture().empty());
@@ -214,7 +214,7 @@ TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
   port.incoming = "ready\r\n";
   link.Task(&lines);
   EXPECT_EQ(lines, (std::vector<std::string>{"ready"}));
-  link.AskForPicture(CONTROL_LINK_PICTURE_INTERVAL_MS);
+  link.AskForPicture(kControlLinkPictureIntervalMs);
   EXPECT_EQ(port.written, "picture\npicture\n");
 }
 

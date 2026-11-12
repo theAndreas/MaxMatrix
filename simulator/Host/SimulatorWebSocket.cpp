@@ -16,28 +16,32 @@
 
 #include <string>
 
+namespace {
+
 /* handshake, RFC 6455 section 1.3: the server hashes the client's key with this
  * fixed string */
-#define SIMULATOR_WEB_SOCKET_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-#define SIMULATOR_WEB_SOCKET_KEY_HEADER "sec-websocket-key:"
+constexpr char kGuid[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+constexpr char kKeyHeader[] = "sec-websocket-key:";
 
 /* frame, RFC 6455 section 5.2 */
-#define SIMULATOR_WEB_SOCKET_FINAL_TEXT_FRAME 0x81u
-#define SIMULATOR_WEB_SOCKET_OPCODE_MASK 0x0Fu
-#define SIMULATOR_WEB_SOCKET_MASK_FLAG 0x80u
-#define SIMULATOR_WEB_SOCKET_MASK_LENGTH 4u
-#define SIMULATOR_WEB_SOCKET_LENGTH_MASK 0x7Fu
-#define SIMULATOR_WEB_SOCKET_LENGTH_16_BIT 126u
-#define SIMULATOR_WEB_SOCKET_LENGTH_64_BIT 127u
-#define SIMULATOR_WEB_SOCKET_HEADER_LENGTH 2u
-#define SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT 4u
+constexpr uint8_t kFinalTextFrame{0x81u};
+constexpr uint8_t kOpcodeMask{0x0Fu};
+constexpr uint8_t kMaskFlag{0x80u};
+constexpr size_t kMaskLength{4u};
+constexpr uint8_t kLengthMask{0x7Fu};
+constexpr uint8_t kLength16Bit{126u};
+constexpr uint8_t kLength64Bit{127u};
+constexpr size_t kHeaderLength{2u};
+constexpr size_t kHeaderLength16Bit{4u};
 
 /* SHA-1, FIPS 180-4 */
-#define SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH 64u
-#define SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION 56u
-#define SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH 5u
-#define SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK 16u
-#define SIMULATOR_WEB_SOCKET_SHA1_ROUNDS 80u
+constexpr size_t kSha1BlockLength{64u};
+constexpr size_t kSha1LengthPosition{56u};
+constexpr uint8_t kSha1StateLength{5u};
+constexpr uint8_t kSha1WordsPerBlock{16u};
+constexpr uint8_t kSha1Rounds{80u};
+
+}  // namespace
 
 bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request,
                                             std::string* answer) {
@@ -58,11 +62,11 @@ bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request,
 std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {
   std::string frame;
 
-  frame += static_cast<char>(SIMULATOR_WEB_SOCKET_FINAL_TEXT_FRAME);
-  if (payload.size() < SIMULATOR_WEB_SOCKET_LENGTH_16_BIT) {
+  frame += static_cast<char>(kFinalTextFrame);
+  if (payload.size() < kLength16Bit) {
     frame += static_cast<char>(payload.size());
   } else {
-    frame += static_cast<char>(SIMULATOR_WEB_SOCKET_LENGTH_16_BIT);
+    frame += static_cast<char>(kLength16Bit);
     frame += static_cast<char>((payload.size() >> 8U) & 0xFFU);
     frame += static_cast<char>(payload.size() & 0xFFU);
   }
@@ -73,27 +77,24 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
                                      std::string* payload) {
   std::string const& frame = *buffer;
 
-  if (frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH) return false;
+  if (frame.size() < kHeaderLength) return false;
 
   size_t const mask_length =
-      (static_cast<uint8_t>(frame[1]) & SIMULATOR_WEB_SOCKET_MASK_FLAG)
-          ? SIMULATOR_WEB_SOCKET_MASK_LENGTH
-          : 0;
-  size_t length =
-      static_cast<uint8_t>(frame[1]) & SIMULATOR_WEB_SOCKET_LENGTH_MASK;
-  size_t offset = SIMULATOR_WEB_SOCKET_HEADER_LENGTH;
+      (static_cast<uint8_t>(frame[1]) & kMaskFlag) ? kMaskLength : 0;
+  size_t length = static_cast<uint8_t>(frame[1]) & kLengthMask;
+  size_t offset = kHeaderLength;
 
-  if (length == SIMULATOR_WEB_SOCKET_LENGTH_64_BIT) {
+  if (length == kLength64Bit) {
     /* no command is this long; dropping what arrived is better than trying to
      * read it */
     buffer->clear();
     return false;
   }
-  if (length == SIMULATOR_WEB_SOCKET_LENGTH_16_BIT) {
-    if (frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT) return false;
+  if (length == kLength16Bit) {
+    if (frame.size() < kHeaderLength16Bit) return false;
     length = (static_cast<size_t>(static_cast<uint8_t>(frame[2])) << 8U) |
              static_cast<uint8_t>(frame[3]);
-    offset = SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT;
+    offset = kHeaderLength16Bit;
   }
   if (frame.size() < offset + mask_length + length) return false;
 
@@ -105,7 +106,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
           static_cast<uint8_t>(frame[offset + i % mask_length]));
     }
   }
-  *opcode = static_cast<uint8_t>(frame[0]) & SIMULATOR_WEB_SOCKET_OPCODE_MASK;
+  *opcode = static_cast<uint8_t>(frame[0]) & kOpcodeMask;
   buffer->erase(0, offset + mask_length + length);
   return true;
 }
@@ -113,26 +114,24 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
 // The accept key is the base64 of the SHA-1 of the key and the fixed GUID of
 // RFC 6455.
 std::string SimulatorWebSocket::ConvertKeyToAcceptKey(std::string const& key) {
-  uint8_t digest[SIMULATOR_WEB_SOCKET_SHA1_LENGTH];
+  uint8_t digest[kSimulatorWebSocketSha1Length];
 
-  CalculateSha1(key + SIMULATOR_WEB_SOCKET_GUID, digest);
+  CalculateSha1(key + kGuid, digest);
   return ConvertToBase64(digest, sizeof(digest));
 }
 
 // Pads the message and processes it block by block, as FIPS 180-4 describes.
 void SimulatorWebSocket::CalculateSha1(std::string const& message,
                                        uint8_t* digest) {
-  uint32_t state[SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH] = {
-      0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u};
+  uint32_t state[kSha1StateLength] = {0x67452301u, 0xEFCDAB89u, 0x98BADCFEu,
+                                      0x10325476u, 0xC3D2E1F0u};
   std::string const padded = PadSha1Message(message);
 
-  for (size_t offset = 0; offset < padded.size();
-       offset += SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH) {
+  for (size_t offset = 0; offset < padded.size(); offset += kSha1BlockLength) {
     ProcessSha1Block(reinterpret_cast<uint8_t const*>(padded.data() + offset),
                      state);
   }
-  for (uint8_t word = 0; word < SIMULATOR_WEB_SOCKET_SHA1_STATE_LENGTH;
-       word++) {
+  for (uint8_t word = 0; word < kSha1StateLength; word++) {
     for (uint8_t part = 0; part < 4; part++) {
       digest[word * 4 + part] =
           static_cast<uint8_t>(state[word] >> (24U - 8U * part));
@@ -173,10 +172,10 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   for (size_t i = 0; i < lowered.size(); i++) {
     lowered[i] = static_cast<char>(tolower(static_cast<uint8_t>(lowered[i])));
   }
-  size_t const found = lowered.find(SIMULATOR_WEB_SOCKET_KEY_HEADER);
+  size_t const found = lowered.find(kKeyHeader);
   if (found == std::string::npos) return false;
 
-  size_t start = found + sizeof(SIMULATOR_WEB_SOCKET_KEY_HEADER) - 1;
+  size_t start = found + sizeof(kKeyHeader) - 1;
   while (start < request.size() && request[start] == ' ') start++;
   size_t const end = request.find("\r\n", start);
   if (end == std::string::npos) return false;
@@ -189,15 +188,14 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
  * Pads `message`, the bytes to hash, to whole blocks: appends a 1 bit, zeros up
  * to eight bytes short of a block, and the length of the message in bits, big
  * endian. Returns the padded message, a multiple of
- * SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH long.
+ * kSha1BlockLength long.
  */
 std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
   uint64_t const bits = static_cast<uint64_t>(message.size()) * 8;
   std::string padded(message);
 
   padded.push_back(static_cast<char>(0x80));
-  while (padded.size() % SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH !=
-         SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION) {
+  while (padded.size() % kSha1BlockLength != kSha1LengthPosition) {
     padded.push_back('\0');
   }
   for (uint8_t i = 1; i <= 8; i++) {
@@ -208,27 +206,25 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
 }
 
 /*
- * Mixes `block`, SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH bytes of the padded
+ * Mixes `block`, kSha1BlockLength bytes of the padded
  * message, into `state`, the five words of the hash so far: expands the block
  * into the message schedule of 80 words and runs the 80 rounds.
  */
 void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block,
                                           uint32_t* state) {
-  uint32_t word[SIMULATOR_WEB_SOCKET_SHA1_ROUNDS];
+  uint32_t word[kSha1Rounds];
   uint32_t a = state[0], b = state[1], c = state[2], d = state[3], e = state[4];
 
-  for (uint8_t i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK;
-       i++, block += 4) {
+  for (uint8_t i = 0; i < kSha1WordsPerBlock; i++, block += 4) {
     word[i] = (static_cast<uint32_t>(block[0]) << 24U) |
               (static_cast<uint32_t>(block[1]) << 16U) |
               (static_cast<uint32_t>(block[2]) << 8U) | block[3];
   }
-  for (uint8_t i = SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK;
-       i < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; i++) {
+  for (uint8_t i = kSha1WordsPerBlock; i < kSha1Rounds; i++) {
     word[i] =
         RotateLeft(word[i - 3] ^ word[i - 8] ^ word[i - 14] ^ word[i - 16], 1);
   }
-  for (uint8_t round = 0; round < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; round++) {
+  for (uint8_t round = 0; round < kSha1Rounds; round++) {
     uint32_t const next =
         RotateLeft(a, 5) + MixSha1(round, b, c, d) + e + word[round];
     e = d;

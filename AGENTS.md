@@ -366,8 +366,12 @@ there it is written `char const*`, as the function gets a pointer and no array.
 #### Constants and configuration
 
 Constants are `constexpr` in the namespace, grouped under a comment; one that only a `.cpp`
-uses lies in an anonymous namespace there. A macro is left for what a sketch or the build sets
-with `-D` and what `#if` reads: the configuration parameters. Configuration switches are
+uses lies in an anonymous namespace there. The host code, which has no namespace yet, does the
+same, but a constant of a header carries its module's name, as a class does:
+`kSimulatorWebSocketOpcodeText`. A macro is left for what a sketch or the build sets
+with `-D` and what `#if` reads: the configuration parameters; and in the host code for what is
+no constant expression, a `wxColour`, or differs per platform, as the socket calls of
+`ControlTcpPort`. Configuration switches are
 `STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. Register addresses
 and values of the MAX7219 get a named constant in `max7219` rather than a literal, as
 `Matrix::RegisterWrite()` takes them: `max7219::kIntensityAddress`.

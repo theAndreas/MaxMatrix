@@ -19,15 +19,19 @@
 
 #include <string>
 
+namespace {
+
 /* SimulatorSocket Parameter */
-#define SIMULATOR_SOCKET_BACKLOG 4
+constexpr int kBacklog{4};
+
+}  // namespace
 
 int SimulatorSocket::OpenListener(uint16_t port) {
   int const listening = socket(AF_INET, SOCK_STREAM, 0);
   int const reuse = 1;
   sockaddr_in address = sockaddr_in();
 
-  if (listening < 0) return SIMULATOR_SOCKET_NONE;
+  if (listening < 0) return kSimulatorSocketNone;
 
   // so that a restart does not wait out the last connection's TIME_WAIT
   setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
@@ -37,9 +41,9 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 
   if (bind(listening, reinterpret_cast<sockaddr*>(&address), sizeof(address)) !=
           0 ||
-      listen(listening, SIMULATOR_SOCKET_BACKLOG) != 0) {
+      listen(listening, kBacklog) != 0) {
     close(listening);
-    return SIMULATOR_SOCKET_NONE;
+    return kSimulatorSocketNone;
   }
   SetNonBlocking(listening);
   return listening;

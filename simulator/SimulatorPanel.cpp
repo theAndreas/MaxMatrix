@@ -27,7 +27,7 @@ static struct {
 };
 
 SimulatorPanel::SimulatorPanel() {
-  wiring_name_ = SIMULATOR_PANEL_DEFAULT_WIRING;
+  wiring_name_ = kSimulatorPanelDefaultWiring;
   wiring_ = FindWiring(wiring_name_);
   upside_down_ = false;
   drawn_frames_ = -1;
@@ -75,7 +75,7 @@ void SimulatorPanel::SetUpsideDown(bool upside_down) {
 bool SimulatorPanel::IsDrawDue(uint32_t now) const {
   bool const changed = mock::frames != drawn_frames_ || draw_requested_;
 
-  return changed && now - last_draw_ >= SIMULATOR_PANEL_REDRAW_INTERVAL;
+  return changed && now - last_draw_ >= kSimulatorPanelRedrawInterval;
 }
 
 void SimulatorPanel::SetDrawn(uint32_t now) {

@@ -18,15 +18,19 @@
 #include <string>
 #include <vector>
 
+namespace {
+
 /* commands of the page */
-#define SIMULATOR_WEB_COMMAND_WIRING "wiring "
-#define SIMULATOR_WEB_COMMAND_UPRIGHT "upside-down 0"
-#define SIMULATOR_WEB_COMMAND_UPSIDE_DOWN "upside-down 1"
-#define SIMULATOR_WEB_COMMAND_SERIAL "serial "
+constexpr char kCommandWiring[] = "wiring ";
+constexpr char kCommandUpright[] = "upside-down 0";
+constexpr char kCommandUpsideDown[] = "upside-down 1";
+constexpr char kCommandSerial[] = "serial ";
 
 /* JSON, RFC 8259: the printable ASCII range; the rest is written as \u00XX */
-#define SIMULATOR_WEB_JSON_FIRST_PLAIN 0x20u
-#define SIMULATOR_WEB_JSON_LAST_PLAIN 0x7Eu
+constexpr uint8_t kJsonFirstPlain{0x20u};
+constexpr uint8_t kJsonLastPlain{0x7Eu};
+
+}  // namespace
 
 SimulatorWeb::SimulatorWeb() { logged_frames_ = 0; }
 
@@ -65,8 +69,7 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
     if (c == '"' || c == '\\') {
       json += '\\';
       json += c;
-    } else if (code >= SIMULATOR_WEB_JSON_FIRST_PLAIN &&
-               code <= SIMULATOR_WEB_JSON_LAST_PLAIN) {
+    } else if (code >= kJsonFirstPlain && code <= kJsonLastPlain) {
       json += c;
     } else {
       snprintf(escaped, sizeof(escaped), "\\u%04X",
@@ -78,7 +81,7 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
 }
 
 // Logs the last frame as address/value pairs, one pair per module, and keeps no
-// more than SIMULATOR_WEB_FRAME_LOG_LENGTH frames.
+// more than kSimulatorWebFrameLogLength frames.
 void SimulatorWeb::LogFrame() {
   std::string line = "#" + std::to_string(mock::frames) + ":";
   char pair[8];
@@ -90,7 +93,7 @@ void SimulatorWeb::LogFrame() {
     line += pair;
   }
   frame_log_.push_back(line);
-  if (frame_log_.size() > SIMULATOR_WEB_FRAME_LOG_LENGTH) {
+  if (frame_log_.size() > kSimulatorWebFrameLogLength) {
     frame_log_.erase(frame_log_.begin());
   }
   logged_frames_ = mock::frames;
@@ -104,16 +107,16 @@ void SimulatorWeb::LogFrame() {
  * one the panel has.
  */
 void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message) {
-  std::string const wiring_command = SIMULATOR_WEB_COMMAND_WIRING;
-  std::string const serial_command = SIMULATOR_WEB_COMMAND_SERIAL;
+  std::string const wiring_command = kCommandWiring;
+  std::string const serial_command = kCommandSerial;
 
   if (message.compare(0, wiring_command.size(), wiring_command) == 0) {
     panel.SetWiring(message.substr(wiring_command.size()));
   } else if (message.compare(0, serial_command.size(), serial_command) == 0) {
     mock::serial_input += message.substr(serial_command.size()) + "\n";
-  } else if (message == SIMULATOR_WEB_COMMAND_UPSIDE_DOWN) {
+  } else if (message == kCommandUpsideDown) {
     panel.SetUpsideDown(true);
-  } else if (message == SIMULATOR_WEB_COMMAND_UPRIGHT) {
+  } else if (message == kCommandUpright) {
     panel.SetUpsideDown(false);
   }
   panel.RequestDraw();

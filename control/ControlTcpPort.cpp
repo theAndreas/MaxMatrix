@@ -25,10 +25,14 @@
 
 #include "ControlTcpPort.h"
 
+namespace {
+
 /* ControlTcpPort Parameter */
-#define CONTROL_TCP_PORT_NONE (-1)
-#define CONTROL_TCP_PORT_CHUNK_LENGTH 256u
-#define CONTROL_TCP_PORT_WRITE_TIMEOUT_MS 1000
+constexpr intptr_t kNone{(-1)};
+constexpr size_t kChunkLength{256u};
+constexpr int kWriteTimeoutMs{1000};
+
+}  // namespace
 
 #ifdef _WIN32
 #define CONTROL_TCP_PORT_SOCKET(socket) static_cast<SOCKET>(socket)
@@ -51,7 +55,7 @@
   poll(descriptors, 1, timeout)
 #endif
 
-ControlTcpPort::ControlTcpPort() { socket_ = CONTROL_TCP_PORT_NONE; }
+ControlTcpPort::ControlTcpPort() { socket_ = kNone; }
 
 // The class is final, so Close() is its own here, as nothing can override it.
 ControlTcpPort::~ControlTcpPort() { Close(); }
@@ -69,7 +73,7 @@ bool ControlTcpPort::Open(uint16_t port) {
   if (WSAStartup(MAKEWORD(2, 2), &winsock) != 0) return false;
 #endif
   socket_ = static_cast<intptr_t>(socket(AF_INET, SOCK_STREAM, 0));
-  if (socket_ == CONTROL_TCP_PORT_NONE) {
+  if (socket_ == kNone) {
 #ifdef _WIN32
     WSACleanup();
 #endif
@@ -98,7 +102,7 @@ bool ControlTcpPort::Open(uint16_t port) {
   return opened;
 }
 
-bool ControlTcpPort::IsOpen() const { return socket_ != CONTROL_TCP_PORT_NONE; }
+bool ControlTcpPort::IsOpen() const { return socket_ != kNone; }
 
 bool ControlTcpPort::Write(std::string const& data) {
   size_t sent = 0;
@@ -113,8 +117,7 @@ bool ControlTcpPort::Write(std::string const& data) {
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && CONTROL_TCP_PORT_WOULD_BLOCK() &&
-               CONTROL_TCP_PORT_POLL(&writable,
-                                     CONTROL_TCP_PORT_WRITE_TIMEOUT_MS) > 0) {
+               CONTROL_TCP_PORT_POLL(&writable, kWriteTimeoutMs) > 0) {
       continue;
     } else {
       Close();
@@ -125,7 +128,7 @@ bool ControlTcpPort::Write(std::string const& data) {
 }
 
 bool ControlTcpPort::Read(std::string* data) {
-  char chunk[CONTROL_TCP_PORT_CHUNK_LENGTH];
+  char chunk[kChunkLength];
 
   if (!IsOpen()) return false;
   for (;;) {
@@ -143,9 +146,9 @@ bool ControlTcpPort::Read(std::string* data) {
 }
 
 void ControlTcpPort::Close() {
-  if (socket_ == CONTROL_TCP_PORT_NONE) return;
+  if (socket_ == kNone) return;
   CONTROL_TCP_PORT_CLOSE(CONTROL_TCP_PORT_SOCKET(socket_));
-  socket_ = CONTROL_TCP_PORT_NONE;
+  socket_ = kNone;
 #ifdef _WIN32
   WSACleanup();
 #endif

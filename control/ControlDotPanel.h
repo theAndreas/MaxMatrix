@@ -68,7 +68,7 @@ class ControlDotPanel : public wxPanel {
    *
    * \param[in] columns One byte per column as the viewer sees it, from the
    *                    left, bit 0 the top row; anything but
-   *                    `CONTROL_NUMBER_OF_COLUMNS` of them is left out.
+   *                    `kControlNumberOfColumns` of them is left out.
    */
   void SetPicture(std::vector<uint8_t> const& columns);
 

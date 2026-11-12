@@ -23,16 +23,16 @@
 
 #include "Arduino.h"
 
+namespace {
+
 /* the Uno's pins 10, 11 and 13 are PB2, PB3 and PB5 */
-#define SIMULATOR_AVR_PORT 'B'
-#define SIMULATOR_AVR_CHIP_SELECT_BIT 2u
-#define SIMULATOR_AVR_DATA_IN_BIT 3u
-#define SIMULATOR_AVR_CLOCK_BIT 5u
+constexpr char kPort{'B'};
+constexpr uint8_t kChipSelectBit{2u};
+constexpr uint8_t kDataInBit{3u};
+constexpr uint8_t kClockBit{5u};
 
 /* Serial is the first and only UART of the ATmega328P */
-#define SIMULATOR_AVR_UART '0'
-
-namespace {
+constexpr char kUart{'0'};
 
 /*!
  * \brief Passes on simavr's log, errors only.
@@ -78,23 +78,20 @@ uint32_t SimulatorAvr::GetMillis() const {
 bool SimulatorAvr::Load(char const* elf_file) {
   avr_global_logger_set(LogSimavr);
   if (elf_read_firmware(elf_file, &firmware_) != 0) return false;
-  avr_ = avr_make_mcu_by_name(SIMULATOR_AVR_MCU);
+  avr_ = avr_make_mcu_by_name(kSimulatorAvrMcu);
   if (avr_ == nullptr) return false;
   avr_init(avr_);
-  avr_->frequency = SIMULATOR_AVR_FREQUENCY;
+  avr_->frequency = kSimulatorAvrFrequency;
   avr_load_firmware(avr_, &firmware_);
 
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT),
-                    SIMULATOR_AVR_DATA_IN_BIT),
-      OnDataIn, this);
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kDataInBit), OnDataIn,
+      this);
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT),
-                    SIMULATOR_AVR_CLOCK_BIT),
-      OnClock, this);
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kClockBit), OnClock,
+      this);
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(SIMULATOR_AVR_PORT),
-                    SIMULATOR_AVR_CHIP_SELECT_BIT),
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kChipSelectBit),
       OnChipSelect, this);
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), OnSpiByte,
@@ -103,20 +100,17 @@ bool SimulatorAvr::Load(char const* elf_file) {
   // The UART would print every line on the console itself, between the panel
   // and the command line.
   uint32_t flags = 0;
-  avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(SIMULATOR_AVR_UART), &flags);
+  avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags);
   flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
-  avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(SIMULATOR_AVR_UART), &flags);
+  avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags);
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART),
-                    UART_IRQ_OUTPUT),
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUTPUT),
       OnSerialByte, this);
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART),
-                    UART_IRQ_OUT_XON),
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XON),
       OnReceiveReady, this);
   avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART),
-                    UART_IRQ_OUT_XOFF),
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XOFF),
       OnReceiveFull, this);
   return true;
 }
@@ -135,8 +129,8 @@ bool SimulatorAvr::Run(uint32_t milliseconds) {
 // Hands the UART what Serial has to read, one byte after the other until the
 // UART says its buffer is full; the rest waits for the next time it has room.
 void SimulatorAvr::ReceiveSerial() {
-  avr_irq_t* const input = avr_io_getirq(
-      avr_, AVR_IOCTL_UART_GETIRQ(SIMULATOR_AVR_UART), UART_IRQ_INPUT);
+  avr_irq_t* const input =
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_INPUT);
 
   while (receive_ready_ && !mock::serial_input.empty()) {
     uint8_t const received = static_cast<uint8_t>(mock::serial_input[0]);

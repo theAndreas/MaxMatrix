@@ -22,7 +22,7 @@
 /* SimulatorWeb Parameter */
 /* the most frames the page is sent at once; more would scroll past before
  * anyone read them */
-#define SIMULATOR_WEB_FRAME_LOG_LENGTH 16u
+constexpr size_t kSimulatorWebFrameLogLength{16u};
 
 /*!
  * \brief The simulator's panel in a browser.

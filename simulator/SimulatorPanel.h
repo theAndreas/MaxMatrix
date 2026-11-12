@@ -20,10 +20,10 @@
 #include "MaxMatrixConfig.h"
 
 /* SimulatorPanel Parameter */
-#define SIMULATOR_PANEL_DEFAULT_WIRING "FC16"
+constexpr char kSimulatorPanelDefaultWiring[] = "FC16";
 /* about 30 pictures a second; neither a terminal nor a page keeps up with every
  * frame */
-#define SIMULATOR_PANEL_REDRAW_INTERVAL 33u
+constexpr uint32_t kSimulatorPanelRedrawInterval{33u};
 
 /*!
  * \brief The LED panel of the simulator, as a module of the chosen wiring
@@ -119,7 +119,7 @@ class SimulatorPanel {
    * \brief Returns whether the panel has to be drawn.
    *
    * It has when a frame arrived or a draw was requested since the last draw,
-   * but no more often than every `SIMULATOR_PANEL_REDRAW_INTERVAL`
+   * but no more often than every `kSimulatorPanelRedrawInterval`
    * milliseconds.
    *
    * \param[in] now The time, as `millis()` gives it.

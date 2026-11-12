@@ -21,8 +21,8 @@
 #include <stdint.h>
 
 /* SimulatorAvr Parameter */
-#define SIMULATOR_AVR_MCU "atmega328p"
-#define SIMULATOR_AVR_FREQUENCY 16000000u
+constexpr char kSimulatorAvrMcu[] = "atmega328p";
+constexpr uint32_t kSimulatorAvrFrequency{16000000u};
 
 /*!
  * \brief An ATmega328P in simavr that runs the .elf of an example, wired to the

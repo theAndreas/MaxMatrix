@@ -24,40 +24,44 @@
 #include "SimulatorSocket.h"
 #include "SimulatorWebSocket.h"
 
+namespace {
+
 /* SimulatorWebHost Parameter */
-#define SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH 4096u
-#define SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH 2048u
-#define SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS 100u
-#define SIMULATOR_WEB_HOST_WEB_SOCKET_PATH "/ws"
+constexpr size_t kRequestChunkLength{4096u};
+constexpr size_t kFrameChunkLength{2048u};
+constexpr uint32_t kRequestTimeoutMs{100u};
+constexpr char kWebSocketPath[] = "/ws";
+
+}  // namespace
 
 SimulatorWebHost::SimulatorWebHost() {
-  listener_ = SIMULATOR_SOCKET_NONE;
+  listener_ = kSimulatorSocketNone;
   page_path_ = nullptr;
-  for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
-    clients_[slot] = SIMULATOR_SOCKET_NONE;
+  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
+    clients_[slot] = kSimulatorSocketNone;
   }
 }
 
 bool SimulatorWebHost::Begin(uint16_t port, char const* page_path) {
   page_path_ = page_path;
   listener_ = SimulatorSocket::OpenListener(port);
-  return listener_ != SIMULATOR_SOCKET_NONE;
+  return listener_ != kSimulatorSocketNone;
 }
 
 void SimulatorWebHost::Task(std::vector<std::string>* messages) {
-  if (listener_ == SIMULATOR_SOCKET_NONE) return;
+  if (listener_ == kSimulatorSocketNone) return;
 
   AcceptClients();
-  for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
-    if (clients_[slot] != SIMULATOR_SOCKET_NONE) ReadClient(slot, messages);
+  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
+    if (clients_[slot] != kSimulatorSocketNone) ReadClient(slot, messages);
   }
 }
 
 void SimulatorWebHost::Broadcast(std::string const& text) {
   std::string const frame = SimulatorWebSocket::EncodeFrame(text);
 
-  for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
-    if (clients_[slot] != SIMULATOR_SOCKET_NONE &&
+  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
+    if (clients_[slot] != kSimulatorSocketNone &&
         !SimulatorSocket::SendAll(clients_[slot], frame)) {
       DropClient(slot);
     }
@@ -73,7 +77,7 @@ void SimulatorWebHost::AcceptClients() {
     std::string const request = ReadRequest(accepted);
     uint8_t const slot = FindFreeSlot();
 
-    if (slot < SIMULATOR_WEB_HOST_MAX_CLIENTS &&
+    if (slot < kSimulatorWebHostMaxClients &&
         AnswerRequest(accepted, request)) {
       SimulatorSocket::SetNonBlocking(accepted);
       clients_[slot] = accepted;
@@ -90,7 +94,7 @@ void SimulatorWebHost::AcceptClients() {
  */
 void SimulatorWebHost::ReadClient(uint8_t slot,
                                   std::vector<std::string>* messages) {
-  char chunk[SIMULATOR_WEB_HOST_FRAME_CHUNK_LENGTH];
+  char chunk[kFrameChunkLength];
   ssize_t const received = recv(clients_[slot], chunk, sizeof(chunk), 0);
   uint8_t opcode;
   std::string payload;
@@ -103,11 +107,11 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
   if (received > 0) pending_[slot].append(chunk, static_cast<size_t>(received));
 
   while (SimulatorWebSocket::DecodeFrame(&pending_[slot], &opcode, &payload)) {
-    if (opcode == SIMULATOR_WEB_SOCKET_OPCODE_CLOSE) {
+    if (opcode == kSimulatorWebSocketOpcodeClose) {
       DropClient(slot);
       return;
     }
-    if (opcode == SIMULATOR_WEB_SOCKET_OPCODE_TEXT) {
+    if (opcode == kSimulatorWebSocketOpcodeText) {
       messages->push_back(payload);
     }
   }
@@ -125,7 +129,7 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
 
   if (!GetPath(request, &path)) return false;
 
-  if (path == SIMULATOR_WEB_HOST_WEB_SOCKET_PATH) {
+  if (path == kWebSocketPath) {
     return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) &&
            SimulatorSocket::SendAll(socket, answer);
   }
@@ -154,12 +158,12 @@ void SimulatorWebHost::SendPage(int socket) {
 }
 
 // Finds a slot for a new WebSocket: returns the first slot without a client, or
-// SIMULATOR_WEB_HOST_MAX_CLIENTS when all are taken.
+// kSimulatorWebHostMaxClients when all are taken.
 uint8_t SimulatorWebHost::FindFreeSlot() const {
   uint8_t slot = 0;
 
-  while (slot < SIMULATOR_WEB_HOST_MAX_CLIENTS &&
-         clients_[slot] != SIMULATOR_SOCKET_NONE) {
+  while (slot < kSimulatorWebHostMaxClients &&
+         clients_[slot] != kSimulatorSocketNone) {
     slot++;
   }
   return slot;
@@ -169,7 +173,7 @@ uint8_t SimulatorWebHost::FindFreeSlot() const {
 // sent that was not yet a whole frame.
 void SimulatorWebHost::DropClient(uint8_t slot) {
   close(clients_[slot]);
-  clients_[slot] = SIMULATOR_SOCKET_NONE;
+  clients_[slot] = kSimulatorSocketNone;
   pending_[slot].clear();
 }
 
@@ -188,10 +192,9 @@ void SimulatorWebHost::DropClient(uint8_t slot) {
  */
 std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
-  char chunk[SIMULATOR_WEB_HOST_REQUEST_CHUNK_LENGTH];
+  char chunk[kRequestChunkLength];
 
-  SimulatorSocket::SetReceiveTimeout(socket,
-                                     SIMULATOR_WEB_HOST_REQUEST_TIMEOUT_MS);
+  SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeoutMs);
 
   while (request.find("\r\n\r\n") == std::string::npos) {
     ssize_t const received = recv(socket, chunk, sizeof(chunk), 0);

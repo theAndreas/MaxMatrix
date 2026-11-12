@@ -16,23 +16,25 @@
 #include <sstream>
 #include <string>
 
+namespace {
+
 /* ANSI escape sequences */
-#define SIMULATOR_TERMINAL_CLEAR_SCREEN "\x1b[2J"
-#define SIMULATOR_TERMINAL_CURSOR_HOME "\x1b[H"
-#define SIMULATOR_TERMINAL_CLEAR_LINE_END "\x1b[K"
+constexpr char kClearScreen[] = "\x1b[2J";
+constexpr char kCursorHome[] = "\x1b[H";
+constexpr char kClearLineEnd[] = "\x1b[K";
 
 /* a dot is two chars wide while it is drawn, so that the panel is about as wide
  * as it is high */
-#define SIMULATOR_TERMINAL_LIT "\u2588\u2588"
-#define SIMULATOR_TERMINAL_DARK "\u00b7 "
+constexpr char kLit[] = "\u2588\u2588";
+constexpr char kDark[] = "\u00b7 ";
 
 /* a dot is one ASCII char in the result, which a test compares with a file */
-#define SIMULATOR_TERMINAL_RESULT_LIT "#"
-#define SIMULATOR_TERMINAL_RESULT_DARK "."
+constexpr char kResultLit[] = "#";
+constexpr char kResultDark[] = ".";
 
-void SimulatorTerminal::Clear() {
-  fputs(SIMULATOR_TERMINAL_CLEAR_SCREEN, stdout);
-}
+}  // namespace
+
+void SimulatorTerminal::Clear() { fputs(kClearScreen, stdout); }
 
 std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
   std::ostringstream line;
@@ -53,19 +55,15 @@ std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
 void SimulatorTerminal::Draw(SimulatorPanel const& panel) {
   // The cursor goes home rather than the terminal being cleared, which would
   // flicker.
-  printf(SIMULATOR_TERMINAL_CURSOR_HOME "%s" SIMULATOR_TERMINAL_CLEAR_LINE_END
-                                        "\n\n",
-         GetStatusLine(panel).c_str());
-  fputs(panel.GetText(SIMULATOR_TERMINAL_LIT, SIMULATOR_TERMINAL_DARK, "\n")
-            .c_str(),
-        stdout);
+  printf("%s%s%s\n\n", kCursorHome, GetStatusLine(panel).c_str(),
+         kClearLineEnd);
+  fputs(panel.GetText(kLit, kDark, "\n").c_str(), stdout);
   fflush(stdout);
 }
 
 bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
                                     char const* expect_file) {
-  std::string const result = panel.GetText(
-      SIMULATOR_TERMINAL_RESULT_LIT, SIMULATOR_TERMINAL_RESULT_DARK, "\n");
+  std::string const result = panel.GetText(kResultLit, kResultDark, "\n");
   std::string expected;
 
   fputs(result.c_str(), stdout);

@@ -19,7 +19,7 @@
 #include <vector>
 
 /* SimulatorWebHost Parameter */
-#define SIMULATOR_WEB_HOST_MAX_CLIENTS 4u
+constexpr uint8_t kSimulatorWebHostMaxClients{4u};
 
 /*!
  * \brief A small HTTP and WebSocket server for the simulator, on loopback only.
@@ -31,8 +31,8 @@
 class SimulatorWebHost {
  private:
   int listener_;
-  int clients_[SIMULATOR_WEB_HOST_MAX_CLIENTS];
-  std::string pending_[SIMULATOR_WEB_HOST_MAX_CLIENTS];
+  int clients_[kSimulatorWebHostMaxClients];
+  std::string pending_[kSimulatorWebHostMaxClients];
   char const* page_path_;
 
   void AcceptClients();
