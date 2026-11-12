@@ -18,6 +18,34 @@
 #include <sstream>
 #include <string>
 
+/*! \brief A point of a picture, in pixels from its left and top. */
+struct DocuPoint {
+  int32_t x; /*!< From the left. */
+  int32_t y; /*!< From the top. */
+};
+
+/*! \brief The size of a rectangle, in pixels. */
+struct DocuSize {
+  uint16_t width;  /*!< Across. */
+  uint16_t height; /*!< Down. */
+};
+
+/*! \brief How a rectangle is painted. */
+struct DocuPaint {
+  char const* fill;   /*!< The fill colour, or `"none"`. */
+  char const* stroke; /*!< The outline colour, or `"none"` for no outline. */
+  uint8_t radius;     /*!< The radius of the corners. */
+};
+
+/*! \brief How a text is set. */
+struct DocuFont {
+  uint8_t size;     /*!< The font size in pixels. */
+  char const* fill; /*!< The colour. */
+  /*! `"start"`, `"middle"` or `"end"`: which part lies at its point. */
+  char const* anchor;
+  bool bold; /*!< True for bold. */
+};
+
 /*! \brief A picture as SVG text, for the pictures in docu/. */
 class DocuSvg {
  private:
@@ -52,46 +80,32 @@ class DocuSvg {
   /*!
    * \brief Adds a rectangle, with an outline 2 pixels wide where it has one.
    *
-   * \param[in] x The left edge.
-   * \param[in] y The top edge.
-   * \param[in] rect_width The width.
-   * \param[in] rect_height The height.
-   * \param[in] fill The fill colour, or `"none"`.
-   * \param[in] stroke The outline colour, or `"none"` for no outline.
-   * \param[in] radius The radius of the corners.
+   * \param[in] corner The top left corner.
+   * \param[in] size The width and the height.
+   * \param[in] paint Its fill, its outline and its corners.
    */
-  void AddRect(int32_t x, int32_t y, uint16_t rect_width, uint16_t rect_height,
-               char const* fill, char const* stroke = "none",
-               uint8_t radius = 0);
+  void AddRect(DocuPoint corner, DocuSize size, DocuPaint paint);
 
   /*!
-   * \brief Adds a line of text, with its baseline at `y`.
+   * \brief Adds a line of text, with its baseline at the point given.
    *
-   * \param[in] x Where the text is anchored.
-   * \param[in] y The baseline.
+   * \param[in] at Where the text is anchored, on its baseline.
    * \param[in] text The text.
-   * \param[in] size The font size in pixels.
-   * \param[in] fill The colour.
-   * \param[in] anchor `"start"`, `"middle"` or `"end"`: which part of the text
-   *                   lies at `x`.
-   * \param[in] bold True for bold.
+   * \param[in] font How it is set.
    * \pre `text` holds no `&`, `<` or `>`.
    */
-  void AddText(int32_t x, int32_t y, std::string const& text, uint8_t size,
-               char const* fill = "#222222", char const* anchor = "middle",
-               bool bold = false);
+  void AddText(DocuPoint at, std::string const& text, DocuFont font);
 
   /*!
-   * \brief Adds a horizontal arrow: a line from `from_x` to `to_x` at height
-   *        `y`, and a head at `to_x`.
+   * \brief Adds a horizontal arrow: a line from `from` to `to_x` at the height
+   *        of `from`, and a head at `to_x`.
    *
-   * \param[in] from_x Where the arrow starts.
+   * \param[in] from Where the arrow starts.
    * \param[in] to_x Where its head points to.
-   * \param[in] y The height of the arrow.
    * \param[in] thickness The width of the line.
    * \param[in] colour The colour of line and head.
    */
-  void AddArrow(int32_t from_x, int32_t to_x, int32_t y, int32_t thickness,
+  void AddArrow(DocuPoint from, int32_t to_x, int32_t thickness,
                 char const* colour);
 };
 

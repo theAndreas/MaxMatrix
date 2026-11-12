@@ -50,6 +50,8 @@ constexpr int kConnectionsWidth{220};
 /* a dozen lines of the log, which makes the window as tall as the old tool's */
 constexpr int kLogHeight{200};
 constexpr int kBorder{8};
+/* the height of the sliders of intensity and speed */
+constexpr int kSliderHeight{140};
 
 }  // namespace
 
@@ -106,6 +108,9 @@ void ControlWindow::MakeMenu() {
  * brightness and the speed as sliders, and beside them whether it shifts, the
  * space between the chars, Clear and Send. Enter in the field sends as well.
  */
+// The controls are made in the order wxWidgets tabs through them; split in
+// parts, they would come in another, which only a look at the window shows.
+// NOLINTNEXTLINE(readability-function-size)
 wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   auto* const page = new wxPanel(parent);
   auto* const rows = new wxBoxSizer(wxVERTICAL);
@@ -130,14 +135,15 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   // as wide as the longest it says, so that the field does not change its width
   // as one types
   bytes_left_->SetMinSize(bytes_left_->GetTextExtent("000 bytes too long"));
-  intensity_ = new wxSlider(intensity_box->GetStaticBox(), wxID_ANY,
-                            MAXMATRIX_INTENSITY_INIT_VALUE, 0, kMaxIntensity,
-                            wxDefaultPosition, FromDIP(wxSize(-1, 140)),
-                            wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
-  speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
-                        MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed,
-                        kMaxSpeed, wxDefaultPosition, FromDIP(wxSize(-1, 140)),
-                        wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
+  intensity_ = new wxSlider(
+      intensity_box->GetStaticBox(), wxID_ANY, MAXMATRIX_INTENSITY_INIT_VALUE,
+      0, kMaxIntensity, wxDefaultPosition, FromDIP(wxSize(-1, kSliderHeight)),
+      wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
+  speed_ =
+      new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
+                   MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed, kMaxSpeed,
+                   wxDefaultPosition, FromDIP(wxSize(-1, kSliderHeight)),
+                   wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
   shift_ = new wxCheckBox(page, wxID_ANY, "Shift in");
   space_ = new wxSpinCtrl(page, wxID_ANY, wxEmptyString, wxDefaultPosition,
                           wxDefaultSize, wxSP_ARROW_KEYS, 0, kMaxSpace,
@@ -198,6 +204,9 @@ wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
  * The column on the right: the board's serial port, the simulator's TCP port,
  * each with a button and its state, and the log below them.
  */
+// The controls are made in the order wxWidgets tabs through them; split in
+// parts, they would come in another, which only a look at the window shows.
+// NOLINTNEXTLINE(readability-function-size)
 wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
   auto* const column = new wxPanel(parent);
   auto* const rows = new wxBoxSizer(wxVERTICAL);

@@ -57,6 +57,31 @@ SimulatorFrontEnd front_end;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorAvr avr;
 
+// Runs the AVR a millisecond at a time, for `--for` or until Ctrl+C, and the
+// front end with it. Returns false if the AVR stopped.
+bool RunAvr() {
+  /* a page or the control program, and whoever is in front of it, speaks in
+   * real time */
+  bool const real_time =
+      options.IsWeb() || options.GetTcpPort() != 0 || options.GetRunFor() == 0;
+  std::chrono::steady_clock::time_point const start =
+      std::chrono::steady_clock::now();
+  for (uint32_t now = 1; options.GetRunFor() == 0 || now <= options.GetRunFor();
+       now++) {
+    if (!avr.Run(now)) {
+      std::cerr << "the AVR stopped after " << now << " ms\n";
+      return false;
+    }
+    front_end.Follow(panel, now);
+    // simavr runs faster than the Uno, so in real time it waits for the host's
+    // clock to catch up.
+    if (real_time) {
+      std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 /*!
@@ -89,25 +114,8 @@ int main(int argc, char** argv) {
   if (!front_end.Begin(options)) {
     return kExitFailed;
   }
-
-  /* a page or the control program, and whoever is in front of it, speaks in
-   * real time */
-  bool const real_time =
-      options.IsWeb() || options.GetTcpPort() != 0 || options.GetRunFor() == 0;
-  std::chrono::steady_clock::time_point const start =
-      std::chrono::steady_clock::now();
-  for (uint32_t now = 1; options.GetRunFor() == 0 || now <= options.GetRunFor();
-       now++) {
-    if (!avr.Run(now)) {
-      std::cerr << "the AVR stopped after " << now << " ms\n";
-      return kExitFailed;
-    }
-    front_end.Follow(panel, now);
-    // simavr runs faster than the Uno, so in real time it waits for the host's
-    // clock to catch up.
-    if (real_time) {
-      std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
-    }
+  if (!RunAvr()) {
+    return kExitFailed;
   }
   bool const passed =
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&

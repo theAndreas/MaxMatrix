@@ -35,12 +35,15 @@ namespace {
 constexpr size_t kChunkLength{256U};
 constexpr int kWriteTimeoutMs{1000};
 
-// Whether the port takes `baud_rate`: the rates of the Arduino IDE's serial
-// monitor that termios names on every system, up to the 115200 of
-// SerialControl.
+/* the rates of the Arduino IDE's serial monitor that termios names on every
+ * system, up to the 115200 of SerialControl */
+constexpr std::array<uint32_t, 5> kBaudRates{
+    {9600, 19200, 38400, 57600, 115200}};
+
+// Whether the port takes `baud_rate`.
 bool IsBaudRate(uint32_t baud_rate) {
-  return baud_rate == 9600 || baud_rate == 19200 || baud_rate == 38400 ||
-         baud_rate == 57600 || baud_rate == 115200;
+  return std::find(kBaudRates.begin(), kBaudRates.end(), baud_rate) !=
+         kBaudRates.end();
 }
 
 }  // namespace

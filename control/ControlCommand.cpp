@@ -18,6 +18,13 @@
 
 #include "MaxMatrixConfig.h"
 
+namespace {
+
+/* a column of picture is two hex digits */
+constexpr int kHexBase{16};
+
+}  // namespace
+
 std::string ControlCommand::MakeText(std::string const& text, bool shift) {
   return (shift ? "textShift=" : "text=") + text;
 }
@@ -65,7 +72,7 @@ bool ControlCommand::DecodePicture(std::string const& line,
       return true;
     }
     columns->push_back(
-        static_cast<uint8_t>(strtoul(digits.data(), nullptr, 16)));
+        static_cast<uint8_t>(strtoul(digits.data(), nullptr, kHexBase)));
   }
   return true;
 }

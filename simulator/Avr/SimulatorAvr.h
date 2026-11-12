@@ -55,6 +55,8 @@ class SimulatorAvr {
    * shiftOut() write the port bit by bit, and only a change is a step on the
    * wire.
    */
+  void ConnectPins();
+  void ConnectUart();
   static void OnDataIn(avr_irq_t* irq, uint32_t value, void* object);
   static void OnClock(avr_irq_t* irq, uint32_t value, void* object);
   static void OnChipSelect(avr_irq_t* irq, uint32_t value, void* object);
