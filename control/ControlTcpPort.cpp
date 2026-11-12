@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
+#include <array>
 #include <string>
 
 #include "ControlTcpPort.h"
@@ -128,14 +129,14 @@ bool ControlTcpPort::Write(std::string const& data) {
 }
 
 bool ControlTcpPort::Read(std::string* data) {
-  char chunk[kChunkLength];
+  std::array<char, kChunkLength> chunk;
 
   if (!IsOpen()) return false;
   for (;;) {
-    auto const length = recv(CONTROL_TCP_PORT_SOCKET(socket_), chunk,
-                             static_cast<int>(sizeof(chunk)), 0);
+    auto const length = recv(CONTROL_TCP_PORT_SOCKET(socket_), chunk.data(),
+                             static_cast<int>(chunk.size()), 0);
     if (length > 0) {
-      data->append(chunk, static_cast<size_t>(length));
+      data->append(chunk.data(), static_cast<size_t>(length));
     } else if (length < 0 && CONTROL_TCP_PORT_WOULD_BLOCK()) {
       return true;
     } else {

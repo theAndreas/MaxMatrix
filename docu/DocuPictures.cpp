@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <array>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -81,26 +82,33 @@ constexpr uint8_t kExampleRow{2};
  * \brief Where the LED of one dot is driven: the chip in the chain, 0 at DIN,
  *        its digit register and the bit in it.
  */
-typedef struct {
+struct DocuLed {
   byte chip;
   byte digit;
   byte bit;
-} DocuLed;
+};
 
 max_matrix::MatrixOf<kNumberOfModules> matrix(kDataInPin, kChipSelectPin,
                                               kClockPin);
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them
  */
-struct {
+struct ModuleName {
   Max7219Wiring const* wiring;
   char const* name;
-} const kModuleNames[] = {
+};
+
+std::array<ModuleName, 4> const kModuleNames{{
     {&kMaX7219WiringFC16, "FC-16"},
     {&kMaX7219WiringGeneric, "Generic"},
     {&kMaX7219WiringParola, "Parola"},
     {&kMaX7219WiringIcstation, "ICStation"},
-};
+}};
+
+/* something for every dot of the panel, as [x][y] */
+template <typename Type>
+using PerDot = std::array<std::array<Type, max_matrix::kRowNumberOfModule>,
+                          kNumberOfColumns>;
 
 /*!
  * \brief Finds the one LED the model has lit, in the digit registers of every
@@ -331,7 +339,7 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
  */
 std::string DrawWiring(max_matrix::ModuleType module_type) {
   DocuSvg svg(GetPictureWidth(), GetPictureHeight());
-  DocuLed leds[kNumberOfColumns][max_matrix::kRowNumberOfModule];
+  PerDot<DocuLed> leds;
   int32_t const inset = (kCell - kLed) / 2 - 2;
 
   matrix.SetModuleType(module_type);
@@ -399,8 +407,8 @@ std::string DrawCoordinates() {
   DocuSvg svg(GetPictureWidth(),
               kCoordinatesAbove + panel_height + kCoordinatesBelow,
               kTop - kCoordinatesAbove);
-  std::string column_labels[kNumberOfColumns][max_matrix::kRowNumberOfModule];
-  std::string row_labels[kNumberOfColumns][max_matrix::kRowNumberOfModule];
+  PerDot<std::string> column_labels;
+  PerDot<std::string> row_labels;
 
   // The coordinates are the same for every module once the module type fits it,
   // so the picture is drawn for FC-16 boards.
@@ -496,14 +504,13 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   matrix.Init();
 
   std::vector<std::pair<std::string, std::string>> pictures;
-  pictures.push_back(std::make_pair("Coordinates.svg", DrawCoordinates()));
+  pictures.emplace_back("Coordinates.svg", DrawCoordinates());
   // The module types in the order of the model's wirings, whose names the files
   // take.
-  for (byte type = 0;
-       type < sizeof(kMax7219Wirings) / sizeof(kMax7219Wirings[0]); type++) {
-    pictures.push_back(std::make_pair(
+  for (byte type = 0; type < kMax7219Wirings.size(); type++) {
+    pictures.emplace_back(
         std::string("Wiring_") + kMax7219Wirings[type].name + ".svg",
-        DrawWiring(static_cast<max_matrix::ModuleType>(type))));
+        DrawWiring(static_cast<max_matrix::ModuleType>(type)));
   }
 
   for (auto const& picture : pictures) {

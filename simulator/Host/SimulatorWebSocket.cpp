@@ -14,6 +14,7 @@
 
 #include <ctype.h>
 
+#include <array>
 #include <string>
 
 namespace {
@@ -114,22 +115,22 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
 // The accept key is the base64 of the SHA-1 of the key and the fixed GUID of
 // RFC 6455.
 std::string SimulatorWebSocket::ConvertKeyToAcceptKey(std::string const& key) {
-  uint8_t digest[kSimulatorWebSocketSha1Length];
+  std::array<uint8_t, kSimulatorWebSocketSha1Length> digest;
 
-  CalculateSha1(key + kGuid, digest);
-  return ConvertToBase64(digest, sizeof(digest));
+  CalculateSha1(key + kGuid, digest.data());
+  return ConvertToBase64(digest.data(), digest.size());
 }
 
 // Pads the message and processes it block by block, as FIPS 180-4 describes.
 void SimulatorWebSocket::CalculateSha1(std::string const& message,
                                        uint8_t* digest) {
-  uint32_t state[kSha1StateLength] = {0x67452301u, 0xEFCDAB89u, 0x98BADCFEu,
-                                      0x10325476u, 0xC3D2E1F0u};
+  std::array<uint32_t, kSha1StateLength> state{
+      {0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u}};
   std::string const padded = PadSha1Message(message);
 
   for (size_t offset = 0; offset < padded.size(); offset += kSha1BlockLength) {
     ProcessSha1Block(reinterpret_cast<uint8_t const*>(padded.data() + offset),
-                     state);
+                     state.data());
   }
   for (uint8_t word = 0; word < kSha1StateLength; word++) {
     for (uint8_t part = 0; part < 4; part++) {
@@ -169,8 +170,8 @@ std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes,
 bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   std::string lowered(request);
 
-  for (size_t i = 0; i < lowered.size(); i++) {
-    lowered[i] = static_cast<char>(tolower(static_cast<uint8_t>(lowered[i])));
+  for (char& c : lowered) {
+    c = static_cast<char>(tolower(static_cast<uint8_t>(c)));
   }
   size_t const found = lowered.find(kKeyHeader);
   if (found == std::string::npos) return false;
@@ -199,7 +200,7 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
     padded.push_back('\0');
   }
   for (uint8_t i = 1; i <= 8; i++) {
-    uint8_t const shift = static_cast<uint8_t>(64U - 8U * i);
+    auto const shift = static_cast<uint8_t>(64U - 8U * i);
     padded.push_back(static_cast<char>((bits >> shift) & 0xFFU));
   }
   return padded;
@@ -212,7 +213,7 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
  */
 void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block,
                                           uint32_t* state) {
-  uint32_t word[kSha1Rounds];
+  std::array<uint32_t, kSha1Rounds> word;
   uint32_t a = state[0], b = state[1], c = state[2], d = state[3], e = state[4];
 
   for (uint8_t i = 0; i < kSha1WordsPerBlock; i++, block += 4) {

@@ -12,19 +12,26 @@
 
 #include "SimulatorPanel.h"
 
+#include <array>
 #include <string>
 
 /* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1
  * from kMax7219Wirings */
-static struct {
+namespace {
+
+struct NamedWiring {
   char const* name;
   Max7219Wiring const* wiring;
-} const kNamedWirings[] = {
+};
+
+std::array<NamedWiring, 4> const kNamedWirings{{
     {"FC16", &kMaX7219WiringFC16},
     {"GENERIC", &kMaX7219WiringGeneric},
     {"PAROLA", &kMaX7219WiringParola},
     {"ICSTATION", &kMaX7219WiringIcstation},
-};
+}};
+
+}  // namespace
 
 SimulatorPanel::SimulatorPanel() {
   wiring_name_ = kSimulatorPanelDefaultWiring;

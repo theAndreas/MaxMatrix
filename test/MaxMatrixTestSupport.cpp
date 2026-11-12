@@ -51,7 +51,7 @@ std::vector<Report> reports;
 
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 void max_matrix::ReportError(__FlashStringHelper const* api, Error error) {
-  reports.push_back(Report(Text(api), error));
+  reports.emplace_back(Text(api), error);
 }
 #endif
 

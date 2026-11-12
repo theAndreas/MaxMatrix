@@ -39,7 +39,7 @@ static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) ==
 
 __FlashStringHelper const* Status::GetErrorText() const {
   char const* text = kErrorTextUnknownError;
-  uint8_t const index = static_cast<uint8_t>(error_);
+  auto const index = static_cast<uint8_t>(error_);
 
   if (index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) {
     text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));

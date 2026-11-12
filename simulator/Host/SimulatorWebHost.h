@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -31,8 +32,8 @@ constexpr uint8_t kSimulatorWebHostMaxClients{4u};
 class SimulatorWebHost {
  private:
   int listener_;
-  int clients_[kSimulatorWebHostMaxClients];
-  std::string pending_[kSimulatorWebHostMaxClients];
+  std::array<int, kSimulatorWebHostMaxClients> clients_;
+  std::array<std::string, kSimulatorWebHostMaxClients> pending_;
   char const* page_path_;
 
   void AcceptClients();

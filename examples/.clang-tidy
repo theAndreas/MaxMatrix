@@ -7,8 +7,11 @@
 # MaxMatrix's own: misc-use-internal-linkage: a sketch is a program of its own,
 # which nothing links against, and reads as the Arduino examples do, its
 # globals and functions without static or an anonymous namespace.
+# modernize-avoid-c-arrays: a sketch hands the library its bitmaps and texts
+# as arrays in PROGMEM, which is what the library takes (src/.clang-tidy).
 InheritParentConfig: true
 Checks: >
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-non-const-global-variables,
-  -misc-use-internal-linkage
+  -misc-use-internal-linkage,
+  -modernize-avoid-c-arrays

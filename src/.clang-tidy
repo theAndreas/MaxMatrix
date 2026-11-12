@@ -1,0 +1,10 @@
+---
+# What the library does that the rest must not:
+# modernize-avoid-c-arrays: the library takes its arrays from the sketch as
+#   the sketch writes them, a font or a bitmap in PROGMEM, a row as byte[4],
+#   and the avr-gcc of the Uno has no std::array to hand them as (T-20, M-3);
+#   the ETL is no dependency of MaxMatrix. A template takes the length from
+#   the array's type wherever the length matters.
+InheritParentConfig: true
+Checks: >
+  -modernize-avoid-c-arrays

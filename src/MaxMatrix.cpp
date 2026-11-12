@@ -23,8 +23,6 @@ Matrix::Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin,
   last_shift_ = 0;
 }
 
-Matrix::~Matrix() {}
-
 void Matrix::Init() {
   state_ = State::kInit;
 

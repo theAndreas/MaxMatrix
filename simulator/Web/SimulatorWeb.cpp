@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 
+#include <array>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -62,19 +63,19 @@ void SimulatorWeb::Send(SimulatorPanel const& panel) {
  */
 std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
   std::string json;
-  char escaped[8];
+  std::array<char, 8> escaped;
 
   for (char const c : text) {
-    uint8_t const code = static_cast<uint8_t>(c);
+    auto const code = static_cast<uint8_t>(c);
     if (c == '"' || c == '\\') {
       json += '\\';
       json += c;
     } else if (code >= kJsonFirstPlain && code <= kJsonLastPlain) {
       json += c;
     } else {
-      snprintf(escaped, sizeof(escaped), "\\u%04X",
+      snprintf(escaped.data(), escaped.size(), "\\u%04X",
                static_cast<uint16_t>(code));
-      json += escaped;
+      json += escaped.data();
     }
   }
   return json;
@@ -84,13 +85,13 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
 // more than kSimulatorWebFrameLogLength frames.
 void SimulatorWeb::LogFrame() {
   std::string line = "#" + std::to_string(mock::frames) + ":";
-  char pair[8];
+  std::array<char, 8> pair;
 
   for (size_t i = 0; i + 1 < mock::last_frame.size(); i += 2) {
-    snprintf(pair, sizeof(pair), "%02X %02X", mock::last_frame[i],
+    snprintf(pair.data(), pair.size(), "%02X %02X", mock::last_frame[i],
              mock::last_frame[i + 1]);
     line += i == 0 ? " " : " | ";
-    line += pair;
+    line += pair.data();
   }
   frame_log_.push_back(line);
   if (frame_log_.size() > kSimulatorWebFrameLogLength) {
@@ -131,15 +132,15 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message) {
 std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
   std::ostringstream json;
 
-  json << "{\"wiring\":\"" << panel.GetWiringName()
-       << "\",\"upsideDown\":" << (panel.IsUpsideDown() ? "true" : "false")
+  json << R"({"wiring":")" << panel.GetWiringName() << R"(","upsideDown":)"
+       << (panel.IsUpsideDown() ? "true" : "false")
        << ",\"columns\":" << static_cast<uint16_t>(panel.GetNumberOfColumns())
        << ",\"rows\":" << static_cast<uint16_t>(max_matrix::kRowNumberOfModule)
-       << ",\"dots\":\"" << panel.GetText("1", "0", "") << "\""
+       << R"(,"dots":")" << panel.GetText("1", "0", "") << "\""
        << ",\"intensity\":[" << GetIntensities(panel) << "]"
        << ",\"frames\":" << mock::frames << ",\"errors\":" << mock::errors
        << ",\"log\":[" << GetLog() << "]"
-       << ",\"serial\":\"" << ConvertToJsonString(serial_output_) << "\"}";
+       << R"(,"serial":")" << ConvertToJsonString(serial_output_) << "\"}";
   return json.str();
 }
 

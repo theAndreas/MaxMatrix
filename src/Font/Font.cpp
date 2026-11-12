@@ -181,7 +181,7 @@ uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM = {
  * behaviour already, compared or not.
  */
 Status Font::CheckFont(uint8_t const* font, size_t size) {
-  if (font == NULL || size < kHeaderLength1 ||
+  if (font == nullptr || size < kHeaderLength1 ||
       pgm_read_byte(font) != kFileIndicator) {
     return Error::kNotAFont;
   }

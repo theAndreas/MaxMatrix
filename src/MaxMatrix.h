@@ -119,7 +119,7 @@ class Matrix {
          byte number_of_modules);
 
   /*! \brief Leaves the LEDs as they are. */
-  ~Matrix();
+  ~Matrix() = default;
 
   /*! \brief Not copyable: the copy would draw into the same buffer. */
   Matrix(Matrix const&) = delete;

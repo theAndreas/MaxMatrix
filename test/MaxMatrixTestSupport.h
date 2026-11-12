@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -42,18 +43,19 @@ static byte const kNumberOfModules = 4;
 static byte const kNumberOfColumns =
     kNumberOfModules * max_matrix::kColumnNumberOfModule;
 /* a row of the whole panel, one byte per module */
-typedef byte PanelRow[kNumberOfModules];
+// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
+using PanelRow = byte[kNumberOfModules];
 
 /* an array that is no font, for SetFont() */
+// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
 static uint8_t const kNoFont[] PROGMEM = {'G', 1, 32, 126, 8};
 
 /* every error by name, in the order of the enum */
-static char const* const kErrorNames[] = {
-    "Error::kOk",          "Error::kOutOfRange", "Error::kUnknownChar",
-    "Error::kNoText",      "Error::kNotANumber", "Error::kUnknownCommand",
-    "Error::kLineTooLong", "Error::kNotAFont"};
-static uint8_t const kNumberOfErrors =
-    sizeof(kErrorNames) / sizeof(kErrorNames[0]);
+static std::array<char const*, 8> const kErrorNames{
+    {"Error::kOk", "Error::kOutOfRange", "Error::kUnknownChar",
+     "Error::kNoText", "Error::kNotANumber", "Error::kUnknownCommand",
+     "Error::kLineTooLong", "Error::kNotAFont"}};
+static uint8_t const kNumberOfErrors = kErrorNames.size();
 
 /* GoogleTest finds what prints and compares a type of the library by ADL, so
  * these lie in its namespace; every test file sees them, as GoogleTest would
@@ -90,7 +92,7 @@ std::string Text(__FlashStringHelper const* text);
  * of ReportError() in MaxMatrixTestSupport.cpp wins over the weak one of the
  * library, which prints. With it off the list stays empty, so that a test can
  * expect a report in every variant. */
-typedef std::pair<std::string, max_matrix::Error> Report;
+using Report = std::pair<std::string, max_matrix::Error>;
 static bool const kDevErrorDetect = (MAXMATRIX_DEV_ERROR_DETECT == STD_ON);
 extern std::vector<Report> reports;
 
@@ -150,23 +152,23 @@ class MaxMatrixTest : public ::testing::Test {
     return mock::frames - frames_before;
   }
 };
-static max_matrix::MatrixOrientation const kMatrixOrientations[] = {
-    max_matrix::MatrixOrientation::k0, max_matrix::MatrixOrientation::k180};
+static std::array<max_matrix::MatrixOrientation, 2> const kMatrixOrientations{
+    {max_matrix::MatrixOrientation::k0, max_matrix::MatrixOrientation::k180}};
 
 /* all eight, in the order of the model's kMax7219Wirings, which
  * MaxMatrixModuleTest checks */
-static max_matrix::ModuleType const kModuleTypes[] = {
-    max_matrix::ModuleType::kDr0Cr0Rr0, max_matrix::ModuleType::kDr0Cr0Rr1,
-    max_matrix::ModuleType::kDr0Cr1Rr0, max_matrix::ModuleType::kDr0Cr1Rr1,
-    max_matrix::ModuleType::kDr1Cr0Rr0, max_matrix::ModuleType::kDr1Cr0Rr1,
-    max_matrix::ModuleType::kDr1Cr1Rr0, max_matrix::ModuleType::kDr1Cr1Rr1};
+static std::array<max_matrix::ModuleType, 8> const kModuleTypes{
+    {max_matrix::ModuleType::kDr0Cr0Rr0, max_matrix::ModuleType::kDr0Cr0Rr1,
+     max_matrix::ModuleType::kDr0Cr1Rr0, max_matrix::ModuleType::kDr0Cr1Rr1,
+     max_matrix::ModuleType::kDr1Cr0Rr0, max_matrix::ModuleType::kDr1Cr0Rr1,
+     max_matrix::ModuleType::kDr1Cr1Rr0, max_matrix::ModuleType::kDr1Cr1Rr1}};
 
 /* the name of a module type as the model names its wiring, DR0CR0RR0 to
  * DR1CR1RR1 */
 std::string ModuleTypeName(max_matrix::ModuleType module_type);
 
-typedef std::tuple<max_matrix::MatrixOrientation, max_matrix::ModuleType>
-    MappingPair;
+using MappingPair =
+    std::tuple<max_matrix::MatrixOrientation, max_matrix::ModuleType>;
 
 /* every test of this fixture runs in all sixteen combinations of matrix
  * orientation and module type */

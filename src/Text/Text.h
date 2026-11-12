@@ -74,7 +74,7 @@ class Text {
 
   /*! \brief Returns the font every char is drawn in. */
   uint8_t const* GetFont() const {
-    return font_ != NULL ? font_ : kDefaultFont;
+    return font_ != nullptr ? font_ : kDefaultFont;
   }
 
   /*!

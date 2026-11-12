@@ -30,7 +30,7 @@ constexpr uint16_t kDefaultFontSize{614};
  * SpriteByte names its bytes. A char of a font is a Glyph
  * instead.
  */
-typedef byte Sprite[kSpriteNumberOfBytes];
+using Sprite = byte[kSpriteNumberOfBytes];
 
 /*! \brief The bytes of a Sprite. */
 enum SpriteByte : uint8_t {

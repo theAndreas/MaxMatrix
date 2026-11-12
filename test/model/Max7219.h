@@ -14,13 +14,14 @@
 
 #include <stdint.h>
 
+#include <array>
 #include <vector>
 
 class Max7219 {
  public:
   static uint8_t const kNumberOfDigits = 8;
 
-  uint8_t digit[kNumberOfDigits];
+  std::array<uint8_t, kNumberOfDigits> digit;
   uint8_t decode_mode;
   uint8_t intensity;
   uint8_t scan_limit;
@@ -55,7 +56,7 @@ extern Max7219Wiring const kMaX7219WiringParola;
 extern Max7219Wiring const kMaX7219WiringIcstation;
 
 /* all eight, DR0CR0RR0 to DR1CR1RR1 */
-extern Max7219Wiring const kMax7219Wirings[8];
+extern std::array<Max7219Wiring, 8> const kMax7219Wirings;
 
 class Max7219Chain {
  public:

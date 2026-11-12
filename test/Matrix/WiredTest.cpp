@@ -32,8 +32,8 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
 TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   for (Max7219& chip : mock::chain.chips) {
-    for (byte digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
-      chip.digit[digit] = 0xA5;
+    for (uint8_t& digit : chip.digit) {
+      digit = 0xA5;
     }
   }
   matrix_.Init();

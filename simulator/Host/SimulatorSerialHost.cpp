@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <array>
 #include <string>
 
 #include "SimulatorSocket.h"
@@ -40,16 +41,16 @@ bool SimulatorSerialHost::Begin(uint16_t port) {
 }
 
 void SimulatorSerialHost::Task(std::string* received) {
-  char chunk[kChunkLength];
+  std::array<char, kChunkLength> chunk;
 
   if (listener_ == kSimulatorSocketNone) return;
 
   // The client first, so that one which has gone frees the port for the next in
   // the same call.
   while (client_ != kSimulatorSocketNone) {
-    ssize_t const length = recv(client_, chunk, sizeof(chunk), 0);
+    ssize_t const length = recv(client_, chunk.data(), chunk.size(), 0);
     if (length > 0) {
-      received->append(chunk, static_cast<size_t>(length));
+      received->append(chunk.data(), static_cast<size_t>(length));
     } else {
       if (length == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
         DropClient();
