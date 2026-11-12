@@ -49,6 +49,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 37 | Files named as their class | 35 | done | #77 |
 | 38 | Results that must not be ignored | 36 | open | |
 | 39 | MC/DC coverage | 34 | open | |
+| 40 | Braced initialization checked | 34 | open | |
 
 ### 1 Build with CMake
 
@@ -859,6 +860,22 @@ with `-fcondition-coverage`, whether each condition of a decision alone turns it
 gcovr 8 reads it. The coverage preset and `tools/coverage.sh` are the template's, so this
 goes into embedded-cpp-template first and reaches MaxMatrix, Utl and Wordclock by
 `copier update`; whether a figure then fails the build is decided there as well.
+
+### 40 Braced initialization checked
+
+T-3 of CodingStyle.md has every variable initialized in braces, `int count{0};`, which refuses a
+narrowing conversion. Only the member initializer list is checked, by `house-braced-member-init`;
+a variable is left to review, and some 240 are initialized with `=`, 50 of them in `src/`. The
+fixes of `cppcoreguidelines-init-variables` write `= 0` themselves, and were taken as they came
+in 36.
+
+A second check of the template's own, for variables, as the one for members: a fix-it where
+braces mean the same, none where an argument narrows or a `std::initializer_list` constructor
+would win. `auto x{1}` was a `std::initializer_list` in C++11 as published; whether avr-gcc 7.3
+in gnu++11 takes it as the `int` of N3922 decides whether the check may rewrite an `auto`.
+`tools/` is the template's, so the check goes into embedded-cpp-template first and reaches
+MaxMatrix, Utl and Wordclock by `copier update`; the places here are fixed in a pull request
+of their own after it.
 
 ## Decisions
 
