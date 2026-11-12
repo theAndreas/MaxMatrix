@@ -28,6 +28,10 @@ constexpr char kListSeparator{','};
 constexpr uint16_t kMaxByte{0xFF};
 constexpr uint16_t kMaxInterval{0xFFFF};
 
+/* a byte of `picture` is two hex digits, the high nibble first */
+constexpr byte kLowNibble{0x0FU};
+constexpr uint8_t kNibbleWidth{4U};
+
 }  // namespace
 
 Command::Command() {
@@ -188,8 +192,10 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
   answer.print(F("picture="));
   for (int16_t column = 0; column < columns; column++) {
     byte const value = matrix.GetColumn(column).GetValue();
-    answer.write(static_cast<uint8_t>(ConvertToHexDigit(value >> 4)));
-    answer.write(static_cast<uint8_t>(ConvertToHexDigit(value & 0x0F)));
+    byte const high_nibble{static_cast<byte>(value >> kNibbleWidth)};
+    byte const low_nibble{static_cast<byte>(value & kLowNibble)};
+    answer.write(static_cast<uint8_t>(ConvertToHexDigit(high_nibble)));
+    answer.write(static_cast<uint8_t>(ConvertToHexDigit(low_nibble)));
   }
   answer.println();
 }

@@ -68,9 +68,10 @@ ControlWindow::ControlWindow()
   controls->Add(MakeText(controls_), 1, wxEXPAND);
   controls_->SetSizer(controls);
   columns->Add(controls_, 1, wxEXPAND | wxALL, FromDIP(CONTROL_WINDOW_BORDER));
-  columns->Add(MakeConnections(content), 0,
-               wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT,
-               FromDIP(CONTROL_WINDOW_BORDER));
+  columns->Add(
+      MakeConnections(content), 0,
+      // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
+      wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(CONTROL_WINDOW_BORDER));
   content->SetSizer(columns);
   SetClientSize(content->GetBestSize());
   SetMinClientSize(content->GetBestSize());
@@ -117,9 +118,10 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   send_ = new wxButton(page, wxID_ANY, "Send");
   text_ = new wxTextCtrl(page, wxID_ANY, "Hello", wxDefaultPosition,
                          wxDefaultSize, wxTE_PROCESS_ENTER);
-  bytes_left_ =
-      new wxStaticText(page, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                       wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE);
+  bytes_left_ = new wxStaticText(
+      page, wxID_ANY, wxEmptyString, wxDefaultPosition,
+      // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
+      wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE);
   // as wide as the longest it says, so that the field does not change its width
   // as one types
   bytes_left_->SetMinSize(bytes_left_->GetTextExtent("000 bytes too long"));
@@ -139,10 +141,14 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
                           CONTROL_WINDOW_MAX_SPACE,
                           MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
 
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   intensity_box->Add(intensity_, 1, wxALIGN_CENTER_HORIZONTAL | wxALL, border);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   speed_box->Add(speed_, 1, wxALIGN_CENTER_HORIZONTAL | wxALL, border);
-  space_row->Add(new wxStaticText(page, wxID_ANY, "Space"), 0,
-                 wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
+  space_row->Add(
+      new wxStaticText(page, wxID_ANY, "Space"), 0,
+      // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
+      wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
   space_row->Add(space_, 1);
   actions->Add(shift_, 0, wxBOTTOM, border);
   actions->Add(space_row, 0, wxEXPAND | wxBOTTOM, border);
@@ -152,9 +158,11 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   settings->Add(intensity_box, 0, wxEXPAND | wxRIGHT, border);
   settings->Add(speed_box, 0, wxEXPAND | wxRIGHT, border);
   settings->Add(actions, 1, wxEXPAND);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   text_row->Add(text_, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
   text_row->Add(bytes_left_, 0, wxALIGN_CENTER_VERTICAL);
   rows->Add(text_row, 0, wxEXPAND | wxALL, border);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   rows->Add(settings, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, border);
   page->SetSizer(rows);
 
@@ -223,18 +231,22 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
   board_row->Add(board_button_, 0, wxRIGHT, border);
   board_row->Add(board_status_, 1, wxALIGN_CENTER_VERTICAL);
   board_box->Add(serial_port_name_, 0, wxEXPAND | wxALL, border);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   board_box->Add(board_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, border);
   port_row->Add(
       new wxStaticText(simulator_box->GetStaticBox(), wxID_ANY, "Port"), 0,
+      // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
       wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
   port_row->Add(tcp_port_number_, 1);
   simulator_row->Add(simulator_button_, 0, wxRIGHT, border);
   simulator_row->Add(simulator_status_, 1, wxALIGN_CENTER_VERTICAL);
   simulator_box->Add(port_row, 0, wxEXPAND | wxALL, border);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   simulator_box->Add(simulator_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM,
                      border);
   log_->SetMinSize(FromDIP(wxSize(-1, CONTROL_WINDOW_LOG_HEIGHT)));
   log_box->Add(log_, 1, wxEXPAND | wxALL, border);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
   log_box->Add(clear_log, 0, wxLEFT | wxRIGHT | wxBOTTOM, border);
   rows->Add(board_box, 0, wxEXPAND | wxBOTTOM, border);
   rows->Add(simulator_box, 0, wxEXPAND | wxBOTTOM, border);

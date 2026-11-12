@@ -86,9 +86,13 @@ bool ControlTcpPort::Open(uint16_t port) {
   opened = opened && ioctlsocket(CONTROL_TCP_PORT_SOCKET(socket_), FIONBIO,
                                  &non_blocking) == 0;
 #else
-  opened = opened && fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_SETFL,
-                           fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_GETFL, 0) |
-                               O_NONBLOCK) == 0;
+  if (opened) {
+    int const flags = fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_GETFL, 0);
+    // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
+    int const non_blocking_flags = flags | O_NONBLOCK;
+    opened = fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_SETFL,
+                   non_blocking_flags) == 0;
+  }
 #endif
   if (!opened) Close();
   return opened;

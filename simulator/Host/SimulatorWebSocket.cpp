@@ -63,8 +63,8 @@ std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {
     frame += static_cast<char>(payload.size());
   } else {
     frame += static_cast<char>(SIMULATOR_WEB_SOCKET_LENGTH_16_BIT);
-    frame += static_cast<char>((payload.size() >> 8) & 0xFF);
-    frame += static_cast<char>(payload.size() & 0xFF);
+    frame += static_cast<char>((payload.size() >> 8U) & 0xFFU);
+    frame += static_cast<char>(payload.size() & 0xFFU);
   }
   return frame + payload;
 }
@@ -91,7 +91,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
   }
   if (length == SIMULATOR_WEB_SOCKET_LENGTH_16_BIT) {
     if (frame.size() < SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT) return false;
-    length = (static_cast<size_t>(static_cast<uint8_t>(frame[2])) << 8) |
+    length = (static_cast<size_t>(static_cast<uint8_t>(frame[2])) << 8U) |
              static_cast<uint8_t>(frame[3]);
     offset = SIMULATOR_WEB_SOCKET_HEADER_LENGTH_16_BIT;
   }
@@ -100,8 +100,9 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
   payload->assign(frame, offset + mask_length, length);
   if (mask_length > 0) {
     for (size_t i = 0; i < length; i++)
-      (*payload)[i] =
-          static_cast<char>((*payload)[i] ^ frame[offset + i % mask_length]);
+      (*payload)[i] = static_cast<char>(
+          static_cast<uint8_t>((*payload)[i]) ^
+          static_cast<uint8_t>(frame[offset + i % mask_length]));
   }
   *opcode = static_cast<uint8_t>(frame[0]) & SIMULATOR_WEB_SOCKET_OPCODE_MASK;
   buffer->erase(0, offset + mask_length + length);
@@ -133,7 +134,7 @@ void SimulatorWebSocket::CalculateSha1(std::string const& message,
        word++) {
     for (uint8_t part = 0; part < 4; part++)
       digest[word * 4 + part] =
-          static_cast<uint8_t>(state[word] >> (24 - 8 * part));
+          static_cast<uint8_t>(state[word] >> (24U - 8U * part));
   }
 }
 
@@ -145,14 +146,14 @@ std::string SimulatorWebSocket::ConvertToBase64(uint8_t const* bytes,
 
   for (size_t offset = 0; offset < length; offset += 3) {
     size_t const remaining = length - offset;
-    uint32_t group = static_cast<uint32_t>(bytes[offset]) << 16;
+    uint32_t group = static_cast<uint32_t>(bytes[offset]) << 16U;
 
-    if (remaining > 1) group |= static_cast<uint32_t>(bytes[offset + 1]) << 8;
+    if (remaining > 1) group |= static_cast<uint32_t>(bytes[offset + 1]) << 8U;
     if (remaining > 2) group |= bytes[offset + 2];
-    encoded += kAlphabet[(group >> 18) & 0x3F];
-    encoded += kAlphabet[(group >> 12) & 0x3F];
-    encoded += remaining > 1 ? kAlphabet[(group >> 6) & 0x3F] : '=';
-    encoded += remaining > 2 ? kAlphabet[group & 0x3F] : '=';
+    encoded += kAlphabet[(group >> 18U) & 0x3FU];
+    encoded += kAlphabet[(group >> 12U) & 0x3FU];
+    encoded += remaining > 1 ? kAlphabet[(group >> 6U) & 0x3FU] : '=';
+    encoded += remaining > 2 ? kAlphabet[group & 0x3FU] : '=';
   }
   return encoded;
 }
@@ -195,8 +196,10 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
   while (padded.size() % SIMULATOR_WEB_SOCKET_SHA1_BLOCK_LENGTH !=
          SIMULATOR_WEB_SOCKET_SHA1_LENGTH_POSITION)
     padded.push_back('\0');
-  for (int8_t shift = 56; shift >= 0; shift -= 8)
-    padded.push_back(static_cast<char>((bits >> shift) & 0xFF));
+  for (uint8_t i = 1; i <= 8; i++) {
+    uint8_t const shift = static_cast<uint8_t>(64U - 8U * i);
+    padded.push_back(static_cast<char>((bits >> shift) & 0xFFU));
+  }
   return padded;
 }
 
@@ -212,9 +215,9 @@ void SimulatorWebSocket::ProcessSha1Block(uint8_t const* block,
 
   for (uint8_t i = 0; i < SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK;
        i++, block += 4) {
-    word[i] = (static_cast<uint32_t>(block[0]) << 24) |
-              (static_cast<uint32_t>(block[1]) << 16) |
-              (static_cast<uint32_t>(block[2]) << 8) | block[3];
+    word[i] = (static_cast<uint32_t>(block[0]) << 24U) |
+              (static_cast<uint32_t>(block[1]) << 16U) |
+              (static_cast<uint32_t>(block[2]) << 8U) | block[3];
   }
   for (uint8_t i = SIMULATOR_WEB_SOCKET_SHA1_WORDS_PER_BLOCK;
        i < SIMULATOR_WEB_SOCKET_SHA1_ROUNDS; i++) {
@@ -257,5 +260,5 @@ uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c,
 // Returns `value` rotated to the left by `bits`, 1 to 31: the bits shifted out
 // on the left come back in on the right.
 uint32_t SimulatorWebSocket::RotateLeft(uint32_t value, uint8_t bits) {
-  return (value << bits) | (value >> (32 - bits));
+  return (value << bits) | (value >> (32U - bits));
 }

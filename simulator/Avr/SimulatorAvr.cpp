@@ -171,8 +171,9 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
   simulator->clock_ = value != 0;
   if (!rising) return;
   mock::chain.ShiftBit(simulator->data_in_);
-  simulator->bits_ = static_cast<uint8_t>((simulator->bits_ << 1) |
-                                          (simulator->data_in_ ? 1 : 0));
+  uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1U)};
+  simulator->bits_ =
+      static_cast<uint8_t>(shifted | (simulator->data_in_ ? 1U : 0U));
   if (++simulator->bit_count_ == 8) {
     simulator->TakeByte(simulator->bits_);
     simulator->bit_count_ = 0;

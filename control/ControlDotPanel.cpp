@@ -178,7 +178,7 @@ void ControlDotPanel::PaintDot(uint8_t column, uint8_t row) {
 }
 
 bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
-  return ((columns_[column] >> row) & 0x01) != 0;
+  return (columns_[column] & (1U << row)) != 0U;
 }
 
 /*

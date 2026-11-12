@@ -65,7 +65,10 @@ inline void* pgm_read_ptr(AddressType const* address) {
 #define LSBFIRST 0
 #define MSBFIRST 1
 
-#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+// The core's bitRead() is (((value) >> (bit)) & 0x01), whose & takes the int
+// the shift returns; clang-tidy leaves it alone in the core, a system header,
+// but not here.
+#define bitRead(value, bit) mock::BitRead((value), (bit))
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
 // The core's bitClear() is ((value) &= ~(1UL << (bit))), which narrows an
 // unsigned long into the byte it clears a bit of: avr-gcc warns of none,
@@ -116,6 +119,14 @@ extern HardwareSerial Serial;
 
 namespace mock {
 
+/* bitRead() of the core, on an unsigned value */
+template <typename T, typename BitType>
+uint8_t BitRead(T value, BitType bit) {
+  uint32_t const shifted{static_cast<uint32_t>(value) >>
+                         static_cast<uint32_t>(bit)};
+  return static_cast<uint8_t>(shifted & 0x01U);
+}
+
 /* bitClear() of the core, without its narrowing */
 template <typename T>
 T& BitClear(T& value, uint8_t bit) {
@@ -145,7 +156,7 @@ mock::PortRegister* portOutputRegister(uint8_t port);
  * with while it writes a port: cli() clears the I bit, 0x80, which the library
  * puts back by restoring SREG */
 extern uint8_t SREG;
-inline void cli() { SREG &= 0x7F; }
+inline void cli() { SREG &= 0x7FU; }
 // NOLINTEND(readability-identifier-naming)
 
 namespace mock {

@@ -41,15 +41,15 @@ static std::string ClientFrame(std::string const& payload) {
 
   frame += static_cast<char>(0x81);
   if (payload.size() < 126) {
-    frame += static_cast<char>(0x80 | payload.size());
+    frame += static_cast<char>(0x80U | payload.size());
   } else {
-    frame += static_cast<char>(0x80 | 126);
-    frame += static_cast<char>(payload.size() >> 8);
-    frame += static_cast<char>(payload.size() & 0xFF);
+    frame += static_cast<char>(0x80U | 126U);
+    frame += static_cast<char>(payload.size() >> 8U);
+    frame += static_cast<char>(payload.size() & 0xFFU);
   }
   frame.append(reinterpret_cast<char const*>(mask), sizeof(mask));
   for (size_t i = 0; i < payload.size(); i++)
-    frame += static_cast<char>(payload[i] ^ mask[i % 4]);
+    frame += static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask[i % 4]);
   return frame;
 }
 
@@ -119,8 +119,8 @@ TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes) {
 
   ASSERT_EQ(frame.size(), 4u + 300u);
   EXPECT_EQ(static_cast<uint8_t>(frame[1]), 126);
-  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 300 >> 8);
-  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 300 & 0xFF);
+  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 300U >> 8U);
+  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 300U & 0xFFU);
   EXPECT_EQ(frame.substr(4), std::string(300, 'x'));
 }
 
