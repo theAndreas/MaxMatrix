@@ -809,9 +809,16 @@ under two names, as `google-readability-braces-around-statements` and
 They come on in this order, the smallest first: each pull request stays one a reviewer can
 read, and what an early group fixes, a later one no longer finds, as the braces both `google-*`
 and `readability-*` ask for. Some 510 of the places of `cppcoreguidelines-macro-usage` and
-`modernize-macro-to-enum` lie in `test/mock/binary.h`, the stand-in for the core's `B00000001`
-and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reaches
-through the tests' header filter; that is a question for the template before those groups.
+`modernize-macro-to-enum` lay in `test/mock/binary.h`, the stand-in for the core's `B00000001`
+and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reached
+through the tests' header filter. CMake now includes the mock as `SYSTEM`, as the board
+includes the core it stands in for: neither clang-tidy nor the compiler reports what lies in
+its headers, which took the 513 places of the two checks in `binary.h`, seen from
+`MaxMatrixTest.cpp`, to none, and `bitRead()` is the core's macro again. The mock's `NOLINT`s
+stay, as clangd reads a header of the mock open in the editor as a file of its own, and
+`bitClear()` stays a function, as `-Wconversion` reports a macro where it is expanded, which
+`SYSTEM` does not cover. The model of the MAX7219 in `test/mock/Max7219.h` is no stand-in,
+but is now left out as well.
 
 ### 37 Files named as their class
 
