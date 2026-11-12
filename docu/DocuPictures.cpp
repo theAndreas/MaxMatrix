@@ -10,7 +10,7 @@
  *
  * Nothing in the pictures is drawn by hand. Every LED is placed by calling the
  * library, with SetDot(), SetColumn() or SetRow(), and reading back which
- * register bit of which MAX7219 the model in test/mock/ latched, or which dot
+ * register bit of which MAX7219 the model in test/model/ latched, or which dot
  * GetDot() reports. The module types in the titles are the wirings of the model
  * on which a pattern set with that module type appears upright. So a picture
  * cannot say something the library does not do, and the test docu/pictures

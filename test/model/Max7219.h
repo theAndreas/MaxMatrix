@@ -9,8 +9,8 @@
  * and the display wrong. Only the logic is modelled - no timing, nothing
  * electrical, and no multiplexing: a digit within the scan limit shows its
  * register for as long as the chip is not shut down. */
-#ifndef MAXMATRIX_TEST_MOCK_MAX7219_H_
-#define MAXMATRIX_TEST_MOCK_MAX7219_H_
+#ifndef MAXMATRIX_TEST_MODEL_MAX7219_H_
+#define MAXMATRIX_TEST_MODEL_MAX7219_H_
 
 #include <stdint.h>
 
@@ -77,4 +77,4 @@ class Max7219Chain {
   std::vector<uint8_t> shift_register_;
 };
 
-#endif  // MAXMATRIX_TEST_MOCK_MAX7219_H_
+#endif  // MAXMATRIX_TEST_MODEL_MAX7219_H_

@@ -1,6 +1,6 @@
 # Checking on hardware
 
-The tests reach the LEDs only through the model in `test/mock/` and the real binary only in simavr. Neither has a
+The tests reach the LEDs only through the model in `test/model/` and the real binary only in simavr. Neither has a
 MAX7219's timing on a real wire, nor a module that is wired other than its datasheet says. So a change to the
 transfer code is untested until it has run on a matrix, and so is a release. This is what to run then, and what each
 step has to show.

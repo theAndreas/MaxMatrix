@@ -817,8 +817,9 @@ its headers, which took the 513 places of the two checks in `binary.h`, seen fro
 `MaxMatrixTest.cpp`, to none, and `bitRead()` is the core's macro again. The mock's `NOLINT`s
 stay, as clangd reads a header of the mock open in the editor as a file of its own, and
 `bitClear()` stays a function, as `-Wconversion` reports a macro where it is expanded, which
-`SYSTEM` does not cover. The model of the MAX7219 in `test/mock/Max7219.h` is no stand-in,
-but is now left out as well.
+`SYSTEM` does not cover. The model of the MAX7219 is no stand-in but our own code, so it
+lies in `test/model/` instead, included as every header of the tests and checked as they are;
+its source, which `tools/tidy.sh` left out with the mock until then, had 19 places to fix.
 
 ### 37 Files named as their class
 

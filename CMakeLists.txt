@@ -31,16 +31,22 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 enable_testing()
 
-add_library(ArduinoMock STATIC test/mock/Arduino.cpp test/mock/Max7219.cpp)
+# The model of the MAX7219 chain, which the stand-in drives: our own code, so its headers are
+# checked as every other of the tests.
+add_library(Max7219Model STATIC test/model/Max7219.cpp)
+target_include_directories(Max7219Model PUBLIC test/model)
+
+add_library(ArduinoMock STATIC test/mock/Arduino.cpp)
 # SYSTEM, as the board takes the core it stands in for: neither the compiler nor clang-tidy
 # reports what lies in its headers, as the core's binary.h and bitRead(), which are the core's
 # and not this repository's. Its sources are compiled with every warning still.
 target_include_directories(ArduinoMock SYSTEM PUBLIC test/mock)
+target_link_libraries(ArduinoMock PUBLIC Max7219Model)
 
 # The MAX7219 model on its own, once: it does not depend on the transfer path.
 add_executable(Max7219Test test/Max7219Test.cpp)
 set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
-target_link_libraries(Max7219Test PRIVATE ArduinoMock GTest::gtest_main)
+target_link_libraries(Max7219Test PRIVATE Max7219Model GTest::gtest_main)
 gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 
 # The simulator's hosts once as well, the web host and the serial port on TCP: they know neither the library nor the

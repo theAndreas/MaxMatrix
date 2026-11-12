@@ -178,8 +178,10 @@ exception goes at the end of a list, with its reason.
   AVR binary that `tools/wokwi.py EXAMPLE` builds; to look at, not tested in CI.
 - `OIL.md` — the open issue list: what is planned, in which order, and why. A PR that works
   on an item updates its row.
-- `test/` — host-side tests on GoogleTest against a mock of the Arduino core and a model of
-  the MAX7219 chain in `test/mock/`, built by `CMakeLists.txt` in the root.
+- `test/` — host-side tests on GoogleTest against a mock of the Arduino core in `test/mock/`
+  and a model of the MAX7219 chain in `test/model/`, built by `CMakeLists.txt` in the root.
+  CMake includes the mock as a system header, as the board includes the core, so that nothing
+  in it is reported; the model is our own code and is checked as the tests are.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
   `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
   runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a
@@ -478,7 +480,7 @@ an SPI transaction, a frame that ends within a byte, and a port written with the
 every library test ends by checking that there are none and that the interrupts are on again.
 
 Every bit and every rising chip select also drive `mock::chain`, a model of the MAX7219 chain
-(`test/mock/Max7219.h`): it shifts like the hardware and each chip latches its register on the
+(`test/model/Max7219.h`): it shifts like the hardware and each chip latches its register on the
 rising edge, so a frame that is too short or a wrong address shows on the model's LEDs.
 `Display()` in the tests reads them back laid out like `matrix_buffer_`, and every library test
 ends by checking that the two agree. A test of what is lit asks the model, not the buffer. The
