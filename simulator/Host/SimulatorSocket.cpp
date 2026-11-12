@@ -46,7 +46,9 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 }
 
 void SimulatorSocket::SetNonBlocking(int socket) {
-  fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
+  int const flags = fcntl(socket, F_GETFL, 0);
+  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
+  fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void SimulatorSocket::SetReceiveTimeout(int socket, uint32_t milliseconds) {

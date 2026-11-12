@@ -406,7 +406,7 @@ static std::string DrawCoordinates() {
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   for (byte bit = 0; bit < 8; bit++) {
     matrix.Clear();
-    matrix.SetColumn(DOCU_EXAMPLE_COLUMN, static_cast<byte>(1 << bit));
+    matrix.SetColumn(DOCU_EXAMPLE_COLUMN, static_cast<byte>(1U << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
         if (matrix.GetDot(x, y).GetValue())
@@ -415,7 +415,7 @@ static std::string DrawCoordinates() {
     }
     matrix.Clear();
     matrix.SetRow(DOCU_EXAMPLE_ROW_MODULE, DOCU_EXAMPLE_ROW,
-                  static_cast<byte>(1 << bit));
+                  static_cast<byte>(1U << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
         if (matrix.GetDot(x, y).GetValue())

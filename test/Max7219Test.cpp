@@ -67,7 +67,8 @@ TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
   Max7219Chain chain = ChainInNormalOperation(1);
   uint16_t const pair = 0x0222;
 
-  for (int8_t bit = 15; bit >= 1; bit--) chain.ShiftBit((pair >> bit) & 0x01);
+  for (uint8_t bit = 15; bit >= 1; bit--)
+    chain.ShiftBit((pair & (1U << bit)) != 0U);
   chain.Latch();
   EXPECT_EQ(chain.chips[0].digit[0], 0x11);
   EXPECT_EQ(chain.chips[0].digit[1], 0x00);
@@ -142,7 +143,7 @@ TEST(Max7219Test, CodeBDecodesOnlyTheSelectedDigits) {
   SendFrame(chain, {{0x09, 0x01}});
   SendFrame(chain, {{0x01, 0x85}});
   SendFrame(chain, {{0x02, 0x85}});
-  EXPECT_EQ(chain.chips[0].Segments(0), 0x80 | 0x5B);  // DP and '5'
+  EXPECT_EQ(chain.chips[0].Segments(0), 0x80U | 0x5BU);  // DP and '5'
   EXPECT_EQ(chain.chips[0].Segments(1), 0x85);
 }
 
@@ -156,7 +157,7 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
 static Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                         uint8_t digit, uint8_t segment) {
   Max7219Chain chain = ChainInNormalOperation(number_of_chips);
-  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1 << segment);
+  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1U << segment);
   return chain;
 }
 

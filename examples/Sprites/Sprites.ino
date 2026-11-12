@@ -44,7 +44,8 @@ void loop() {
        * dark without a flicker */
       max_matrix::Batch batch(matrix);
       matrix.Clear();
-      matrix.SetSprite(x, kSpriteY, (x & 1) ? kInvaderLegsOut : kInvaderLegsIn);
+      matrix.SetSprite(x, kSpriteY,
+                       x % 2 != 0 ? kInvaderLegsOut : kInvaderLegsIn);
     }
     delay(kStepDelayMs);
   }

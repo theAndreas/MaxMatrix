@@ -311,7 +311,7 @@ void Panel::ShiftRows(bool up, ShiftFill fill) {
                           : fill == ShiftFill::kKeep ? bitRead(value, fill_row)
                                                      : false;
     byte shifted =
-        up ? static_cast<byte>(value >> 1) : static_cast<byte>(value << 1);
+        up ? static_cast<byte>(value >> 1U) : static_cast<byte>(value << 1U);
     bitWrite(shifted, fill_row, fill_dot);
     SetLine(column, 0, true, shifted);
   }
@@ -363,11 +363,12 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
   }
 }
 
-// Returns `input` with its bits in the opposite order.
+// Returns `input` with its bits in the opposite order: the halves swapped, then
+// the pairs in each half, then the bits in each pair.
 byte Panel::ReverseByte(byte input) {
-  input = static_cast<byte>((input & 0xF0) >> 4 | (input & 0x0F) << 4);
-  input = static_cast<byte>((input & 0xCC) >> 2 | (input & 0x33) << 2);
-  input = static_cast<byte>((input & 0xAA) >> 1 | (input & 0x55) << 1);
+  input = static_cast<byte>((input & 0xF0U) >> 4U | (input & 0x0FU) << 4U);
+  input = static_cast<byte>((input & 0xCCU) >> 2U | (input & 0x33U) << 2U);
+  input = static_cast<byte>((input & 0xAAU) >> 1U | (input & 0x55U) << 1U);
 
   return input;
 }

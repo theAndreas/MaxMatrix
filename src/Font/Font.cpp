@@ -24,6 +24,21 @@ constexpr uint8_t kVersion2{2};
 constexpr uint8_t kHeaderLength1{5};
 constexpr uint8_t kHeaderLength2{7};
 
+/* the bits of a two byte UTF-8 sequence: the lead byte carries the two high
+ * bits of the char, the continuation byte, 10xxxxxx, the six low ones */
+constexpr uint8_t kUtf8LeadBits{0x03U};
+constexpr uint8_t kUtf8ContinuationMask{0xC0U};
+constexpr uint8_t kUtf8ContinuationTag{0x80U};
+constexpr uint8_t kUtf8ContinuationBits{0x3FU};
+constexpr uint8_t kUtf8ContinuationWidth{6U};
+
+// Reads a number of two bytes from flash, the high byte first, as the header
+// of a font of version 2 holds it.
+uint16_t ReadNumber(uint8_t const* address) {
+  uint16_t const high{static_cast<uint16_t>(pgm_read_byte(address) << 8U)};
+  return static_cast<uint16_t>(high | pgm_read_byte(address + 1));
+}
+
 }  // namespace
 
 /*
@@ -183,10 +198,8 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
     height = pgm_read_byte(font + 4);
     offset = kHeaderLength1;
   } else if (version == kVersion2 && size >= kHeaderLength2) {
-    first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) |
-                                  pgm_read_byte(font + 3));
-    last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) |
-                                 pgm_read_byte(font + 5));
+    first = ReadNumber(font + 2);
+    last = ReadNumber(font + 4);
     height = pgm_read_byte(font + 6);
     offset = kHeaderLength2;
   } else {
@@ -222,10 +235,8 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
     glyph.height = pgm_read_byte(font + 4);
     font += kHeaderLength1;
   } else {
-    first = static_cast<uint16_t>((pgm_read_byte(font + 2) << 8) |
-                                  pgm_read_byte(font + 3));
-    last = static_cast<uint16_t>((pgm_read_byte(font + 4) << 8) |
-                                 pgm_read_byte(font + 5));
+    first = ReadNumber(font + 2);
+    last = ReadNumber(font + 4);
     glyph.height = pgm_read_byte(font + 6);
     font += kHeaderLength2;
   }
@@ -243,8 +254,14 @@ byte Font::DecodeChar(char const* text, char* c) {
   byte const next_byte{static_cast<byte>(text[1])};
 
   /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
-  if ((0xC2 == lead_byte || 0xC3 == lead_byte) && 0x80 == (next_byte & 0xC0)) {
-    *c = static_cast<char>(((lead_byte & 0x03) << 6) | (next_byte & 0x3F));
+  bool const is_latin_1_lead{0xC2 == lead_byte || 0xC3 == lead_byte};
+  bool const is_continuation{kUtf8ContinuationTag ==
+                             (next_byte & kUtf8ContinuationMask)};
+  if (is_latin_1_lead && is_continuation) {
+    byte const high_bits{static_cast<byte>(lead_byte & kUtf8LeadBits)};
+    byte const low_bits{static_cast<byte>(next_byte & kUtf8ContinuationBits)};
+    *c = static_cast<char>(
+        static_cast<byte>(high_bits << kUtf8ContinuationWidth) | low_bits);
     return 2;
   } else {
     *c = static_cast<char>(lead_byte);

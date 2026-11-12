@@ -274,7 +274,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in, out;
   for (byte module = 0; module < kNumberOfModules; module++)
-    in[module] = 0xA5 ^ (module * 0x3C);
+    in[module] = static_cast<byte>(0xA5U ^ (module * 0x3CU));
 
   for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
@@ -380,7 +380,7 @@ static void DrawPattern(Matrix& matrix) {
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
   for (byte module = 0; module < kNumberOfModules; module++)
-    row[module] = 0x81 ^ (module * 0x16);
+    row[module] = static_cast<byte>(0x81U ^ (module * 0x16U));
 
   matrix_.SetRow(2, row);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
@@ -397,7 +397,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
     Result<byte> value = matrix_.GetRow(0, y);
     EXPECT_EQ(value.GetError(), Error::kOk);
-    EXPECT_EQ(value.GetValue(), bitRead(0xA3, y) ? 1 << (7 - 5) : 0)
+    EXPECT_EQ(value.GetValue(), bitRead(0xA3, y) ? 1U << (7U - 5U) : 0U)
         << "Row " << static_cast<uint16_t>(y);
   }
 }
@@ -528,7 +528,7 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
-      bool expected = (column * 3 + row) & 1;
+      bool expected = ((column * 3U + row) & 1U) != 0U;
       matrix_.SetDot(column, row, expected);
       Result<bool> value = matrix_.GetDot(column, row);
       EXPECT_EQ(value.GetError(), Error::kOk);
@@ -908,7 +908,7 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {
   int32_t frames_before = mock::frames;
 
   matrix_.SetText("Hi!");
-  matrix_.SetDot(0, 0, matrix_.panel_.wired_.GetColumn(0) & 1);
+  matrix_.SetDot(0, 0, (matrix_.panel_.wired_.GetColumn(0) & 1U) != 0U);
   EXPECT_EQ(mock::frames, frames_before);
 }
 
