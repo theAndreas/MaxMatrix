@@ -97,14 +97,30 @@ endif()
 
 # One library and one test binary per variant: the two transfer paths are separate code, and the reports of
 # MAXMATRIX_DEV_ERROR_DETECT are compiled in only where it is on.
+# The tests of the library, a file per header as in src/ (TS-5 of docs/Testing.md), so that clang-tidy reads
+# them side by side; what they share is in MaxMatrixTestSupport.
+set(MaxMatrixTestSources
+    test/MaxMatrixTestSupport.cpp
+    test/MaxMatrixTest.cpp
+    test/MaxMatrixChainLengthTest.cpp
+    test/MaxMatrixErrorTest.cpp
+    test/Command/CommandTest.cpp
+    test/Font/FontTest.cpp
+    test/Matrix/PanelTest.cpp
+    test/Matrix/WiredTest.cpp
+    test/Max7219/ChainTest.cpp
+    test/Text/TextTest.cpp)
+
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
     target_include_directories(MaxMatrix-${Variant} PUBLIC ${PROJECT_SOURCE_DIR}/src)
     target_compile_definitions(MaxMatrix-${Variant} PUBLIC ${ARGN})
     target_link_libraries(MaxMatrix-${Variant} PUBLIC ArduinoMock)
 
-    add_executable(MaxMatrixTest-${Variant} test/MaxMatrixTest.cpp)
+    add_executable(MaxMatrixTest-${Variant} ${MaxMatrixTestSources})
     set_target_properties(MaxMatrixTest-${Variant} PROPERTIES CXX_STANDARD 17)
+    # MaxMatrixTestSupport.h for the tests in the folders below test/, by its name, as src/ is
+    target_include_directories(MaxMatrixTest-${Variant} PRIVATE ${PROJECT_SOURCE_DIR}/test)
     target_link_libraries(MaxMatrixTest-${Variant} PRIVATE MaxMatrix-${Variant} GTest::gtest_main)
     # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
     gtest_discover_tests(MaxMatrixTest-${Variant} TEST_PREFIX "${Variant}/" NO_PRETTY_VALUES)

@@ -181,7 +181,10 @@ exception goes at the end of a list, with its reason.
 - `test/` — host-side tests on GoogleTest against a mock of the Arduino core in `test/mock/`
   and a model of the MAX7219 chain in `test/model/`, built by `CMakeLists.txt` in the root.
   CMake includes the mock as a system header, as the board includes the core, so that nothing
-  in it is reported; the model is our own code and is checked as the tests are.
+  in it is reported; the model is our own code and is checked as the tests are. The tests of
+  the library are a file per header, in folders as in `src/` (`test/Command/CommandTest.cpp`),
+  so that clang-tidy reads them side by side; what they share, the fixtures `MaxMatrixTest`
+  and `MaxMatrixMappingTest`, `Display()` and the reports, is in `MaxMatrixTestSupport.h`.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
   `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
   runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a
@@ -470,8 +473,8 @@ Arduino core are ignored.
 `make tests` configures into `build/host`, builds the library three times, with bit banging,
 with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on each through
 `ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
-first two only. In `det/`, the test file defines `ReportError()` itself and records into
-`Reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
+first two only. In `det/`, `MaxMatrixTestSupport.cpp` defines `ReportError()` itself and records
+into `reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
 only the tests are C++17, which GoogleTest needs. A test that loops over the orientations and
 module types is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
 a falling chip select starts a frame, a rising clock takes the level of data in as a bit, and a
