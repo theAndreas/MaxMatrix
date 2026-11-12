@@ -26,7 +26,7 @@ set -euo pipefail
 # shellcheck source=tools/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-readonly CLANG_TIDY=(uv run --frozen clang-tidy)
+readonly RUN_CLANG_TIDY=(uv run --frozen run-clang-tidy.py)
 readonly TIDY_DIR="${BUILD_DIR}/tidy"
 
 # Prints, as a JSON array, the arguments arduino-cli compiles a file of the sketch
@@ -85,6 +85,39 @@ write_database() {
     })' > "${dir}/compile_commands.json"
 }
 
+# Runs clang-tidy on the files given, with the entries the database in <dir> has for them, one
+# file per core: clang-tidy alone reads one file after the other. run-clang-tidy prints the
+# findings of a file together, and reads every file of the database it is given, so it gets a
+# database of these files alone, written beside the others; a file the database lacks fails
+# here, as clang-tidy fails on it, rather than going unread.
+# Arguments:
+#   dir, the header filter (empty for that of .clang-tidy), then the files
+run_tidy() {
+  local dir="$1"
+  local header_filter="$2"
+  shift 2
+  local selected="${TIDY_DIR}/selected/${dir##*/}"
+  mkdir -p "${selected}"
+  jq --arg root "${ROOT_DIR}" '
+    def path: if (.file | startswith("/")) then .file else .directory + "/" + .file end;
+    ($ARGS.positional | map($root + "/" + .)) as $wanted
+    | [.[] | select(path as $path | any($wanted[]; . == $path))] as $entries
+    | ($wanted - ($entries | map(path))) as $missing
+    | if ($missing | length) > 0
+      then error("in no entry of the database: " + ($missing | join(", ")))
+      else $entries end' \
+    "${dir}/compile_commands.json" --args "$@" > "${selected}/compile_commands.json" ||
+    return 1
+  local args=(-p "${selected}" -j "$(nproc)" -quiet -hide-progress)
+  if [[ -n "${MODULE}" ]]; then
+    args+=("-load=${MODULE}")
+  fi
+  if [[ -n "${header_filter}" ]]; then
+    args+=("-header-filter=${header_filter}")
+  fi
+  "${RUN_CLANG_TIDY[@]}" "${args[@]}"
+}
+
 main() {
   local database_only=0
   if [[ "${1:-}" == "--database-only" ]]; then
@@ -98,11 +131,9 @@ main() {
   mkdir -p "${TIDY_DIR}"
   local sources
   list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*'
-  local clang_tidy=("${CLANG_TIDY[@]}")
+  MODULE=''
   if ((!database_only)); then
-    local module
-    module="$(tools/lib/tidy_module.sh)"
-    clang_tidy+=("--load=${module}")
+    MODULE="$(tools/lib/tidy_module.sh)"
   fi
 
   # Each variant takes other branches of #if. The first is the one clangd reads, see .clangd.
@@ -117,8 +148,7 @@ main() {
       exit 0
     fi
     echo "clang-tidy, ${variant}:"
-    "${clang_tidy[@]}" -p "${TIDY_DIR}/${variant}" --quiet \
-      "${sources[@]}" || failed=1
+    run_tidy "${TIDY_DIR}/${variant}" '' "${sources[@]}" || failed=1
   done
 
   # The tests on the host, against the mock, with the database CMake writes. Only what lies in
@@ -140,9 +170,7 @@ main() {
   list_files tests '\.cpp$' "${paths[@]}"
   cmake --preset default >/dev/null
   echo "clang-tidy, the tests on the host:"
-  "${clang_tidy[@]}" -p "${BUILD_DIR}/host" --quiet \
-    --header-filter="(^|/)(${filter})/" \
-    "${tests[@]}" || failed=1
+  run_tidy "${BUILD_DIR}/host" "(^|/)(${filter})/" "${tests[@]}" || failed=1
   exit "${failed}"
 }
 
