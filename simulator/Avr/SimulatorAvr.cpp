@@ -145,10 +145,11 @@ void SimulatorAvr::ReceiveSerial() {
 // Adds `value`, the byte on the wire, to the frame as the page shows it; a byte
 // outside a frame is an error, as in the Arduino stand-in.
 void SimulatorAvr::TakeByte(uint8_t value) const {
-  if (chip_select_)
+  if (chip_select_) {
     mock::errors++;
-  else
+  } else {
     mock::frame.push_back(value);
+  }
 }
 
 // DIN changed: `irq` is the pin, `value` its level, `object` the SimulatorAvr.

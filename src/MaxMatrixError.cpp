@@ -41,8 +41,9 @@ __FlashStringHelper const* Status::GetErrorText() const {
   char const* text = kErrorTextUnknownError;
   uint8_t const index = static_cast<uint8_t>(error_);
 
-  if (index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0]))
+  if (index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) {
     text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));
+  }
   return reinterpret_cast<__FlashStringHelper const*>(text);
 }
 

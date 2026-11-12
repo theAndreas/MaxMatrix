@@ -157,13 +157,16 @@ static bool IsUpright(Max7219Wiring const& wiring) {
 
   matrix.Clear();
   for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++)
+    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
       matrix.SetDot(x, y, (x * x + 3 * y + x * y) % 3 == 0);
+    }
   }
   for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
     for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-      if (mock::chain.IsLit(wiring, x, y) != ((x * x + 3 * y + x * y) % 3 == 0))
+      if (mock::chain.IsLit(wiring, x, y) !=
+          ((x * x + 3 * y + x * y) % 3 == 0)) {
         upright = false;
+      }
     }
   }
   return upright;
@@ -187,8 +190,9 @@ static std::string GetModules() {
     for (auto const& named : kModuleNames) {
       if (named.wiring->digits_as_rows == wiring.digits_as_rows &&
           named.wiring->reversed_columns == wiring.reversed_columns &&
-          named.wiring->reversed_rows == wiring.reversed_rows)
+          named.wiring->reversed_rows == wiring.reversed_rows) {
         modules += std::string(" (") + named.name + ")";
+      }
     }
   }
   return modules.empty() ? "no module" : modules;
@@ -257,9 +261,10 @@ static void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
 
   svg->AddRect(GetCellX(x) + inset, GetCellY(y) + inset, DOCU_LED, DOCU_LED,
                colour, "none", 3);
-  if (!label.empty())
+  if (!label.empty()) {
     svg->AddText(GetCellX(x) + DOCU_CELL / 2, GetCellY(y) + DOCU_CELL / 2 + 4,
                  label, DOCU_FONT_LED, "#ffffff", "middle", true);
+  }
 }
 
 /*!
@@ -277,9 +282,10 @@ static void DrawPanel(DocuSvg* svg, std::string const& title) {
   int32_t const module_height = max_matrix::kRowNumberOfModule * DOCU_CELL;
   DocuLed led;
 
-  if (!title.empty())
+  if (!title.empty()) {
     svg->AddText(DOCU_LEFT, 30, title, DOCU_FONT_TITLE, DOCU_COLOUR_TEXT,
                  "start", true);
+  }
   for (byte module = 0; module < DOCU_NUMBER_OF_MODULES; module++) {
     int32_t const left = GetCellX(module * max_matrix::kColumnNumberOfModule);
     svg->AddRect(left - 4, DOCU_TOP - 4, module_width + 8, module_height + 8,
@@ -409,8 +415,9 @@ static std::string DrawCoordinates() {
     matrix.SetColumn(DOCU_EXAMPLE_COLUMN, static_cast<byte>(1U << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-        if (matrix.GetDot(x, y).GetValue())
+        if (matrix.GetDot(x, y).GetValue()) {
           column_labels[x][y] = std::to_string(bit);
+        }
       }
     }
     matrix.Clear();
@@ -418,8 +425,9 @@ static std::string DrawCoordinates() {
                   static_cast<byte>(1U << bit));
     for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
       for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-        if (matrix.GetDot(x, y).GetValue())
+        if (matrix.GetDot(x, y).GetValue()) {
           row_labels[x][y] = std::to_string(bit);
+        }
       }
     }
   }
@@ -427,12 +435,13 @@ static std::string DrawCoordinates() {
   DrawPanel(&svg, "");
   for (byte x = 0; x < DOCU_NUMBER_OF_COLUMNS; x++) {
     for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-      if (!column_labels[x][y].empty())
+      if (!column_labels[x][y].empty()) {
         DrawLed(&svg, x, y, DOCU_COLOUR_LED, column_labels[x][y]);
-      else if (!row_labels[x][y].empty())
+      } else if (!row_labels[x][y].empty()) {
         DrawLed(&svg, x, y, DOCU_COLOUR_ROW, row_labels[x][y]);
-      else
+      } else {
         DrawLed(&svg, x, y, DOCU_COLOUR_LED_OFF, "");
+      }
     }
   }
 

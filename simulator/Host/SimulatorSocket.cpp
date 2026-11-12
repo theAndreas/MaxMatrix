@@ -65,12 +65,13 @@ bool SimulatorSocket::SendAll(int socket, std::string const& data) {
   while (sent < data.size()) {
     ssize_t const written =
         send(socket, data.data() + sent, data.size() - sent, MSG_NOSIGNAL);
-    if (written > 0)
+    if (written > 0) {
       sent += static_cast<size_t>(written);
-    else if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+    } else if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
       continue;
-    else
+    } else {
       return false;
+    }
   }
   return true;
 }

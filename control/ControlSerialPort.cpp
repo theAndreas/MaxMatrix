@@ -176,10 +176,11 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   // so no table maps one to the other.
   opened = opened && cfsetspeed(&settings, baud_rate) == 0 &&
            tcsetattr(descriptor_, TCSANOW, &settings) == 0;
-  if (opened)
+  if (opened) {
     tcflush(descriptor_, TCIOFLUSH);
-  else
+  } else {
     Close();
+  }
   return opened;
 }
 
@@ -190,8 +191,9 @@ std::vector<std::string> ControlSerialPort::List() {
   for (char const* const pattern : patterns) {
     glob_t found = glob_t();
     if (glob(pattern, 0, nullptr, &found) == 0) {
-      for (size_t i = 0; i < found.gl_pathc; i++)
+      for (size_t i = 0; i < found.gl_pathc; i++) {
         ports.push_back(found.gl_pathv[i]);
+      }
     }
     globfree(&found);
   }

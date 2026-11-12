@@ -95,8 +95,9 @@ int main(int argc, char** argv) {
     front_end.Follow(panel, now);
     // simavr runs faster than the Uno, so in real time it waits for the host's
     // clock to catch up.
-    if (real_time)
+    if (real_time) {
       std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
+    }
   }
   bool const passed =
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&

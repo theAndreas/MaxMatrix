@@ -49,10 +49,11 @@ Command::Command() {
 Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   if (c == kCarriageReturn) return CommandState::kPending;
   if (c != kLineEnd) {
-    if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH)
+    if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH) {
       line_[line_length_++] = c;
-    else
+    } else {
       line_too_long_ = true;
+    }
     return CommandState::kPending;
   }
 
@@ -90,14 +91,15 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
     matrix.Clear();
   } else {
     *value++ = internal::kNullCharacter;
-    if (0 == strcmp_P(text, PSTR("text")))
+    if (0 == strcmp_P(text, PSTR("text"))) {
       status = ExecuteText(matrix, value);
-    else if (0 == strcmp_P(text, PSTR("textShift")))
+    } else if (0 == strcmp_P(text, PSTR("textShift"))) {
       status = ExecuteTextShift(matrix, value);
-    else if (0 == strcmp_P(text, PSTR("setDot")))
+    } else if (0 == strcmp_P(text, PSTR("setDot"))) {
       status = ExecuteDot(matrix, value);
-    else
+    } else {
       status = ExecuteSetting(matrix, text, value);
+    }
   }
   if (!status.IsOk()) return status.GetError();
   return CommandState::kDone;
@@ -212,8 +214,9 @@ Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
   if (*text == internal::kNullCharacter) return Error::kNotANumber;
   for (; *text != internal::kNullCharacter; text++) {
     if (*text < '0' || *text > '9') return Error::kNotANumber;
-    if (value <= maximum)
+    if (value <= maximum) {
       value = value * 10 + static_cast<uint32_t>(*text - '0');
+    }
   }
   if (value > maximum) return Error::kOutOfRange;
   return static_cast<uint16_t>(value);

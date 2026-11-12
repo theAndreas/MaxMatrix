@@ -91,14 +91,16 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index) {
  */
 bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
   char* end;
-  // What strtoul() returns, until its range is checked below.
-  unsigned long const value = strtoul(text, &end, 10);  // NOLINT(runtime/int)
+  // uint64_t holds what strtoul() returns on every host, until the range check
+  // below.
+  uint64_t const value{strtoul(text, &end, 10)};
 
   /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
    * check then refuses */
   if (end == text || *end != '\0' || value == 0 ||
-      value > SIMULATOR_OPTIONS_MAX_PORT)
+      value > SIMULATOR_OPTIONS_MAX_PORT) {
     return false;
+  }
   *port = static_cast<uint16_t>(value);
   return true;
 }
@@ -119,8 +121,9 @@ bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
   /* written so that NaN, which compares false with everything, is refused as
    * well */
   if (end == text || *end != '\0' ||
-      !(milliseconds >= 1 && milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR))
+      !(milliseconds >= 1 && milliseconds <= SIMULATOR_OPTIONS_MAX_RUN_FOR)) {
     return false;
+  }
   *run_for = static_cast<uint32_t>(milliseconds);
   return true;
 }

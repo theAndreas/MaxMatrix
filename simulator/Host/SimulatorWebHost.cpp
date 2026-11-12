@@ -33,8 +33,9 @@
 SimulatorWebHost::SimulatorWebHost() {
   listener_ = SIMULATOR_SOCKET_NONE;
   page_path_ = nullptr;
-  for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++)
+  for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
     clients_[slot] = SIMULATOR_SOCKET_NONE;
+  }
 }
 
 bool SimulatorWebHost::Begin(uint16_t port, char const* page_path) {
@@ -57,8 +58,9 @@ void SimulatorWebHost::Broadcast(std::string const& text) {
 
   for (uint8_t slot = 0; slot < SIMULATOR_WEB_HOST_MAX_CLIENTS; slot++) {
     if (clients_[slot] != SIMULATOR_SOCKET_NONE &&
-        !SimulatorSocket::SendAll(clients_[slot], frame))
+        !SimulatorSocket::SendAll(clients_[slot], frame)) {
       DropClient(slot);
+    }
   }
 }
 
@@ -105,8 +107,9 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
       DropClient(slot);
       return;
     }
-    if (opcode == SIMULATOR_WEB_SOCKET_OPCODE_TEXT)
+    if (opcode == SIMULATOR_WEB_SOCKET_OPCODE_TEXT) {
       messages->push_back(payload);
+    }
   }
 }
 
@@ -126,11 +129,12 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
     return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) &&
            SimulatorSocket::SendAll(socket, answer);
   }
-  if (path == "/" || path == "/index.html")
+  if (path == "/" || path == "/index.html") {
     SendPage(socket);
-  else
+  } else {
     SendResponse(socket, "404 Not Found", "text/plain",
                  "no such route on the simulator\n");
+  }
   return false;
 }
 
@@ -141,11 +145,12 @@ void SimulatorWebHost::SendPage(int socket) {
   std::stringstream body;
 
   body << file.rdbuf();
-  if (file)
+  if (file) {
     SendResponse(socket, "200 OK", "text/html; charset=utf-8", body.str());
-  else
+  } else {
     SendResponse(socket, "500 Internal Server Error", "text/plain",
                  std::string("cannot read ") + page_path_ + "\n");
+  }
 }
 
 // Finds a slot for a new WebSocket: returns the first slot without a client, or
@@ -154,8 +159,9 @@ uint8_t SimulatorWebHost::FindFreeSlot() const {
   uint8_t slot = 0;
 
   while (slot < SIMULATOR_WEB_HOST_MAX_CLIENTS &&
-         clients_[slot] != SIMULATOR_SOCKET_NONE)
+         clients_[slot] != SIMULATOR_SOCKET_NONE) {
     slot++;
+  }
   return slot;
 }
 
