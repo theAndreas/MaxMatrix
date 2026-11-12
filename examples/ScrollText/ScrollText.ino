@@ -15,12 +15,12 @@
  */
 #include <MaxMatrix.h>
 
-byte const kDataInPin = 11;
-byte const kChipSelectPin = 10;
-byte const kClockPin = 13;
-uint16_t const kShiftIntervalMs = 50;
+byte const kDataInPin{11};
+byte const kChipSelectPin{10};
+byte const kClockPin{13};
+uint16_t const kShiftIntervalMs{50};
 
-max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
 
 /* Text must stay valid while it is shifted, so don't use a local variable; the
  * spaces at its end keep the end apart from the start */

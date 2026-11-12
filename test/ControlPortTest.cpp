@@ -19,17 +19,17 @@
 
 namespace {
 
-uint16_t const kPort = 18086;
+uint16_t const kPort{18086};
 
 // What arrives on `descriptor` within half a second.
 std::string Receive(int descriptor) {
-  pollfd ready = {descriptor, POLLIN, 0};
+  pollfd ready{descriptor, POLLIN, 0};
   std::array<char, 256> chunk{};
 
   if (poll(&ready, 1, 500) <= 0) {
     return "";
   }
-  ssize_t const length = read(descriptor, chunk.data(), chunk.size());
+  ssize_t const length{read(descriptor, chunk.data(), chunk.size())};
   return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
                     : "";
 }
@@ -39,7 +39,7 @@ std::string Receive(int descriptor) {
 std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
-  for (int16_t i = 0; i < 50 && received.empty() && port.Read(&received); i++) {
+  for (int16_t i{0}; i < 50 && received.empty() && port.Read(&received); i++) {
     usleep(10000);
   }
   return received;
@@ -49,8 +49,8 @@ std::string ReadUntilReceived(ControlPort& port) {
 // reads, and `name_` the port the program opens.
 class ControlSerialPortTest : public testing::Test {
  protected:
-  int board_ = -1;
-  int port_end_ = -1;
+  int board_{-1};
+  int port_end_{-1};
   std::string name_;
 
   void SetUp() override {
@@ -135,7 +135,7 @@ TEST(ControlTcpPortTest, CarriesBothWaysToTheSimulator) {
   ASSERT_TRUE(host.Begin(kPort));
   ASSERT_TRUE(port.Open(kPort));
   EXPECT_TRUE(port.Write("clear\n"));
-  for (int16_t i = 0; i < 50 && received.empty(); i++) {
+  for (int16_t i{0}; i < 50 && received.empty(); i++) {
     host.Task(&received);
     usleep(10000);
   }
@@ -156,7 +156,7 @@ TEST(ControlTcpPortTest, ReadSaysWhenTheSimulatorIsGone) {
     ASSERT_TRUE(port.Open(kPort));
     host.Task(&received);
   }
-  for (int16_t i = 0; i < 50 && port.Read(&received); i++) {
+  for (int16_t i{0}; i < 50 && port.Read(&received); i++) {
     usleep(10000);
   }
   EXPECT_FALSE(port.IsOpen());

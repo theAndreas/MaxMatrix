@@ -30,20 +30,19 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   std::vector<std::vector<std::string>> pictures;
 
   ShiftWholeText(text);
-  uint16_t const pass = shift_calls_ - 1;
+  uint16_t const pass{static_cast<uint16_t>(shift_calls_ - 1)};
   ASSERT_GT(pass, 0);
 
   matrix_.Clear();
   matrix_.SetDot(0, 0, true);
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
-  for (uint16_t step = 0; step < kNumberOfColumns + (3 * pass); step++) {
+  for (uint16_t step{0}; step < kNumberOfColumns + (3 * pass); step++) {
     matrix_.ShiftTask();
     pictures.push_back(ShownPicture(matrix_));
   }
   EXPECT_EQ(matrix_.GetState(), State::kStringShift);
   EXPECT_NE(pictures.back(), Picture([](int16_t, int16_t) { return false; }));
-  for (uint16_t step = kNumberOfColumns; step + pass < pictures.size();
-       step++) {
+  for (uint16_t step{kNumberOfColumns}; step + pass < pictures.size(); step++) {
     ASSERT_EQ(pictures[step + pass], pictures[step])
         << "step " << step << " and one pass later";
   }
@@ -65,14 +64,14 @@ TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
   char const text[] = "Hello ";
 
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
-  for (byte step = 0; step < 20; step++) {
+  for (byte step{0}; step < 20; step++) {
     matrix_.ShiftTask();
   }
   std::vector<std::string> const stopped = ShownPicture(matrix_);
 
   matrix_.StopShift();
   EXPECT_EQ(matrix_.GetState(), State::kReady);
-  for (byte step = 0; step < 20; step++) {
+  for (byte step{0}; step < 20; step++) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(ShownPicture(matrix_), stopped);
@@ -83,7 +82,7 @@ TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
  * space it never reached a char's width and space, and the char shifted for
  * ever */
 TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting) {
-  uint16_t steps = 0;
+  uint16_t steps{0};
 
   matrix_.SetSpaceBetweenChars(255);
   ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);

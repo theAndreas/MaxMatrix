@@ -84,7 +84,7 @@ it:
 |---|---|---|
 | T-1 | Integers of fixed width, `uint8_t` to `int32_t`, in `src/`, a loop counter among them: the width of `int` depends on the target, 16 bits on an 8-bit microcontroller and 32 on the host, so a test on the host misses an overflow on the device. A counter takes the type of what it is compared with, `size_t` for a size, `uint8_t` for a small range. `bool`, `char` for text and `size_t` stay; so does `int` where an API of the platform gives it. | Review, until a check of our own (ROADMAP C-5) |
 | T-2 | No implicit conversion that can change a value. | `-Wconversion`, `-Wsign-conversion` |
-| T-3 | Braced initialization: `int count{0};`, `Point p{1, 2};`, and in a member initializer list. | `house-braced-member-init` in the initializer list, Review elsewhere |
+| T-3 | Braced initialization: `int count{0};`, `Point p{1, 2};`, `auto copy{value};`, a data member's default `uint8_t count_{0};`, and in a member initializer list. Not where braces would choose a `std::initializer_list` constructor that is not meant, and not `auto list = {1, 2};`, which is one. A text in a C array keeps `=`, as T-20 writes it: `char const kName[] = "font";`. | `house-braced-var-init`, `house-braced-member-init` |
 | T-4 | `const` to the right of what it makes constant: `char const*`, `T const&`. | clang-format |
 | T-5 | Everything that does not change is `const`; a value known when compiling is `constexpr`. | `misc-const-correctness` |
 | T-6 | `constexpr` before `const` before a macro. A macro only where nothing else will do, as for a conditional build or a macro the platform requires. | `cppcoreguidelines-macro-usage` |

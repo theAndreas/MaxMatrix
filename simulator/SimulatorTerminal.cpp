@@ -44,7 +44,7 @@ std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
        << ", intensity";
   // The modules are counted from the left, as on the page: counting the chips
   // along the chain, as before, had them backwards on a board upside down.
-  for (uint8_t module = 0; module < SimulatorPanel::GetNumberOfModules();
+  for (uint8_t module{0}; module < SimulatorPanel::GetNumberOfModules();
        module++) {
     line << ' ' << static_cast<uint16_t>(panel.GetIntensity(module));
   }

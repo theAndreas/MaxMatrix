@@ -21,15 +21,15 @@
 
 namespace {
 
-uint16_t const kPort = 18087;
+uint16_t const kPort{18087};
 
 // A client connected to the host on loopback, or -1 if the connection failed.
 int Connect() {
-  int const client = socket(AF_INET, SOCK_STREAM, 0);
+  int const client{socket(AF_INET, SOCK_STREAM, 0)};
   if (client < 0) {
     return -1;
   }
-  sockaddr_in address = sockaddr_in();
+  sockaddr_in address{};
 
   address.sin_family = AF_INET;
   address.sin_port = htons(kPort);
@@ -45,13 +45,13 @@ int Connect() {
 // What arrives at `client` within half a second; "" if the host closed the
 // connection or sent nothing.
 std::string Receive(int client) {
-  pollfd ready = {client, POLLIN, 0};
+  pollfd ready{client, POLLIN, 0};
   std::array<char, 256> chunk{};
 
   if (poll(&ready, 1, 500) <= 0) {
     return "";
   }
-  ssize_t const length = recv(client, chunk.data(), chunk.size(), 0);
+  ssize_t const length{recv(client, chunk.data(), chunk.size(), 0)};
   return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
                     : "";
 }
@@ -59,8 +59,8 @@ std::string Receive(int client) {
 // Whether the host has closed the connection of `client` within half a second:
 // a read then returns 0.
 bool IsClosedByHost(int client) {
-  pollfd ready = {client, POLLIN, 0};
-  char c = 0;
+  pollfd ready{client, POLLIN, 0};
+  char c{0};
 
   return poll(&ready, 1, 500) > 0 && recv(client, &c, 1, 0) == 0;
 }
@@ -70,7 +70,7 @@ bool IsClosedByHost(int client) {
 std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
-  for (int16_t i = 0; i < 100 && received.empty(); i++) {
+  for (int16_t i{0}; i < 100 && received.empty(); i++) {
     host.Task(&received);
     usleep(10000);
   }
@@ -83,7 +83,7 @@ TEST(SimulatorSerialHostTest, CarriesBothWays) {
   SimulatorSerialHost host;
 
   ASSERT_TRUE(host.Begin(kPort));
-  int const client = Connect();
+  int const client{Connect()};
   ASSERT_GE(client, 0);
 
   ASSERT_EQ(send(client, "text=Hi\n", 8, 0), 8);
@@ -101,10 +101,10 @@ TEST(SimulatorSerialHostTest, ClosesASecondClient) {
   std::string received;
 
   ASSERT_TRUE(host.Begin(kPort));
-  int const first = Connect();
+  int const first{Connect()};
   ASSERT_GE(first, 0);
   host.Task(&received);
-  int const second = Connect();
+  int const second{Connect()};
   ASSERT_GE(second, 0);
   host.Task(&received);
 
@@ -122,13 +122,13 @@ TEST(SimulatorSerialHostTest, TakesTheNextClientOnceTheFirstHasGone) {
   std::string received;
 
   ASSERT_TRUE(host.Begin(kPort));
-  int const first = Connect();
+  int const first{Connect()};
   ASSERT_GE(first, 0);
   host.Task(&received);
   close(first);
   host.Task(&received);
 
-  int const next = Connect();
+  int const next{Connect()};
   ASSERT_GE(next, 0);
   ASSERT_EQ(send(next, "clear\n", 6, 0), 6);
   EXPECT_EQ(TaskUntilReceived(host), "clear\n");

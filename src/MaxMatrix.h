@@ -605,7 +605,7 @@ class Matrix {
 
   /*! \copydoc internal::Panel::ShiftLeft(byte) */
   byte ShiftLeft(byte shifted_in) {
-    byte const shifted_out = panel_.ShiftLeft(shifted_in);
+    byte const shifted_out{panel_.ShiftLeft(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }
@@ -618,7 +618,7 @@ class Matrix {
 
   /*! \copydoc internal::Panel::ShiftRight(byte) */
   byte ShiftRight(byte shifted_in) {
-    byte const shifted_out = panel_.ShiftRight(shifted_in);
+    byte const shifted_out{panel_.ShiftRight(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }

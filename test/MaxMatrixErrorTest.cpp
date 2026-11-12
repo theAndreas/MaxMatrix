@@ -24,7 +24,7 @@ namespace {
 Error FeedText(Matrix& matrix, std::string const& text) {
   Command command;
   TextPrint answer;
-  Result<CommandState> result = CommandState::kPending;
+  Result<CommandState> result{CommandState::kPending};
 
   for (char const c : text) {
     result = command.Feed(matrix, c, answer);
@@ -182,7 +182,7 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
        "unknown command", "line too long", "not a font"}};
   ASSERT_EQ(texts.size(), kNumberOfErrors);
 
-  for (uint8_t error = 0; error < kNumberOfErrors; error++) {
+  for (uint8_t error{0}; error < kNumberOfErrors; error++) {
     EXPECT_EQ(Text(Status(static_cast<Error>(error)).GetErrorText()),
               texts[error])
         << kErrorNames[error];

@@ -52,7 +52,7 @@ void SimulatorSerialHost::Task(std::string* received) {
   // The client first, so that one which has gone frees the port for the next in
   // the same call.
   while (client_ != kSimulatorSocketNone) {
-    ssize_t const length = recv(client_, chunk.data(), chunk.size(), 0);
+    ssize_t const length{recv(client_, chunk.data(), chunk.size(), 0)};
     if (length > 0) {
       received->append(chunk.data(), static_cast<size_t>(length));
     } else {
@@ -78,7 +78,7 @@ void SimulatorSerialHost::Send(std::string const& text) {
  * is taken rather than waiting for an answer that never comes.
  */
 void SimulatorSerialHost::AcceptClient() {
-  int accepted = 0;
+  int accepted{0};
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
     if (client_ == kSimulatorSocketNone) {

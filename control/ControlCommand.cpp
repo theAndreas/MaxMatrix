@@ -64,7 +64,7 @@ bool ControlCommand::DecodePicture(std::string const& line,
       kName.size() + (2U * static_cast<size_t>(kControlNumberOfColumns))) {
     return true;
   }
-  for (size_t i = kName.size(); i < line.size(); i += 2) {
+  for (size_t i{kName.size()}; i < line.size(); i += 2) {
     std::array<char, 3> const digits{{line[i], line[i + 1], '\0'}};
     if ((isxdigit(static_cast<unsigned char>(digits[0])) == 0) ||
         (isxdigit(static_cast<unsigned char>(digits[1])) == 0)) {

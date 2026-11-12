@@ -167,7 +167,7 @@ ControlSerialPort::~ControlSerialPort() { Close(); }
  * it.
  */
 bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
-  termios settings = termios();
+  termios settings{};
 
   Close();
   if (!IsBaudRate(baud_rate)) {
@@ -180,8 +180,8 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   }
 
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
-  bool opened = ioctl(descriptor_, TIOCEXCL) == 0 &&
-                tcgetattr(descriptor_, &settings) == 0;
+  bool opened{ioctl(descriptor_, TIOCEXCL) == 0 &&
+              tcgetattr(descriptor_, &settings) == 0};
   cfmakeraw(&settings);
   settings.c_cflag |= CLOCAL | CREAD;
   settings.c_cflag &= ~(CSTOPB | CRTSCTS);
@@ -204,9 +204,9 @@ std::vector<std::string> ControlSerialPort::List() {
   std::array<char const*, 2> const patterns{{"/dev/ttyACM*", "/dev/ttyUSB*"}};
 
   for (char const* const pattern : patterns) {
-    glob_t found = glob_t();
+    glob_t found{};
     if (glob(pattern, 0, nullptr, &found) == 0) {
-      for (size_t i = 0; i < found.gl_pathc; i++) {
+      for (size_t i{0}; i < found.gl_pathc; i++) {
         // T-20: glob() hands its paths as a pointer and a count
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         ports.emplace_back(found.gl_pathv[i]);
@@ -224,14 +224,14 @@ bool ControlSerialPort::IsOpen() const { return descriptor_ >= 0; }
 // kWriteTimeoutMs: a line is a few bytes, and a port that
 // takes none for that long has no board behind it.
 bool ControlSerialPort::Write(std::string const& data) {
-  size_t sent = 0;
+  size_t sent{0};
 
   if (!IsOpen()) {
     return false;
   }
   while (sent < data.size()) {
-    ssize_t const written = write(descriptor_, &data[sent], data.size() - sent);
-    pollfd writable = {descriptor_, POLLOUT, 0};
+    ssize_t const written{write(descriptor_, &data[sent], data.size() - sent)};
+    pollfd writable{descriptor_, POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && errno == EAGAIN &&
@@ -252,7 +252,7 @@ bool ControlSerialPort::Read(std::string* data) {
     return false;
   }
   for (;;) {
-    ssize_t const length = read(descriptor_, chunk.data(), chunk.size());
+    ssize_t const length{read(descriptor_, chunk.data(), chunk.size())};
     if (length > 0) {
       data->append(chunk.data(), static_cast<size_t>(length));
     } else if (length < 0 && errno == EAGAIN) {

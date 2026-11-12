@@ -26,7 +26,7 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
    * leave the line pending, and answer nothing */
   Result<CommandState> FeedLine(std::string const& text) {
     answer_.text.clear();
-    for (size_t i = 0; i + 1 < text.size(); i++) {
+    for (size_t i{0}; i + 1 < text.size(); i++) {
       EXPECT_EQ(command_.Feed(matrix_, text[i], answer_),
                 CommandState::kPending)
           << "char " << i << " of " << text;
@@ -38,7 +38,7 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
   /* the display after every step of the shift running now, until it is done */
   std::vector<std::vector<byte>> ShiftSteps() {
     std::vector<std::vector<byte>> steps;
-    for (uint16_t step = 0; step < 1000 && matrix_.GetState() != State::kReady;
+    for (uint16_t step{0}; step < 1000 && matrix_.GetState() != State::kReady;
          step++) {
       matrix_.ShiftTask();
       steps.push_back(Display());

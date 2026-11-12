@@ -13,7 +13,7 @@
  */
 #include <MaxMatrix.h>
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
 void setup() {
   matrix.Init();

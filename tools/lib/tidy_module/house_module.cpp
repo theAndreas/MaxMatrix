@@ -7,6 +7,7 @@
 // house-*.
 
 #include "braced_member_init_check.h"
+#include "braced_var_init_check.h"
 #include "clang-tidy/ClangTidyModule.h"
 
 namespace house {
@@ -17,6 +18,7 @@ class HouseModule : public clang::tidy::ClangTidyModule {
   void addCheckFactories(
       clang::tidy::ClangTidyCheckFactories& factories) override {
     factories.registerCheck<BracedMemberInitCheck>("house-braced-member-init");
+    factories.registerCheck<BracedVarInitCheck>("house-braced-var-init");
   }
 };
 

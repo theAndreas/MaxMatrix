@@ -21,7 +21,7 @@
 #include <thread>
 #include <vector>
 
-static uint16_t const kPort = 18081;
+static uint16_t const kPort{18081};
 
 /* a connection that is opened and sends nothing is what a browser does when it
  * opens a socket ahead of a request it may never make; Task() used to wait for
@@ -31,10 +31,10 @@ static uint16_t const kPort = 18081;
 TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing) {
   SimulatorWebHost host;
   std::vector<std::string> messages;
-  sockaddr_in address = sockaddr_in();
+  sockaddr_in address{};
 
   ASSERT_TRUE(host.Begin(kPort, "/dev/null"));
-  int const idle = socket(AF_INET, SOCK_STREAM, 0);
+  int const idle{socket(AF_INET, SOCK_STREAM, 0)};
   ASSERT_GE(idle, 0);
   address.sin_family = AF_INET;
   address.sin_port = htons(kPort);
@@ -43,17 +43,17 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing) {
       connect(idle, reinterpret_cast<sockaddr*>(&address), sizeof(address)), 0);
 
   std::promise<void> task_done;
-  std::future<void> done = task_done.get_future();
-  std::thread closer([idle, &done] {
+  std::future<void> done{task_done.get_future()};
+  std::thread closer{[idle, &done] {
     if (done.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) {
       shutdown(idle, SHUT_RDWR);
     }
-  });
+  }};
 
-  auto const start = std::chrono::steady_clock::now();
+  auto const start{std::chrono::steady_clock::now()};
   host.Task(&messages);
-  auto const elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::steady_clock::now() - start);
+  auto const elapsed{std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start)};
 
   task_done.set_value();
   closer.join();

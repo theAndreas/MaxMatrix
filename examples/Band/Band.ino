@@ -14,19 +14,19 @@
  */
 #include <MaxMatrix.h>
 
-uint32_t const kStepIntervalMs = 60;
+uint32_t const kStepIntervalMs{60};
 
 /* one beat, a column per byte, bit 0 the top row: a line in row 5 with a spike
  * up and down */
-byte const kBeat[] PROGMEM = {
+byte const kBeat[] PROGMEM{
     0x20, 0x20, 0x20, 0x10, 0x08, 0x10, 0x20, 0x20, 0x60, 0x3F, 0xE0, 0x20,
     0x20, 0x20, 0x10, 0x08, 0x08, 0x10, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 };
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
-byte next_column = 0;
-uint32_t last_step = 0;
+byte next_column{0};
+uint32_t last_step{0};
 
 void setup() {
   matrix.Init();

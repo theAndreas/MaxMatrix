@@ -129,8 +129,8 @@ struct Dot {
 
 // the matrix, as a sketch has it, which every picture draws on
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-max_matrix::MatrixOf<kNumberOfModules> matrix(kDataInPin, kChipSelectPin,
-                                              kClockPin);
+max_matrix::MatrixOf<kNumberOfModules> matrix{kDataInPin, kChipSelectPin,
+                                              kClockPin};
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them
  */
@@ -160,10 +160,10 @@ using PerDot = std::array<std::array<Type, max_matrix::kRowNumberOfModule>,
  * \return How many of its LEDs are lit.
  */
 byte CountLit(byte chip, byte digit, DocuLed* led) {
-  uint8_t const segments = mock::chain.chips[chip].digit[digit];
-  byte lit = 0;
+  uint8_t const segments{mock::chain.chips[chip].digit[digit]};
+  byte lit{0};
 
-  for (byte bit = 0; bit < kBitsPerDigit; bit++) {
+  for (byte bit{0}; bit < kBitsPerDigit; bit++) {
     if (bitRead(segments, bit)) {
       *led = DocuLed{chip, digit, bit};
       lit++;
@@ -180,10 +180,10 @@ byte CountLit(byte chip, byte digit, DocuLed* led) {
  * \return True if exactly one LED is lit, or false if none or more than one is.
  */
 bool FindLed(DocuLed* led) {
-  byte lit = 0;
+  byte lit{0};
 
-  for (byte chip = 0; chip < mock::chain.chips.size(); chip++) {
-    for (byte digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
+  for (byte chip{0}; chip < mock::chain.chips.size(); chip++) {
+    for (byte digit{0}; digit < Max7219::kNumberOfDigits; digit++) {
       lit = static_cast<byte>(lit + CountLit(chip, digit, led));
     }
   }
@@ -217,16 +217,16 @@ bool FindLedOfDot(byte x, byte y, DocuLed* led) {
  * \return True if every dot is lit where it was set.
  */
 bool IsUpright(Max7219Wiring const& wiring) {
-  bool upright = true;
+  bool upright{true};
 
   matrix.Clear();
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       matrix.SetDot(x, y, ((x * x) + (3 * y) + (x * y)) % 3 == 0);
     }
   }
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (mock::chain.IsLit(wiring, x, y) !=
           (((x * x) + (3 * y) + (x * y)) % 3 == 0)) {
         upright = false;
@@ -323,9 +323,9 @@ uint16_t GetPictureHeight() {
  */
 void DrawLed(DocuSvg* svg, Dot dot, char const* colour,
              std::string const& label) {
-  int32_t const inset = (kCell - kLed) / 2;
-  int32_t const left = GetCellX(dot.x);
-  int32_t const top = GetCellY(dot.y);
+  int32_t const inset{(kCell - kLed) / 2};
+  int32_t const left{GetCellX(dot.x)};
+  int32_t const top{GetCellY(dot.y)};
 
   svg->AddRect({left + inset, top + inset},
                {static_cast<uint16_t>(kLed), static_cast<uint16_t>(kLed)},
@@ -344,10 +344,10 @@ void DrawLed(DocuSvg* svg, Dot dot, char const* colour,
  * \param[in] module The module, from the left.
  */
 void DrawModule(DocuSvg* svg, byte module) {
-  int32_t const module_width = max_matrix::kColumnNumberOfModule * kCell;
-  int32_t const module_height = max_matrix::kRowNumberOfModule * kCell;
-  int32_t const left = GetCellX(module * max_matrix::kColumnNumberOfModule);
-  int32_t const middle = kTop + (module_height / 2);
+  int32_t const module_width{max_matrix::kColumnNumberOfModule * kCell};
+  int32_t const module_height{max_matrix::kRowNumberOfModule * kCell};
+  int32_t const left{GetCellX(module * max_matrix::kColumnNumberOfModule)};
+  int32_t const middle{kTop + (module_height / 2)};
   DocuLed led{};
 
   svg->AddRect({left - kFramePadding, kTop - kFramePadding},
@@ -360,10 +360,10 @@ void DrawModule(DocuSvg* svg, byte module) {
       led.chip != 0) {
     return;
   }
-  bool const right = module == kNumberOfModules - 1;
-  int32_t const edge = right ? left + module_width + (2 * kFramePadding)
-                             : left - (2 * kFramePadding);
-  int32_t const outside = right ? edge + kArrowLength : edge - kArrowLength;
+  bool const right{module == kNumberOfModules - 1};
+  int32_t const edge{right ? left + module_width + (2 * kFramePadding)
+                           : left - (2 * kFramePadding)};
+  int32_t const outside{right ? edge + kArrowLength : edge - kArrowLength};
   svg->AddArrow({outside, middle}, edge, kArrowThickness, kColourFrame);
   svg->AddText({(outside + edge) / 2, middle - kDinAbove}, "DIN", kDinText);
 }
@@ -374,14 +374,14 @@ void DrawModule(DocuSvg* svg, byte module) {
  * \param[in,out] svg The picture.
  */
 void DrawAxes(DocuSvg* svg) {
-  int32_t const module_height = max_matrix::kRowNumberOfModule * kCell;
-  int32_t const below = kTop + module_height + kAxisBelow;
+  int32_t const module_height{max_matrix::kRowNumberOfModule * kCell};
+  int32_t const below{kTop + module_height + kAxisBelow};
 
-  for (byte x = 0; x < kNumberOfColumns; x++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
     svg->AddText({GetCellX(x) + (kCell / 2), below}, std::to_string(x),
                  kColumnAxisText);
   }
-  for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     svg->AddText(
         {kLeft - kAxisLeft, GetCellY(y) + (kCell / 2) + kBaselineShift},
         std::to_string(y), kRowAxisText);
@@ -403,7 +403,7 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
   if (!title.empty()) {
     svg->AddText({kLeft, kTitleBaseline}, title, kTitleText);
   }
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     DrawModule(svg, module);
   }
   DrawAxes(svg);
@@ -416,8 +416,8 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
  * \return True if every dot lit exactly one LED.
  */
 bool FindLeds(PerDot<DocuLed>* leds) {
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (!FindLedOfDot(x, y, &(*leds)[x][y])) {
         return false;
       }
@@ -434,16 +434,16 @@ bool FindLeds(PerDot<DocuLed>* leds) {
  * \param[in] leds The chip, digit and bit of each dot's LED.
  */
 void DrawBands(DocuSvg* svg, PerDot<DocuLed> const& leds) {
-  int32_t const inset = ((kCell - kLed) / 2) - 2;
-  auto const across = static_cast<uint16_t>(kCell + kLed + 4);
-  auto const along = static_cast<uint16_t>(kLed + 4);
+  int32_t const inset{((kCell - kLed) / 2) - 2};
+  auto const across{static_cast<uint16_t>(kCell + kLed + 4)};
+  auto const along{static_cast<uint16_t>(kLed + 4)};
 
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       DocuPoint const corner{GetCellX(x) + inset, GetCellY(y) + inset};
-      bool const right_in_module = x % max_matrix::kColumnNumberOfModule <
-                                   max_matrix::kColumnNumberOfModule - 1;
-      bool const below_on_panel = y < max_matrix::kRowNumberOfModule - 1;
+      bool const right_in_module{x % max_matrix::kColumnNumberOfModule <
+                                 max_matrix::kColumnNumberOfModule - 1};
+      bool const below_on_panel{y < max_matrix::kRowNumberOfModule - 1};
       if (right_in_module && leds[x + 1][y].digit == leds[x][y].digit) {
         svg->AddRect(corner, {across, along}, {kColourBand, "none", 0});
       }
@@ -460,8 +460,8 @@ void DrawBands(DocuSvg* svg, PerDot<DocuLed> const& leds) {
  * \param[in,out] svg The picture.
  */
 void DrawWiringLegend(DocuSvg* svg) {
-  int32_t const legend =
-      GetCellY(max_matrix::kRowNumberOfModule - 1) + kCell + kLegendBelow;
+  int32_t const legend{GetCellY(max_matrix::kRowNumberOfModule - 1) + kCell +
+                       kLegendBelow};
 
   svg->AddText({kLeft, legend},
                "Each LED is labelled byte.bit: byte n is digit register n of "
@@ -489,7 +489,7 @@ void DrawWiringLegend(DocuSvg* svg) {
  *         LED.
  */
 std::string DrawWiring(max_matrix::ModuleType module_type) {
-  DocuSvg svg(GetPictureWidth(), GetPictureHeight());
+  DocuSvg svg{GetPictureWidth(), GetPictureHeight()};
   PerDot<DocuLed> leds;
 
   matrix.SetModuleType(module_type);
@@ -498,9 +498,9 @@ std::string DrawWiring(max_matrix::ModuleType module_type) {
   }
   DrawPanel(&svg, "Module type " + GetModules());
   DrawBands(&svg, leds);
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-      char const* colour = leds[x][y].bit == 0 ? kColourLedBit0 : kColourLed;
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
+      char const* colour{leds[x][y].bit == 0 ? kColourLedBit0 : kColourLed};
       DrawLed(&svg, {x, y}, colour,
               std::to_string(leds[x][y].digit) + "." +
                   std::to_string(leds[x][y].bit));
@@ -517,8 +517,8 @@ std::string DrawWiring(max_matrix::ModuleType module_type) {
  * \param[in,out] labels The label of each dot.
  */
 void LabelLitDots(byte bit, PerDot<std::string>* labels) {
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (matrix.GetDot(x, y).GetValue()) {
         (*labels)[x][y] = std::to_string(bit);
       }
@@ -532,10 +532,10 @@ void LabelLitDots(byte bit, PerDot<std::string>* labels) {
  * \param[in,out] svg The picture.
  */
 void DrawFunctionNames(DocuSvg* svg) {
-  int32_t const panel_height = max_matrix::kRowNumberOfModule * kCell;
-  int32_t const names = kTop + panel_height + kNamesBelow;
-  int32_t const row_module_left =
-      GetCellX(kExampleRowModule * max_matrix::kColumnNumberOfModule);
+  int32_t const panel_height{max_matrix::kRowNumberOfModule * kCell};
+  int32_t const names{kTop + panel_height + kNamesBelow};
+  int32_t const row_module_left{
+      GetCellX(kExampleRowModule * max_matrix::kColumnNumberOfModule)};
 
   svg->AddText({GetCellX(kExampleColumn) + (kCell / 2), names},
                "SetColumn(" + std::to_string(kExampleColumn) + ", value)",
@@ -559,17 +559,17 @@ void DrawFunctionNames(DocuSvg* svg) {
  * \return The SVG text.
  */
 std::string DrawCoordinates() {
-  int32_t const panel_height = max_matrix::kRowNumberOfModule * kCell;
-  DocuSvg svg(GetPictureWidth(),
+  int32_t const panel_height{max_matrix::kRowNumberOfModule * kCell};
+  DocuSvg svg{GetPictureWidth(),
               kCoordinatesAbove + panel_height + kCoordinatesBelow,
-              kTop - kCoordinatesAbove);
+              kTop - kCoordinatesAbove};
   PerDot<std::string> column_labels;
   PerDot<std::string> row_labels;
 
   // The coordinates are the same for every module once the module type fits it,
   // so the picture is drawn for FC-16 boards.
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
-  for (byte bit = 0; bit < max_matrix::kRowNumberOfModule; bit++) {
+  for (byte bit{0}; bit < max_matrix::kRowNumberOfModule; bit++) {
     matrix.Clear();
     matrix.SetColumn(kExampleColumn, static_cast<byte>(1U << bit));
     LabelLitDots(bit, &column_labels);
@@ -579,8 +579,8 @@ std::string DrawCoordinates() {
   }
 
   DrawPanel(&svg, "");
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (!column_labels[x][y].empty()) {
         DrawLed(&svg, {x, y}, kColourLed, column_labels[x][y]);
       } else if (!row_labels[x][y].empty()) {
@@ -621,7 +621,7 @@ std::vector<std::pair<std::string, std::string>> DrawPictures() {
   pictures.emplace_back("Coordinates.svg", DrawCoordinates());
   // The module types in the order of the model's wirings, whose names the files
   // take.
-  for (byte type = 0; type < kMax7219Wirings.size(); type++) {
+  for (byte type{0}; type < kMax7219Wirings.size(); type++) {
     pictures.emplace_back(
         std::string("Wiring_") + kMax7219Wirings[type].name + ".svg",
         DrawWiring(static_cast<max_matrix::ModuleType>(type)));
@@ -640,7 +640,7 @@ std::vector<std::pair<std::string, std::string>> DrawPictures() {
 byte WriteOrCheck(
     std::vector<std::pair<std::string, std::string>> const& pictures,
     std::string const& folder, bool write) {
-  byte failed = 0;
+  byte failed{0};
 
   for (auto const& picture : pictures) {
     std::string const path = folder + "/" + picture.first;
@@ -682,7 +682,7 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
     std::cerr << "usage: " << arguments[0] << " --write|--check FOLDER\n";
     return 2;
   }
-  bool const write = arguments[1] == "--write";
+  bool const write{arguments[1] == "--write"};
 
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   matrix.Init();

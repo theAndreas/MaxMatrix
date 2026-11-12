@@ -80,9 +80,9 @@ SimulatorFrontEnd front_end;
  * which never return on their own.
  */
 [[noreturn]] void Finish() {
-  bool const passed =
+  bool const passed{
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
-      mock::errors == 0;
+      mock::errors == 0};
 
   exit(passed ? kExitOk : kExitFailed);
 }
@@ -95,7 +95,7 @@ SimulatorFrontEnd front_end;
  * draws only at the end.
  */
 void Tick() {
-  uint32_t const now = millis();
+  uint32_t const now{millis()};
 
   front_end.Follow(panel, now);
   if (options.GetRunFor() != 0 && now >= options.GetRunFor()) {

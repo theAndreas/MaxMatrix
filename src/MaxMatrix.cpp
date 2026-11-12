@@ -34,7 +34,7 @@ void Matrix::Init() {
 }
 
 void Matrix::ShiftTask() {
-  uint32_t const now = millis();
+  uint32_t const now{millis()};
 
   // The interval counts from this step on, not from when the step was due.
   if (now - last_shift_ < shift_interval_) {
@@ -79,8 +79,8 @@ void Matrix::SetDisplayTest(bool display_test) {
 }
 
 Status Matrix::SetCharWithShift(char c) {
-  Status status =
-      MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c));
+  Status status{
+      MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c))};
 
   if (status.IsOk()) {
     StartShift(State::kCharShift);
@@ -89,8 +89,8 @@ Status Matrix::SetCharWithShift(char c) {
 }
 
 Status Matrix::SetTextWithShift(char const* text, bool repeat) {
-  Status status = MAXMATRIX_REPORT_ERROR("SetTextWithShift",
-                                         text_.SetTextWithShift(text, repeat));
+  Status status{MAXMATRIX_REPORT_ERROR("SetTextWithShift",
+                                       text_.SetTextWithShift(text, repeat))};
 
   if (status.IsOk()) {
     StartShift(State::kStringShift);

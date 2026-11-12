@@ -30,9 +30,9 @@ using ChainParameter = std::tuple<byte, MatrixOrientation, ModuleType>;
 class MaxMatrixChainLengthTest
     : public ::testing::TestWithParam<ChainParameter> {
  protected:
-  byte number_of_modules_ = std::get<0>(GetParam());
-  byte number_of_columns_ =
-      static_cast<byte>(number_of_modules_ * max_matrix::kColumnNumberOfModule);
+  byte number_of_modules_{std::get<0>(GetParam())};
+  byte number_of_columns_{static_cast<byte>(number_of_modules_ *
+                                            max_matrix::kColumnNumberOfModule)};
   std::vector<byte> buffer_ =
       std::vector<byte>(max_matrix::BufferSize(number_of_modules_), 0xAA);
   Matrix matrix_{kDataInPin, kChipSelectPin, kClockPin, buffer_.data(),
@@ -112,7 +112,7 @@ TEST_P(MaxMatrixChainLengthTest, PictureStaysWhenTheMappingChanges) {
 /* the shifts work column by column in place: a rotation round and back, and up
  * and down, give the picture again, and a shift fills the column it leaves */
 TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
-  byte const columns = number_of_columns_;
+  byte const columns{number_of_columns_};
 
   DrawPattern(matrix_);
   matrix_.ShiftLeft(ShiftFill::kRotate);
@@ -142,17 +142,17 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
  * as far as it reaches by SetRow() */
 TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
   // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  byte const values[6] = {0x81, 0x42, 0x24, 0x18, 0xF0, 0x0F};
+  byte const values[6]{0x81, 0x42, 0x24, 0x18, 0xF0, 0x0F};
   // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  byte read[6] = {0};
+  byte read[6]{0};
   // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  byte read_one[1] = {0};
+  byte read_one[1]{0};
   // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  byte const one[1] = {0xFF};
+  byte const one[1]{0xFF};
 
   matrix_.SetRow(2, values);
   ASSERT_EQ(matrix_.GetRow(2, read).GetError(), Error::kOk);
-  for (byte module = 0; module < number_of_modules_; module++) {
+  for (byte module{0}; module < number_of_modules_; module++) {
     EXPECT_EQ(read[module], values[module])
         << "module " << static_cast<uint16_t>(module);
     EXPECT_EQ(matrix_.GetRow(module, 2).GetValue(), values[module])
@@ -174,7 +174,7 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
   char const text[] = "Hi";
   Command command;
   TextPrint answer;
-  uint16_t steps = 0;
+  uint16_t steps{0};
 
   ASSERT_EQ(matrix_.SetTextWithShift(text).GetError(), Error::kOk);
   for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++) {

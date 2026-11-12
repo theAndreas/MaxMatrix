@@ -50,7 +50,7 @@ uint16_t ReadNumber(uint8_t const* address) {
  * a 0, which the test DefaultFontHasAsciiAndNothingBetween finds, as the chars
  * then no longer end the array.
  */
-uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM = {
+uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM{
     // A glyph a line, with its char beside it: laid out by hand, not by
     // clang-format.
     // clang-format off
@@ -186,11 +186,11 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
     return Error::kNotAFont;
   }
 
-  byte const version = pgm_read_byte(font + 1);
-  uint16_t first = 0;
-  uint16_t last = 0;
-  byte height = 0;
-  size_t offset = 0;
+  byte const version{pgm_read_byte(font + 1)};
+  uint16_t first{0};
+  uint16_t last{0};
+  byte height{0};
+  size_t offset{0};
 
   if (version == kVersion1) {
     first = pgm_read_byte(font + 2);
@@ -210,7 +210,7 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
   }
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
-  for (uint16_t code = first;; code++) {
+  for (uint16_t code{first};; code++) {
     if (offset >= size) {
       return Error::kNotAFont;
     }
@@ -228,10 +228,10 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
  * five bytes from flash cost less than the RAM to keep them.
  */
 Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
-  bool const version_1 = pgm_read_byte(font + 1) == kVersion1;
-  uint16_t const code = static_cast<byte>(c);
-  uint16_t first = 0;
-  uint16_t last = 0;
+  bool const version_1{pgm_read_byte(font + 1) == kVersion1};
+  uint16_t const code{static_cast<byte>(c)};
+  uint16_t first{0};
+  uint16_t last{0};
   Glyph glyph{};
 
   if (version_1) {
@@ -248,7 +248,7 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
   if (code < first || code > last) {
     return Error::kUnknownChar;
   }
-  for (uint16_t skipped = first; skipped < code; skipped++) {
+  for (uint16_t skipped{first}; skipped < code; skipped++) {
     font += pgm_read_byte(font) + 1;
   }
   glyph.width = pgm_read_byte(font);

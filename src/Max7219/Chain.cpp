@@ -70,7 +70,7 @@ void Chain::Init() {
 
 void Chain::WriteRegisterAll(byte register_address, byte register_value) {
   StartTransmission();
-  for (byte module = 0; module < number_of_modules_; module++) {
+  for (byte module{0}; module < number_of_modules_; module++) {
     Transfer(register_address, register_value);
   }
   StopTransmission();
@@ -79,7 +79,7 @@ void Chain::WriteRegisterAll(byte register_address, byte register_value) {
 void Chain::WriteRegisterEach(byte register_address,
                               byte const* register_values, byte stride) {
   StartTransmission();
-  for (byte module = 0; module < number_of_modules_;
+  for (byte module{0}; module < number_of_modules_;
        module++, register_values += stride) {
     Transfer(register_address, *register_values);
   }
@@ -152,15 +152,15 @@ void Chain::ShiftOut(byte value) {
    * address: clang-tidy reports both on the Uno, where there is no other way to
    * a port.
    */
-  auto* const data_in_register =
-      portOutputRegister(data_in_port_); /* NOLINT(performance-no-int-to-ptr) */
-  auto* const clock_register =
-      portOutputRegister(clock_port_); /* NOLINT(performance-no-int-to-ptr) */
-  byte const status_register =
-      SREG; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
+  auto* const data_in_register{portOutputRegister(
+      data_in_port_)}; /* NOLINT(performance-no-int-to-ptr) */
+  auto* const clock_register{
+      portOutputRegister(clock_port_)}; /* NOLINT(performance-no-int-to-ptr) */
+  byte const status_register{
+      SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (byte bit = kFirstBit; bit != 0U; bit >>= 1U) {
+  for (byte bit{kFirstBit}; bit != 0U; bit >>= 1U) {
     if ((value & bit) != 0) {
       *data_in_register |= data_in_mask_;
     } else {
@@ -177,10 +177,10 @@ void Chain::ShiftOut(byte value) {
 // as ShiftOut() does.
 void Chain::WritePin(byte port, byte mask, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
-  auto* const port_register =
-      portOutputRegister(port); /* NOLINT(performance-no-int-to-ptr) */
-  byte const status_register =
-      SREG; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
+  auto* const port_register{
+      portOutputRegister(port)}; /* NOLINT(performance-no-int-to-ptr) */
+  byte const status_register{
+      SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
   if (high) {

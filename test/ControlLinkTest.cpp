@@ -19,8 +19,8 @@ namespace {
 // `gone` ends the connection as a pulled cable would.
 class FakePort : public ControlPort {
  public:
-  bool open = true;
-  bool gone = false;
+  bool open{true};
+  bool gone{false};
   std::string written;
   std::string incoming;
 
@@ -50,7 +50,7 @@ class FakePort : public ControlPort {
 // started is lost; the link holds back until the sketch says ready
 TEST(ControlLinkTest, WaitsForReadyOnABoard) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(true);
@@ -69,7 +69,7 @@ TEST(ControlLinkTest, WaitsForReadyOnABoard) {
 // for it would wait for ever
 TEST(ControlLinkTest, IsReadyAtOnceWithTheSimulator) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
 
   link.Begin(false);
   EXPECT_TRUE(link.IsReady());
@@ -81,7 +81,7 @@ TEST(ControlLinkTest, IsReadyAtOnceWithTheSimulator) {
 // the \r\n of println()
 TEST(ControlLinkTest, CutsWhatArrivesIntoLines) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -97,7 +97,7 @@ TEST(ControlLinkTest, CutsWhatArrivesIntoLines) {
 // is shown in pieces instead
 TEST(ControlLinkTest, CutsALineThatNeverEnds) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -111,7 +111,7 @@ TEST(ControlLinkTest, CutsALineThatNeverEnds) {
 // takes no more commands
 TEST(ControlLinkTest, SaysWhenThePortIsGone) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -127,7 +127,7 @@ TEST(ControlLinkTest, SaysWhenThePortIsGone) {
 // the next
 TEST(ControlLinkTest, BeginForgetsHalfALine) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(true);
@@ -151,7 +151,7 @@ std::string Picture(char const* first) {
 // than shown as a line
 TEST(ControlLinkTest, AsksForThePictureOncePerInterval) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -175,7 +175,7 @@ TEST(ControlLinkTest, AsksForThePictureOncePerInterval) {
 // picture for good
 TEST(ControlLinkTest, AsksAgainWhenAnAnswerIsLost) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
 
   link.Begin(false);
   link.AskForPicture(0);
@@ -190,7 +190,7 @@ TEST(ControlLinkTest, AsksAgainWhenAnAnswerIsLost) {
 // dropped
 TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -212,7 +212,7 @@ TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
 // timeout
 TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
   std::vector<std::string> lines;
 
   link.Begin(false);
@@ -227,7 +227,7 @@ TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
 // a board that waits for ready is not asked, as it would lose the line
 TEST(ControlLinkTest, AsksNothingBeforeReady) {
   FakePort port;
-  ControlLink link(port);
+  ControlLink link{port};
 
   link.Begin(true);
   link.AskForPicture(1000);

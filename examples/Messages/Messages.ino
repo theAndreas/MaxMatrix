@@ -26,16 +26,16 @@ struct Message {
   uint16_t shift_interval_ms;
 };
 
-Message const kMessages[] = {
+Message const kMessages[]{
     {kHello, 50},
     {kUmlauts, 50},
     {kFast, 15},
     {kSlow, 120},
 };
-byte const kNumberOfMessages = sizeof(kMessages) / sizeof(kMessages[0]);
+byte const kNumberOfMessages{sizeof(kMessages) / sizeof(kMessages[0])};
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);
-byte current = 0;
+max_matrix::MatrixOf<4> matrix{11, 10, 13};
+byte current{0};
 
 void Show(Message const& message) {
   matrix.SetShiftInterval(message.shift_interval_ms);
