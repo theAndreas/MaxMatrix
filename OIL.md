@@ -45,7 +45,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 33 | A font checked against its length | 15 | done | #67 |
 | 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
-| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78 |
+| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78, #79 |
 | 37 | Files named as their class | 35 | in progress | #77 |
 
 ### 1 Build with CMake
@@ -809,9 +809,16 @@ under two names, as `google-readability-braces-around-statements` and
 They come on in this order, the smallest first: each pull request stays one a reviewer can
 read, and what an early group fixes, a later one no longer finds, as the braces both `google-*`
 and `readability-*` ask for. Some 510 of the places of `cppcoreguidelines-macro-usage` and
-`modernize-macro-to-enum` lie in `test/mock/binary.h`, the stand-in for the core's `B00000001`
-and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reaches
-through the tests' header filter; that is a question for the template before those groups.
+`modernize-macro-to-enum` lay in `test/mock/binary.h`, the stand-in for the core's `B00000001`
+and its kin, which `tools/tidy.sh` means to leave out with the rest of the mock but reached
+through the tests' header filter. CMake now includes the mock as `SYSTEM`, as the board
+includes the core it stands in for: neither clang-tidy nor the compiler reports what lies in
+its headers, which took the 513 places of the two checks in `binary.h`, seen from
+`MaxMatrixTest.cpp`, to none, and `bitRead()` is the core's macro again. The mock's `NOLINT`s
+stay, as clangd reads a header of the mock open in the editor as a file of its own, and
+`bitClear()` stays a function, as `-Wconversion` reports a macro where it is expanded, which
+`SYSTEM` does not cover. The model of the MAX7219 in `test/mock/Max7219.h` is no stand-in,
+but is now left out as well.
 
 ### 37 Files named as their class
 

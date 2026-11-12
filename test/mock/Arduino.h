@@ -65,10 +65,7 @@ inline void* pgm_read_ptr(AddressType const* address) {
 #define LSBFIRST 0
 #define MSBFIRST 1
 
-// The core's bitRead() is (((value) >> (bit)) & 0x01), whose & takes the int
-// the shift returns; clang-tidy leaves it alone in the core, a system header,
-// but not here.
-#define bitRead(value, bit) mock::BitRead((value), (bit))
+#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
 // The core's bitClear() is ((value) &= ~(1UL << (bit))), which narrows an
 // unsigned long into the byte it clears a bit of: avr-gcc warns of none,
@@ -118,14 +115,6 @@ class HardwareSerial : public Print {
 extern HardwareSerial Serial;
 
 namespace mock {
-
-/* bitRead() of the core, on an unsigned value */
-template <typename T, typename BitType>
-uint8_t BitRead(T value, BitType bit) {
-  uint32_t const shifted{static_cast<uint32_t>(value) >>
-                         static_cast<uint32_t>(bit)};
-  return static_cast<uint8_t>(shifted & 0x01U);
-}
 
 /* bitClear() of the core, without its narrowing */
 template <typename T>

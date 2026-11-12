@@ -32,7 +32,10 @@ include(GoogleTest)
 enable_testing()
 
 add_library(ArduinoMock STATIC test/mock/Arduino.cpp test/mock/Max7219.cpp)
-target_include_directories(ArduinoMock PUBLIC test/mock)
+# SYSTEM, as the board takes the core it stands in for: neither the compiler nor clang-tidy
+# reports what lies in its headers, as the core's binary.h and bitRead(), which are the core's
+# and not this repository's. Its sources are compiled with every warning still.
+target_include_directories(ArduinoMock SYSTEM PUBLIC test/mock)
 
 # The MAX7219 model on its own, once: it does not depend on the transfer path.
 add_executable(Max7219Test test/Max7219Test.cpp)
