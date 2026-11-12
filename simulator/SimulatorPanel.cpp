@@ -41,8 +41,8 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark,
                                     char const* end_of_row) const {
   std::string text;
 
-  for (uint8_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-    for (uint8_t x = 0; x < GetNumberOfColumns(); x++) {
+  for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
+    for (uint8_t x{0}; x < GetNumberOfColumns(); x++) {
       text += mock::chain.IsLit(*wiring_, x, y, upside_down_) ? lit : dark;
     }
     text += end_of_row;
@@ -57,7 +57,7 @@ uint8_t SimulatorPanel::GetIntensity(uint8_t module) const {
 }
 
 bool SimulatorPanel::SetWiring(std::string const& name) {
-  Max7219Wiring const* found = FindWiring(name);
+  Max7219Wiring const* found{FindWiring(name)};
 
   if (found != nullptr) {
     wiring_ = found;
@@ -74,7 +74,7 @@ void SimulatorPanel::SetUpsideDown(bool upside_down) {
 }
 
 bool SimulatorPanel::IsDrawDue(uint32_t now) const {
-  bool const changed = mock::frames != drawn_frames_ || draw_requested_;
+  bool const changed{mock::frames != drawn_frames_ || draw_requested_};
 
   return changed && now - last_draw_ >= kSimulatorPanelRedrawInterval;
 }

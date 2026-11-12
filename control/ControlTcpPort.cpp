@@ -74,7 +74,7 @@ ControlTcpPort::~ControlTcpPort() { Close(); }
  * only then switched to return at once, so that Read() never waits.
  */
 bool ControlTcpPort::Open(uint16_t port) {
-  sockaddr_in address = sockaddr_in();
+  sockaddr_in address{};
 
   Close();
 #ifdef _WIN32
@@ -91,20 +91,20 @@ bool ControlTcpPort::Open(uint16_t port) {
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  bool opened =
+  bool opened{
       connect(ToSocket(socket_),
               // the sockets API takes every address as a sockaddr
               // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-              reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0;
+              reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0};
 #ifdef _WIN32
   u_long non_blocking = 1;
   opened =
       opened && ioctlsocket(ToSocket(socket_), FIONBIO, &non_blocking) == 0;
 #else
   if (opened) {
-    int const flags = fcntl(ToSocket(socket_), F_GETFL, 0);
+    int const flags{fcntl(ToSocket(socket_), F_GETFL, 0)};
     // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
-    int const non_blocking_flags = flags | O_NONBLOCK;
+    int const non_blocking_flags{flags | O_NONBLOCK};
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
     opened = fcntl(ToSocket(socket_), F_SETFL, non_blocking_flags) == 0;
   }
@@ -118,15 +118,15 @@ bool ControlTcpPort::Open(uint16_t port) {
 bool ControlTcpPort::IsOpen() const { return socket_ != kNone; }
 
 bool ControlTcpPort::Write(std::string const& data) {
-  size_t sent = 0;
+  size_t sent{0};
 
   if (!IsOpen()) {
     return false;
   }
   while (sent < data.size()) {
-    auto const written = send(ToSocket(socket_), &data[sent],
-                              ToLength(data.size() - sent), kSendFlags);
-    pollfd writable = {ToSocket(socket_), POLLOUT, 0};
+    auto const written{send(ToSocket(socket_), &data[sent],
+                            ToLength(data.size() - sent), kSendFlags)};
+    pollfd writable{ToSocket(socket_), POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && WouldBlock() &&
@@ -147,8 +147,8 @@ bool ControlTcpPort::Read(std::string* data) {
     return false;
   }
   for (;;) {
-    auto const length = recv(ToSocket(socket_), chunk.data(),
-                             static_cast<int>(chunk.size()), 0);
+    auto const length{recv(ToSocket(socket_), chunk.data(),
+                           static_cast<int>(chunk.size()), 0)};
     if (length > 0) {
       data->append(chunk.data(), static_cast<size_t>(length));
     } else if (length < 0 && WouldBlock()) {

@@ -28,7 +28,7 @@ namespace {
 
 /* a picture in flash, a column per byte, for DrawBitmap() */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, as a sketch has one
-byte const kBitmap[] PROGMEM = {0x01, 0x82, 0xFF, 0x00, 0x3C};
+byte const kBitmap[] PROGMEM{0x01, 0x82, 0xFF, 0x00, 0x3C};
 
 std::string MappingName(::testing::TestParamInfo<MappingPair> const& info) {
   return std::string("matrix") +
@@ -46,11 +46,11 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in;
   PanelRow out;
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     in[module] = static_cast<byte>(0xA5U ^ (module * 0x3CU));
   }
 
-  for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
+  for (byte row{0}; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
     matrix_.SetRow(row, in);
     EXPECT_EQ(matrix_.GetRow(row, out).GetError(), Error::kOk);
@@ -64,7 +64,7 @@ TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
   char const text[] = "Hi \xC4!";
 
   matrix_.SetTextWithShift(text);
-  for (uint16_t step = 0; step < 1000 && matrix_.GetState() != State::kReady;
+  for (uint16_t step{0}; step < 1000 && matrix_.GetState() != State::kReady;
        step++) {
     matrix_.ShiftTask();
     ASSERT_EQ(Display(),
@@ -108,7 +108,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
         << call.name;
   }
   matrix_.SetTextWithShift(text);
-  for (uint16_t step = 0; step < 1000 && matrix_.GetState() != State::kReady;
+  for (uint16_t step{0}; step < 1000 && matrix_.GetState() != State::kReady;
        step++) {
     int32_t const frames_before{mock::frames};
     matrix_.ShiftTask();
@@ -120,7 +120,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
  * turned the whole panel while SetRow turned each module */
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     row[module] = static_cast<byte>(0x81U ^ (module * 0x16U));
   }
 
@@ -136,7 +136,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x == 5 && bitRead(0xA3, y);
             }));
-  for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     Result<byte> const value{matrix_.GetRow(0, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(value.GetValue(), bitRead(0xA3, y) ? 1U << (7U - 5U) : 0U)
@@ -178,8 +178,8 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
       {"ShiftDown keeping", [](Matrix& m) { m.ShiftDown(ShiftFill::kKeep); }, 0,
        -1, ShiftFill::kKeep},
   }};
-  int16_t const width = kNumberOfColumns;
-  int16_t const height = max_matrix::kRowNumberOfModule;
+  int16_t const width{kNumberOfColumns};
+  int16_t const height{max_matrix::kRowNumberOfModule};
 
   for (auto const& test_case : cases) {
     matrix_.Clear();
@@ -208,7 +208,7 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
 TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
   DrawPattern(matrix_);
   std::vector<std::string> const before = ShownPicture(matrix_);
-  byte const leftmost = matrix_.GetColumn(0).GetValue();
+  byte const leftmost{matrix_.GetColumn(0).GetValue()};
 
   EXPECT_EQ(matrix_.ShiftLeft(0xA5), leftmost);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
@@ -227,7 +227,7 @@ TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
 TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   std::vector<byte> band;
   band.reserve(size_t{3} * kNumberOfColumns);
-  for (uint16_t index = 0; index < 3 * kNumberOfColumns; index++) {
+  for (uint16_t index{0}; index < 3 * kNumberOfColumns; index++) {
     band.push_back(static_cast<byte>((index * 37) + 11));
   }
   std::vector<byte> out;
@@ -236,7 +236,7 @@ TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   for (byte const column : band) {
     out.push_back(matrix_.ShiftLeft(column));
   }
-  for (byte column = 0; column < kNumberOfColumns; column++) {
+  for (byte column{0}; column < kNumberOfColumns; column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(),
               band[band.size() - kNumberOfColumns + column])
         << "column " << static_cast<uint16_t>(column);
@@ -269,8 +269,8 @@ TEST_P(MaxMatrixMappingTest, PictureStaysWhenTheMappingChanges) {
 }
 
 TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
-  for (byte column = 0; column < kNumberOfColumns; column++) {
-    for (byte row = 0; row < max_matrix::kRowNumberOfModule; row++) {
+  for (byte column{0}; column < kNumberOfColumns; column++) {
+    for (byte row{0}; row < max_matrix::kRowNumberOfModule; row++) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
@@ -313,24 +313,24 @@ TEST_F(MaxMatrixTest, NamedModuleTypesAreTheirWirings) {
 /* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a
  * wrong mapping could hide behind */
 TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
-  ModuleType const module_type = std::get<0>(GetParam());
-  bool const upside_down = std::get<1>(GetParam());
-  Max7219Wiring const& wiring =
-      kMax7219Wirings[static_cast<uint8_t>(module_type)];
-  auto const pattern = [](uint16_t x, uint8_t y) {
+  ModuleType const module_type{std::get<0>(GetParam())};
+  bool const upside_down{std::get<1>(GetParam())};
+  Max7219Wiring const& wiring{
+      kMax7219Wirings[static_cast<uint8_t>(module_type)]};
+  auto const pattern{[](uint16_t x, uint8_t y) {
     return ((x * x) + (3 * y) + (x * y)) % 3 == 0;
-  };
+  }};
 
   matrix_.SetMatrixOrientation(upside_down ? MatrixOrientation::k180
                                            : MatrixOrientation::k0);
   matrix_.SetModuleType(module_type);
-  for (byte x = 0; x < kNumberOfColumns; x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < kNumberOfColumns; x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       matrix_.SetDot(x, y, pattern(x, y));
     }
   }
-  for (uint16_t x = 0; x < kNumberOfColumns; x++) {
-    for (uint8_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (uint16_t x{0}; x < kNumberOfColumns; x++) {
+    for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       EXPECT_EQ(mock::chain.IsLit(wiring, x, y, upside_down), pattern(x, y))
           << "X " << x << ", Y " << y;
     }
@@ -397,11 +397,11 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
  * SetSprite(): whole columns for a char at the top, single dots for one moved
  * down */
 TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
-  Result<Glyph> const glyph = Font::GetGlyph(kDefaultFont, 'A');
+  Result<Glyph> const glyph{Font::GetGlyph(kDefaultFont, 'A')};
   ASSERT_EQ(glyph.GetError(), Error::kOk);
-  int16_t const width = glyph.GetValue().width;
-  int16_t const height = glyph.GetValue().height;
-  uint8_t const* const columns = glyph.GetValue().columns;
+  int16_t const width{glyph.GetValue().width};
+  int16_t const height{glyph.GetValue().height};
+  uint8_t const* const columns{glyph.GetValue().columns};
   struct Place {
     int16_t x, y;
   };
@@ -443,19 +443,19 @@ struct Axes {
  * between the ends, at most half a dot from the true line, none beyond them. */
 void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
                   int16_t breadth) {
-  bool const inside = along >= std::min(axes.along_0, axes.along_1) &&
-                      along <= std::max(axes.along_0, axes.along_1);
-  double const ideal = axes.along_0 == axes.along_1
-                           ? axes.across_0
-                           : axes.across_0 + ((axes.across_1 - axes.across_0) *
-                                              (along - axes.along_0) /
-                                              (axes.along_1 - axes.along_0));
-  uint16_t lit = 0;
+  bool const inside{along >= std::min(axes.along_0, axes.along_1) &&
+                    along <= std::max(axes.along_0, axes.along_1)};
+  double const ideal{axes.along_0 == axes.along_1
+                         ? axes.across_0
+                         : axes.across_0 + ((axes.across_1 - axes.across_0) *
+                                            (along - axes.along_0) /
+                                            (axes.along_1 - axes.along_0))};
+  uint16_t lit{0};
 
-  for (int16_t across = 0; across < breadth; across++) {
-    bool const dot = (axes.steep ? matrix.GetDot(across, along)
-                                 : matrix.GetDot(along, across))
-                         .GetValue();
+  for (int16_t across{0}; across < breadth; across++) {
+    bool const dot{(axes.steep ? matrix.GetDot(across, along)
+                               : matrix.GetDot(along, across))
+                       .GetValue()};
     if (!dot) {
       continue;
     }
@@ -464,8 +464,8 @@ void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
     EXPECT_LE(std::abs(across - ideal), 0.5)
         << "at " << along << ", " << across << " off the line";
   }
-  bool const ideal_on_panel =
-      std::round(ideal) >= 0 && std::round(ideal) < breadth;
+  bool const ideal_on_panel{std::round(ideal) >= 0 &&
+                            std::round(ideal) < breadth};
   if (inside && ideal_on_panel) {
     EXPECT_EQ(lit, 1U) << "at " << along;
   }
@@ -474,17 +474,17 @@ void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
 /* Whether `line`, drawn, is the line on the panel: along its longer axis the
  * dots of every column or row are the line's. */
 void ExpectLine(Matrix& matrix, Line const& line) {
-  bool const steep = std::abs(line.y1 - line.y0) > std::abs(line.x1 - line.x0);
+  bool const steep{std::abs(line.y1 - line.y0) > std::abs(line.x1 - line.x0)};
   Axes const axes{steep, static_cast<double>(steep ? line.y0 : line.x0),
                   static_cast<double>(steep ? line.y1 : line.x1),
                   static_cast<double>(steep ? line.x0 : line.y0),
                   static_cast<double>(steep ? line.x1 : line.y1)};
-  int16_t const length =
-      steep ? max_matrix::kRowNumberOfModule : matrix.GetNumberOfColumns();
-  int16_t const breadth =
-      steep ? matrix.GetNumberOfColumns() : max_matrix::kRowNumberOfModule;
+  int16_t const length{steep ? max_matrix::kRowNumberOfModule
+                             : matrix.GetNumberOfColumns()};
+  int16_t const breadth{steep ? matrix.GetNumberOfColumns()
+                              : max_matrix::kRowNumberOfModule};
 
-  for (int16_t along = 0; along < length; along++) {
+  for (int16_t along{0}; along < length; along++) {
     ExpectDotsAt(matrix, axes, along, breadth);
   }
 }
@@ -551,15 +551,15 @@ TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
   for (auto const& r : rectangles) {
     SCOPED_TRACE(::testing::Message()
                  << r.x << ", " << r.y << ", " << r.width << " x " << r.height);
-    int32_t const right = static_cast<int32_t>(r.x) + r.width - 1;
-    int32_t const bottom = static_cast<int32_t>(r.y) + r.height - 1;
-    auto inside = [&](int16_t x, int16_t y) {
+    int32_t const right{static_cast<int32_t>(r.x) + r.width - 1};
+    int32_t const bottom{static_cast<int32_t>(r.y) + r.height - 1};
+    auto inside{[&](int16_t x, int16_t y) {
       return x >= r.x && x <= right && y >= r.y && y <= bottom;
-    };
-    auto const edge = [&](int16_t x, int16_t y) {
+    }};
+    auto const edge{[&](int16_t x, int16_t y) {
       return inside(x, y) &&
              (x == r.x || x == right || y == r.y || y == bottom);
-    };
+    }};
 
     matrix_.Clear();
     matrix_.FillRect(r.x, r.y, r.width, r.height, true);
@@ -582,7 +582,7 @@ TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
 /* the outlines the midpoint circle gives for small radii, round and closed,
  * also across the edge of the panel */
 TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
-  std::vector<std::string> const radius_3 = {
+  std::vector<std::string> const radius_3{
       "..###..", ".#...#.", "#.....#", "#.....#",
       "#.....#", ".#...#.", "..###..",
   };
@@ -625,10 +625,10 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
 /* a bitmap is drawn column by column from flash, also partly off the panel, and
  * leaves the rows below its height */
 TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
-  auto bitmap_dot = [](int16_t column, int16_t row) {
+  auto bitmap_dot{[](int16_t column, int16_t row) {
     return column >= 0 && column < static_cast<int16_t>(sizeof(kBitmap)) &&
            row >= 0 && row < 8 && bitRead(kBitmap[column], row);
-  };
+  }};
 
   matrix_.DrawBitmap(3, 0, kBitmap, sizeof(kBitmap));
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {

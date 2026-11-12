@@ -13,19 +13,19 @@
  */
 #include <MaxMatrix.h>
 
-uint32_t const kShowMs = 1000;
-byte const kNumberOfShapes = 4;
+uint32_t const kShowMs{1000};
+byte const kNumberOfShapes{4};
 
 /* a heart, a column per byte, bit 0 the top row */
-byte const kHeart[] PROGMEM = {0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06};
+byte const kHeart[] PROGMEM{0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06};
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
-byte shape = 0;
-uint32_t last_shape = 0;
+byte shape{0};
+uint32_t last_shape{0};
 
 void DrawShape() {
-  int16_t const right = matrix.GetNumberOfColumns() - 1;
+  int16_t const right{static_cast<int16_t>(matrix.GetNumberOfColumns() - 1)};
   max_matrix::Batch const batch{matrix};
 
   matrix.Clear();
@@ -38,12 +38,12 @@ void DrawShape() {
     matrix.DrawLine(0, 7, right, 0, true);
   } else if (shape == 2) {
     /* the radius grows from 0 to the 3 that fills the height of the matrix */
-    for (int16_t radius = 0; radius <= 3; radius++) {
+    for (int16_t radius{0}; radius <= 3; radius++) {
       matrix.DrawCircle(static_cast<int16_t>(4 + (8 * radius)), 3, radius,
                         true);
     }
   } else {
-    for (int16_t x = 0; x < matrix.GetNumberOfColumns(); x += 8) {
+    for (int16_t x{0}; x < matrix.GetNumberOfColumns(); x += 8) {
       matrix.DrawBitmap(x, 1, kHeart, sizeof(kHeart));
     }
   }

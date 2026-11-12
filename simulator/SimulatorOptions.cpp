@@ -25,7 +25,7 @@ bool SimulatorOptions::Parse(int argc, char** argv) {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   std::vector<char const*> const arguments(argv, argv + argc);
 
-  for (size_t i = 1; i < arguments.size(); i++) {
+  for (size_t i{1}; i < arguments.size(); i++) {
     if (!ParseOption(arguments, &i)) {
       return false;
     }
@@ -106,7 +106,7 @@ bool SimulatorOptions::ParseValue(std::string const& option,
  * 80, so the simulator listened somewhere else than asked without a word.
  */
 bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
-  char* end = nullptr;
+  char* end{nullptr};
   // uint64_t holds what strtoul() returns on every host, until the range check
   // below.
   uint64_t const value{strtoul(text, &end, 10)};
@@ -131,13 +131,13 @@ bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
  * reached a cast to uint32_t that is undefined for it.
  */
 bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
-  char* end = nullptr;
-  double const milliseconds = strtod(text, &end) * 1000;
+  char* end{nullptr};
+  double const milliseconds{strtod(text, &end) * 1000};
 
   /* asked as whether it lies in the range, so that NaN, which compares false
    * with everything, is refused as well */
-  bool const in_range =
-      milliseconds >= 1 && milliseconds <= kSimulatorOptionsMaxRunFor;
+  bool const in_range{milliseconds >= 1 &&
+                      milliseconds <= kSimulatorOptionsMaxRunFor};
   if (end == text || *end != '\0' || !in_range) {
     return false;
   }

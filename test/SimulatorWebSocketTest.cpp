@@ -48,7 +48,7 @@ std::string ClientFrame(std::string const& payload) {
     frame += static_cast<char>(payload.size() & 0xFFU);
   }
   frame.append(mask.begin(), mask.end());
-  for (size_t i = 0; i < payload.size(); i++) {
+  for (size_t i{0}; i < payload.size(); i++) {
     frame += static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask[i % 4]);
   }
   return frame;
@@ -128,7 +128,7 @@ TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes) {
 TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends) {
   std::string buffer = ClientFrame("wiring GENERIC");
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
   EXPECT_EQ(opcode, kSimulatorWebSocketOpcodeText);
@@ -140,7 +140,7 @@ TEST(SimulatorWebSocketTest, DecodeReadsThe16BitLength) {
   std::string const long_text(200, 'x');
   std::string buffer = ClientFrame(long_text);
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
   EXPECT_EQ(payload, long_text);
@@ -152,9 +152,9 @@ TEST(SimulatorWebSocketTest, DecodeWaitsForTheWholeFrame) {
   std::string const frame = ClientFrame("hello");
   std::string buffer;
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
-  for (size_t i = 0; i + 1 < frame.size(); i++) {
+  for (size_t i{0}; i + 1 < frame.size(); i++) {
     buffer += frame[i];
     ASSERT_FALSE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload))
         << "after " << i + 1 << " bytes";
@@ -170,7 +170,7 @@ TEST(SimulatorWebSocketTest, DecodeWaitsForTheWholeFrame) {
 TEST(SimulatorWebSocketTest, DecodeTakesOneFrameAtATime) {
   std::string buffer = ClientFrame("hello") + ClientFrame("upside-down 1");
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
   EXPECT_EQ(payload, "hello");
@@ -182,7 +182,7 @@ TEST(SimulatorWebSocketTest, DecodeTakesOneFrameAtATime) {
 TEST(SimulatorWebSocketTest, DecodeDropsA64BitLength) {
   std::string buffer = std::string("\x81\xFF", 2) + std::string(12, '\0');
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
   EXPECT_FALSE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
   EXPECT_TRUE(buffer.empty());
@@ -191,7 +191,7 @@ TEST(SimulatorWebSocketTest, DecodeDropsA64BitLength) {
 TEST(SimulatorWebSocketTest, DecodeReadsWhatEncodeWrites) {
   std::string buffer = SimulatorWebSocket::EncodeFrame(std::string(300, 'y'));
   std::string payload;
-  uint8_t opcode = 0;
+  uint8_t opcode{0};
 
   ASSERT_TRUE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload));
   EXPECT_EQ(opcode, kSimulatorWebSocketOpcodeText);

@@ -111,7 +111,7 @@ void SimulatorAvr::ConnectPins() {
 // when its receive buffer has room. It would print every line on the console
 // itself, between the panel and the command line.
 void SimulatorAvr::ConnectUart() {
-  uint32_t flags = 0;
+  uint32_t flags{0};
   avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags);
   flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
   avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags);
@@ -127,12 +127,12 @@ void SimulatorAvr::ConnectUart() {
 }
 
 bool SimulatorAvr::Run(uint32_t milliseconds) {
-  avr_cycle_count_t const end =
-      avr_usec_to_cycles(avr_, milliseconds * kMicrosecondsPerMillisecond);
+  avr_cycle_count_t const end{
+      avr_usec_to_cycles(avr_, milliseconds * kMicrosecondsPerMillisecond)};
 
   ReceiveSerial();
   while (avr_->cycle < end) {
-    int const state = avr_run(avr_);
+    int const state{avr_run(avr_)};
     if (state == cpu_Done || state == cpu_Crashed) {
       return false;
     }
@@ -143,11 +143,11 @@ bool SimulatorAvr::Run(uint32_t milliseconds) {
 // Hands the UART what Serial has to read, one byte after the other until the
 // UART says its buffer is full; the rest waits for the next time it has room.
 void SimulatorAvr::ReceiveSerial() {
-  avr_irq_t* const input =
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_INPUT);
+  avr_irq_t* const input{
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_INPUT)};
 
   while (receive_ready_ && !mock::serial_input.empty()) {
-    auto const received = static_cast<uint8_t>(mock::serial_input[0]);
+    auto const received{static_cast<uint8_t>(mock::serial_input[0])};
     mock::serial_input.erase(0, 1);
     avr_raise_irq(input, received);
   }
@@ -176,8 +176,8 @@ void SimulatorAvr::OnDataIn(avr_irq_t* irq, uint32_t value, void* object) {
  * pin; the SPI peripheral of simavr reports its byte without it.
  */
 void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
-  auto* const simulator = static_cast<SimulatorAvr*>(object);
-  bool const rising = value != 0 && !simulator->clock_;
+  auto* const simulator{static_cast<SimulatorAvr*>(object)};
+  bool const rising{value != 0 && !simulator->clock_};
 
   (void)irq;
   simulator->clock_ = value != 0;
@@ -200,8 +200,8 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
  * the chain does; a frame that ends within a byte is an error.
  */
 void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
-  auto* const simulator = static_cast<SimulatorAvr*>(object);
-  bool const high = value != 0;
+  auto* const simulator{static_cast<SimulatorAvr*>(object)};
+  bool const high{value != 0};
 
   (void)irq;
   if (simulator->chip_select_ && !high) {
@@ -221,7 +221,7 @@ void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
 // The SPI peripheral sent a byte: `irq` is the SPI output, `value` the byte,
 // `object` the SimulatorAvr.
 void SimulatorAvr::OnSpiByte(avr_irq_t* irq, uint32_t value, void* object) {
-  auto const data = static_cast<uint8_t>(value);
+  auto const data{static_cast<uint8_t>(value)};
 
   (void)irq;
   mock::chain.Shift(data);
@@ -244,7 +244,7 @@ void SimulatorAvr::OnSerialByte(avr_irq_t* irq, uint32_t value, void* object) {
  */
 void SimulatorAvr::OnReceiveReady(avr_irq_t* irq, uint32_t value,
                                   void* object) {
-  auto* const simulator = static_cast<SimulatorAvr*>(object);
+  auto* const simulator{static_cast<SimulatorAvr*>(object)};
 
   (void)irq;
   (void)value;

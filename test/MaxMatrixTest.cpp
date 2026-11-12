@@ -13,10 +13,10 @@ using max_matrix::Error;
 using max_matrix::MatrixOf;
 
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     SCOPED_TRACE(::testing::Message()
                  << "Module " << static_cast<uint16_t>(module));
-    Max7219 const& chip = ChipOfModule(module);
+    Max7219 const& chip{ChipOfModule(module)};
     EXPECT_EQ(chip.shutdown, max_matrix::max7219::kShutdownModeNormalOperation);
     EXPECT_EQ(chip.display_test,
               max_matrix::max7219::kDisplayTestNormalOperation);
@@ -30,7 +30,7 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
   EXPECT_EQ(
       matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue).GetError(),
       Error::kOk);
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     EXPECT_EQ(ChipOfModule(module).intensity,
               max_matrix::max7219::kIntensityMaxValue)
         << "Module " << static_cast<uint16_t>(module);
@@ -41,9 +41,9 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
  * module once */
 TEST_F(MaxMatrixTest, DrawingInBothModes) {
   std::vector<byte> drawn;
-  int32_t frames_before = mock::frames;
+  int32_t frames_before{mock::frames};
 
-  for (byte column = 0; column < kNumberOfColumns; column++) {
+  for (byte column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
@@ -54,7 +54,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   matrix_.Clear();
   matrix_.SetAutoUpdate(false);
   frames_before = mock::frames;
-  for (byte column = 0; column < kNumberOfColumns; column++) {
+  for (byte column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
@@ -81,8 +81,8 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch batch(matrix_);
-    for (byte column = 0; column < kNumberOfColumns; column++) {
+    Batch batch{matrix_};
+    for (byte column{0}; column < kNumberOfColumns; column++) {
       matrix_.SetDot(
           column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
           true);
@@ -102,9 +102,9 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch outer(matrix_);
+    Batch outer{matrix_};
     {
-      Batch inner(matrix_);
+      Batch inner{matrix_};
       matrix_.SetDot(1, 1, true);
     }
     EXPECT_EQ(mock::frames, frames_before)
@@ -120,7 +120,7 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch batch(matrix_);
+    Batch batch{matrix_};
     matrix_.SetDot(1, 1, true);
   }
   EXPECT_FALSE(matrix_.GetAutoUpdate());
@@ -185,7 +185,7 @@ TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall) {
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
   uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
-  for (uint8_t call = 0; call < 3; call++) {
+  for (uint8_t call{0}; call < 3; call++) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 3);
@@ -213,7 +213,7 @@ TEST_F(MaxMatrixTest, ShutdownKeepsThePicture) {
   ASSERT_TRUE(matrix_.SetIntensity(9).IsOk());
   ASSERT_TRUE(matrix_.SetText("Hi").IsOk());
   matrix_.SetShutdown(true);
-  for (byte module = 0; module < kNumberOfModules; module++) {
+  for (byte module{0}; module < kNumberOfModules; module++) {
     EXPECT_EQ(ChipOfModule(module).shutdown, 0)
         << "module " << static_cast<uint16_t>(module);
   }

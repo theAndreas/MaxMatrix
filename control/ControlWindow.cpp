@@ -65,9 +65,9 @@ ControlWindow::ControlWindow()
       board_link_{serial_port_},
       simulator_link_{tcp_port_},
       timer_{this} {
-  auto* const content = new wxPanel(this);
-  auto* const columns = new wxBoxSizer(wxHORIZONTAL);
-  auto* const controls = new wxBoxSizer(wxVERTICAL);
+  auto* const content{new wxPanel(this)};
+  auto* const columns{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const controls{new wxBoxSizer(wxVERTICAL)};
 
   MakeMenu();
   controls_ = new wxPanel(content);
@@ -90,9 +90,9 @@ ControlWindow::ControlWindow()
 
 // File and Help, as the old tool had them.
 void ControlWindow::MakeMenu() {
-  auto* const bar = new wxMenuBar();
-  auto* const file = new wxMenu();
-  auto* const help = new wxMenu();
+  auto* const bar{new wxMenuBar()};
+  auto* const file{new wxMenu()};
+  auto* const help{new wxMenu()};
 
   file->Append(wxID_EXIT);
   help->Append(wxID_ABOUT);
@@ -112,18 +112,18 @@ void ControlWindow::MakeMenu() {
 // parts, they would come in another, which only a look at the window shows.
 // NOLINTNEXTLINE(readability-function-size)
 wxWindow* ControlWindow::MakeText(wxWindow* parent) {
-  auto* const page = new wxPanel(parent);
-  auto* const rows = new wxBoxSizer(wxVERTICAL);
-  auto* const settings = new wxBoxSizer(wxHORIZONTAL);
-  auto* const intensity_box =
-      new wxStaticBoxSizer(wxVERTICAL, page, "Intensity");
-  auto* const speed_box =
-      new wxStaticBoxSizer(wxVERTICAL, page, "Speed, ms per column");
-  auto* const actions = new wxBoxSizer(wxVERTICAL);
-  auto* const space_row = new wxBoxSizer(wxHORIZONTAL);
-  auto* const text_row = new wxBoxSizer(wxHORIZONTAL);
-  auto* const clear = new wxButton(page, wxID_ANY, "Clear");
-  wxCoord const border = FromDIP(kBorder);
+  auto* const page{new wxPanel(parent)};
+  auto* const rows{new wxBoxSizer(wxVERTICAL)};
+  auto* const settings{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const intensity_box{
+      new wxStaticBoxSizer(wxVERTICAL, page, "Intensity")};
+  auto* const speed_box{
+      new wxStaticBoxSizer(wxVERTICAL, page, "Speed, ms per column")};
+  auto* const actions{new wxBoxSizer(wxVERTICAL)};
+  auto* const space_row{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const text_row{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const clear{new wxButton(page, wxID_ANY, "Clear")};
+  wxCoord const border{FromDIP(kBorder)};
 
   send_ = new wxButton(page, wxID_ANY, "Send");
   text_ = new wxTextCtrl(page, wxID_ANY, "Hello", wxDefaultPosition,
@@ -188,8 +188,8 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
 // The whole panel as the matrix shows it, to click on; Clear below it turns
 // every LED off.
 wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
-  auto* const panel = new wxPanel(parent);
-  auto* const box = new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix");
+  auto* const panel{new wxPanel(parent)};
+  auto* const box{new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix")};
 
   dots_ = new ControlDotPanel(
       box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) {
@@ -208,18 +208,18 @@ wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
 // parts, they would come in another, which only a look at the window shows.
 // NOLINTNEXTLINE(readability-function-size)
 wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
-  auto* const column = new wxPanel(parent);
-  auto* const rows = new wxBoxSizer(wxVERTICAL);
-  auto* const board_box = new wxStaticBoxSizer(wxVERTICAL, column, "Board");
-  auto* const simulator_box =
-      new wxStaticBoxSizer(wxVERTICAL, column, "Simulator");
-  auto* const log_box = new wxStaticBoxSizer(wxVERTICAL, column, "Log");
-  auto* const board_row = new wxBoxSizer(wxHORIZONTAL);
-  auto* const simulator_row = new wxBoxSizer(wxHORIZONTAL);
-  auto* const port_row = new wxBoxSizer(wxHORIZONTAL);
-  auto* const clear_log =
-      new wxButton(log_box->GetStaticBox(), wxID_ANY, "Clear log");
-  wxCoord const border = FromDIP(kBorder);
+  auto* const column{new wxPanel(parent)};
+  auto* const rows{new wxBoxSizer(wxVERTICAL)};
+  auto* const board_box{new wxStaticBoxSizer(wxVERTICAL, column, "Board")};
+  auto* const simulator_box{
+      new wxStaticBoxSizer(wxVERTICAL, column, "Simulator")};
+  auto* const log_box{new wxStaticBoxSizer(wxVERTICAL, column, "Log")};
+  auto* const board_row{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const simulator_row{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const port_row{new wxBoxSizer(wxHORIZONTAL)};
+  auto* const clear_log{
+      new wxButton(log_box->GetStaticBox(), wxID_ANY, "Clear log")};
+  wxCoord const border{FromDIP(kBorder)};
 
   serial_port_name_ = new wxComboBox(board_box->GetStaticBox(), wxID_ANY);
   board_button_ = new wxButton(board_box->GetStaticBox(), wxID_ANY, "Open");
@@ -318,7 +318,7 @@ void ControlWindow::OnSpace(wxSpinEvent& /* event */) {
 
 // Opens the port in the box, or closes the one that is open.
 void ControlWindow::OnBoard(wxCommandEvent& /* event */) {
-  wxString const name = serial_port_name_->GetValue();
+  wxString const name{serial_port_name_->GetValue()};
 
   if (serial_port_.IsOpen()) {
     serial_port_.Close();
@@ -334,7 +334,7 @@ void ControlWindow::OnBoard(wxCommandEvent& /* event */) {
 
 // Connects to the simulator on the port in the box, or ends the connection.
 void ControlWindow::OnSimulator(wxCommandEvent& /* event */) {
-  auto const port = static_cast<uint16_t>(tcp_port_number_->GetValue());
+  auto const port{static_cast<uint16_t>(tcp_port_number_->GetValue())};
 
   if (tcp_port_.IsOpen()) {
     tcp_port_.Close();
@@ -354,7 +354,7 @@ void ControlWindow::OnSimulator(wxCommandEvent& /* event */) {
 // Fills the box with the ports a board may be on, and keeps what was typed into
 // it.
 void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
-  wxString const typed = serial_port_name_->GetValue();
+  wxString const typed{serial_port_name_->GetValue()};
 
   serial_port_name_->Clear();
   for (std::string const& port : ControlSerialPort::List()) {
@@ -372,14 +372,14 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
  * shows for its picture; only that one, as the other would answer for nothing.
  */
 void ControlWindow::OnTimer(wxTimerEvent& /* event */) {
-  uint32_t const now = static_cast<uint32_t>(
+  uint32_t const now{static_cast<uint32_t>(
       std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::steady_clock::now().time_since_epoch())
-          .count());
+          .count())};
 
   Follow(board_link_, "board");
   Follow(simulator_link_, "simulator");
-  ControlLink* const shown = GetShownLink();
+  ControlLink* const shown{GetShownLink()};
   if (shown == nullptr) {
     return;
   }
@@ -451,8 +451,8 @@ void ControlWindow::Follow(ControlLink& link, char const* name) {
   if (!link.IsOpen()) {
     return;
   }
-  bool const was_ready = link.IsReady();
-  bool const open = link.Task(&lines);
+  bool const was_ready{link.IsReady()};
+  bool const open{link.Task(&lines)};
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": " + ConvertToText(line) + "\n");
@@ -486,7 +486,7 @@ ControlLink* ControlWindow::GetShownLink() {
  * only for a text that shifts.
  */
 void ControlWindow::ShowState() {
-  bool const any_ready = board_link_.IsReady() || simulator_link_.IsReady();
+  bool const any_ready{board_link_.IsReady() || simulator_link_.IsReady()};
 
   board_button_->SetLabel(serial_port_.IsOpen() ? "Close" : "Open");
   serial_port_name_->Enable(!serial_port_.IsOpen());
@@ -524,7 +524,7 @@ void ControlWindow::ShowState() {
 void ControlWindow::ShowBytesLeft() {
   std::string const line = ControlCommand::MakeText(
       std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
-  int32_t const left = ControlCommand::GetBytesLeft(line);
+  int32_t const left{ControlCommand::GetBytesLeft(line)};
 
   if (left >= 0) {
     bytes_left_->SetLabel(wxString::Format("%" PRId32 " bytes left", left));
@@ -546,7 +546,7 @@ void ControlWindow::Log(wxString const& text) { log_->AppendText(text); }
  * sends.
  */
 wxString ControlWindow::ConvertToText(std::string const& line) {
-  wxString const text = wxString::FromUTF8(line);
+  wxString const text{wxString::FromUTF8(line)};
 
   return text.empty() && !line.empty() ? wxString(line.c_str(), wxConvISO8859_1)
                                        : text;

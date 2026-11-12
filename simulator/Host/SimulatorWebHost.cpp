@@ -52,7 +52,7 @@ void SimulatorWebHost::Task(std::vector<std::string>* messages) {
   }
 
   AcceptClients();
-  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
+  for (uint8_t slot{0}; slot < kSimulatorWebHostMaxClients; slot++) {
     if (clients_[slot] != kSimulatorSocketNone) {
       ReadClient(slot, messages);
     }
@@ -62,7 +62,7 @@ void SimulatorWebHost::Task(std::vector<std::string>* messages) {
 void SimulatorWebHost::Broadcast(std::string const& text) {
   std::string const frame = SimulatorWebSocket::EncodeFrame(text);
 
-  for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
+  for (uint8_t slot{0}; slot < kSimulatorWebHostMaxClients; slot++) {
     if (clients_[slot] != kSimulatorSocketNone &&
         !SimulatorSocket::SendAll(clients_[slot], frame)) {
       DropClient(slot);
@@ -73,11 +73,11 @@ void SimulatorWebHost::Broadcast(std::string const& text) {
 // Answers every new connection: keeps one that became a WebSocket, as long as
 // there is a free slot for it, and closes every other one.
 void SimulatorWebHost::AcceptClients() {
-  int accepted = 0;
+  int accepted{0};
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
     std::string const request = ReadRequest(accepted);
-    uint8_t const slot = FindFreeSlot();
+    uint8_t const slot{FindFreeSlot()};
 
     if (slot < kSimulatorWebHostMaxClients &&
         AnswerRequest(accepted, request)) {
@@ -97,8 +97,8 @@ void SimulatorWebHost::AcceptClients() {
 void SimulatorWebHost::ReadClient(uint8_t slot,
                                   std::vector<std::string>* messages) {
   std::array<char, kFrameChunkLength> chunk{};
-  ssize_t const received = recv(clients_[slot], chunk.data(), chunk.size(), 0);
-  uint8_t opcode = 0;
+  ssize_t const received{recv(clients_[slot], chunk.data(), chunk.size(), 0)};
+  uint8_t opcode{0};
   std::string payload;
 
   if (received == 0 ||
@@ -166,7 +166,7 @@ void SimulatorWebHost::SendPage(int socket) {
 // Finds a slot for a new WebSocket: returns the first slot without a client, or
 // kSimulatorWebHostMaxClients when all are taken.
 uint8_t SimulatorWebHost::FindFreeSlot() const {
-  uint8_t slot = 0;
+  uint8_t slot{0};
 
   while (slot < kSimulatorWebHostMaxClients &&
          clients_[slot] != kSimulatorSocketNone) {
@@ -203,7 +203,7 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
   SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeoutMs);
 
   while (request.find("\r\n\r\n") == std::string::npos) {
-    ssize_t const received = recv(socket, chunk.data(), chunk.size(), 0);
+    ssize_t const received{recv(socket, chunk.data(), chunk.size(), 0)};
     if (received <= 0) {
       break;
     }
@@ -216,9 +216,9 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
 // request line, and gives it in `path`. Returns false if the request line has
 // no path.
 bool SimulatorWebHost::GetPath(std::string const& request, std::string* path) {
-  size_t const start = request.find(' ');
-  size_t const end = start == std::string::npos ? std::string::npos
-                                                : request.find(' ', start + 1);
+  size_t const start{request.find(' ')};
+  size_t const end{start == std::string::npos ? std::string::npos
+                                              : request.find(' ', start + 1)};
 
   if (end == std::string::npos) {
     return false;

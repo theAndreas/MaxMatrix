@@ -28,7 +28,7 @@ static char const kErrorTextNotAFont[] PROGMEM = "not a font";
 static char const kErrorTextUnknownError[] PROGMEM = "unknown error";
 
 /* in the order of Error */
-static char const* const kErrorTexts[] PROGMEM = {
+static char const* const kErrorTexts[] PROGMEM{
     kErrorTextOk,          kErrorTextOutOfRange, kErrorTextUnknownChar,
     kErrorTextNoText,      kErrorTextNotANumber, kErrorTextUnknownCommand,
     kErrorTextLineTooLong, kErrorTextNotAFont};
@@ -38,8 +38,8 @@ static_assert(sizeof(kErrorTexts) / sizeof(kErrorTexts[0]) ==
               "every error needs a text");
 
 __FlashStringHelper const* Status::GetErrorText() const {
-  char const* text = kErrorTextUnknownError;
-  auto const index = static_cast<uint8_t>(error_);
+  char const* text{kErrorTextUnknownError};
+  auto const index{static_cast<uint8_t>(error_)};
 
   if (index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) {
     text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));

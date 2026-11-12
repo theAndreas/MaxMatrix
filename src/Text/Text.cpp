@@ -16,7 +16,7 @@ namespace internal {
 Text::Text() = default;
 
 Status Text::SetFont(uint8_t const* font, size_t size) {
-  Status const status = Font::CheckFont(font, size);
+  Status const status{Font::CheckFont(font, size)};
 
   if (status.IsOk()) {
     font_ = font;
@@ -25,7 +25,7 @@ Status Text::SetFont(uint8_t const* font, size_t size) {
 }
 
 Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
-  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
+  Result<Glyph> const found{Font::GetGlyph(GetFont(), c)};
 
   if (found.IsOk()) {
     SetGlyph(panel, x, y, found.GetValue());
@@ -35,7 +35,7 @@ Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
 
 // The glyph that shifts in stays as it was for a char the font lacks.
 Status Text::SetCharWithShift(char c) {
-  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
+  Result<Glyph> const found{Font::GetGlyph(GetFont(), c)};
 
   if (found.IsOk()) {
     glyph_ = found.GetValue();
@@ -45,19 +45,19 @@ Status Text::SetCharWithShift(char c) {
 }
 
 Status Text::SetText(Panel& panel, char const* text) const {
-  int16_t char_column = 0;
+  int16_t char_column{0};
 
   if (text == nullptr) {
     return Error::kNoText;
   }
   while (*text != internal::kNullCharacter) {
-    DecodedChar const decoded = Font::DecodeChar(text);
+    DecodedChar const decoded{Font::DecodeChar(text)};
     text += decoded.length;
-    Result<Glyph> const found = Font::GetGlyph(GetFont(), decoded.c);
+    Result<Glyph> const found{Font::GetGlyph(GetFont(), decoded.c)};
     if (!found.IsOk()) {
       return found.GetError();
     }
-    Glyph const glyph = found.GetValue();
+    Glyph const glyph{found.GetValue()};
     SetGlyph(panel, char_column, 0, glyph);
     char_column =
         static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
@@ -84,7 +84,7 @@ void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
   if (x >= panel.GetNumberOfColumns()) {
     return;
   }
-  for (byte sprite_column = 0; sprite_column < sprite[kSpriteWidth];
+  for (byte sprite_column{0}; sprite_column < sprite[kSpriteWidth];
        sprite_column++) {
     panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y,
                      sprite[kSpriteHeight],
@@ -132,7 +132,7 @@ bool Text::CharShiftTask(Panel& panel) {
  * the end of any other text nothing starts.
  */
 void Text::ReadNextChar() {
-  char const* start_over_at = repeat_from_;
+  char const* start_over_at{repeat_from_};
 
   while (sprite_shift_counter_ == kShiftIdle) {
     if (*string_ == internal::kNullCharacter) {
@@ -142,7 +142,7 @@ void Text::ReadNextChar() {
       string_ = start_over_at;
       start_over_at = nullptr;
     } else {
-      DecodedChar const decoded = Font::DecodeChar(string_);
+      DecodedChar const decoded{Font::DecodeChar(string_)};
       string_ += decoded.length;
       // A char the font lacks leaves the counter idle, and the loop reads on.
       SetCharWithShift(decoded.c);

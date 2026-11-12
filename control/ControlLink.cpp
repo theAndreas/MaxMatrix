@@ -39,7 +39,7 @@ bool ControlLink::Send(std::string const& line) {
 // The time is compared as a difference, so that a clock that runs past 2^32 ms
 // keeps working.
 void ControlLink::AskForPicture(uint32_t now) {
-  uint32_t const waited = now - picture_asked_at_;
+  uint32_t const waited{now - picture_asked_at_};
 
   if (!IsReady()) {
     return;
@@ -59,17 +59,17 @@ void ControlLink::AskForPicture(uint32_t now) {
 }
 
 bool ControlLink::Task(std::vector<std::string>* lines) {
-  size_t end = 0;
+  size_t end{0};
 
   if (!port_.get().IsOpen()) {
     return false;
   }
-  bool const open = port_.get().Read(&received_);
+  bool const open{port_.get().Read(&received_)};
 
   while ((end = received_.find('\n')) != std::string::npos ||
          received_.size() >= kControlLinkMaxLineLength) {
-    size_t const length =
-        end != std::string::npos ? end : kControlLinkMaxLineLength;
+    size_t const length{end != std::string::npos ? end
+                                                 : kControlLinkMaxLineLength};
     std::string line = received_.substr(0, length);
     received_.erase(0, end != std::string::npos ? end + 1 : length);
     if (!line.empty() && line.back() == '\r') {

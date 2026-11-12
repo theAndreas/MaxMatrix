@@ -33,7 +33,7 @@ void SendFrame(Max7219Chain& chain, std::initializer_list<Pair> pairs) {
 Max7219Chain ChainInNormalOperation(uint8_t number_of_chips) {
   Max7219Chain chain;
   chain.Reset(number_of_chips);
-  for (uint8_t i = 0; i < number_of_chips; i++) {
+  for (uint8_t i{0}; i < number_of_chips; i++) {
     chain.chips[i].shutdown = 1;
     chain.chips[i].scan_limit = 7;
   }
@@ -41,7 +41,7 @@ Max7219Chain ChainInNormalOperation(uint8_t number_of_chips) {
 }
 
 TEST(Max7219Test, FirstPairSentEndsUpAtTheFarEnd) {
-  Max7219Chain chain = ChainInNormalOperation(3);
+  Max7219Chain chain{ChainInNormalOperation(3)};
 
   SendFrame(chain, {{0x01, 0x11}, {0x01, 0x22}, {0x01, 0x33}});
   EXPECT_EQ(chain.chips[2].digit[0], 0x11);
@@ -52,7 +52,7 @@ TEST(Max7219Test, FirstPairSentEndsUpAtTheFarEnd) {
 /* the chip at the far end still holds a pair of the frame before and latches it
  * again */
 TEST(Max7219Test, ShortFrameLatchesWhatIsLeftInTheChain) {
-  Max7219Chain chain = ChainInNormalOperation(2);
+  Max7219Chain chain{ChainInNormalOperation(2)};
 
   SendFrame(chain, {{0x01, 0xAA}, {0x02, 0xBB}});
   EXPECT_EQ(chain.chips[1].digit[0], 0xAA);
@@ -67,10 +67,10 @@ TEST(Max7219Test, ShortFrameLatchesWhatIsLeftInTheChain) {
  * send it, latches every pair one bit to the right - 0x02 0x22 as digit 0 with
  * 0x11 */
 TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
-  Max7219Chain chain = ChainInNormalOperation(1);
-  uint16_t const pair = 0x0222;
+  Max7219Chain chain{ChainInNormalOperation(1)};
+  uint16_t const pair{0x0222};
 
-  for (uint8_t bit = 15; bit >= 1; bit--) {
+  for (uint8_t bit{15}; bit >= 1; bit--) {
     chain.ShiftBit((pair & (1U << bit)) != 0U);
   }
   chain.Latch();
@@ -79,7 +79,7 @@ TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
 }
 
 TEST(Max7219Test, NoOpChangesNothing) {
-  Max7219Chain chain = ChainInNormalOperation(2);
+  Max7219Chain chain{ChainInNormalOperation(2)};
 
   SendFrame(chain, {{0x01, 0x11}, {0x01, 0x22}});
   SendFrame(chain, {{0x00, 0xFF}, {0x00, 0xFF}});
@@ -88,7 +88,7 @@ TEST(Max7219Test, NoOpChangesNothing) {
 }
 
 TEST(Max7219Test, OnlyTheLowNibbleOfTheAddressCounts) {
-  Max7219Chain chain = ChainInNormalOperation(1);
+  Max7219Chain chain{ChainInNormalOperation(1)};
 
   SendFrame(chain, {{0xF1, 0x5A}});
   EXPECT_EQ(chain.chips[0].digit[0], 0x5A);
@@ -97,7 +97,7 @@ TEST(Max7219Test, OnlyTheLowNibbleOfTheAddressCounts) {
 TEST(Max7219Test, PowerUpIsShutDownWithOneDigitAndMinimumIntensity) {
   Max7219Chain chain;
   chain.Reset(1);
-  Max7219 const& chip = chain.chips[0];
+  Max7219 const& chip{chain.chips[0]};
 
   EXPECT_EQ(chip.shutdown, 0);
   EXPECT_EQ(chip.scan_limit, 0);
@@ -110,7 +110,7 @@ TEST(Max7219Test, PowerUpIsShutDownWithOneDigitAndMinimumIntensity) {
 }
 
 TEST(Max7219Test, ShutdownBlanksAndKeepsTheDigits) {
-  Max7219Chain chain = ChainInNormalOperation(1);
+  Max7219Chain chain{ChainInNormalOperation(1)};
 
   SendFrame(chain, {{0x01, 0x81}});
   EXPECT_EQ(chain.chips[0].Segments(0), 0x81);
@@ -121,7 +121,7 @@ TEST(Max7219Test, ShutdownBlanksAndKeepsTheDigits) {
 }
 
 TEST(Max7219Test, DigitsBeyondTheScanLimitAreDark) {
-  Max7219Chain chain = ChainInNormalOperation(1);
+  Max7219Chain chain{ChainInNormalOperation(1)};
 
   SendFrame(chain, {{0x03, 0xFF}});
   SendFrame(chain, {{0x04, 0xFF}});
@@ -135,7 +135,7 @@ TEST(Max7219Test, DisplayTestLightsEverythingEvenInShutdown) {
   chain.Reset(1);
 
   SendFrame(chain, {{0x0F, 0x01}});
-  for (uint8_t digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
+  for (uint8_t digit{0}; digit < Max7219::kNumberOfDigits; digit++) {
     EXPECT_EQ(chain.chips[0].Segments(digit), 0xFF);
   }
   SendFrame(chain, {{0x0F, 0x00}});
@@ -143,7 +143,7 @@ TEST(Max7219Test, DisplayTestLightsEverythingEvenInShutdown) {
 }
 
 TEST(Max7219Test, CodeBDecodesOnlyTheSelectedDigits) {
-  Max7219Chain chain = ChainInNormalOperation(1);
+  Max7219Chain chain{ChainInNormalOperation(1)};
 
   SendFrame(chain, {{0x09, 0x01}});
   SendFrame(chain, {{0x01, 0x85}});
@@ -153,7 +153,7 @@ TEST(Max7219Test, CodeBDecodesOnlyTheSelectedDigits) {
 }
 
 TEST(Max7219Test, IntensityKeepsFourBits) {
-  Max7219Chain chain = ChainInNormalOperation(1);
+  Max7219Chain chain{ChainInNormalOperation(1)};
 
   SendFrame(chain, {{0x0A, 0xF7}});
   EXPECT_EQ(chain.chips[0].intensity, 0x07);
@@ -161,7 +161,7 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
 
 Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                  uint8_t digit, uint8_t segment) {
-  Max7219Chain chain = ChainInNormalOperation(number_of_chips);
+  Max7219Chain chain{ChainInNormalOperation(number_of_chips)};
   chain.chips[chip].digit[digit] = static_cast<uint8_t>(1U << segment);
   return chain;
 }
@@ -172,8 +172,8 @@ using Led = std::pair<uint16_t, uint16_t>;
 std::vector<Led> LitLeds(Max7219Chain const& chain, Max7219Wiring const& wiring,
                          bool upside_down = false) {
   std::vector<Led> leds;
-  for (uint16_t x = 0; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
-    for (uint8_t y = 0; y < Max7219::kNumberOfDigits; y++) {
+  for (uint16_t x{0}; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
+    for (uint8_t y{0}; y < Max7219::kNumberOfDigits; y++) {
       if (chain.IsLit(wiring, x, y, upside_down)) {
         leds.emplace_back(x, y);
       }
@@ -187,8 +187,8 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce) {
   for (Max7219Wiring const& wiring : kMax7219Wirings) {
     SCOPED_TRACE(wiring.name);
     std::vector<Led> seen;
-    for (uint8_t digit = 0; digit < Max7219::kNumberOfDigits; digit++) {
-      for (uint8_t segment = 0; segment < 8; segment++) {
+    for (uint8_t digit{0}; digit < Max7219::kNumberOfDigits; digit++) {
+      for (uint8_t segment{0}; segment < 8; segment++) {
         std::vector<Led> leds =
             LitLeds(ChainWithOneSegment(1, 0, digit, segment), wiring);
         ASSERT_EQ(leds.size(), 1U);
@@ -220,7 +220,7 @@ TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
 }
 
 TEST(Max7219Test, ChainRunsFromRightToLeft) {
-  Max7219Chain chain = ChainWithOneSegment(2, 0, 0, 0);
+  Max7219Chain chain{ChainWithOneSegment(2, 0, 0, 0)};
 
   std::vector<Led> leds = LitLeds(chain, kMaX7219WiringFC16);
   ASSERT_EQ(leds.size(), 1U);

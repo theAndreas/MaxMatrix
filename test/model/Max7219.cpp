@@ -18,10 +18,10 @@ std::array<Max7219Wiring, 8> const kMax7219Wirings{{
     {"DR1CR1RR1", true, true, true},
 }};
 
-Max7219Wiring const kMaX7219WiringGeneric = kMax7219Wirings[2];
-Max7219Wiring const kMaX7219WiringFC16 = kMax7219Wirings[4];
-Max7219Wiring const kMaX7219WiringParola = kMax7219Wirings[6];
-Max7219Wiring const kMaX7219WiringIcstation = kMax7219Wirings[7];
+Max7219Wiring const kMaX7219WiringGeneric{kMax7219Wirings[2]};
+Max7219Wiring const kMaX7219WiringFC16{kMax7219Wirings[4]};
+Max7219Wiring const kMaX7219WiringParola{kMax7219Wirings[6]};
+Max7219Wiring const kMaX7219WiringIcstation{kMax7219Wirings[7]};
 
 /* the datasheet's power-up state: control registers reset, which means shut
  * down, one digit scanned, no decode and minimum intensity; the digit registers
@@ -100,7 +100,7 @@ void Max7219Chain::ShiftBit(bool value) {
   if (shift_register_.empty()) {
     return;
   }
-  for (size_t i = shift_register_.size() - 1; i > 0; i--) {
+  for (size_t i{shift_register_.size() - 1}; i > 0; i--) {
     uint8_t const shifted{static_cast<uint8_t>(shift_register_[i] << 1U)};
     uint8_t const carry{static_cast<uint8_t>(shift_register_[i - 1] >> 7U)};
     shift_register_[i] = static_cast<uint8_t>(shifted | carry);
@@ -113,7 +113,7 @@ void Max7219Chain::ShiftBit(bool value) {
  * select - after a frame that was too short, that is part of the frame before
  */
 void Max7219Chain::Latch() {
-  for (size_t chip = 0; chip < chips.size(); chip++) {
+  for (size_t chip{0}; chip < chips.size(); chip++) {
     chips[chip].Latch(shift_register_[(2 * chip) + 1],
                       shift_register_[2 * chip]);
   }
@@ -135,8 +135,8 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
   Max7219 const& chip{ChipAt(x)};
   uint8_t const column{static_cast<uint8_t>(Max7219::kNumberOfDigits - 1 -
                                             (x % Max7219::kNumberOfDigits))};
-  uint8_t digit = wiring.digits_as_rows ? y : column;
-  uint8_t segment = wiring.digits_as_rows ? column : y;
+  uint8_t digit{wiring.digits_as_rows ? y : column};
+  uint8_t segment{wiring.digits_as_rows ? column : y};
 
   if (wiring.reversed_rows) {
     digit = Max7219::kNumberOfDigits - 1 - digit;

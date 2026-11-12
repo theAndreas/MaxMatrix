@@ -35,27 +35,27 @@
 #include "MaxMatrix.h"
 #undef private
 
-static byte const kDataInPin = 11;
-static byte const kChipSelectPin = 10;
-static byte const kClockPin = 13;
+static byte const kDataInPin{11};
+static byte const kChipSelectPin{10};
+static byte const kClockPin{13};
 /* the chain of the examples; the tests of other lengths make their own */
-static byte const kNumberOfModules = 4;
-static byte const kNumberOfColumns =
-    kNumberOfModules * max_matrix::kColumnNumberOfModule;
+static byte const kNumberOfModules{4};
+static byte const kNumberOfColumns{kNumberOfModules *
+                                   max_matrix::kColumnNumberOfModule};
 /* a row of the whole panel, one byte per module */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
 using PanelRow = byte[kNumberOfModules];
 
 /* an array that is no font, for SetFont() */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-static uint8_t const kNoFont[] PROGMEM = {'G', 1, 32, 126, 8};
+static uint8_t const kNoFont[] PROGMEM{'G', 1, 32, 126, 8};
 
 /* every error by name, in the order of the enum */
 static std::array<char const*, 8> const kErrorNames{
     {"Error::kOk", "Error::kOutOfRange", "Error::kUnknownChar",
      "Error::kNoText", "Error::kNotANumber", "Error::kUnknownCommand",
      "Error::kLineTooLong", "Error::kNotAFont"}};
-static uint8_t const kNumberOfErrors = kErrorNames.size();
+static uint8_t const kNumberOfErrors{kErrorNames.size()};
 
 /* GoogleTest finds what prints and compares a type of the library by ADL, so
  * these lie in its namespace; every test file sees them, as GoogleTest would
@@ -93,7 +93,7 @@ std::string Text(__FlashStringHelper const* text);
  * library, which prints. With it off the list stays empty, so that a test can
  * expect a report in every variant. */
 using Report = std::pair<std::string, max_matrix::Error>;
-static bool const kDevErrorDetect = (MAXMATRIX_DEV_ERROR_DETECT == STD_ON);
+static bool const kDevErrorDetect{(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)};
 extern std::vector<Report> reports;
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only
@@ -137,7 +137,7 @@ class MaxMatrixTest : public ::testing::Test {
 
   /* the ShiftTask() calls the last ShiftWholeText() took, each one a step of
    * the text on the panel */
-  uint16_t shift_calls_ = 0;
+  uint16_t shift_calls_{0};
 
   /* returns the number of frames the shift sent to the chain */
   int32_t ShiftWholeText(char const* text) {
@@ -190,9 +190,9 @@ bool Pattern(int16_t x, int16_t y);
 template <typename DotType>
 std::vector<std::string> Picture(DotType dot, byte columns = kNumberOfColumns) {
   std::vector<std::string> rows;
-  for (int16_t y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (int16_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     std::string row;
-    for (int16_t x = 0; x < columns; x++) {
+    for (int16_t x{0}; x < columns; x++) {
       row += dot(x, y) ? '#' : '.';
     }
     rows.push_back(row);

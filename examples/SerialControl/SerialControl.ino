@@ -27,12 +27,12 @@
  */
 #include <MaxMatrix.h>
 
-byte const kDataInPin = 11;
-byte const kChipSelectPin = 10;
-byte const kClockPin = 13;
-uint32_t const kBaudRate = 115200;
+byte const kDataInPin{11};
+byte const kChipSelectPin{10};
+byte const kClockPin{13};
+uint32_t const kBaudRate{115200};
 
-max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
 max_matrix::Command command;
 
 void setup() {

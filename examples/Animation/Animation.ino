@@ -13,15 +13,15 @@
  */
 #include <MaxMatrix.h>
 
-uint32_t const kStepIntervalMs = 40;
+uint32_t const kStepIntervalMs{40};
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);
+max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
-int16_t ball_x = 0;
-int16_t ball_y = 0;
-int8_t step_x = 1;
-int8_t step_y = 1;
-uint32_t last_step = 0;
+int16_t ball_x{0};
+int16_t ball_y{0};
+int8_t step_x{1};
+int8_t step_y{1};
+uint32_t last_step{0};
 
 void setup() {
   matrix.Init();

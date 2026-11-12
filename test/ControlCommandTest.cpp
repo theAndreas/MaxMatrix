@@ -65,8 +65,7 @@ TEST(ControlCommandTest, FitsRefusesALineBreak) {
 // edge and the empty columns after it
 TEST(ControlCommandTest, DecodesThePicture) {
   std::vector<uint8_t> columns;
-  std::vector<uint8_t> expected = {0x7F, 0x08, 0x08, 0x7F,
-                                   0x00, 0x44, 0x7D, 0x40};
+  std::vector<uint8_t> expected{0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40};
 
   expected.resize(static_cast<size_t>(kControlNumberOfColumns), 0x00);
   ASSERT_TRUE(ControlCommand::DecodePicture(
@@ -83,7 +82,7 @@ TEST(ControlCommandTest, DecodesThePicture) {
 // a picture of another chain, or one cut short, is still an answer to picture,
 // but has no columns to draw; any other line is no answer to it
 TEST(ControlCommandTest, DecodesAPictureItCannotDrawAsEmpty) {
-  std::vector<uint8_t> columns = {1, 2, 3};
+  std::vector<uint8_t> columns{1, 2, 3};
 
   EXPECT_TRUE(ControlCommand::DecodePicture(
       "picture=" + std::string((2 * kControlNumberOfColumns) + 2, '0'),

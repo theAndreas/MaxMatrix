@@ -31,9 +31,9 @@ constexpr uint32_t kMicrosecondsPerMillisecond{1000};
 }  // namespace
 
 int SimulatorSocket::OpenListener(uint16_t port) {
-  int const listening = socket(AF_INET, SOCK_STREAM, 0);
-  int const reuse = 1;
-  sockaddr_in address = sockaddr_in();
+  int const listening{socket(AF_INET, SOCK_STREAM, 0)};
+  int const reuse{1};
+  sockaddr_in address{};
 
   if (listening < 0) {
     return kSimulatorSocketNone;
@@ -58,28 +58,28 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 }
 
 void SimulatorSocket::SetNonBlocking(int socket) {
-  int const flags = fcntl(socket, F_GETFL, 0);
+  int const flags{fcntl(socket, F_GETFL, 0)};
   // H-8: fcntl() takes flags as int, and has no other form than a vararg
   // NOLINTNEXTLINE(bugprone-signed-bitwise,cppcoreguidelines-pro-type-vararg)
   fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void SimulatorSocket::SetReceiveTimeout(int socket, uint32_t milliseconds) {
-  timeval timeout = timeval();
+  timeval timeout{};
 
   timeout.tv_sec = static_cast<time_t>(milliseconds / kMillisecondsPerSecond);
-  auto const remainder =
-      static_cast<suseconds_t>(milliseconds % kMillisecondsPerSecond);
+  auto const remainder{
+      static_cast<suseconds_t>(milliseconds % kMillisecondsPerSecond)};
   timeout.tv_usec = remainder * kMicrosecondsPerMillisecond;
   setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 }
 
 bool SimulatorSocket::SendAll(int socket, std::string const& data) {
-  size_t sent = 0;
+  size_t sent{0};
 
   while (sent < data.size()) {
-    ssize_t const written =
-        send(socket, &data[sent], data.size() - sent, MSG_NOSIGNAL);
+    ssize_t const written{
+        send(socket, &data[sent], data.size() - sent, MSG_NOSIGNAL)};
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {

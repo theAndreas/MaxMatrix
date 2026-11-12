@@ -67,9 +67,8 @@ Max7219 const& ChipOfModule(byte module) {
 
 std::vector<byte> Display() {
   std::vector<byte> columns;
-  for (byte module = 0; module < mock::chain.chips.size(); module++) {
-    for (byte column = 0; column < max_matrix::kColumnNumberOfModule;
-         column++) {
+  for (byte module{0}; module < mock::chain.chips.size(); module++) {
+    for (byte column{0}; column < max_matrix::kColumnNumberOfModule; column++) {
       columns.push_back(ChipOfModule(module).Segments(column));
     }
   }
@@ -93,8 +92,8 @@ std::vector<std::string> ShownPicture(Matrix& matrix) {
 }
 
 void DrawPattern(Matrix& matrix) {
-  for (byte x = 0; x < matrix.GetNumberOfColumns(); x++) {
-    for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
+  for (byte x{0}; x < matrix.GetNumberOfColumns(); x++) {
+    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       matrix.SetDot(x, y, Pattern(x, y));
     }
   }

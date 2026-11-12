@@ -80,7 +80,7 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
   std::string json;
 
   for (char const c : text) {
-    auto const code = static_cast<uint8_t>(c);
+    auto const code{static_cast<uint8_t>(c)};
     if (c == '"' || c == '\\') {
       json += '\\';
       json += c;
@@ -98,7 +98,7 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
 void SimulatorWeb::LogFrame() {
   std::string line = "#" + std::to_string(mock::frames) + ":";
 
-  for (size_t i = 0; i + 1 < mock::last_frame.size(); i += 2) {
+  for (size_t i{0}; i + 1 < mock::last_frame.size(); i += 2) {
     line += i == 0 ? " " : " | ";
     line += ConvertToHex(mock::last_frame[i], 2) + " " +
             ConvertToHex(mock::last_frame[i + 1], 2);
@@ -160,7 +160,7 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
 std::string SimulatorWeb::GetLog() const {
   std::string log;
 
-  for (size_t i = 0; i < frame_log_.size(); i++) {
+  for (size_t i{0}; i < frame_log_.size(); i++) {
     log += (i > 0 ? ",\"" : "\"") + frame_log_[i] + "\"";
   }
   return log;
@@ -172,7 +172,7 @@ std::string SimulatorWeb::GetLog() const {
 std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel) {
   std::string intensities;
 
-  for (uint8_t module = 0; module < SimulatorPanel::GetNumberOfModules();
+  for (uint8_t module{0}; module < SimulatorPanel::GetNumberOfModules();
        module++) {
     intensities +=
         (module > 0 ? "," : "") + std::to_string(panel.GetIntensity(module));

@@ -64,8 +64,8 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
     return CommandState::kPending;
   }
 
-  bool const too_long = line_too_long_;
-  bool const empty = line_length_ == 0;
+  bool const too_long{line_too_long_};
+  bool const empty{line_length_ == 0};
 
   line_[line_length_] = internal::kNullCharacter;
   line_length_ = 0;
@@ -73,7 +73,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   if (empty) {
     return CommandState::kPending;
   }
-  Result<CommandState> result = Error::kLineTooLong;
+  Result<CommandState> result{Error::kLineTooLong};
   if (!too_long) {
     result = Execute(matrix, line_, answer);
   }
@@ -90,8 +90,8 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
 // with the end of the name, and passes it on by name.
 Result<CommandState> Command::Execute(Matrix& matrix, char* text,
                                       Print& answer) {
-  char* value = strchr(text, kValueSeparator);
-  Status status = Error::kOk;
+  char* value{strchr(text, kValueSeparator)};
+  Status status{Error::kOk};
 
   if (value == nullptr) {
     if (0 == strcmp_P(text, PSTR("picture"))) {
@@ -156,9 +156,9 @@ Status Command::ExecuteText(Matrix& matrix, char const* value) {
  * word, and whoever typed the line should learn that it did nothing.
  */
 Status Command::ExecuteDot(Matrix& matrix, char* value) {
-  char* row_text = strchr(value, kListSeparator);
-  char* lit_text =
-      row_text == nullptr ? nullptr : strchr(row_text + 1, kListSeparator);
+  char* row_text{strchr(value, kListSeparator)};
+  char* lit_text{row_text == nullptr ? nullptr
+                                     : strchr(row_text + 1, kListSeparator)};
 
   if (lit_text == nullptr) {
     return Error::kNotANumber;
@@ -222,11 +222,11 @@ Status Command::ExecuteSetting(Matrix& matrix, char const* name,
  * type and orientation. The column is on the panel, so GetColumn() cannot fail.
  */
 void Command::AnswerPicture(Matrix& matrix, Print& answer) {
-  int16_t const columns = matrix.GetNumberOfColumns();
+  int16_t const columns{matrix.GetNumberOfColumns()};
 
   answer.print(F("picture="));
-  for (int16_t column = 0; column < columns; column++) {
-    byte const value = matrix.GetColumn(column).GetValue();
+  for (int16_t column{0}; column < columns; column++) {
+    byte const value{matrix.GetColumn(column).GetValue()};
     byte const high_nibble{static_cast<byte>(value >> kNibbleWidth)};
     byte const low_nibble{static_cast<byte>(value & kLowNibble)};
     answer.write(static_cast<uint8_t>(ConvertToHexDigit(high_nibble)));
@@ -242,7 +242,7 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
  * same, so that "999x" is no number rather than too large.
  */
 Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
-  uint32_t value = 0;
+  uint32_t value{0};
 
   if (*text == internal::kNullCharacter) {
     return Error::kNotANumber;

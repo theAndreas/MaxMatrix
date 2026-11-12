@@ -19,7 +19,7 @@
 
 class Max7219 {
  public:
-  static uint8_t const kNumberOfDigits = 8;
+  static uint8_t const kNumberOfDigits{8};
 
   std::array<uint8_t, kNumberOfDigits> digit{};
   uint8_t decode_mode{};
