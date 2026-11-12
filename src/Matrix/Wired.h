@@ -40,7 +40,7 @@ class Wired {
    * a module have changed, one bit each, and Send() needs one frame per changed
    * column: eight at most for a whole picture, however many calls drew it.
    */
-  byte changed_columns_;
+  byte changed_columns_{0};
 
  public:
   /*!

@@ -24,7 +24,7 @@ uint16_t const kPort = 18086;
 // What arrives on `descriptor` within half a second.
 std::string Receive(int descriptor) {
   pollfd ready = {descriptor, POLLIN, 0};
-  std::array<char, 256> chunk;
+  std::array<char, 256> chunk{};
 
   if (poll(&ready, 1, 500) <= 0) return "";
   ssize_t const length = read(descriptor, chunk.data(), chunk.size());
@@ -52,7 +52,7 @@ class ControlSerialPortTest : public testing::Test {
   std::string name_;
 
   void SetUp() override {
-    std::array<char, 64> path;
+    std::array<char, 64> path{};
     ASSERT_EQ(openpty(&board_, &port_end_, path.data(), nullptr, nullptr), 0);
     name_ = path.data();
   }

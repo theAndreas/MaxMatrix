@@ -44,7 +44,7 @@ int Connect() {
 // connection or sent nothing.
 std::string Receive(int client) {
   pollfd ready = {client, POLLIN, 0};
-  std::array<char, 256> chunk;
+  std::array<char, 256> chunk{};
 
   if (poll(&ready, 1, 500) <= 0) return "";
   ssize_t const length = recv(client, chunk.data(), chunk.size(), 0);
@@ -56,7 +56,7 @@ std::string Receive(int client) {
 // a read then returns 0.
 bool IsClosedByHost(int client) {
   pollfd ready = {client, POLLIN, 0};
-  char c;
+  char c = 0;
 
   return poll(&ready, 1, 500) > 0 && recv(client, &c, 1, 0) == 0;
 }

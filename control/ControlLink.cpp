@@ -15,13 +15,7 @@
 
 #include "ControlCommand.h"
 
-ControlLink::ControlLink(ControlPort& port) : port_{port} {
-  ready_ = false;
-  picture_asked_ = false;
-  picture_stale_ = false;
-  picture_timed_ = false;
-  picture_asked_at_ = 0;
-}
+ControlLink::ControlLink(ControlPort& port) : port_{port} {}
 
 void ControlLink::Begin(bool wait_for_ready) {
   ready_ = !wait_for_ready;
@@ -32,12 +26,12 @@ void ControlLink::Begin(bool wait_for_ready) {
   picture_timed_ = false;
 }
 
-bool ControlLink::IsReady() const { return ready_ && port_.IsOpen(); }
+bool ControlLink::IsReady() const { return ready_ && port_.get().IsOpen(); }
 
 bool ControlLink::Send(std::string const& line) {
   if (!IsReady()) return false;
   picture_stale_ = picture_asked_;
-  return port_.Write(line + "\n");
+  return port_.get().Write(line + "\n");
 }
 
 // The time is compared as a difference, so that a clock that runs past 2^32 ms
@@ -51,7 +45,7 @@ void ControlLink::AskForPicture(uint32_t now) {
                                : kControlLinkPictureIntervalMs)) {
     return;
   }
-  if (!port_.Write(ControlCommand::MakePicture() + "\n")) return;
+  if (!port_.get().Write(ControlCommand::MakePicture() + "\n")) return;
   picture_asked_ = true;
   picture_stale_ = false;
   picture_timed_ = true;
@@ -59,10 +53,10 @@ void ControlLink::AskForPicture(uint32_t now) {
 }
 
 bool ControlLink::Task(std::vector<std::string>* lines) {
-  size_t end;
+  size_t end = 0;
 
-  if (!port_.IsOpen()) return false;
-  bool const open = port_.Read(&received_);
+  if (!port_.get().IsOpen()) return false;
+  bool const open = port_.get().Read(&received_);
 
   while ((end = received_.find('\n')) != std::string::npos ||
          received_.size() >= kControlLinkMaxLineLength) {

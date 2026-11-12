@@ -31,9 +31,11 @@ namespace max_matrix {
  * \see ReportError()
  */
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, F() needs a literal
 #define MAXMATRIX_REPORT_ERROR(Api, Call) \
   ::max_matrix::internal::ReportIfError(F(Api), Call)
 #else
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a build without reports
 #define MAXMATRIX_REPORT_ERROR(Api, Call) (Call)
 #endif
 

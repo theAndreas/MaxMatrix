@@ -123,13 +123,13 @@ class Chain {
    * statement expression, which decltype() cannot take outside a function, so
    * it is read where it is written. Data in and clock only bit bang.
    */
-  byte chip_select_port_;
-  byte chip_select_mask_;
+  byte chip_select_port_{0};
+  byte chip_select_mask_{0};
 #if (MAXMATRIX_USE_SPI == STD_OFF)
-  byte data_in_port_;
-  byte data_in_mask_;
-  byte clock_port_;
-  byte clock_mask_;
+  byte data_in_port_{0};
+  byte data_in_mask_{0};
+  byte clock_port_{0};
+  byte clock_mask_{0};
 #endif
 
   /*

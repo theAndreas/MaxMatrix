@@ -10,9 +10,8 @@
 
 #include "SimulatorTerminal.h"
 
-#include <stdio.h>
-
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -34,7 +33,7 @@ constexpr char kResultDark[] = ".";
 
 }  // namespace
 
-void SimulatorTerminal::Clear() { fputs(kClearScreen, stdout); }
+void SimulatorTerminal::Clear() { std::cout << kClearScreen; }
 
 std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
   std::ostringstream line;
@@ -55,10 +54,9 @@ std::string SimulatorTerminal::GetStatusLine(SimulatorPanel const& panel) {
 void SimulatorTerminal::Draw(SimulatorPanel const& panel) {
   // The cursor goes home rather than the terminal being cleared, which would
   // flicker.
-  printf("%s%s%s\n\n", kCursorHome, GetStatusLine(panel).c_str(),
-         kClearLineEnd);
-  fputs(panel.GetText(kLit, kDark, "\n").c_str(), stdout);
-  fflush(stdout);
+  std::cout << kCursorHome << GetStatusLine(panel) << kClearLineEnd << "\n\n"
+            << panel.GetText(kLit, kDark, "\n");
+  std::cout.flush();
 }
 
 bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
@@ -66,11 +64,11 @@ bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
   std::string const result = panel.GetText(kResultLit, kResultDark, "\n");
   std::string expected;
 
-  fputs(result.c_str(), stdout);
+  std::cout << result;
   if (expect_file == nullptr) return true;
 
   if (!ReadFile(expect_file, &expected) || expected != result) {
-    fprintf(stderr, "differs from %s:\n%s", expect_file, expected.c_str());
+    std::cerr << "differs from " << expect_file << ":\n" << expected;
     return false;
   } else {
     return true;

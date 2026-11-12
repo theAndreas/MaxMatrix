@@ -21,12 +21,12 @@ class Max7219 {
  public:
   static uint8_t const kNumberOfDigits = 8;
 
-  std::array<uint8_t, kNumberOfDigits> digit;
-  uint8_t decode_mode;
-  uint8_t intensity;
-  uint8_t scan_limit;
-  uint8_t shutdown;
-  uint8_t display_test;
+  std::array<uint8_t, kNumberOfDigits> digit{};
+  uint8_t decode_mode{};
+  uint8_t intensity{};
+  uint8_t scan_limit{};
+  uint8_t shutdown{};
+  uint8_t display_test{};
 
   Max7219() { Reset(); }
   void Reset();

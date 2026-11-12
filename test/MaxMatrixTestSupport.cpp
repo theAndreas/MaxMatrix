@@ -56,6 +56,8 @@ void max_matrix::ReportError(__FlashStringHelper const* api, Error error) {
 #endif
 
 std::vector<byte> Bytes(byte const* data, size_t size) {
+  // T-20: the library's buffer is a pointer and a length
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   return std::vector<byte>(data, data + size);
 }
 

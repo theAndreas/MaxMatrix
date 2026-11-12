@@ -25,10 +25,8 @@ constexpr size_t kChunkLength{256u};
 
 }  // namespace
 
-SimulatorSerialHost::SimulatorSerialHost() {
-  listener_ = kSimulatorSocketNone;
-  client_ = kSimulatorSocketNone;
-}
+SimulatorSerialHost::SimulatorSerialHost()
+    : listener_{kSimulatorSocketNone}, client_{kSimulatorSocketNone} {}
 
 SimulatorSerialHost::~SimulatorSerialHost() {
   if (client_ != kSimulatorSocketNone) close(client_);
@@ -41,7 +39,7 @@ bool SimulatorSerialHost::Begin(uint16_t port) {
 }
 
 void SimulatorSerialHost::Task(std::string* received) {
-  std::array<char, kChunkLength> chunk;
+  std::array<char, kChunkLength> chunk{};
 
   if (listener_ == kSimulatorSocketNone) return;
 
@@ -74,7 +72,7 @@ void SimulatorSerialHost::Send(std::string const& text) {
  * is taken rather than waiting for an answer that never comes.
  */
 void SimulatorSerialHost::AcceptClient() {
-  int accepted;
+  int accepted = 0;
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
     if (client_ == kSimulatorSocketNone) {

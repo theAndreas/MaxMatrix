@@ -32,9 +32,9 @@ constexpr uint8_t kSimulatorWebHostMaxClients{4u};
 class SimulatorWebHost {
  private:
   int listener_;
-  std::array<int, kSimulatorWebHostMaxClients> clients_;
+  std::array<int, kSimulatorWebHostMaxClients> clients_{};
   std::array<std::string, kSimulatorWebHostMaxClients> pending_;
-  char const* page_path_;
+  char const* page_path_{nullptr};
 
   void AcceptClients();
   void ReadClient(uint8_t slot, std::vector<std::string>* messages);

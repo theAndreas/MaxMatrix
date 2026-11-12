@@ -9,17 +9,13 @@
 
 #include "SimulatorFrontEnd.h"
 
-#include <stdio.h>
-
+#include <iostream>
 #include <string>
 
 #include "Arduino.h"
 #include "SimulatorTerminal.h"
 
-SimulatorFrontEnd::SimulatorFrontEnd() {
-  web_on_ = false;
-  terminal_on_ = false;
-}
+SimulatorFrontEnd::SimulatorFrontEnd() = default;
 
 bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
   web_on_ = options.IsWeb();
@@ -27,21 +23,21 @@ bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
 
   if (web_on_) {
     if (!web_.Begin(options.GetPort(), SIMULATOR_PAGE)) {
-      fprintf(stderr, "port %u is taken, maybe by another simulator\n",
-              options.GetPort());
+      std::cerr << "port " << options.GetPort()
+                << " is taken, maybe by another simulator\n";
       return false;
     }
-    printf("http://localhost:%u/\n", options.GetPort());
+    std::cout << "http://localhost:" << options.GetPort() << "/\n";
   }
   if (options.GetTcpPort() != 0) {
     if (!serial_host_.Begin(options.GetTcpPort())) {
-      fprintf(stderr, "port %u is taken, maybe by another simulator\n",
-              options.GetTcpPort());
+      std::cerr << "port " << options.GetTcpPort()
+                << " is taken, maybe by another simulator\n";
       return false;
     }
-    printf("Serial on localhost:%u\n", options.GetTcpPort());
+    std::cout << "Serial on localhost:" << options.GetTcpPort() << '\n';
   }
-  fflush(stdout);
+  std::cout.flush();
   if (terminal_on_) SimulatorTerminal::Clear();
   return true;
 }

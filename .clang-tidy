@@ -49,7 +49,6 @@ Checks: >
   -bugprone-throwing-static-initialization,
   -modernize-use-nodiscard,
   -modernize-concat-nested-namespaces,
-  -cppcoreguidelines-*,
   -misc-include-cleaner,
   -readability-*,
   readability-convert-member-functions-to-static,
@@ -75,8 +74,8 @@ Checks: >
 #   library and all host code but the tests are built as gnu++11, as avr-gcc builds a sketch,
 #   where it does not compile; the check reports a header only where a test, built as C++17
 #   for GoogleTest, includes it.
-# MaxMatrix's own, for now: cppcoreguidelines-* and
-#   readability-* but the three it had before it came onto the template. The
+# MaxMatrix's own, for now: readability-* but the three it had before it came onto the
+#   template. The
 #   template's checks found some 670 places in src/ alone, most of them the macros that version
 #   2.0.0 turned into constants of a namespace (OIL 35); the groups come on one at a time now,
 #   each with what it finds fixed (OIL 36), and leave this list then.

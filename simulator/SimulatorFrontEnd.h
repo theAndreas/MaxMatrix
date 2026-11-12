@@ -30,8 +30,8 @@ class SimulatorFrontEnd {
  private:
   SimulatorWeb web_;
   SimulatorSerialHost serial_host_;
-  bool web_on_;
-  bool terminal_on_;
+  bool web_on_{false};
+  bool terminal_on_{false};
 
  public:
   /*! \brief Makes a front end that shows nothing until Begin(). */

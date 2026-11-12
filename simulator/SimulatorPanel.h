@@ -36,10 +36,10 @@ class SimulatorPanel {
  private:
   std::string wiring_name_;
   Max7219Wiring const* wiring_;
-  bool upside_down_;
-  int32_t drawn_frames_;
-  uint32_t last_draw_;
-  bool draw_requested_;
+  bool upside_down_{false};
+  int32_t drawn_frames_{-1};
+  uint32_t last_draw_{0};
+  bool draw_requested_{true};
 
   static Max7219Wiring const* FindWiring(std::string const& name);
 

@@ -91,12 +91,17 @@ namespace internal {
 class Panel {
  private:
   Wired wired_;
-  ModuleType module_type_;
-  MatrixOrientation matrix_orientation_;
+  ModuleType module_type_{ModuleType::kDr0Cr0Rr1};
+  MatrixOrientation matrix_orientation_{MatrixOrientation::k0};
+
+  /* where a dot lies in the buffer: the buffer column and its bit */
+  struct BufferDot {
+    byte column;
+    byte bit;
+  };
 
   static byte ReverseByte(byte input);
-  void ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
-                          byte* buffer_bit);
+  BufferDot ConvertDotToBuffer(byte column, byte row) const;
   byte GetLine(byte column, byte row, bool vertical);
   void SetLine(byte column, byte row, bool vertical, byte value);
   void SetFarDot(int32_t column, int32_t row, bool value);

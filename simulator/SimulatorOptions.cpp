@@ -11,41 +11,35 @@
 
 #include "SimulatorOptions.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
+#include <iostream>
 #include <string>
+#include <vector>
 
-SimulatorOptions::SimulatorOptions() {
-  wiring_name_ = kSimulatorPanelDefaultWiring;
-  upside_down_ = false;
-  web_ = false;
-  port_ = kSimulatorOptionsDefaultPort;
-  tcp_port_ = 0;
-  run_for_ = 0;
-  expect_file_ = nullptr;
-  elf_file_ = nullptr;
-}
+SimulatorOptions::SimulatorOptions()
+    : wiring_name_(kSimulatorPanelDefaultWiring) {}
 
 bool SimulatorOptions::Parse(int argc, char** argv) {
-  for (int i = 1; i < argc; i++) {
-    if (!ParseOption(argc, argv, &i)) return false;
+  // T-20: main() is handed its arguments as a pointer to an array
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  std::vector<char const*> const arguments(argv, argv + argc);
+
+  for (size_t i = 1; i < arguments.size(); i++) {
+    if (!ParseOption(arguments, &i)) return false;
   }
   return expect_file_ == nullptr || run_for_ != 0;
 }
 
 void SimulatorOptions::PrintUsage(char const* program) {
-  fprintf(stderr,
-          "usage: %s [--elf FILE] [--wiring NAME] [--upside-down] [--serial "
-          "LINE]... [--web [--port PORT]]\n",
-          program);
-  fprintf(stderr, "         [--tcp PORT] [--for SECONDS [--expect FILE]]\n");
-  fprintf(stderr,
-          "  FILE of --elf: the example built for the Uno; SimulatorAvr only, "
-          "which needs it\n");
-  fprintf(stderr,
-          "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or DR0CR0RR0 ... "
-          "DR1CR1RR1\n");
+  std::cerr << "usage: " << program
+            << " [--elf FILE] [--wiring NAME] [--upside-down] [--serial "
+               "LINE]... [--web [--port PORT]]\n"
+               "         [--tcp PORT] [--for SECONDS [--expect FILE]]\n"
+               "  FILE of --elf: the example built for the Uno; SimulatorAvr "
+               "only, which needs it\n"
+               "  NAME: FC16 (default), GENERIC, PAROLA, ICSTATION or "
+               "DR0CR0RR0 ... DR1CR1RR1\n";
 }
 
 /*
@@ -53,28 +47,29 @@ void SimulatorOptions::PrintUsage(char const* program) {
  * moved on to the value. Returns false if the option is unknown, lacks its
  * value or has a value it cannot take.
  */
-bool SimulatorOptions::ParseOption(int argc, char** argv, int* index) {
-  std::string const option = argv[*index];
-  bool const has_value = *index + 1 < argc;
+bool SimulatorOptions::ParseOption(std::vector<char const*> const& arguments,
+                                   size_t* index) {
+  std::string const option = arguments[*index];
+  bool const has_value = *index + 1 < arguments.size();
 
   if (option == "--upside-down") {
     upside_down_ = true;
   } else if (option == "--web") {
     web_ = true;
   } else if (option == "--wiring" && has_value) {
-    wiring_name_ = argv[++*index];
+    wiring_name_ = arguments[++*index];
   } else if (option == "--port" && has_value) {
-    if (!ConvertToPort(argv[++*index], &port_)) return false;
+    if (!ConvertToPort(arguments[++*index], &port_)) return false;
   } else if (option == "--tcp" && has_value) {
-    if (!ConvertToPort(argv[++*index], &tcp_port_)) return false;
+    if (!ConvertToPort(arguments[++*index], &tcp_port_)) return false;
   } else if (option == "--for" && has_value) {
-    if (!ConvertToRunFor(argv[++*index], &run_for_)) return false;
+    if (!ConvertToRunFor(arguments[++*index], &run_for_)) return false;
   } else if (option == "--expect" && has_value) {
-    expect_file_ = argv[++*index];
+    expect_file_ = arguments[++*index];
   } else if (option == "--elf" && has_value) {
-    elf_file_ = argv[++*index];
+    elf_file_ = arguments[++*index];
   } else if (option == "--serial" && has_value) {
-    serial_input_ += std::string(argv[++*index]) + "\n";
+    serial_input_ += std::string(arguments[++*index]) + "\n";
   } else {
     return false;
   }
@@ -90,7 +85,7 @@ bool SimulatorOptions::ParseOption(int argc, char** argv, int* index) {
  * 80, so the simulator listened somewhere else than asked without a word.
  */
 bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
-  char* end;
+  char* end = nullptr;
   // uint64_t holds what strtoul() returns on every host, until the range check
   // below.
   uint64_t const value{strtoul(text, &end, 10)};
@@ -115,7 +110,7 @@ bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
  * reached a cast to uint32_t that is undefined for it.
  */
 bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
-  char* end;
+  char* end = nullptr;
   double const milliseconds = strtod(text, &end) * 1000;
 
   /* written so that NaN, which compares false with everything, is refused as

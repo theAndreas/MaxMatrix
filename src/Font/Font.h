@@ -32,15 +32,15 @@ constexpr uint16_t kDefaultFontSize{614};
  */
 using Sprite = byte[kSpriteNumberOfBytes];
 
-/*! \brief The bytes of a Sprite. */
-enum SpriteByte : uint8_t {
-  kSpriteWidth,   /*!< The columns it takes, 1 to 5. */
-  kSpriteHeight,  /*!< The rows it takes, 1 to 8. */
-  kSpriteColumn1, /*!< Its leftmost column. */
-  kSpriteColumn2, /*!< Its second column. */
-  kSpriteColumn3, /*!< Its third column. */
-  kSpriteColumn4, /*!< Its fourth column. */
-  kSpriteColumn5  /*!< Its fifth column. */
+/*! \brief The bytes of a Sprite; a plain enum, as each indexes a Sprite. */
+enum SpriteByte : uint8_t {  // NOLINT(cppcoreguidelines-use-enum-class)
+  kSpriteWidth,              /*!< The columns it takes, 1 to 5. */
+  kSpriteHeight,             /*!< The rows it takes, 1 to 8. */
+  kSpriteColumn1,            /*!< Its leftmost column. */
+  kSpriteColumn2,            /*!< Its second column. */
+  kSpriteColumn3,            /*!< Its third column. */
+  kSpriteColumn4,            /*!< Its fourth column. */
+  kSpriteColumn5             /*!< Its fifth column. */
 };
 
 /*! \brief A char of a font, as it lies in flash: where its columns are, and how
@@ -50,6 +50,12 @@ struct Glyph {
       columns; /*!< Its columns in flash, leftmost first, bit 0 the top row. */
   byte width;  /*!< The columns it takes, 1 to 255. */
   byte height; /*!< The rows it takes, the height of its font, 1 to 8. */
+};
+
+/*! \brief A char of a text, as Font::DecodeChar() reads it. */
+struct DecodedChar {
+  char c;      /*!< The char, latin-1. */
+  byte length; /*!< The bytes it took in the text, 1 or 2. */
 };
 
 /*!
@@ -131,10 +137,9 @@ class Font {
    *
    * \param[in] text The text at the char to decode; not at its terminating null
    *                 character.
-   * \param[out] c The decoded char.
-   * \return The number of bytes the char took in `text`.
+   * \return The char, and the number of bytes it took in `text`.
    */
-  static byte DecodeChar(char const* text, char* c);
+  static DecodedChar DecodeChar(char const* text);
 };
 
 }  // namespace max_matrix

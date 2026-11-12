@@ -44,11 +44,6 @@ ControlDotPanel::ControlDotPanel(
     : wxPanel{parent},
       columns_(static_cast<size_t>(kControlNumberOfColumns), 0x00),
       on_switch_{std::move(on_switch)} {
-  painting_ = false;
-  paint_lit_ = false;
-  on_dot_ = false;
-  last_column_ = 0;
-  last_row_ = 0;
   wxCoord const width = kControlNumberOfColumns * kCell +
                         (kControlNumberOfModules - 1) * kModuleGap +
                         2 * kMargin;
@@ -113,8 +108,8 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
  * outside the panel.
  */
 void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
-  uint8_t column;
-  uint8_t row;
+  uint8_t column = 0;
+  uint8_t row = 0;
 
   if (!GetDotAt(event.GetPosition(), &column, &row)) return;
   painting_ = true;
@@ -133,8 +128,8 @@ void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
  * starts again at the next LED without a line to it.
  */
 void ControlDotPanel::OnMotion(wxMouseEvent& event) {
-  uint8_t column;
-  uint8_t row;
+  uint8_t column = 0;
+  uint8_t row = 0;
 
   if (!painting_ || !event.LeftIsDown()) return;
   if (!GetDotAt(event.GetPosition(), &column, &row)) {

@@ -8,7 +8,13 @@
 # clang-diagnostic-enum-enum-conversion
 #   The same flags, as clang's warning reports them; CMakeLists.txt here turns it off for the
 #   window.
+#
+# cppcoreguidelines-owning-memory
+#   Reports every new of a control: wxWidgets hands it to the parent it is made with, which
+#   deletes it, so the window owns no pointer it could free. The classes without a window
+#   allocate nothing.
 InheritParentConfig: true
 Checks: >
   -bugprone-suspicious-enum-usage,
-  -clang-diagnostic-enum-enum-conversion
+  -clang-diagnostic-enum-enum-conversion,
+  -cppcoreguidelines-owning-memory

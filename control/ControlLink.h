@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -47,8 +48,8 @@ constexpr uint32_t kControlLinkPictureTimeoutMs{1000u};
  */
 class ControlLink {
  private:
-  ControlPort& port_;
-  bool ready_;
+  std::reference_wrapper<ControlPort> port_;
+  bool ready_{false};
   /* what has arrived after the last line feed */
   std::string received_;
   std::vector<uint8_t> picture_;
@@ -59,10 +60,10 @@ class ControlLink {
    * answer to a picture asked for before a command shows the matrix before it,
    * and is dropped as stale.
    */
-  bool picture_asked_;
-  bool picture_stale_;
-  bool picture_timed_;
-  uint32_t picture_asked_at_;
+  bool picture_asked_{false};
+  bool picture_stale_{false};
+  bool picture_timed_{false};
+  uint32_t picture_asked_at_{0};
 
   void Take(std::string line, std::vector<std::string>* lines);
 
@@ -84,7 +85,7 @@ class ControlLink {
   void Begin(bool wait_for_ready);
 
   /*! \brief Returns whether the port is open, ready or not. */
-  bool IsOpen() const { return port_.IsOpen(); }
+  bool IsOpen() const { return port_.get().IsOpen(); }
 
   /*! \brief Returns whether the port is open and SerialControl takes commands.
    */

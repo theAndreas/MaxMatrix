@@ -410,14 +410,17 @@ TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
   for (auto const& place : places) {
     matrix_.Clear();
     ASSERT_EQ(matrix_.SetChar(place.x, place.y, 'A').GetError(), Error::kOk);
-    EXPECT_EQ(ShownPicture(matrix_),
-              Picture([columns, &place, width, height](int16_t x, int16_t y) {
-                int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
-                int16_t const sprite_y{static_cast<int16_t>(y - place.y)};
-                return sprite_x >= 0 && sprite_x < width && sprite_y >= 0 &&
-                       sprite_y < height &&
-                       bitRead(columns[sprite_x], sprite_y);
-              }))
+    EXPECT_EQ(
+        ShownPicture(matrix_),
+        Picture([columns, &place, width, height](int16_t x, int16_t y) {
+          int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
+          int16_t const sprite_y{static_cast<int16_t>(y - place.y)};
+          return sprite_x >= 0 && sprite_x < width && sprite_y >= 0 &&
+                 sprite_y < height &&
+                 // T-20: a glyph's columns are a pointer into the font
+                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                 bitRead(columns[sprite_x], sprite_y);
+        }))
         << "X " << place.x << ", Y " << place.y;
   }
 }

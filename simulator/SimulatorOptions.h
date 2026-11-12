@@ -14,6 +14,7 @@
 #define MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_
 
 #include <string>
+#include <vector>
 
 #include "SimulatorPanel.h"
 
@@ -33,16 +34,16 @@ constexpr uint32_t kSimulatorOptionsMaxRunFor{UINT32_MAX}; /* milliseconds */
 class SimulatorOptions {
  private:
   std::string wiring_name_;
-  bool upside_down_;
-  bool web_;
-  uint16_t port_;
-  uint16_t tcp_port_;
-  uint32_t run_for_;
-  char const* expect_file_;
-  char const* elf_file_;
+  bool upside_down_{false};
+  bool web_{false};
+  uint16_t port_{kSimulatorOptionsDefaultPort};
+  uint16_t tcp_port_{0};
+  uint32_t run_for_{0};
+  char const* expect_file_{nullptr};
+  char const* elf_file_{nullptr};
   std::string serial_input_;
 
-  bool ParseOption(int argc, char** argv, int* index);
+  bool ParseOption(std::vector<char const*> const& arguments, size_t* index);
   static bool ConvertToPort(char const* text, uint16_t* port);
   static bool ConvertToRunFor(char const* text, uint32_t* run_for);
 

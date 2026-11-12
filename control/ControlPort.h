@@ -30,6 +30,21 @@ class ControlPort {
    * destroyed. */
   virtual ~ControlPort() = default;
 
+  /*! \brief Makes a port that is not open. */
+  ControlPort() = default;
+
+  /*! \brief Not copyable: the copy would close the same port again. */
+  ControlPort(ControlPort const&) = delete;
+
+  /*! \brief Not assignable, as it is not copyable. */
+  ControlPort& operator=(ControlPort const&) = delete;
+
+  /*! \brief Not movable: a test's port and the window's stay where they are. */
+  ControlPort(ControlPort&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  ControlPort& operator=(ControlPort&&) = delete;
+
   /*! \brief Returns whether the port is open. */
   virtual bool IsOpen() const = 0;
 

@@ -9,9 +9,12 @@
 # globals and functions without static or an anonymous namespace.
 # modernize-avoid-c-arrays: a sketch hands the library its bitmaps and texts
 # as arrays in PROGMEM, which is what the library takes (src/.clang-tidy).
+# cppcoreguidelines-pro-bounds-pointer-arithmetic: a sketch includes the
+# library's headers, which read flash through an address (src/.clang-tidy).
 InheritParentConfig: true
 Checks: >
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -misc-use-internal-linkage,
-  -modernize-avoid-c-arrays
+  -modernize-avoid-c-arrays,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic

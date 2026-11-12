@@ -36,11 +36,11 @@ class ControlDotPanel : public wxPanel {
   std::function<void(uint8_t, uint8_t, bool)> on_switch_;
   /* while the button is held: the state every LED passed takes, and the LED the
    * mouse was on last, if it was on one */
-  bool painting_;
-  bool paint_lit_;
-  bool on_dot_;
-  uint8_t last_column_;
-  uint8_t last_row_;
+  bool painting_{false};
+  bool paint_lit_{false};
+  bool on_dot_{false};
+  uint8_t last_column_{0};
+  uint8_t last_row_{0};
 
   void OnPaint(wxPaintEvent& event);
   void OnLeftDown(wxMouseEvent& event);

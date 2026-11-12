@@ -33,17 +33,18 @@ constexpr uint32_t kSimulatorAvrFrequency{16000000u};
  */
 class SimulatorAvr {
  private:
-  avr_t* avr_;
-  elf_firmware_t firmware_;
-  bool data_in_;
-  bool clock_;
-  bool chip_select_;
+  avr_t* avr_{nullptr};
+  elf_firmware_t firmware_{};
+  bool data_in_{false};
+  bool clock_{false};
+  // high, as the pull-up of a real module keeps it until Init() drives the pin
+  bool chip_select_{true};
   // The bits of the byte on the wire so far, for the frame the page shows; the
   // model has them one by one already.
-  uint8_t bits_;
-  uint8_t bit_count_;
+  uint8_t bits_{0};
+  uint8_t bit_count_{0};
   // simavr's receive buffer has room.
-  bool receive_ready_;
+  bool receive_ready_{false};
 
   void ReceiveSerial();
   void TakeByte(uint8_t value) const;

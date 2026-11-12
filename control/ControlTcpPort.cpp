@@ -33,30 +33,38 @@ constexpr intptr_t kNone{(-1)};
 constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
-}  // namespace
-
 #ifdef _WIN32
-#define CONTROL_TCP_PORT_SOCKET(socket) static_cast<SOCKET>(socket)
-#define CONTROL_TCP_PORT_WOULD_BLOCK() (WSAGetLastError() == WSAEWOULDBLOCK)
-#define CONTROL_TCP_PORT_SEND_FLAGS 0
+using Socket = SOCKET;
 /* send() takes the length as an int on Windows, a size_t on POSIX */
-#define CONTROL_TCP_PORT_LENGTH(length) static_cast<int>(length)
-#define CONTROL_TCP_PORT_CLOSE(socket) closesocket(socket)
-#define CONTROL_TCP_PORT_POLL(descriptors, timeout) \
-  WSAPoll(descriptors, 1, timeout)
+using Length = int;
+constexpr int kSendFlags{0};
+
+bool WouldBlock() { return WSAGetLastError() == WSAEWOULDBLOCK; }
+void CloseSocket(Socket socket) { closesocket(socket); }
+int Poll(pollfd* descriptor, int timeout) {
+  return WSAPoll(descriptor, 1, timeout);
+}
 #else
-#define CONTROL_TCP_PORT_SOCKET(socket) static_cast<int>(socket)
-#define CONTROL_TCP_PORT_WOULD_BLOCK() (errno == EAGAIN || errno == EWOULDBLOCK)
+using Socket = int;
+using Length = size_t;
 /* a write to a socket the simulator has closed fails rather than ending the
  * program with SIGPIPE */
-#define CONTROL_TCP_PORT_SEND_FLAGS MSG_NOSIGNAL
-#define CONTROL_TCP_PORT_LENGTH(length) (length)
-#define CONTROL_TCP_PORT_CLOSE(socket) close(socket)
-#define CONTROL_TCP_PORT_POLL(descriptors, timeout) \
-  poll(descriptors, 1, timeout)
+constexpr int kSendFlags{MSG_NOSIGNAL};
+
+bool WouldBlock() { return errno == EAGAIN || errno == EWOULDBLOCK; }
+void CloseSocket(Socket socket) { close(socket); }
+int Poll(pollfd* descriptor, int timeout) {
+  return poll(descriptor, 1, timeout);
+}
 #endif
 
-ControlTcpPort::ControlTcpPort() { socket_ = kNone; }
+// The socket is kept as an intptr_t, which holds both kinds.
+Socket ToSocket(intptr_t socket) { return static_cast<Socket>(socket); }
+Length ToLength(size_t length) { return static_cast<Length>(length); }
+
+}  // namespace
+
+ControlTcpPort::ControlTcpPort() : socket_{kNone} {}
 
 // The class is final, so Close() is its own here, as nothing can override it.
 ControlTcpPort::~ControlTcpPort() { Close(); }
@@ -84,19 +92,21 @@ bool ControlTcpPort::Open(uint16_t port) {
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   bool opened =
-      connect(CONTROL_TCP_PORT_SOCKET(socket_),
+      connect(ToSocket(socket_),
+              // the sockets API takes every address as a sockaddr
+              // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
               reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0;
 #ifdef _WIN32
   u_long non_blocking = 1;
-  opened = opened && ioctlsocket(CONTROL_TCP_PORT_SOCKET(socket_), FIONBIO,
-                                 &non_blocking) == 0;
+  opened =
+      opened && ioctlsocket(ToSocket(socket_), FIONBIO, &non_blocking) == 0;
 #else
   if (opened) {
-    int const flags = fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_GETFL, 0);
+    int const flags = fcntl(ToSocket(socket_), F_GETFL, 0);
     // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
     int const non_blocking_flags = flags | O_NONBLOCK;
-    opened = fcntl(CONTROL_TCP_PORT_SOCKET(socket_), F_SETFL,
-                   non_blocking_flags) == 0;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
+    opened = fcntl(ToSocket(socket_), F_SETFL, non_blocking_flags) == 0;
   }
 #endif
   if (!opened) Close();
@@ -110,15 +120,13 @@ bool ControlTcpPort::Write(std::string const& data) {
 
   if (!IsOpen()) return false;
   while (sent < data.size()) {
-    auto const written =
-        send(CONTROL_TCP_PORT_SOCKET(socket_), data.data() + sent,
-             CONTROL_TCP_PORT_LENGTH(data.size() - sent),
-             CONTROL_TCP_PORT_SEND_FLAGS);
-    pollfd writable = {CONTROL_TCP_PORT_SOCKET(socket_), POLLOUT, 0};
+    auto const written = send(ToSocket(socket_), &data[sent],
+                              ToLength(data.size() - sent), kSendFlags);
+    pollfd writable = {ToSocket(socket_), POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
-    } else if (written < 0 && CONTROL_TCP_PORT_WOULD_BLOCK() &&
-               CONTROL_TCP_PORT_POLL(&writable, kWriteTimeoutMs) > 0) {
+    } else if (written < 0 && WouldBlock() &&
+               Poll(&writable, kWriteTimeoutMs) > 0) {
       continue;
     } else {
       Close();
@@ -129,15 +137,15 @@ bool ControlTcpPort::Write(std::string const& data) {
 }
 
 bool ControlTcpPort::Read(std::string* data) {
-  std::array<char, kChunkLength> chunk;
+  std::array<char, kChunkLength> chunk{};
 
   if (!IsOpen()) return false;
   for (;;) {
-    auto const length = recv(CONTROL_TCP_PORT_SOCKET(socket_), chunk.data(),
+    auto const length = recv(ToSocket(socket_), chunk.data(),
                              static_cast<int>(chunk.size()), 0);
     if (length > 0) {
       data->append(chunk.data(), static_cast<size_t>(length));
-    } else if (length < 0 && CONTROL_TCP_PORT_WOULD_BLOCK()) {
+    } else if (length < 0 && WouldBlock()) {
       return true;
     } else {
       Close();
@@ -148,7 +156,7 @@ bool ControlTcpPort::Read(std::string* data) {
 
 void ControlTcpPort::Close() {
   if (socket_ == kNone) return;
-  CONTROL_TCP_PORT_CLOSE(CONTROL_TCP_PORT_SOCKET(socket_));
+  CloseSocket(ToSocket(socket_));
   socket_ = kNone;
 #ifdef _WIN32
   WSACleanup();

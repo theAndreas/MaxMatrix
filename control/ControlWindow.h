@@ -59,21 +59,21 @@ class ControlWindow : public wxFrame {
   std::string last_setting_;
 
   wxWindow* controls_;
-  wxTextCtrl* text_;
-  wxStaticText* bytes_left_;
-  wxButton* send_;
-  wxCheckBox* shift_;
-  wxSpinCtrl* space_;
-  wxSlider* intensity_;
-  wxSlider* speed_;
-  ControlDotPanel* dots_;
-  wxComboBox* serial_port_name_;
-  wxButton* board_button_;
-  wxStaticText* board_status_;
-  wxSpinCtrl* tcp_port_number_;
-  wxButton* simulator_button_;
-  wxStaticText* simulator_status_;
-  wxTextCtrl* log_;
+  wxTextCtrl* text_{};
+  wxStaticText* bytes_left_{};
+  wxButton* send_{};
+  wxCheckBox* shift_{};
+  wxSpinCtrl* space_{};
+  wxSlider* intensity_{};
+  wxSlider* speed_{};
+  ControlDotPanel* dots_{};
+  wxComboBox* serial_port_name_{};
+  wxButton* board_button_{};
+  wxStaticText* board_status_{};
+  wxSpinCtrl* tcp_port_number_{};
+  wxButton* simulator_button_{};
+  wxStaticText* simulator_status_{};
+  wxTextCtrl* log_{};
 
   void MakeMenu();
   wxWindow* MakeMatrix(wxWindow* parent);
