@@ -39,7 +39,7 @@ class SimulatorWeb {
   /* the frames since the page was last sent the panel, as hex pairs, one string
    * per frame */
   std::vector<std::string> frame_log_;
-  int32_t logged_frames_;
+  int32_t logged_frames_{0};
   /* what the sketch printed since the page was last sent the panel */
   std::string serial_output_;
 

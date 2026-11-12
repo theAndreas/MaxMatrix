@@ -16,12 +16,7 @@ namespace max_matrix {
 Matrix::Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin,
                byte* buffer, byte number_of_modules)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer,
-             number_of_modules} {
-  state_ = State::kNone;
-  auto_update_ = true;
-  shift_interval_ = MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE;
-  last_shift_ = 0;
-}
+             number_of_modules} {}
 
 void Matrix::Init() {
   state_ = State::kInit;

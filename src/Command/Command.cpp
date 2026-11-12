@@ -34,11 +34,12 @@ constexpr uint8_t kNibbleWidth{4U};
 
 }  // namespace
 
+// P-1: a line ends at its null character, so only that is set; emptying both
+// buffers whole would cost flash and time for bytes no one reads.
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 Command::Command() {
   line_[0] = internal::kNullCharacter;
   shift_text_[0] = internal::kNullCharacter;
-  line_length_ = 0;
-  line_too_long_ = false;
 }
 
 /*

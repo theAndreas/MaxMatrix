@@ -34,9 +34,7 @@ constexpr char kWebSocketPath[] = "/ws";
 
 }  // namespace
 
-SimulatorWebHost::SimulatorWebHost() {
-  listener_ = kSimulatorSocketNone;
-  page_path_ = nullptr;
+SimulatorWebHost::SimulatorWebHost() : listener_{kSimulatorSocketNone} {
   for (int& client : clients_) {
     client = kSimulatorSocketNone;
   }
@@ -71,7 +69,7 @@ void SimulatorWebHost::Broadcast(std::string const& text) {
 // Answers every new connection: keeps one that became a WebSocket, as long as
 // there is a free slot for it, and closes every other one.
 void SimulatorWebHost::AcceptClients() {
-  int accepted;
+  int accepted = 0;
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
     std::string const request = ReadRequest(accepted);
@@ -94,9 +92,9 @@ void SimulatorWebHost::AcceptClients() {
  */
 void SimulatorWebHost::ReadClient(uint8_t slot,
                                   std::vector<std::string>* messages) {
-  std::array<char, kFrameChunkLength> chunk;
+  std::array<char, kFrameChunkLength> chunk{};
   ssize_t const received = recv(clients_[slot], chunk.data(), chunk.size(), 0);
-  uint8_t opcode;
+  uint8_t opcode = 0;
   std::string payload;
 
   if (received == 0 ||
@@ -194,7 +192,7 @@ void SimulatorWebHost::DropClient(uint8_t slot) {
  */
 std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
-  std::array<char, kRequestChunkLength> chunk;
+  std::array<char, kRequestChunkLength> chunk{};
 
   SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeoutMs);
 

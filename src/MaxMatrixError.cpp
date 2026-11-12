@@ -44,6 +44,8 @@ __FlashStringHelper const* Status::GetErrorText() const {
   if (index < sizeof(kErrorTexts) / sizeof(kErrorTexts[0])) {
     text = static_cast<char const*>(pgm_read_ptr(&kErrorTexts[index]));
   }
+  // AVR-1: a text in flash is handed on as F() of the core makes one
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
   return reinterpret_cast<__FlashStringHelper const*>(text);
 }
 

@@ -66,8 +66,11 @@ namespace {
 
 // mock::tick is a plain function pointer, so what Tick() works on has to be
 // reachable without an object.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorOptions options;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorPanel panel;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorFrontEnd front_end;
 
 /*!
@@ -116,7 +119,7 @@ int main(int argc, char** argv) {
   /* the sketch is built in; an .elf is for SimulatorAvr */
   if (!options.Parse(argc, argv) || options.GetElfFile() != nullptr ||
       !panel.SetWiring(options.GetWiringName())) {
-    SimulatorOptions::PrintUsage(argv[0]);
+    SimulatorOptions::PrintUsage(*argv);
     return kExitUsage;
   }
   panel.SetUpsideDown(options.IsUpsideDown());

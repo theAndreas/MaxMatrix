@@ -19,7 +19,6 @@
 #include <sim_time.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "Arduino.h"
 
@@ -53,18 +52,7 @@ __attribute__((format(printf, 3, 0))) void LogSimavr(
 
 }  // namespace
 
-SimulatorAvr::SimulatorAvr() {
-  avr_ = nullptr;
-  memset(&firmware_, 0, sizeof(firmware_));
-  data_in_ = false;
-  clock_ = false;
-  // Chip select is high, as the pull-up of a real module keeps it until Init()
-  // drives the pin.
-  chip_select_ = true;
-  bits_ = 0;
-  bit_count_ = 0;
-  receive_ready_ = false;
-}
+SimulatorAvr::SimulatorAvr() = default;
 
 SimulatorAvr::~SimulatorAvr() {
   if (avr_ != nullptr) avr_terminate(avr_);

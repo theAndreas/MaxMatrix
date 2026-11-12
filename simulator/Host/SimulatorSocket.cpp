@@ -39,6 +39,8 @@ int SimulatorSocket::OpenListener(uint16_t port) {
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
+  // the sockets API takes every address as a sockaddr
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
   if (bind(listening, reinterpret_cast<sockaddr*>(&address), sizeof(address)) !=
           0 ||
       listen(listening, kBacklog) != 0) {
@@ -51,7 +53,8 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 
 void SimulatorSocket::SetNonBlocking(int socket) {
   int const flags = fcntl(socket, F_GETFL, 0);
-  // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
+  // H-8: fcntl() takes flags as int, and has no other form than a vararg
+  // NOLINTNEXTLINE(bugprone-signed-bitwise,cppcoreguidelines-pro-type-vararg)
   fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
@@ -68,7 +71,7 @@ bool SimulatorSocket::SendAll(int socket, std::string const& data) {
 
   while (sent < data.size()) {
     ssize_t const written =
-        send(socket, data.data() + sent, data.size() - sent, MSG_NOSIGNAL);
+        send(socket, &data[sent], data.size() - sent, MSG_NOSIGNAL);
     if (written > 0) {
       sent += static_cast<size_t>(written);
     } else if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {

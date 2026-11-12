@@ -49,7 +49,6 @@ Checks: >
   -bugprone-throwing-static-initialization,
   -modernize-use-nodiscard,
   -modernize-concat-nested-namespaces,
-  -cppcoreguidelines-*,
   -misc-include-cleaner,
   -readability-*,
   readability-convert-member-functions-to-static,

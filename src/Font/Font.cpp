@@ -187,10 +187,10 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
   }
 
   byte const version = pgm_read_byte(font + 1);
-  uint16_t first;
-  uint16_t last;
-  byte height;
-  size_t offset;
+  uint16_t first = 0;
+  uint16_t last = 0;
+  byte height = 0;
+  size_t offset = 0;
 
   if (version == kVersion1) {
     first = pgm_read_byte(font + 2);
@@ -226,9 +226,9 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
 Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
   bool const version_1 = pgm_read_byte(font + 1) == kVersion1;
   uint16_t const code = static_cast<byte>(c);
-  uint16_t first;
-  uint16_t last;
-  Glyph glyph;
+  uint16_t first = 0;
+  uint16_t last = 0;
+  Glyph glyph{};
 
   if (version_1) {
     first = pgm_read_byte(font + 2);
@@ -251,7 +251,7 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
   return glyph;
 }
 
-byte Font::DecodeChar(char const* text, char* c) {
+DecodedChar Font::DecodeChar(char const* text) {
   byte const lead_byte{static_cast<byte>(text[0])};
   byte const next_byte{static_cast<byte>(text[1])};
 
@@ -262,12 +262,11 @@ byte Font::DecodeChar(char const* text, char* c) {
   if (is_latin_1_lead && is_continuation) {
     byte const high_bits{static_cast<byte>(lead_byte & kUtf8LeadBits)};
     byte const low_bits{static_cast<byte>(next_byte & kUtf8ContinuationBits)};
-    *c = static_cast<char>(
-        static_cast<byte>(high_bits << kUtf8ContinuationWidth) | low_bits);
-    return 2;
+    byte const latin_1{static_cast<byte>(
+        static_cast<byte>(high_bits << kUtf8ContinuationWidth) | low_bits)};
+    return {static_cast<char>(latin_1), 2};
   } else {
-    *c = static_cast<char>(lead_byte);
-    return 1;
+    return {static_cast<char>(lead_byte), 1};
   }
 }
 

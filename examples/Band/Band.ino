@@ -42,6 +42,6 @@ void loop() {
 
   /* the column that falls out at the left comes back, for a sketch that passes
    * it on */
-  matrix.ShiftLeft(pgm_read_byte(kBeat + next_column));
+  matrix.ShiftLeft(pgm_read_byte(&kBeat[next_column]));
   next_column = static_cast<byte>((next_column + 1) % sizeof(kBeat));
 }

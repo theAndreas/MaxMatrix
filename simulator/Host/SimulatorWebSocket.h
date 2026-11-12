@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <string>
 
 /* SimulatorWebSocket opcodes, RFC 6455 section 5.2 */
@@ -24,6 +25,8 @@ constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8u};
 
 /* SimulatorWebSocket Parameter */
 constexpr size_t kSimulatorWebSocketSha1Length{20u};
+/* the hash of SHA-1 */
+using SimulatorSha1Digest = std::array<uint8_t, kSimulatorWebSocketSha1Length>;
 
 /*!
  * \brief The WebSocket protocol of the simulator's web page.
@@ -33,9 +36,13 @@ constexpr size_t kSimulatorWebSocketSha1Length{20u};
  */
 class SimulatorWebSocket {
  private:
+  /* the five words of the hash while SHA-1 runs, FIPS 180-4 */
+  using Sha1State = std::array<uint32_t, 5>;
+
   static bool GetKey(std::string const& request, std::string* key);
   static std::string PadSha1Message(std::string const& message);
-  static void ProcessSha1Block(uint8_t const* block, uint32_t* state);
+  static Sha1State ProcessSha1Block(std::string const& padded, size_t offset,
+                                    Sha1State state);
   static uint32_t MixSha1(uint8_t round, uint32_t b, uint32_t c, uint32_t d);
   static uint32_t RotateLeft(uint32_t value, uint8_t bits);
 
@@ -93,9 +100,9 @@ class SimulatorWebSocket {
    * \brief Calculates the SHA-1 of a message.
    *
    * \param[in] message The bytes to hash.
-   * \param[out] digest The hash, kSimulatorWebSocketSha1Length bytes.
+   * \return The hash.
    */
-  static void CalculateSha1(std::string const& message, uint8_t* digest);
+  static SimulatorSha1Digest CalculateSha1(std::string const& message);
 
   /*!
    * \brief Converts bytes to base64.
@@ -103,10 +110,9 @@ class SimulatorWebSocket {
    * Every three bytes become four chars, and the last group is padded with `=`.
    *
    * \param[in] bytes The bytes to convert.
-   * \param[in] length The number of bytes.
    * \return The base64 text.
    */
-  static std::string ConvertToBase64(uint8_t const* bytes, size_t length);
+  static std::string ConvertToBase64(std::string const& bytes);
 };
 
 #endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_

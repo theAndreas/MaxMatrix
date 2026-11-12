@@ -151,7 +151,7 @@ void ControlSerialPort::Close() {
 
 #else
 
-ControlSerialPort::ControlSerialPort() { descriptor_ = -1; }
+ControlSerialPort::ControlSerialPort() = default;
 
 // The class is final, so Close() is its own here, as nothing can override it.
 ControlSerialPort::~ControlSerialPort() { Close(); }
@@ -168,9 +168,11 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
 
   Close();
   if (!IsBaudRate(baud_rate)) return false;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's open()
   descriptor_ = open(name.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
   if (descriptor_ < 0) return false;
 
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
   bool opened = ioctl(descriptor_, TIOCEXCL) == 0 &&
                 tcgetattr(descriptor_, &settings) == 0;
   cfmakeraw(&settings);
@@ -198,6 +200,8 @@ std::vector<std::string> ControlSerialPort::List() {
     glob_t found = glob_t();
     if (glob(pattern, 0, nullptr, &found) == 0) {
       for (size_t i = 0; i < found.gl_pathc; i++) {
+        // T-20: glob() hands its paths as a pointer and a count
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         ports.emplace_back(found.gl_pathv[i]);
       }
     }
@@ -217,8 +221,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 
   if (!IsOpen()) return false;
   while (sent < data.size()) {
-    ssize_t const written =
-        write(descriptor_, data.data() + sent, data.size() - sent);
+    ssize_t const written = write(descriptor_, &data[sent], data.size() - sent);
     pollfd writable = {descriptor_, POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
@@ -234,7 +237,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  std::array<char, kChunkLength> chunk;
+  std::array<char, kChunkLength> chunk{};
 
   if (!IsOpen()) return false;
   for (;;) {

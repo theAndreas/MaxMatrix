@@ -24,7 +24,7 @@ struct NamedWiring {
   Max7219Wiring const* wiring;
 };
 
-std::array<NamedWiring, 4> const kNamedWirings{{
+constexpr std::array<NamedWiring, 4> kNamedWirings{{
     {"FC16", &kMaX7219WiringFC16},
     {"GENERIC", &kMaX7219WiringGeneric},
     {"PAROLA", &kMaX7219WiringParola},
@@ -33,14 +33,9 @@ std::array<NamedWiring, 4> const kNamedWirings{{
 
 }  // namespace
 
-SimulatorPanel::SimulatorPanel() {
-  wiring_name_ = kSimulatorPanelDefaultWiring;
-  wiring_ = FindWiring(wiring_name_);
-  upside_down_ = false;
-  drawn_frames_ = -1;
-  last_draw_ = 0;
-  draw_requested_ = true;
-}
+SimulatorPanel::SimulatorPanel()
+    : wiring_name_(kSimulatorPanelDefaultWiring),
+      wiring_{FindWiring(wiring_name_)} {}
 
 std::string SimulatorPanel::GetText(char const* lit, char const* dark,
                                     char const* end_of_row) const {

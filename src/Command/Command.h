@@ -77,8 +77,8 @@ class Command {
    */
   char line_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
   char shift_text_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
-  byte line_length_;
-  bool line_too_long_;
+  byte line_length_{0};
+  bool line_too_long_{false};
 
   Result<CommandState> Execute(Matrix& matrix, char* text, Print& answer);
   Status ExecuteTextShift(Matrix& matrix, char const* value);

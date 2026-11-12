@@ -12,9 +12,8 @@
 
 #include "SimulatorWeb.h"
 
-#include <stdio.h>
-
 #include <array>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -31,9 +30,19 @@ constexpr char kCommandSerial[] = "serial ";
 constexpr uint8_t kJsonFirstPlain{0x20u};
 constexpr uint8_t kJsonLastPlain{0x7Eu};
 
+// Returns `value` as `digits` hex digits in upper case, as JSON escapes a char
+// and the frame log shows a byte.
+std::string ConvertToHex(uint16_t value, uint8_t digits) {
+  std::ostringstream text;
+
+  text << std::uppercase << std::hex << std::setw(digits) << std::setfill('0')
+       << value;
+  return text.str();
+}
+
 }  // namespace
 
-SimulatorWeb::SimulatorWeb() { logged_frames_ = 0; }
+SimulatorWeb::SimulatorWeb() = default;
 
 bool SimulatorWeb::Begin(uint16_t port, char const* page_path) {
   return host_.Begin(port, page_path);
@@ -63,7 +72,6 @@ void SimulatorWeb::Send(SimulatorPanel const& panel) {
  */
 std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
   std::string json;
-  std::array<char, 8> escaped;
 
   for (char const c : text) {
     auto const code = static_cast<uint8_t>(c);
@@ -73,9 +81,7 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
     } else if (code >= kJsonFirstPlain && code <= kJsonLastPlain) {
       json += c;
     } else {
-      snprintf(escaped.data(), escaped.size(), "\\u%04X",
-               static_cast<uint16_t>(code));
-      json += escaped.data();
+      json += "\\u" + ConvertToHex(code, 4);
     }
   }
   return json;
@@ -85,13 +91,11 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
 // more than kSimulatorWebFrameLogLength frames.
 void SimulatorWeb::LogFrame() {
   std::string line = "#" + std::to_string(mock::frames) + ":";
-  std::array<char, 8> pair;
 
   for (size_t i = 0; i + 1 < mock::last_frame.size(); i += 2) {
-    snprintf(pair.data(), pair.size(), "%02X %02X", mock::last_frame[i],
-             mock::last_frame[i + 1]);
     line += i == 0 ? " " : " | ";
-    line += pair.data();
+    line += ConvertToHex(mock::last_frame[i], 2) + " " +
+            ConvertToHex(mock::last_frame[i + 1], 2);
   }
   frame_log_.push_back(line);
   if (frame_log_.size() > kSimulatorWebFrameLogLength) {

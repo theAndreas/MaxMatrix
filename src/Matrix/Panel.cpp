@@ -17,10 +17,7 @@ namespace internal {
 Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte* buffer, byte number_of_modules)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer,
-             number_of_modules} {
-  module_type_ = ModuleType::kDr0Cr0Rr1;
-  matrix_orientation_ = MatrixOrientation::k0;
-}
+             number_of_modules} {}
 
 Result<byte> Panel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns()) {
@@ -95,27 +92,22 @@ void Panel::SetRow(byte module, byte row, byte value) {
 }
 
 Result<bool> Panel::GetDot(int16_t column, int16_t row) {
-  byte buffer_column, buffer_bit;
-
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < kRowNumberOfModule) {
-    ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
-                       &buffer_column, &buffer_bit);
-    return static_cast<bool>(
-        bitRead(wired_.GetColumn(buffer_column), buffer_bit));
+    BufferDot const dot =
+        ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row));
+    return static_cast<bool>(bitRead(wired_.GetColumn(dot.column), dot.bit));
   } else {
     return Error::kOutOfRange;
   }
 }
 
 void Panel::SetDot(int16_t column, int16_t row, bool value) {
-  byte buffer_column, buffer_bit;
-
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < kRowNumberOfModule) {
-    ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row),
-                       &buffer_column, &buffer_bit);
-    wired_.StoreBit(buffer_column, buffer_bit, value);
+    BufferDot const dot =
+        ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row));
+    wired_.StoreBit(dot.column, dot.bit, value);
   }
 }
 
@@ -396,8 +388,7 @@ byte Panel::ReverseByte(byte input) {
  * than a case for each of the eight types, so that a mirrored module costs no
  * code of its own.
  */
-void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
-                               byte* buffer_bit) {
+Panel::BufferDot Panel::ConvertDotToBuffer(byte column, byte row) const {
   if (matrix_orientation_ == MatrixOrientation::k180) {
     column = static_cast<byte>(GetNumberOfColumns() - 1 - column);
     row = kRowNumberOfModule - 1 - row;
@@ -417,8 +408,7 @@ void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
   if ((type & internal::kModuleTypeReversedColumns) != 0) {
     segment = kRowNumberOfModule - 1 - segment;
   }
-  *buffer_column = static_cast<byte>((module * kColumnNumberOfModule) + digit);
-  *buffer_bit = segment;
+  return {static_cast<byte>((module * kColumnNumberOfModule) + digit), segment};
 }
 
 /*
@@ -427,13 +417,13 @@ void Panel::ConvertDotToBuffer(byte column, byte row, byte* buffer_column,
  * within the matrix.
  */
 byte Panel::GetLine(byte column, byte row, bool vertical) {
-  byte buffer_column, buffer_bit;
   byte value = 0;
 
   for (byte dot = 0; dot < 8; dot++) {
-    ConvertDotToBuffer(vertical ? column : column + dot,
-                       vertical ? row + dot : row, &buffer_column, &buffer_bit);
-    bitWrite(value, dot, bitRead(wired_.GetColumn(buffer_column), buffer_bit));
+    BufferDot const buffer_dot = ConvertDotToBuffer(
+        vertical ? column : column + dot, vertical ? row + dot : row);
+    bitWrite(value, dot,
+             bitRead(wired_.GetColumn(buffer_dot.column), buffer_dot.bit));
   }
   return value;
 }
@@ -444,12 +434,10 @@ byte Panel::GetLine(byte column, byte row, bool vertical) {
  * has to lie within one module.
  */
 void Panel::SetLine(byte column, byte row, bool vertical, byte value) {
-  byte buffer_column, buffer_bit;
-
   for (byte dot = 0; dot < 8; dot++) {
-    ConvertDotToBuffer(vertical ? column : column + dot,
-                       vertical ? row + dot : row, &buffer_column, &buffer_bit);
-    wired_.StoreBit(buffer_column, buffer_bit, bitRead(value, dot));
+    BufferDot const buffer_dot = ConvertDotToBuffer(
+        vertical ? column : column + dot, vertical ? row + dot : row);
+    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, bitRead(value, dot));
   }
 }
 

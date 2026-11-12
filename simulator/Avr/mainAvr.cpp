@@ -21,9 +21,8 @@
  * of an example that moves.
  */
 
-#include <stdio.h>
-
 #include <chrono>
+#include <iostream>
 #include <thread>
 
 #include "Arduino.h"
@@ -47,9 +46,15 @@ constexpr int kExitOk{0};
 constexpr int kExitFailed{1};
 constexpr int kExitUsage{2};
 
+// mock::tick is a plain function pointer, so what Tick() works on has to be
+// reachable without an object.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorOptions options;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorPanel panel;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorFrontEnd front_end;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 SimulatorAvr avr;
 
 }  // namespace
@@ -70,15 +75,15 @@ SimulatorAvr avr;
 int main(int argc, char** argv) {
   if (!options.Parse(argc, argv) || options.GetElfFile() == nullptr ||
       !panel.SetWiring(options.GetWiringName())) {
-    SimulatorOptions::PrintUsage(argv[0]);
+    SimulatorOptions::PrintUsage(*argv);
     return kExitUsage;
   }
   panel.SetUpsideDown(options.IsUpsideDown());
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   mock::serial_input = options.GetSerialInput();
   if (!avr.Load(options.GetElfFile())) {
-    fprintf(stderr, "%s is no .elf for the %s\n", options.GetElfFile(),
-            kSimulatorAvrMcu);
+    std::cerr << options.GetElfFile() << " is no .elf for the "
+              << kSimulatorAvrMcu << '\n';
     return kExitFailed;
   }
   if (!front_end.Begin(options)) return kExitFailed;
@@ -92,7 +97,7 @@ int main(int argc, char** argv) {
   for (uint32_t now = 1; options.GetRunFor() == 0 || now <= options.GetRunFor();
        now++) {
     if (!avr.Run(now)) {
-      fprintf(stderr, "the AVR stopped after %u ms\n", now);
+      std::cerr << "the AVR stopped after " << now << " ms\n";
       return kExitFailed;
     }
     front_end.Follow(panel, now);

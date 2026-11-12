@@ -17,10 +17,9 @@ namespace internal {
 
 Wired::Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte* buffer, byte number_of_modules)
-    : chain_{data_in_pin, chip_select_pin, clock_pin, number_of_modules} {
-  matrix_buffer_ = buffer;
+    : chain_{data_in_pin, chip_select_pin, clock_pin, number_of_modules},
+      matrix_buffer_{buffer} {
   memset(matrix_buffer_, 0, GetNumberOfColumns());
-  changed_columns_ = 0;
 }
 
 void Wired::StoreBit(byte column, byte bit, bool value) {

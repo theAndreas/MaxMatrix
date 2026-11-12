@@ -10,6 +10,7 @@
 
 #include "MaxMatrixTestSupport.h"
 
+using max_matrix::DecodedChar;
 using max_matrix::Error;
 using max_matrix::Font;
 using max_matrix::Glyph;
@@ -69,13 +70,13 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
       {"Ä", "Ö", "Ü", "ä", "ö", "ü", "ß", "°"}};
   std::array<byte, 8> const codes{
       {0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF, 0xB0}};
-  char c;
 
   for (byte i = 0; i < 8; i++) {
     SCOPED_TRACE(chars[i]);
-    EXPECT_EQ(Font::DecodeChar(chars[i], &c), 2);
-    EXPECT_EQ(static_cast<byte>(c), codes[i]);
-    EXPECT_EQ(Font::GetGlyph(kDefaultFont, c).GetError(), Error::kOk);
+    DecodedChar const decoded = Font::DecodeChar(chars[i]);
+    EXPECT_EQ(decoded.length, 2);
+    EXPECT_EQ(static_cast<byte>(decoded.c), codes[i]);
+    EXPECT_EQ(Font::GetGlyph(kDefaultFont, decoded.c).GetError(), Error::kOk);
   }
 
   /* the Ü sprite used to be a copy of the O */
@@ -100,11 +101,9 @@ TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn) {
 }
 
 TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString) {
-  char c;
-
-  EXPECT_EQ(Font::DecodeChar("A", &c), 1);
-  EXPECT_EQ(c, 'A');
-  EXPECT_EQ(Font::DecodeChar("\xC3", &c), 1);
+  EXPECT_EQ(Font::DecodeChar("A").length, 1);
+  EXPECT_EQ(Font::DecodeChar("A").c, 'A');
+  EXPECT_EQ(Font::DecodeChar("\xC3").length, 1);
 
   char truncated[] = "a\xC3";
   ShiftWholeText(truncated);

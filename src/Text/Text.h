@@ -52,17 +52,16 @@ class Text {
    * the default font set here. And the char that shifts in, which lies in the
    * font.
    */
-  uint8_t const* font_;
-  Glyph glyph_;
+  uint8_t const* font_{nullptr};
+  Glyph glyph_{};
   /* 16 bits, as a char and its space take up to 255 + 255 columns */
-  uint16_t sprite_shift_counter_;
-  byte space_between_chars_;
-  char const* string_;
+  uint16_t sprite_shift_counter_{kShiftIdle};
+  byte space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
+  char const* string_{nullptr};
   /* the start of a text that starts over after its last char, NULL for one that
    * stops there */
-  char const* repeat_from_;
+  char const* repeat_from_{nullptr};
 
-  Status FindGlyph(char c, Glyph* glyph) const;
   void ReadNextChar();
 
  public:

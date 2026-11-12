@@ -13,16 +13,7 @@
 namespace max_matrix {
 namespace internal {
 
-Text::Text() {
-  string_ = nullptr;
-  repeat_from_ = nullptr;
-  sprite_shift_counter_ = kShiftIdle;
-  space_between_chars_ = MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE;
-  font_ = nullptr;
-  glyph_.columns = nullptr;
-  glyph_.width = 0;
-  glyph_.height = 0;
-}
+Text::Text() = default;
 
 Status Text::SetFont(uint8_t const* font, size_t size) {
   Status const status = Font::CheckFont(font, size);
@@ -32,30 +23,33 @@ Status Text::SetFont(uint8_t const* font, size_t size) {
 }
 
 Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
-  Glyph glyph;
-  Status const status = FindGlyph(c, &glyph);
+  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
 
-  if (status.IsOk()) SetGlyph(panel, x, y, glyph);
-  return status;
+  if (found.IsOk()) SetGlyph(panel, x, y, found.GetValue());
+  return found.GetError();
 }
 
+// The glyph that shifts in stays as it was for a char the font lacks.
 Status Text::SetCharWithShift(char c) {
-  Status const status = FindGlyph(c, &glyph_);
+  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
 
-  if (status.IsOk()) sprite_shift_counter_ = kShiftStart;
-  return status;
+  if (found.IsOk()) {
+    glyph_ = found.GetValue();
+    sprite_shift_counter_ = kShiftStart;
+  }
+  return found.GetError();
 }
 
 Status Text::SetText(Panel& panel, char const* text) const {
   int16_t char_column = 0;
-  char c;
 
   if (text == nullptr) return Error::kNoText;
   while (*text != internal::kNullCharacter) {
-    text += Font::DecodeChar(text, &c);
-    Glyph glyph;
-    Status const status = FindGlyph(c, &glyph);
-    if (!status.IsOk()) return status;
+    DecodedChar const decoded = Font::DecodeChar(text);
+    text += decoded.length;
+    Result<Glyph> const found = Font::GetGlyph(GetFont(), decoded.c);
+    if (!found.IsOk()) return found.GetError();
+    Glyph const glyph = found.GetValue();
     SetGlyph(panel, char_column, 0, glyph);
     char_column =
         static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
@@ -70,19 +64,6 @@ Status Text::SetTextWithShift(char const* text, bool repeat) {
   string_ = text;
   repeat_from_ = repeat ? text : nullptr;
   return Error::kOk;
-}
-
-/*
- * The glyph of `c` in the font that is set, into `glyph`, which stays as it was
- * if the font has none. One place that unpacks the result of
- * Font::GetGlyph() rather than four: 62 bytes less of flash in
- * SerialControl, which draws through all four.
- */
-Status Text::FindGlyph(char c, Glyph* glyph) const {
-  Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
-
-  if (found.IsOk()) *glyph = found.GetValue();
-  return found.GetError();
 }
 
 void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
@@ -138,7 +119,6 @@ bool Text::CharShiftTask(Panel& panel) {
  */
 void Text::ReadNextChar() {
   char const* start_over_at = repeat_from_;
-  char c;
 
   while (sprite_shift_counter_ == kShiftIdle) {
     if (*string_ == internal::kNullCharacter) {
@@ -146,8 +126,10 @@ void Text::ReadNextChar() {
       string_ = start_over_at;
       start_over_at = nullptr;
     } else {
-      string_ += Font::DecodeChar(string_, &c);
-      if (FindGlyph(c, &glyph_).IsOk()) sprite_shift_counter_ = kShiftStart;
+      DecodedChar const decoded = Font::DecodeChar(string_);
+      string_ += decoded.length;
+      // A char the font lacks leaves the counter idle, and the loop reads on.
+      SetCharWithShift(decoded.c);
     }
   }
 }

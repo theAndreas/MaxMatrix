@@ -36,23 +36,27 @@
 
 /*! \brief The SPI clock in Hz; the MAX7219 takes 10 MHz at most. */
 #ifndef MAXMATRIX_SPI_CLOCK_SPEED
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_SPI_CLOCK_SPEED 10000000
 #endif
 
 /*! \brief The empty columns between two chars of a text, until
  * Matrix::SetSpaceBetweenChars(). */
 #ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE 1
 #endif
 
 /*! \brief The intensity Matrix::Init() sets, 0 to 15. */
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_INTENSITY_INIT_VALUE 5
 #endif
 
 /*! \brief The chars of a line Command takes; it costs twice as many
  * bytes of RAM. */
 #ifndef MAXMATRIX_COMMAND_LINE_LENGTH
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_COMMAND_LINE_LENGTH 64
 #endif
 
@@ -61,6 +65,7 @@
  *        Matrix::SetShiftInterval(); 0 for a step on every call.
  */
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE 50
 #endif
 

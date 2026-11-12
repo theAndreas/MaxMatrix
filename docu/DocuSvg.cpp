@@ -23,10 +23,8 @@ constexpr int32_t kArrowHeadHalfWidth{6};
 
 }  // namespace
 
-DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top) {
-  width_ = width;
-  height_ = height;
-  top_ = top;
+DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top)
+    : width_{width}, height_{height}, top_{top} {
   AddRect(0, top_, width_, height_, "#ffffff");
 }
 

@@ -17,11 +17,11 @@
  * fails when the library changes and the pictures were not written again.
  */
 
-#include <stdio.h>
 #include <string.h>
 
 #include <array>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -88,6 +88,8 @@ struct DocuLed {
   byte bit;
 };
 
+// the matrix, as a sketch has it, which every picture draws on
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 max_matrix::MatrixOf<kNumberOfModules> matrix(kDataInPin, kChipSelectPin,
                                               kClockPin);
 
@@ -98,7 +100,7 @@ struct ModuleName {
   char const* name;
 };
 
-std::array<ModuleName, 4> const kModuleNames{{
+constexpr std::array<ModuleName, 4> kModuleNames{{
     {&kMaX7219WiringFC16, "FC-16"},
     {&kMaX7219WiringGeneric, "Generic"},
     {&kMaX7219WiringParola, "Parola"},
@@ -288,7 +290,7 @@ void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
 void DrawPanel(DocuSvg* svg, std::string const& title) {
   int32_t const module_width = max_matrix::kColumnNumberOfModule * kCell;
   int32_t const module_height = max_matrix::kRowNumberOfModule * kCell;
-  DocuLed led;
+  DocuLed led{};
 
   if (!title.empty()) {
     svg->AddText(kLeft, 30, title, kFontTitle, kColourText, "start", true);
@@ -491,13 +493,17 @@ std::string ReadFile(std::string const& path) {
  */
 int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   // takes argv as the standard declares it, whatever reads it.
-  if (argc != 3 ||
-      (strcmp(argv[1], "--write") != 0 && strcmp(argv[1], "--check") != 0)) {
-    fprintf(stderr, "usage: %s --write|--check FOLDER\n", argv[0]);
+  // T-20: main() is handed its arguments as a pointer to an array
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  std::vector<std::string> const arguments(argv, argv + argc);
+
+  if (arguments.size() != 3 ||
+      (arguments[1] != "--write" && arguments[1] != "--check")) {
+    std::cerr << "usage: " << arguments[0] << " --write|--check FOLDER\n";
     return 2;
   }
-  bool const write = strcmp(argv[1], "--write") == 0;
-  std::string const folder = argv[2];
+  bool const write = arguments[1] == "--write";
+  std::string const& folder = arguments[2];
   byte failed = 0;
 
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
@@ -516,15 +522,13 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   for (auto const& picture : pictures) {
     std::string const path = folder + "/" + picture.first;
     if (picture.second.empty()) {
-      fprintf(stderr, "%s: a dot did not light exactly one LED\n",
-              picture.first.c_str());
+      std::cerr << picture.first << ": a dot did not light exactly one LED\n";
       failed++;
     } else if (write) {
       std::ofstream(path) << picture.second;
     } else if (ReadFile(path) != picture.second) {
-      fprintf(stderr,
-              "%s is not what the library draws; run DocuPictures --write\n",
-              path.c_str());
+      std::cerr << path
+                << " is not what the library draws; run DocuPictures --write\n";
       failed++;
     }
   }

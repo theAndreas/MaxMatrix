@@ -75,10 +75,10 @@ class Matrix {
  private:
   internal::Panel panel_;
   internal::Text text_;
-  State state_;
-  bool auto_update_;
-  uint16_t shift_interval_;
-  uint32_t last_shift_;
+  State state_{State::kNone};
+  bool auto_update_{true};
+  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
+  uint32_t last_shift_{0};
 
   // Sends what changed, if auto update is on; every public function that draws
   // ends with it.
@@ -653,8 +653,8 @@ class Batch {
    *
    * \param[in,out] matrix The matrix; it has to outlive the batch.
    */
-  explicit Batch(Matrix& matrix) : matrix_{matrix} {
-    previous_auto_update_ = matrix_.GetAutoUpdate();
+  explicit Batch(Matrix& matrix)
+      : matrix_{matrix}, previous_auto_update_{matrix_.GetAutoUpdate()} {
     matrix_.SetAutoUpdate(false);
   }
 

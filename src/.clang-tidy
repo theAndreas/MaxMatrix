@@ -5,6 +5,11 @@
 #   and the avr-gcc of the Uno has no std::array to hand them as (T-20, M-3);
 #   the ETL is no dependency of MaxMatrix. A template takes the length from
 #   the array's type wherever the length matters.
+# cppcoreguidelines-pro-bounds-pointer-arithmetic: a font, a bitmap or a text
+#   in flash is read as pgm_read_byte(address + offset), as the AVR reads flash
+#   only through an address, and a text is walked a char at a time; avr-gcc has
+#   no std::span to index them with instead (T-20).
 InheritParentConfig: true
 Checks: >
-  -modernize-avoid-c-arrays
+  -modernize-avoid-c-arrays,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic

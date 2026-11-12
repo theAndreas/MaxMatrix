@@ -33,7 +33,7 @@ class ControlSerialPort final : public ControlPort {
 #ifdef _WIN32
   void* handle_;
 #else
-  int descriptor_;
+  int descriptor_{-1};
 #endif
 
  public:
