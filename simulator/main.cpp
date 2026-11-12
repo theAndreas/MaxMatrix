@@ -45,11 +45,11 @@
 namespace {
 
 /* the pins every example puts the chain on */
-constexpr uint8_t kDataInPin{11u};
-constexpr uint8_t kChipSelectPin{10u};
-constexpr uint8_t kClockPin{13u};
+constexpr uint8_t kDataInPin{11U};
+constexpr uint8_t kChipSelectPin{10U};
+constexpr uint8_t kClockPin{13U};
 /* the chain every example has, max_matrix::MatrixOf<4> */
-constexpr uint8_t kNumberOfModules{4u};
+constexpr uint8_t kNumberOfModules{4U};
 
 /* exit codes */
 constexpr int kExitOk{0};
@@ -98,7 +98,9 @@ void Tick() {
   uint32_t const now = millis();
 
   front_end.Follow(panel, now);
-  if (options.GetRunFor() != 0 && now >= options.GetRunFor()) Finish();
+  if (options.GetRunFor() != 0 && now >= options.GetRunFor()) {
+    Finish();
+  }
 }
 
 }  // namespace
@@ -126,7 +128,9 @@ int main(int argc, char** argv) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   mock::serial_input = options.GetSerialInput();
   mock::tick = Tick;
-  if (!front_end.Begin(options)) return kExitFailed;
+  if (!front_end.Begin(options)) {
+    return kExitFailed;
+  }
 
   setup();
   for (;;) {

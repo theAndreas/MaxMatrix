@@ -27,8 +27,8 @@ constexpr char kCommandUpsideDown[] = "upside-down 1";
 constexpr char kCommandSerial[] = "serial ";
 
 /* JSON, RFC 8259: the printable ASCII range; the rest is written as \u00XX */
-constexpr uint8_t kJsonFirstPlain{0x20u};
-constexpr uint8_t kJsonLastPlain{0x7Eu};
+constexpr uint8_t kJsonFirstPlain{0x20U};
+constexpr uint8_t kJsonLastPlain{0x7EU};
 
 // Returns `value` as `digits` hex digits in upper case, as JSON escapes a char
 // and the frame log shows a byte.
@@ -51,11 +51,17 @@ bool SimulatorWeb::Begin(uint16_t port, char const* page_path) {
 void SimulatorWeb::Task(SimulatorPanel& panel, std::string const& printed) {
   std::vector<std::string> messages;
 
-  if (mock::frames != logged_frames_) LogFrame();
+  if (mock::frames != logged_frames_) {
+    LogFrame();
+  }
   host_.Task(&messages);
-  for (std::string const& message : messages) Command(panel, message);
+  for (std::string const& message : messages) {
+    Command(panel, message);
+  }
   serial_output_ += printed;
-  if (!printed.empty()) panel.RequestDraw();
+  if (!printed.empty()) {
+    panel.RequestDraw();
+  }
 }
 
 void SimulatorWeb::Send(SimulatorPanel const& panel) {
@@ -137,8 +143,8 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
   std::ostringstream json;
 
   json << R"({"wiring":")" << panel.GetWiringName() << R"(","upsideDown":)"
-       << (panel.IsUpsideDown() ? "true" : "false")
-       << ",\"columns\":" << static_cast<uint16_t>(panel.GetNumberOfColumns())
+       << (panel.IsUpsideDown() ? "true" : "false") << ",\"columns\":"
+       << static_cast<uint16_t>(SimulatorPanel::GetNumberOfColumns())
        << ",\"rows\":" << static_cast<uint16_t>(max_matrix::kRowNumberOfModule)
        << R"(,"dots":")" << panel.GetText("1", "0", "") << "\""
        << ",\"intensity\":[" << GetIntensities(panel) << "]"
@@ -166,7 +172,8 @@ std::string SimulatorWeb::GetLog() const {
 std::string SimulatorWeb::GetIntensities(SimulatorPanel const& panel) {
   std::string intensities;
 
-  for (uint8_t module = 0; module < panel.GetNumberOfModules(); module++) {
+  for (uint8_t module = 0; module < SimulatorPanel::GetNumberOfModules();
+       module++) {
     intensities +=
         (module > 0 ? "," : "") + std::to_string(panel.GetIntensity(module));
   }

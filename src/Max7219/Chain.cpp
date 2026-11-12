@@ -20,6 +20,15 @@
 namespace max_matrix {
 namespace internal {
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+namespace {
+
+/* the MAX7219 takes a byte most significant bit first */
+constexpr byte kFirstBit{0x80};
+
+}  // namespace
+#endif
+
 Chain::Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte number_of_modules)
     : data_in_pin_{data_in_pin},
@@ -33,6 +42,8 @@ void Chain::Init() {
   chip_select_mask_ = digitalPinToBitMask(chip_select_pin_);
   WritePin(chip_select_port_, chip_select_mask_, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
+  // the core's SPI object; its members are static on the AVR alone
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   SPI.begin();
 #else
   pinMode(data_in_pin_, OUTPUT);
@@ -81,6 +92,8 @@ void Chain::WriteRegisterEach(byte register_address,
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::StartTransmission() {
 #if (MAXMATRIX_USE_SPI == STD_ON)
+  // the core's SPI object; its members are static on the AVR alone
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   SPI.beginTransaction(
       SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
 #endif
@@ -97,6 +110,8 @@ void Chain::StartTransmission() {
 void Chain::StopTransmission() {
   WritePin(chip_select_port_, chip_select_mask_, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
+  // the core's SPI object; its members are static on the AVR alone
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   SPI.endTransaction();
 #endif
 }
@@ -107,7 +122,11 @@ void Chain::StopTransmission() {
 // NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
 void Chain::Transfer(byte register_address, byte register_value) {
 #if (MAXMATRIX_USE_SPI == STD_ON)
+  // the core's SPI object; its members are static on the AVR alone
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   SPI.transfer(register_address);
+  // the core's SPI object; its members are static on the AVR alone
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   SPI.transfer(register_value);
 #else
   ShiftOut(register_address);
@@ -133,15 +152,15 @@ void Chain::ShiftOut(byte value) {
    * address: clang-tidy reports both on the Uno, where there is no other way to
    * a port.
    */
-  auto const data_in_register =
+  auto* const data_in_register =
       portOutputRegister(data_in_port_); /* NOLINT(performance-no-int-to-ptr) */
-  auto const clock_register =
+  auto* const clock_register =
       portOutputRegister(clock_port_); /* NOLINT(performance-no-int-to-ptr) */
   byte const status_register =
       SREG; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (byte bit = 0x80U; bit != 0U; bit >>= 1U) {
+  for (byte bit = kFirstBit; bit != 0U; bit >>= 1U) {
     if ((value & bit) != 0) {
       *data_in_register |= data_in_mask_;
     } else {
@@ -158,7 +177,7 @@ void Chain::ShiftOut(byte value) {
 // as ShiftOut() does.
 void Chain::WritePin(byte port, byte mask, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
-  auto const port_register =
+  auto* const port_register =
       portOutputRegister(port); /* NOLINT(performance-no-int-to-ptr) */
   byte const status_register =
       SREG; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */

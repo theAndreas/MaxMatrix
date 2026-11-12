@@ -14,6 +14,30 @@
 namespace max_matrix {
 namespace internal {
 
+namespace {
+
+/* a line of the panel is a byte, one dot per bit */
+constexpr byte kDotsPerLine{8};
+
+/* the upper bits of each half, pair and neighbour of a byte, which
+ * ReverseByte() swaps with the lower ones */
+constexpr byte kUpperHalf{0xF0};
+constexpr byte kUpperPairs{0xCC};
+constexpr byte kUpperBits{0xAA};
+
+// Returns `value` with the bits under `upper` swapped with those `shift` places
+// below them.
+byte SwapBits(byte value, byte upper, uint8_t shift) {
+  byte const high{static_cast<byte>(value & upper)};
+  byte const low{static_cast<byte>(value & static_cast<byte>(~upper))};
+  return static_cast<byte>(static_cast<byte>(high >> shift) |
+                           static_cast<byte>(low << shift));
+}
+
+}  // namespace
+
+// FN-3: the three pins, the buffer and its length, as a sketch hands them
+// NOLINTNEXTLINE(readability-function-size)
 Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
              byte* buffer, byte number_of_modules)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer,
@@ -22,18 +46,16 @@ Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
 Result<byte> Panel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns()) {
     return GetLine(static_cast<byte>(column), 0, true);
-  } else {
-    return Error::kOutOfRange;
   }
+  return Error::kOutOfRange;
 }
 
 Result<byte> Panel::GetColumn(byte module, byte column) {
   if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
     return GetColumn(
         static_cast<int16_t>((module * kColumnNumberOfModule) + column));
-  } else {
-    return Error::kOutOfRange;
   }
+  return Error::kOutOfRange;
 }
 
 void Panel::SetColumn(int16_t column, byte value) {
@@ -61,17 +83,15 @@ Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
       values[module] = GetRow(module, static_cast<byte>(row)).GetValue();
     }
     return Error::kOk;
-  } else {
-    return Error::kOutOfRange;
   }
+  return Error::kOutOfRange;
 }
 
 Result<byte> Panel::GetRow(byte module, byte row) {
   if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
     return ReverseByte(GetLine(module * kColumnNumberOfModule, row, false));
-  } else {
-    return Error::kOutOfRange;
   }
+  return Error::kOutOfRange;
 }
 
 void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
@@ -97,9 +117,8 @@ Result<bool> Panel::GetDot(int16_t column, int16_t row) {
     BufferDot const dot =
         ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row));
     return static_cast<bool>(bitRead(wired_.GetColumn(dot.column), dot.bit));
-  } else {
-    return Error::kOutOfRange;
   }
+  return Error::kOutOfRange;
 }
 
 void Panel::SetDot(int16_t column, int16_t row, bool value) {
@@ -117,6 +136,8 @@ void Panel::SetDot(int16_t column, int16_t row, bool value) {
  * keeps it small. The sums are int32_t, as the ends may lie further apart than
  * an int16_t holds, and an int is 16 bits on the Uno.
  */
+// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
+// NOLINTNEXTLINE(readability-function-size)
 void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                      bool value) {
   int32_t const width =
@@ -131,7 +152,9 @@ void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
 
   for (;;) {
     SetFarDot(x, y, value);
-    if (x == x1 && y == y1) break;
+    if (x == x1 && y == y1) {
+      break;
+    }
     int32_t const twice = 2 * error;
     if (twice >= height) {
       error += height;
@@ -144,9 +167,13 @@ void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
   }
 }
 
+// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
+// NOLINTNEXTLINE(readability-function-size)
 void Panel::DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
                      bool value) {
-  if (width <= 0 || height <= 0) return;
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   int32_t const right = static_cast<int32_t>(x) + width - 1;
   int32_t const bottom = static_cast<int32_t>(y) + height - 1;
 
@@ -156,9 +183,13 @@ void Panel::DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
   FillArea(right, y, right, bottom, value);
 }
 
+// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
+// NOLINTNEXTLINE(readability-function-size)
 void Panel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
                      bool value) {
-  if (width <= 0 || height <= 0) return;
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   FillArea(x, y, static_cast<int32_t>(x) + width - 1,
            static_cast<int32_t>(y) + height - 1, value);
 }
@@ -170,7 +201,9 @@ void Panel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
  * step goes inwards as well.
  */
 void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
-  if (radius < 0) return;
+  if (radius < 0) {
+    return;
+  }
   int32_t outer = radius;
   int32_t inner = 0;
   int32_t error = 1 - outer;
@@ -186,19 +219,23 @@ void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
     SetFarDot(x - inner, y - outer, value);
     inner++;
     if (error < 0) {
-      error += 2 * inner + 1;
+      error += (2 * inner) + 1;
     } else {
       outer--;
-      error += 2 * (inner - outer) + 1;
+      error += (2 * (inner - outer)) + 1;
     }
   }
 }
 
 // Right of the panel nothing is drawn, and left of its right edge x plus a
 // column cannot overflow.
+// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
+// NOLINTNEXTLINE(readability-function-size)
 void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
                        byte height) {
-  if (x >= GetNumberOfColumns()) return;
+  if (x >= GetNumberOfColumns()) {
+    return;
+  }
   for (byte column = 0; column < width; column++) {
     DrawColumn(static_cast<int16_t>(x + column), y, height,
                pgm_read_byte(bitmap + column));
@@ -231,12 +268,25 @@ void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
 
 // Sets every dot from `left`, `top` to `right`, `bottom`, both included, that
 // lies on the panel.
+// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
+// NOLINTNEXTLINE(readability-function-size)
 void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
                      bool value) {
-  if (left < 0) left = 0;
-  if (top < 0) top = 0;
-  if (right >= GetNumberOfColumns()) right = GetNumberOfColumns() - 1;
-  if (bottom >= kRowNumberOfModule) bottom = kRowNumberOfModule - 1;
+  // avr-gcc has no <algorithm>, and the core's max() is a macro
+  // NOLINTNEXTLINE(readability-use-std-min-max)
+  if (left < 0) {
+    left = 0;
+  }
+  // NOLINTNEXTLINE(readability-use-std-min-max): as for left
+  if (top < 0) {
+    top = 0;
+  }
+  if (right >= GetNumberOfColumns()) {
+    right = GetNumberOfColumns() - 1;
+  }
+  if (bottom >= kRowNumberOfModule) {
+    bottom = kRowNumberOfModule - 1;
+  }
   for (int32_t column = left; column <= right; column++) {
     for (int32_t row = top; row <= bottom; row++) {
       SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
@@ -253,14 +303,14 @@ void Panel::ShiftLeft(ShiftFill fill) {
   ShiftLeft(GetFill(fill, 0, static_cast<byte>(GetNumberOfColumns() - 1)));
 }
 
-byte Panel::ShiftLeft(byte column) {
+byte Panel::ShiftLeft(byte shifted_in) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(0, 0, true);
 
   for (byte panel_column = 0; panel_column < last; panel_column++) {
     SetLine(panel_column, 0, true, GetLine(panel_column + 1, 0, true));
   }
-  SetLine(last, 0, true, column);
+  SetLine(last, 0, true, shifted_in);
   return shifted_out;
 }
 
@@ -268,14 +318,14 @@ void Panel::ShiftRight(ShiftFill fill) {
   ShiftRight(GetFill(fill, static_cast<byte>(GetNumberOfColumns() - 1), 0));
 }
 
-byte Panel::ShiftRight(byte column) {
+byte Panel::ShiftRight(byte shifted_in) {
   byte const last = static_cast<byte>(GetNumberOfColumns() - 1);
   byte const shifted_out = GetLine(last, 0, true);
 
   for (byte panel_column = last; panel_column > 0; panel_column--) {
     SetLine(panel_column, 0, true, GetLine(panel_column - 1, 0, true));
   }
-  SetLine(0, 0, true, column);
+  SetLine(0, 0, true, shifted_in);
   return shifted_out;
 }
 
@@ -289,8 +339,12 @@ void Panel::ShiftDown(ShiftFill fill) { ShiftRows(false, fill); }
  * comes in at, as it is.
  */
 byte Panel::GetFill(ShiftFill fill, byte rotated_column, byte kept_column) {
-  if (fill == ShiftFill::kRotate) return GetLine(rotated_column, 0, true);
-  if (fill == ShiftFill::kKeep) return GetLine(kept_column, 0, true);
+  if (fill == ShiftFill::kRotate) {
+    return GetLine(rotated_column, 0, true);
+  }
+  if (fill == ShiftFill::kKeep) {
+    return GetLine(kept_column, 0, true);
+  }
   return 0;
 }
 
@@ -307,10 +361,12 @@ void Panel::ShiftRows(bool up, ShiftFill fill) {
   for (byte column = 0; column < columns; column++) {
     byte const value = GetLine(column, 0, true);
     byte const fill_row = up ? bottom : top;
-    bool const fill_dot = fill == ShiftFill::kRotate
-                              ? bitRead(value, up ? top : bottom)
-                          : fill == ShiftFill::kKeep ? bitRead(value, fill_row)
-                                                     : false;
+    bool fill_dot = false;
+    if (fill == ShiftFill::kRotate) {
+      fill_dot = bitRead(value, up ? top : bottom) != 0;
+    } else if (fill == ShiftFill::kKeep) {
+      fill_dot = bitRead(value, fill_row) != 0;
+    }
     byte shifted =
         up ? static_cast<byte>(value >> 1U) : static_cast<byte>(value << 1U);
     bitWrite(shifted, fill_row, fill_dot);
@@ -367,11 +423,9 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
 // Returns `input` with its bits in the opposite order: the halves swapped, then
 // the pairs in each half, then the bits in each pair.
 byte Panel::ReverseByte(byte input) {
-  input = static_cast<byte>((input & 0xF0U) >> 4U | (input & 0x0FU) << 4U);
-  input = static_cast<byte>((input & 0xCCU) >> 2U | (input & 0x33U) << 2U);
-  input = static_cast<byte>((input & 0xAAU) >> 1U | (input & 0x55U) << 1U);
-
-  return input;
+  byte const halves_swapped{SwapBits(input, kUpperHalf, 4)};
+  byte const pairs_swapped{SwapBits(halves_swapped, kUpperPairs, 2)};
+  return SwapBits(pairs_swapped, kUpperBits, 1);
 }
 
 /*
@@ -419,7 +473,7 @@ Panel::BufferDot Panel::ConvertDotToBuffer(byte column, byte row) const {
 byte Panel::GetLine(byte column, byte row, bool vertical) {
   byte value = 0;
 
-  for (byte dot = 0; dot < 8; dot++) {
+  for (byte dot = 0; dot < kDotsPerLine; dot++) {
     BufferDot const buffer_dot = ConvertDotToBuffer(
         vertical ? column : column + dot, vertical ? row + dot : row);
     bitWrite(value, dot,
@@ -434,7 +488,7 @@ byte Panel::GetLine(byte column, byte row, bool vertical) {
  * has to lie within one module.
  */
 void Panel::SetLine(byte column, byte row, bool vertical, byte value) {
-  for (byte dot = 0; dot < 8; dot++) {
+  for (byte dot = 0; dot < kDotsPerLine; dot++) {
     BufferDot const buffer_dot = ConvertDotToBuffer(
         vertical ? column : column + dot, vertical ? row + dot : row);
     wired_.StoreBit(buffer_dot.column, buffer_dot.bit, bitRead(value, dot));

@@ -27,9 +27,9 @@
 namespace {
 
 /* SimulatorWebHost Parameter */
-constexpr size_t kRequestChunkLength{4096u};
-constexpr size_t kFrameChunkLength{2048u};
-constexpr uint32_t kRequestTimeoutMs{100u};
+constexpr size_t kRequestChunkLength{4096U};
+constexpr size_t kFrameChunkLength{2048U};
+constexpr uint32_t kRequestTimeoutMs{100U};
 constexpr char kWebSocketPath[] = "/ws";
 
 }  // namespace
@@ -47,11 +47,15 @@ bool SimulatorWebHost::Begin(uint16_t port, char const* page_path) {
 }
 
 void SimulatorWebHost::Task(std::vector<std::string>* messages) {
-  if (listener_ == kSimulatorSocketNone) return;
+  if (listener_ == kSimulatorSocketNone) {
+    return;
+  }
 
   AcceptClients();
   for (uint8_t slot = 0; slot < kSimulatorWebHostMaxClients; slot++) {
-    if (clients_[slot] != kSimulatorSocketNone) ReadClient(slot, messages);
+    if (clients_[slot] != kSimulatorSocketNone) {
+      ReadClient(slot, messages);
+    }
   }
 }
 
@@ -127,7 +131,9 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
   std::string path;
   std::string answer;
 
-  if (!GetPath(request, &path)) return false;
+  if (!GetPath(request, &path)) {
+    return false;
+  }
 
   if (path == kWebSocketPath) {
     return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) &&
@@ -198,7 +204,9 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
 
   while (request.find("\r\n\r\n") == std::string::npos) {
     ssize_t const received = recv(socket, chunk.data(), chunk.size(), 0);
-    if (received <= 0) break;
+    if (received <= 0) {
+      break;
+    }
     request.append(chunk.data(), static_cast<size_t>(received));
   }
   return request;
@@ -212,7 +220,9 @@ bool SimulatorWebHost::GetPath(std::string const& request, std::string* path) {
   size_t const end = start == std::string::npos ? std::string::npos
                                                 : request.find(' ', start + 1);
 
-  if (end == std::string::npos) return false;
+  if (end == std::string::npos) {
+    return false;
+  }
   *path = request.substr(start + 1, end - start - 1);
   return true;
 }

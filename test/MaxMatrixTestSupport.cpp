@@ -80,7 +80,9 @@ std::string ModuleTypeName(ModuleType module_type) {
   return kMax7219Wirings[static_cast<uint8_t>(module_type)].name;
 }
 
-bool Pattern(int16_t x, int16_t y) { return (x * x + 3 * y + x * y) % 3 == 0; }
+bool Pattern(int16_t x, int16_t y) {
+  return ((x * x) + (3 * y) + (x * y)) % 3 == 0;
+}
 
 std::vector<std::string> ShownPicture(Matrix& matrix) {
   return Picture(

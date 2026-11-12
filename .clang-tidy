@@ -49,11 +49,7 @@ Checks: >
   -bugprone-throwing-static-initialization,
   -modernize-use-nodiscard,
   -modernize-concat-nested-namespaces,
-  -misc-include-cleaner,
-  -readability-*,
-  readability-convert-member-functions-to-static,
-  readability-make-member-function-const,
-  readability-identifier-naming
+  -misc-include-cleaner
 # MaxMatrix's own, for good:
 # bugprone-easily-swappable-parameters: reports every pair of coordinates,
 #   ConvertDotToBuffer(byte column, byte row, ...), and the three pins of MaxMatrixChain. The

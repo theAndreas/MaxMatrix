@@ -169,13 +169,13 @@ bool IsUpright(Max7219Wiring const& wiring) {
   matrix.Clear();
   for (byte x = 0; x < kNumberOfColumns; x++) {
     for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-      matrix.SetDot(x, y, (x * x + 3 * y + x * y) % 3 == 0);
+      matrix.SetDot(x, y, ((x * x) + (3 * y) + (x * y)) % 3 == 0);
     }
   }
   for (byte x = 0; x < kNumberOfColumns; x++) {
     for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
       if (mock::chain.IsLit(wiring, x, y) !=
-          ((x * x + 3 * y + x * y) % 3 == 0)) {
+          (((x * x) + (3 * y) + (x * y)) % 3 == 0)) {
         upright = false;
       }
     }
@@ -195,8 +195,12 @@ std::string GetModules() {
   std::string modules;
 
   for (Max7219Wiring const& wiring : kMax7219Wirings) {
-    if (!IsUpright(wiring)) continue;
-    if (!modules.empty()) modules += ", ";
+    if (!IsUpright(wiring)) {
+      continue;
+    }
+    if (!modules.empty()) {
+      modules += ", ";
+    }
     modules += wiring.name;
     for (auto const& named : kModuleNames) {
       if (named.wiring->digits_as_rows == wiring.digits_as_rows &&
@@ -218,9 +222,9 @@ std::string GetModules() {
  */
 int32_t GetCellX(byte x) {
   return kLeft +
-         (x / max_matrix::kColumnNumberOfModule) *
-             (max_matrix::kColumnNumberOfModule * kCell + kModuleGap) +
-         (x % max_matrix::kColumnNumberOfModule) * kCell;
+         ((x / max_matrix::kColumnNumberOfModule) *
+          ((max_matrix::kColumnNumberOfModule * kCell) + kModuleGap)) +
+         ((x % max_matrix::kColumnNumberOfModule) * kCell);
 }
 
 /*!
@@ -230,7 +234,7 @@ int32_t GetCellX(byte x) {
  * \param[in] y The row, as the viewer sees it.
  * \return The pixels from the top.
  */
-int32_t GetCellY(byte y) { return kTop + y * kCell; }
+int32_t GetCellY(byte y) { return kTop + (y * kCell); }
 
 /*!
  * \brief Returns the width of a picture of the whole panel.
@@ -272,8 +276,8 @@ void DrawLed(DocuSvg* svg, byte x, byte y, char const* colour,
   svg->AddRect(GetCellX(x) + inset, GetCellY(y) + inset, kLed, kLed, colour,
                "none", 3);
   if (!label.empty()) {
-    svg->AddText(GetCellX(x) + kCell / 2, GetCellY(y) + kCell / 2 + 4, label,
-                 kFontLed, "#ffffff", "middle", true);
+    svg->AddText(GetCellX(x) + (kCell / 2), GetCellY(y) + (kCell / 2) + 4,
+                 label, kFontLed, "#ffffff", "middle", true);
   }
 }
 
@@ -299,7 +303,7 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
     int32_t const left = GetCellX(module * max_matrix::kColumnNumberOfModule);
     svg->AddRect(left - 4, kTop - 4, module_width + 8, module_height + 8,
                  "none", kColourFrame, 4);
-    svg->AddText(left + module_width / 2, kTop - 14,
+    svg->AddText(left + (module_width / 2), kTop - 14,
                  "Module " + std::to_string(module), kFontModule, kColourText,
                  "middle", true);
 
@@ -308,20 +312,20 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
       bool const right = module == kNumberOfModules - 1;
       int32_t const edge = right ? left + module_width + 8 : left - 8;
       int32_t const outside = right ? edge + 70 : edge - 70;
-      svg->AddArrow(outside, edge, kTop + module_height / 2, 3, kColourFrame);
-      svg->AddText((outside + edge) / 2, kTop + module_height / 2 - 10, "DIN",
+      svg->AddArrow(outside, edge, kTop + (module_height / 2), 3, kColourFrame);
+      svg->AddText((outside + edge) / 2, kTop + (module_height / 2) - 10, "DIN",
                    kFontModule, kColourText);
     }
   }
   for (byte x = 0; x < kNumberOfColumns; x++) {
-    svg->AddText(GetCellX(x) + kCell / 2, kTop + module_height + 22,
+    svg->AddText(GetCellX(x) + (kCell / 2), kTop + module_height + 22,
                  std::to_string(x), kFontAxis, kColourText);
   }
   for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-    svg->AddText(kLeft - 14, GetCellY(y) + kCell / 2 + 4, std::to_string(y),
+    svg->AddText(kLeft - 14, GetCellY(y) + (kCell / 2) + 4, std::to_string(y),
                  kFontAxis, kColourText, "end");
   }
-  svg->AddText(kLeft - 40, kTop + module_height / 2 + 5, "Y", kFontModule,
+  svg->AddText(kLeft - 40, kTop + (module_height / 2) + 5, "Y", kFontModule,
                kColourText, "middle", true);
   svg->AddText(kLeft - 14, kTop + module_height + 22, "X", kFontModule,
                kColourText, "end", true);
@@ -342,12 +346,14 @@ void DrawPanel(DocuSvg* svg, std::string const& title) {
 std::string DrawWiring(max_matrix::ModuleType module_type) {
   DocuSvg svg(GetPictureWidth(), GetPictureHeight());
   PerDot<DocuLed> leds;
-  int32_t const inset = (kCell - kLed) / 2 - 2;
+  int32_t const inset = ((kCell - kLed) / 2) - 2;
 
   matrix.SetModuleType(module_type);
   for (byte x = 0; x < kNumberOfColumns; x++) {
     for (byte y = 0; y < max_matrix::kRowNumberOfModule; y++) {
-      if (!FindLedOfDot(x, y, &leds[x][y])) return "";
+      if (!FindLedOfDot(x, y, &leds[x][y])) {
+        return "";
+      }
     }
   }
 
@@ -452,10 +458,10 @@ std::string DrawCoordinates() {
   int32_t const names = kTop + panel_height + 46;
   int32_t const row_module_left =
       GetCellX(kExampleRowModule * max_matrix::kColumnNumberOfModule);
-  svg.AddText(GetCellX(kExampleColumn) + kCell / 2, names,
+  svg.AddText(GetCellX(kExampleColumn) + (kCell / 2), names,
               "SetColumn(" + std::to_string(kExampleColumn) + ", value)",
               kFontModule, kColourLed, "middle", true);
-  svg.AddText(row_module_left + max_matrix::kColumnNumberOfModule * kCell / 2,
+  svg.AddText(row_module_left + (max_matrix::kColumnNumberOfModule * kCell / 2),
               names,
               "SetRow(" + std::to_string(kExampleRowModule) + ", " +
                   std::to_string(kExampleRow) + ", value)",

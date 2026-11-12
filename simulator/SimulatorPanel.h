@@ -23,7 +23,7 @@
 constexpr char kSimulatorPanelDefaultWiring[] = "FC16";
 /* about 30 pictures a second; neither a terminal nor a page keeps up with every
  * frame */
-constexpr uint32_t kSimulatorPanelRedrawInterval{33u};
+constexpr uint32_t kSimulatorPanelRedrawInterval{33U};
 
 /*!
  * \brief The LED panel of the simulator, as a module of the chosen wiring

@@ -13,16 +13,16 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   byte const module = kNumberOfModules - 2;
   int32_t const frames_before{mock::frames};
 
-  matrix_.panel_.wired_.StoreBit(module * max_matrix::kColumnNumberOfModule + 3,
-                                 1, true);
+  matrix_.panel_.wired_.StoreBit(
+      (module * max_matrix::kColumnNumberOfModule) + 3, 1, true);
   matrix_.Update();
   EXPECT_EQ(mock::frames - frames_before, 1);
-  ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
+  ASSERT_EQ(mock::last_frame.size(), 2U * kNumberOfModules);
   for (byte i = 0; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
     EXPECT_EQ(mock::last_frame[size_t{2} * i],
               max_matrix::max7219::kDigit3Address);
-    EXPECT_EQ(mock::last_frame[size_t{2} * i + 1], i == module ? 0x02 : 0x00);
+    EXPECT_EQ(mock::last_frame[(size_t{2} * i) + 1], i == module ? 0x02 : 0x00);
   }
 }
 

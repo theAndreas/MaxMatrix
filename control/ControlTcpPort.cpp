@@ -30,7 +30,7 @@ namespace {
 
 /* ControlTcpPort Parameter */
 constexpr intptr_t kNone{(-1)};
-constexpr size_t kChunkLength{256u};
+constexpr size_t kChunkLength{256U};
 constexpr int kWriteTimeoutMs{1000};
 
 #ifdef _WIN32
@@ -109,7 +109,9 @@ bool ControlTcpPort::Open(uint16_t port) {
     opened = fcntl(ToSocket(socket_), F_SETFL, non_blocking_flags) == 0;
   }
 #endif
-  if (!opened) Close();
+  if (!opened) {
+    Close();
+  }
   return opened;
 }
 
@@ -118,7 +120,9 @@ bool ControlTcpPort::IsOpen() const { return socket_ != kNone; }
 bool ControlTcpPort::Write(std::string const& data) {
   size_t sent = 0;
 
-  if (!IsOpen()) return false;
+  if (!IsOpen()) {
+    return false;
+  }
   while (sent < data.size()) {
     auto const written = send(ToSocket(socket_), &data[sent],
                               ToLength(data.size() - sent), kSendFlags);
@@ -139,7 +143,9 @@ bool ControlTcpPort::Write(std::string const& data) {
 bool ControlTcpPort::Read(std::string* data) {
   std::array<char, kChunkLength> chunk{};
 
-  if (!IsOpen()) return false;
+  if (!IsOpen()) {
+    return false;
+  }
   for (;;) {
     auto const length = recv(ToSocket(socket_), chunk.data(),
                              static_cast<int>(chunk.size()), 0);
@@ -155,7 +161,9 @@ bool ControlTcpPort::Read(std::string* data) {
 }
 
 void ControlTcpPort::Close() {
-  if (socket_ == kNone) return;
+  if (socket_ == kNone) {
+    return;
+  }
   CloseSocket(ToSocket(socket_));
   socket_ = kNone;
 #ifdef _WIN32

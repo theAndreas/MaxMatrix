@@ -185,7 +185,9 @@ TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall) {
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
   uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
-  for (uint8_t call = 0; call < 3; call++) matrix_.ShiftTask();
+  for (uint8_t call = 0; call < 3; call++) {
+    matrix_.ShiftTask();
+  }
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 3);
 }
 

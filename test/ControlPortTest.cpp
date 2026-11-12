@@ -26,7 +26,9 @@ std::string Receive(int descriptor) {
   pollfd ready = {descriptor, POLLIN, 0};
   std::array<char, 256> chunk{};
 
-  if (poll(&ready, 1, 500) <= 0) return "";
+  if (poll(&ready, 1, 500) <= 0) {
+    return "";
+  }
   ssize_t const length = read(descriptor, chunk.data(), chunk.size());
   return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
                     : "";
@@ -57,8 +59,12 @@ class ControlSerialPortTest : public testing::Test {
     name_ = path.data();
   }
   void TearDown() override {
-    if (port_end_ >= 0) close(port_end_);
-    if (board_ >= 0) close(board_);
+    if (port_end_ >= 0) {
+      close(port_end_);
+    }
+    if (board_ >= 0) {
+      close(board_);
+    }
   }
 };
 
@@ -150,7 +156,9 @@ TEST(ControlTcpPortTest, ReadSaysWhenTheSimulatorIsGone) {
     ASSERT_TRUE(port.Open(kPort));
     host.Task(&received);
   }
-  for (int16_t i = 0; i < 50 && port.Read(&received); i++) usleep(10000);
+  for (int16_t i = 0; i < 50 && port.Read(&received); i++) {
+    usleep(10000);
+  }
   EXPECT_FALSE(port.IsOpen());
 }
 

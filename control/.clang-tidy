@@ -13,8 +13,16 @@
 #   Reports every new of a control: wxWidgets hands it to the parent it is made with, which
 #   deletes it, so the window owns no pointer it could free. The classes without a window
 #   allocate nothing.
+#
+# For now, until a pull request of its own splits the functions and names the sizes (OIL 36):
+#   readability-function-size, readability-function-cognitive-complexity and
+#   readability-magic-numbers, which report the long layout functions of the window and its
+#   pixel sizes.
 InheritParentConfig: true
 Checks: >
   -bugprone-suspicious-enum-usage,
   -clang-diagnostic-enum-enum-conversion,
-  -cppcoreguidelines-owning-memory
+  -cppcoreguidelines-owning-memory,
+  -readability-function-size,
+  -readability-function-cognitive-complexity,
+  -readability-magic-numbers

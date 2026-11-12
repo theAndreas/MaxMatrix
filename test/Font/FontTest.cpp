@@ -41,7 +41,8 @@ static uint8_t const kWideFont[] PROGMEM = {
 };
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */
 TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
-  std::vector<byte> utf8, latin1;
+  std::vector<byte> utf8;
+  std::vector<byte> latin1;
 
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("Äöü!").GetError(), Error::kOk);
@@ -200,7 +201,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
   for (byte column = 0; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1u << column)
+    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1U << column)
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -212,7 +213,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
   for (byte column = 0; column < 8; column++) {
     EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue(),
-              1u << column)
+              1U << column)
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

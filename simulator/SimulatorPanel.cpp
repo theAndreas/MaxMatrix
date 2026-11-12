@@ -64,9 +64,8 @@ bool SimulatorPanel::SetWiring(std::string const& name) {
     wiring_name_ = name;
     draw_requested_ = true;
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 void SimulatorPanel::SetUpsideDown(bool upside_down) {
@@ -90,10 +89,14 @@ void SimulatorPanel::SetDrawn(uint32_t now) {
 // DR0CR0RR0 ... DR1CR1RR1. Returns nullptr if no wiring has this name.
 Max7219Wiring const* SimulatorPanel::FindWiring(std::string const& name) {
   for (auto const& named : kNamedWirings) {
-    if (name == named.name) return named.wiring;
+    if (name == named.name) {
+      return named.wiring;
+    }
   }
   for (Max7219Wiring const& each : kMax7219Wirings) {
-    if (name == each.name) return &each;
+    if (name == each.name) {
+      return &each;
+    }
   }
   return nullptr;
 }

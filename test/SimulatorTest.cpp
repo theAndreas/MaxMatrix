@@ -27,7 +27,9 @@ bool Parse(SimulatorOptions& options, std::vector<std::string> arguments) {
 
   arguments.insert(arguments.begin(), "Simulator");
   argv.reserve(arguments.size());
-  for (std::string& argument : arguments) argv.push_back(&argument[0]);
+  for (std::string& argument : arguments) {
+    argv.push_back(argument.data());
+  }
   return options.Parse(static_cast<int>(argv.size()), argv.data());
 }
 
@@ -68,7 +70,7 @@ TEST(SimulatorTest, RunForIsTakenInMilliseconds) {
   SimulatorOptions options;
 
   ASSERT_TRUE(Parse(options, {"--for", "1.5"}));
-  EXPECT_EQ(options.GetRunFor(), 1500u);
+  EXPECT_EQ(options.GetRunFor(), 1500U);
 }
 
 /* Bug: atof() took --for 2x as two seconds, and turned -1 and 1e10 into a value
@@ -89,9 +91,9 @@ TEST(SimulatorTest, IntensityIsCountedFromTheLeft) {
   SimulatorPanel panel;
 
   ResetChainWithDistinctIntensities();
-  EXPECT_EQ(panel.GetIntensity(0), kNumberOfModules - 1u);
+  EXPECT_EQ(panel.GetIntensity(0), kNumberOfModules - 1U);
   panel.SetUpsideDown(true);
-  EXPECT_EQ(panel.GetIntensity(0), 0u);
+  EXPECT_EQ(panel.GetIntensity(0), 0U);
 }
 
 TEST(SimulatorTest, StatusLineListsTheIntensitiesFromTheLeft) {

@@ -41,6 +41,13 @@ enum class State : uint8_t {
   kCharShift
 };
 
+namespace internal {
+
+/* the most bytes of a row Panel takes, as it counts them in a byte */
+constexpr size_t kMaxRowBytes{0xFF};
+
+}  // namespace internal
+
 /*!
  * \brief The matrix a sketch draws on: a chain of 8x8 modules, in the
  *        coordinates the viewer sees.
@@ -83,7 +90,9 @@ class Matrix {
   // Sends what changed, if auto update is on; every public function that draws
   // ends with it.
   void UpdateIfAuto() {
-    if (auto_update_) Update();
+    if (auto_update_) {
+      Update();
+    }
   }
   Status UpdateIfAuto(Status status) {
     UpdateIfAuto();
@@ -203,7 +212,9 @@ class Matrix {
   Status GetRow(int16_t row, byte (&values)[NumberOfValues]) {
     return MAXMATRIX_REPORT_ERROR(
         "GetRow", panel_.GetRow(row, values,
-                                NumberOfValues > 0xFF ? 0xFF : NumberOfValues));
+                                NumberOfValues > internal::kMaxRowBytes
+                                    ? internal::kMaxRowBytes
+                                    : NumberOfValues));
   }
 
   /*! \copydoc internal::Panel::GetRow(byte, byte) */
@@ -331,7 +342,10 @@ class Matrix {
    */
   template <size_t NumberOfValues>
   void SetRow(int16_t row, byte const (&values)[NumberOfValues]) {
-    panel_.SetRow(row, values, NumberOfValues > 0xFF ? 0xFF : NumberOfValues);
+    panel_.SetRow(row, values,
+                  NumberOfValues > internal::kMaxRowBytes
+                      ? internal::kMaxRowBytes
+                      : NumberOfValues);
     UpdateIfAuto();
   }
 
@@ -349,23 +363,24 @@ class Matrix {
 
   /*! \copydoc internal::Panel::DrawLine(int16_t, int16_t, int16_t, int16_t,
    * bool) */
-  void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value) {
+  void DrawLine(  // NOLINT(readability-function-size)
+      int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value) {
     panel_.DrawLine(x0, y0, x1, y1, value);
     UpdateIfAuto();
   }
 
   /*! \copydoc internal::Panel::DrawRect(int16_t, int16_t, int16_t, int16_t,
    * bool) */
-  void DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                bool value) {
+  void DrawRect(  // NOLINT(readability-function-size)
+      int16_t x, int16_t y, int16_t width, int16_t height, bool value) {
     panel_.DrawRect(x, y, width, height, value);
     UpdateIfAuto();
   }
 
   /*! \copydoc internal::Panel::FillRect(int16_t, int16_t, int16_t, int16_t,
    * bool) */
-  void FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                bool value) {
+  void FillRect(  // NOLINT(readability-function-size)
+      int16_t x, int16_t y, int16_t width, int16_t height, bool value) {
     panel_.FillRect(x, y, width, height, value);
     UpdateIfAuto();
   }
@@ -378,8 +393,9 @@ class Matrix {
 
   /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, byte const*, byte,
    * byte) */
-  void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
-                  byte height = kRowNumberOfModule) {
+  void DrawBitmap(  // NOLINT(readability-function-size)
+      int16_t x, int16_t y, byte const* bitmap, byte width,
+      byte height = kRowNumberOfModule) {
     panel_.DrawBitmap(x, y, bitmap, width, height);
     UpdateIfAuto();
   }
@@ -516,7 +532,7 @@ class Matrix {
    *                   top row.
    */
   void SetSprite(int16_t x, int16_t y, Sprite const sprite) {
-    text_.SetSprite(panel_, x, y, sprite);
+    max_matrix::internal::Text::SetSprite(panel_, x, y, sprite);
     UpdateIfAuto();
   }
 
@@ -588,8 +604,8 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::ShiftLeft(byte) */
-  byte ShiftLeft(byte column) {
-    byte const shifted_out = panel_.ShiftLeft(column);
+  byte ShiftLeft(byte shifted_in) {
+    byte const shifted_out = panel_.ShiftLeft(shifted_in);
     UpdateIfAuto();
     return shifted_out;
   }
@@ -601,8 +617,8 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::ShiftRight(byte) */
-  byte ShiftRight(byte column) {
-    byte const shifted_out = panel_.ShiftRight(column);
+  byte ShiftRight(byte shifted_in) {
+    byte const shifted_out = panel_.ShiftRight(shifted_in);
     UpdateIfAuto();
     return shifted_out;
   }

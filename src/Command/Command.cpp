@@ -28,6 +28,10 @@ constexpr char kListSeparator{','};
 constexpr uint16_t kMaxByte{0xFF};
 constexpr uint16_t kMaxInterval{0xFFFF};
 
+/* the digits a number is written in, and the first that hex writes as a letter
+ */
+constexpr uint8_t kDecimalBase{10};
+
 /* a byte of `picture` is two hex digits, the high nibble first */
 constexpr byte kLowNibble{0x0FU};
 constexpr uint8_t kNibbleWidth{4U};
@@ -48,7 +52,9 @@ Command::Command() {
  * `ok`.
  */
 Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
-  if (c == kCarriageReturn) return CommandState::kPending;
+  if (c == kCarriageReturn) {
+    return CommandState::kPending;
+  }
   if (c != kLineEnd) {
     if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH) {
       line_[line_length_++] = c;
@@ -64,9 +70,13 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   line_[line_length_] = internal::kNullCharacter;
   line_length_ = 0;
   line_too_long_ = false;
-  if (empty) return CommandState::kPending;
+  if (empty) {
+    return CommandState::kPending;
+  }
   Result<CommandState> result = Error::kLineTooLong;
-  if (!too_long) result = Execute(matrix, line_, answer);
+  if (!too_long) {
+    result = Execute(matrix, line_, answer);
+  }
   if (!result.IsOk()) {
     answer.print(F("error: "));
     answer.println(result.GetErrorText());
@@ -88,7 +98,9 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
       AnswerPicture(matrix, answer);
       return CommandState::kAnswered;
     }
-    if (0 != strcmp_P(text, PSTR("clear"))) return Error::kUnknownCommand;
+    if (0 != strcmp_P(text, PSTR("clear"))) {
+      return Error::kUnknownCommand;
+    }
     matrix.Clear();
   } else {
     *value++ = internal::kNullCharacter;
@@ -102,7 +114,9 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
       status = ExecuteSetting(matrix, text, value);
     }
   }
-  if (!status.IsOk()) return status.GetError();
+  if (!status.IsOk()) {
+    return status.GetError();
+  }
   return CommandState::kDone;
 }
 
@@ -117,7 +131,9 @@ Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
   static_assert(sizeof(shift_text_) >= sizeof(line_),
                 "ShiftText has to hold any text of a line");
 
-  if (*value == internal::kNullCharacter) return Error::kNoText;
+  if (*value == internal::kNullCharacter) {
+    return Error::kNoText;
+  }
   // strcpy() into a buffer that the static_assert above holds large enough.
   // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
   strcpy(shift_text_, value);  // NOLINT(runtime/printf)
@@ -144,7 +160,9 @@ Status Command::ExecuteDot(Matrix& matrix, char* value) {
   char* lit_text =
       row_text == nullptr ? nullptr : strchr(row_text + 1, kListSeparator);
 
-  if (lit_text == nullptr) return Error::kNotANumber;
+  if (lit_text == nullptr) {
+    return Error::kNotANumber;
+  }
   *row_text = internal::kNullCharacter;
   row_text++;
   *lit_text = internal::kNullCharacter;
@@ -153,9 +171,15 @@ Status Command::ExecuteDot(Matrix& matrix, char* value) {
       ConvertToNumber(value, matrix.GetNumberOfColumns() - 1)};
   Result<uint16_t> const row{ConvertToNumber(row_text, kRowNumberOfModule - 1)};
   Result<uint16_t> const lit{ConvertToNumber(lit_text, 1)};
-  if (!column.IsOk()) return column.GetError();
-  if (!row.IsOk()) return row.GetError();
-  if (!lit.IsOk()) return lit.GetError();
+  if (!column.IsOk()) {
+    return column.GetError();
+  }
+  if (!row.IsOk()) {
+    return row.GetError();
+  }
+  if (!lit.IsOk()) {
+    return lit.GetError();
+  }
   matrix.SetDot(static_cast<int16_t>(column.GetValue()),
                 static_cast<int16_t>(row.GetValue()), lit.GetValue() == 1);
   return Error::kOk;
@@ -168,16 +192,22 @@ Status Command::ExecuteSetting(Matrix& matrix, char const* name,
   if (0 == strcmp_P(name, PSTR("intensity"))) {
     Result<uint16_t> const number{
         ConvertToNumber(value, max7219::kIntensityMaxValue)};
-    if (!number.IsOk()) return number.GetError();
+    if (!number.IsOk()) {
+      return number.GetError();
+    }
     // ConvertToNumber() held it to the intensity's 15.
     matrix.SetIntensity(static_cast<byte>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxInterval)};
-    if (!number.IsOk()) return number.GetError();
+    if (!number.IsOk()) {
+      return number.GetError();
+    }
     matrix.SetShiftInterval(number.GetValue());
   } else if (0 == strcmp_P(name, PSTR("space"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxByte)};
-    if (!number.IsOk()) return number.GetError();
+    if (!number.IsOk()) {
+      return number.GetError();
+    }
     // ConvertToNumber() held it to a byte.
     matrix.SetSpaceBetweenChars(static_cast<byte>(number.GetValue()));
   } else {
@@ -214,21 +244,28 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
 Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
   uint32_t value = 0;
 
-  if (*text == internal::kNullCharacter) return Error::kNotANumber;
+  if (*text == internal::kNullCharacter) {
+    return Error::kNotANumber;
+  }
   for (; *text != internal::kNullCharacter; text++) {
-    if (*text < '0' || *text > '9') return Error::kNotANumber;
+    if (*text < '0' || *text > '9') {
+      return Error::kNotANumber;
+    }
     if (value <= maximum) {
-      value = value * 10 + static_cast<uint32_t>(*text - '0');
+      value = (value * kDecimalBase) + static_cast<uint32_t>(*text - '0');
     }
   }
-  if (value > maximum) return Error::kOutOfRange;
+  if (value > maximum) {
+    return Error::kOutOfRange;
+  }
   return static_cast<uint16_t>(value);
 }
 
 // Computed rather than looked up: a table of the digits would lie in RAM on the
 // Uno.
 char Command::ConvertToHexDigit(byte value) {
-  return static_cast<char>(value < 10 ? '0' + value : 'A' + value - 10);
+  return static_cast<char>(value < kDecimalBase ? '0' + value
+                                                : 'A' + value - kDecimalBase);
 }
 
 }  // namespace max_matrix

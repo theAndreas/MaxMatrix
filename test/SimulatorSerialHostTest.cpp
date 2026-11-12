@@ -26,7 +26,9 @@ uint16_t const kPort = 18087;
 // A client connected to the host on loopback, or -1 if the connection failed.
 int Connect() {
   int const client = socket(AF_INET, SOCK_STREAM, 0);
-  if (client < 0) return -1;
+  if (client < 0) {
+    return -1;
+  }
   sockaddr_in address = sockaddr_in();
 
   address.sin_family = AF_INET;
@@ -46,7 +48,9 @@ std::string Receive(int client) {
   pollfd ready = {client, POLLIN, 0};
   std::array<char, 256> chunk{};
 
-  if (poll(&ready, 1, 500) <= 0) return "";
+  if (poll(&ready, 1, 500) <= 0) {
+    return "";
+  }
   ssize_t const length = recv(client, chunk.data(), chunk.size(), 0);
   return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
                     : "";

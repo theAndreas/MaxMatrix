@@ -20,7 +20,7 @@
 #include <vector>
 
 /* SimulatorWebHost Parameter */
-constexpr uint8_t kSimulatorWebHostMaxClients{4u};
+constexpr uint8_t kSimulatorWebHostMaxClients{4U};
 
 /*!
  * \brief A small HTTP and WebSocket server for the simulator, on loopback only.

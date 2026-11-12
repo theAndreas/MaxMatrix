@@ -26,7 +26,9 @@ Error FeedText(Matrix& matrix, std::string const& text) {
   TextPrint answer;
   Result<CommandState> result = CommandState::kPending;
 
-  for (char const c : text) result = command.Feed(matrix, c, answer);
+  for (char const c : text) {
+    result = command.Feed(matrix, c, answer);
+  }
   return result.GetError();
 }
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {

@@ -13,6 +13,8 @@
 
 namespace max_matrix {
 
+// FN-3: the three pins, the buffer and its length, as a sketch hands them
+// NOLINTNEXTLINE(readability-function-size)
 Matrix::Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin,
                byte* buffer, byte number_of_modules)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer,
@@ -35,15 +37,19 @@ void Matrix::ShiftTask() {
   uint32_t const now = millis();
 
   // The interval counts from this step on, not from when the step was due.
-  if (now - last_shift_ < shift_interval_) return;
+  if (now - last_shift_ < shift_interval_) {
+    return;
+  }
   last_shift_ = now;
 
-  if (State::kStringShift == state_) {
-    if (!text_.StringShiftTask(panel_)) state_ = State::kReady;
+  if (State::kStringShift == state_ && !text_.StringShiftTask(panel_)) {
+    state_ = State::kReady;
   }
-  if (State::kCharShift == state_) {
-    if (!text_.CharShiftTask(panel_)) state_ = State::kReady;
+
+  if (State::kCharShift == state_ && !text_.CharShiftTask(panel_)) {
+    state_ = State::kReady;
   }
+
   UpdateIfAuto();
 }
 
@@ -76,7 +82,9 @@ Status Matrix::SetCharWithShift(char c) {
   Status status =
       MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c));
 
-  if (status.IsOk()) StartShift(State::kCharShift);
+  if (status.IsOk()) {
+    StartShift(State::kCharShift);
+  }
   return status;
 }
 
@@ -84,7 +92,9 @@ Status Matrix::SetTextWithShift(char const* text, bool repeat) {
   Status status = MAXMATRIX_REPORT_ERROR("SetTextWithShift",
                                          text_.SetTextWithShift(text, repeat));
 
-  if (status.IsOk()) StartShift(State::kStringShift);
+  if (status.IsOk()) {
+    StartShift(State::kStringShift);
+  }
   return status;
 }
 

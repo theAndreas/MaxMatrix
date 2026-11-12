@@ -49,16 +49,18 @@ bool ControlCommand::DecodePicture(std::string const& line,
                                    std::vector<uint8_t>* columns) {
   static std::string const kName = "picture=";
 
-  if (line.compare(0, kName.size(), kName) != 0) return false;
+  if (line.compare(0, kName.size(), kName) != 0) {
+    return false;
+  }
   columns->clear();
   if (line.size() !=
-      kName.size() + 2u * static_cast<size_t>(kControlNumberOfColumns)) {
+      kName.size() + (2U * static_cast<size_t>(kControlNumberOfColumns))) {
     return true;
   }
   for (size_t i = kName.size(); i < line.size(); i += 2) {
     std::array<char, 3> const digits{{line[i], line[i + 1], '\0'}};
-    if (!isxdigit(static_cast<unsigned char>(digits[0])) ||
-        !isxdigit(static_cast<unsigned char>(digits[1]))) {
+    if ((isxdigit(static_cast<unsigned char>(digits[0])) == 0) ||
+        (isxdigit(static_cast<unsigned char>(digits[1])) == 0)) {
       columns->clear();
       return true;
     }

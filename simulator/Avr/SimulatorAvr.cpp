@@ -26,9 +26,9 @@ namespace {
 
 /* the Uno's pins 10, 11 and 13 are PB2, PB3 and PB5 */
 constexpr char kPort{'B'};
-constexpr uint8_t kChipSelectBit{2u};
-constexpr uint8_t kDataInBit{3u};
-constexpr uint8_t kClockBit{5u};
+constexpr uint8_t kChipSelectBit{2U};
+constexpr uint8_t kDataInBit{3U};
+constexpr uint8_t kClockBit{5U};
 
 /* Serial is the first and only UART of the ATmega328P */
 constexpr char kUart{'0'};
@@ -47,7 +47,9 @@ __attribute__((format(printf, 3, 0))) void LogSimavr(
   (void)avr;
   // simavr also reports every section of the .elf it loads, which would stand
   // between the panel and the command line.
-  if (level <= LOG_ERROR) vfprintf(stderr, format, arguments);
+  if (level <= LOG_ERROR) {
+    vfprintf(stderr, format, arguments);
+  }
 }
 
 }  // namespace
@@ -55,19 +57,27 @@ __attribute__((format(printf, 3, 0))) void LogSimavr(
 SimulatorAvr::SimulatorAvr() = default;
 
 SimulatorAvr::~SimulatorAvr() {
-  if (avr_ != nullptr) avr_terminate(avr_);
+  if (avr_ != nullptr) {
+    avr_terminate(avr_);
+  }
 }
 
 uint32_t SimulatorAvr::GetMillis() const {
-  if (avr_ == nullptr) return 0;
-  return static_cast<uint32_t>(avr_cycles_to_usec(avr_, avr_->cycle) / 1000);
+  if (avr_ == nullptr) {
+    return 0;
+  }
+  return (avr_cycles_to_usec(avr_, avr_->cycle) / 1000);
 }
 
 bool SimulatorAvr::Load(char const* elf_file) {
   avr_global_logger_set(LogSimavr);
-  if (elf_read_firmware(elf_file, &firmware_) != 0) return false;
+  if (elf_read_firmware(elf_file, &firmware_) != 0) {
+    return false;
+  }
   avr_ = avr_make_mcu_by_name(kSimulatorAvrMcu);
-  if (avr_ == nullptr) return false;
+  if (avr_ == nullptr) {
+    return false;
+  }
   avr_init(avr_);
   avr_->frequency = kSimulatorAvrFrequency;
   avr_load_firmware(avr_, &firmware_);
@@ -104,12 +114,14 @@ bool SimulatorAvr::Load(char const* elf_file) {
 }
 
 bool SimulatorAvr::Run(uint32_t milliseconds) {
-  avr_cycle_count_t const end = avr_usec_to_cycles(avr_, milliseconds * 1000u);
+  avr_cycle_count_t const end = avr_usec_to_cycles(avr_, milliseconds * 1000U);
 
   ReceiveSerial();
   while (avr_->cycle < end) {
     int const state = avr_run(avr_);
-    if (state == cpu_Done || state == cpu_Crashed) return false;
+    if (state == cpu_Done || state == cpu_Crashed) {
+      return false;
+    }
   }
   return true;
 }
@@ -155,7 +167,9 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
 
   (void)irq;
   simulator->clock_ = value != 0;
-  if (!rising) return;
+  if (!rising) {
+    return;
+  }
   mock::chain.ShiftBit(simulator->data_in_);
   uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1U)};
   simulator->bits_ =
@@ -179,7 +193,9 @@ void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
   if (simulator->chip_select_ && !high) {
     mock::frame.clear();
   } else if (!simulator->chip_select_ && high) {
-    if (simulator->bit_count_ != 0) mock::errors++;
+    if (simulator->bit_count_ != 0) {
+      mock::errors++;
+    }
     simulator->bit_count_ = 0;
     mock::chain.Latch();
     mock::last_frame = mock::frame;

@@ -18,14 +18,18 @@ Text::Text() = default;
 Status Text::SetFont(uint8_t const* font, size_t size) {
   Status const status = Font::CheckFont(font, size);
 
-  if (status.IsOk()) font_ = font;
+  if (status.IsOk()) {
+    font_ = font;
+  }
   return status;
 }
 
 Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
   Result<Glyph> const found = Font::GetGlyph(GetFont(), c);
 
-  if (found.IsOk()) SetGlyph(panel, x, y, found.GetValue());
+  if (found.IsOk()) {
+    SetGlyph(panel, x, y, found.GetValue());
+  }
   return found.GetError();
 }
 
@@ -43,23 +47,31 @@ Status Text::SetCharWithShift(char c) {
 Status Text::SetText(Panel& panel, char const* text) const {
   int16_t char_column = 0;
 
-  if (text == nullptr) return Error::kNoText;
+  if (text == nullptr) {
+    return Error::kNoText;
+  }
   while (*text != internal::kNullCharacter) {
     DecodedChar const decoded = Font::DecodeChar(text);
     text += decoded.length;
     Result<Glyph> const found = Font::GetGlyph(GetFont(), decoded.c);
-    if (!found.IsOk()) return found.GetError();
+    if (!found.IsOk()) {
+      return found.GetError();
+    }
     Glyph const glyph = found.GetValue();
     SetGlyph(panel, char_column, 0, glyph);
     char_column =
         static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
-    if (char_column > panel.GetNumberOfColumns()) break;
+    if (char_column > panel.GetNumberOfColumns()) {
+      break;
+    }
   }
   return Error::kOk;
 }
 
 Status Text::SetTextWithShift(char const* text, bool repeat) {
-  if (text == nullptr) return Error::kNoText;
+  if (text == nullptr) {
+    return Error::kNoText;
+  }
   sprite_shift_counter_ = kShiftIdle;
   string_ = text;
   repeat_from_ = repeat ? text : nullptr;
@@ -69,7 +81,9 @@ Status Text::SetTextWithShift(char const* text, bool repeat) {
 void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
   // As in Panel::DrawBitmap(): right of the panel x plus a column
   // could overflow.
-  if (x >= panel.GetNumberOfColumns()) return;
+  if (x >= panel.GetNumberOfColumns()) {
+    return;
+  }
   for (byte sprite_column = 0; sprite_column < sprite[kSpriteWidth];
        sprite_column++) {
     panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y,
@@ -122,7 +136,9 @@ void Text::ReadNextChar() {
 
   while (sprite_shift_counter_ == kShiftIdle) {
     if (*string_ == internal::kNullCharacter) {
-      if (start_over_at == nullptr) return;
+      if (start_over_at == nullptr) {
+        return;
+      }
       string_ = start_over_at;
       start_over_at = nullptr;
     } else {

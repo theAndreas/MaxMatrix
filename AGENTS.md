@@ -324,6 +324,16 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   library it builds with MaxMatrix, where an `Error.h` or `Config.h` would meet another's. In a
   folder, the folder's name in the path keeps them apart.
 
+#### Parameters
+
+FN-3 allows four parameters, and the library departs from it where a sketch writer knows the
+function by five: the shapes take their coordinates as Adafruit GFX and MD_MAX72XX do,
+`DrawLine(x0, y0, x1, y1, value)`, `DrawRect(x, y, width, height, value)` and `DrawBitmap`, and
+the constructors of `Matrix`, `Panel` and `Wired` take the three pins, the buffer and its length.
+A struct for a point or the pins was weighed and left for 2.0.0: every sketch that draws a shape
+would change, for a rule of review. Each carries a `NOLINT(readability-function-size)`; nothing
+else in `src/` does.
+
 #### Integer types
 
 Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `byte` for an

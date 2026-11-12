@@ -216,7 +216,9 @@ namespace internal {
 // if it has one; what MAXMATRIX_REPORT_ERROR() calls.
 template <typename ResultType>
 ResultType ReportIfError(__FlashStringHelper const* api, ResultType result) {
-  if (!result.IsOk()) ReportError(api, result.GetError());
+  if (!result.IsOk()) {
+    ReportError(api, result.GetError());
+  }
   return result;
 }
 

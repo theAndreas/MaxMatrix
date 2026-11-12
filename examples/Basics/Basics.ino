@@ -22,27 +22,33 @@ void setup() {
       max_matrix::ModuleType::kFc16);  // see the README for other modules
 }
 
-void loop() {
-  /* static text */
+/* text that stands */
+void ShowText() {
   matrix.Clear();
   matrix.SetText("Hi!");
   delay(2000);
+}
 
-  /* Draw a diagonal line dot by dot */
+/* a diagonal line, dot by dot */
+void DrawDiagonal() {
   matrix.Clear();
   for (byte column = 0; column < matrix.GetNumberOfColumns(); column++) {
     matrix.SetDot(column, column % max_matrix::kRowNumberOfModule, true);
     delay(30);
   }
   delay(1000);
+}
 
-  /* fill row 3 on every module */
+/* row 3 on every module */
+void FillRow() {
   for (byte module = 0; module < matrix.GetNumberOfModules(); module++) {
     matrix.SetRow(module, 3, 0xFF);
   }
   delay(1000);
+}
 
-  /* Draw a frame from many dots and show it at once, rather than dot by dot */
+/* a frame of many dots, shown at once rather than dot by dot */
+void DrawFrame() {
   {
     // nothing is sent until the end of this block
     max_matrix::Batch const batch{matrix};
@@ -57,11 +63,21 @@ void loop() {
     }
   }
   delay(1000);
+}
 
-  /* fade the intensity */
+/* the intensity, from dark to bright */
+void FadeIn() {
   for (byte intensity = 0; intensity <= 15; intensity++) {
     matrix.SetIntensity(intensity);
     delay(100);
   }
   matrix.SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
+}
+
+void loop() {
+  ShowText();
+  DrawDiagonal();
+  FillRow();
+  DrawFrame();
+  FadeIn();
 }
