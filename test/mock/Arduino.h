@@ -66,10 +66,12 @@ inline void* pgm_read_ptr(AddressType const* address) {
 #define MSBFIRST 1
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
-#define bitSet(value, bit) ((value) |= (1UL << (bit)))
-// The core's bitClear() is ((value) &= ~(1UL << (bit))), which narrows an
-// unsigned long into the byte it clears a bit of: avr-gcc warns of none,
-// -Wconversion here of each. So it is a function.
+// The core's bitSet() and bitClear() are ((value) |= (1UL << (bit))) and
+// ((value) &= ~(1UL << (bit))), which narrow an unsigned long into the byte
+// they change a bit of: avr-gcc warns of none, -Wconversion here of each, of
+// bitSet() in the sanitize build. A system header does not keep a macro's
+// warning from where it is expanded, so they are functions.
+#define bitSet(value, bit) mock::BitSet((value), (bit))
 #define bitClear(value, bit) mock::BitClear((value), (bit))
 #define bitWrite(value, bit, bitvalue) \
   ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
@@ -115,6 +117,12 @@ class HardwareSerial : public Print {
 extern HardwareSerial Serial;
 
 namespace mock {
+
+/* bitSet() of the core, without its narrowing */
+template <typename T>
+T& BitSet(T& value, uint8_t bit) {
+  return value = static_cast<T>(value | (1UL << bit));
+}
 
 /* bitClear() of the core, without its narrowing */
 template <typename T>
