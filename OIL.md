@@ -45,7 +45,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 33 | A font checked against its length | 15 | done | #67 |
 | 34 | On the template embedded-cpp-template | 16, 30 | done | #69 |
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
-| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78, #79 |
+| 36 | The template's checks, one group at a time | 35 | in progress | #73, #74, #78, #79, #80 |
 | 37 | Files named as their class | 35 | in progress | #77 |
 
 ### 1 Build with CMake
