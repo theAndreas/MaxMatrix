@@ -78,6 +78,16 @@ TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
   matrix_.StopShift();
   EXPECT_EQ(matrix_.GetState(), State::kReady) << "stopped twice";
 }
+/* StopShift() ends a char that shifts in as well as a text */
+TEST_F(MaxMatrixTest, StopShiftEndsAShiftingChar) {
+  ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  matrix_.StopShift();
+
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+}
+
 /* Bug: the count of the columns shifted in was a byte, so with the largest
  * space it never reached a char's width and space, and the char shifted for
  * ever */

@@ -116,6 +116,18 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
         << "shift step " << step;
   }
 }
+/* a column of a module is the column of the panel that many modules in */
+TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
+  matrix_.SetColumn(1, 2, 0xA3);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
+              return x == 10 && bitRead(0xA3, y);
+            }));
+  Result<byte> const value{matrix_.GetColumn(1, 2)};
+  EXPECT_EQ(value.GetError(), Error::kOk);
+  EXPECT_EQ(value.GetValue(), 0xA3);
+}
+
 /* rows and columns are two views of one picture: in orientation 180 SetColumn
  * turned the whole panel while SetRow turned each module */
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
@@ -572,6 +584,8 @@ TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
   matrix_.FillRect(0, 0, 32, 8, true);
   matrix_.FillRect(1, 1, 3, 2, false);
   matrix_.DrawRect(5, 0, 0, 8, false);
+  matrix_.DrawRect(5, 0, 8, 0, false);
+  matrix_.FillRect(5, 0, 0, 8, false);
   matrix_.FillRect(5, 0, 8, -1, false);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x < 1 || x > 3 || y < 1 || y > 2;
@@ -655,9 +669,22 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
   matrix_.DrawBitmap(32767, 0, kBitmap, sizeof(kBitmap));
   matrix_.DrawBitmap(-32768, 0, kBitmap, sizeof(kBitmap));
   matrix_.DrawBitmap(0, 32767, kBitmap, sizeof(kBitmap), 8);
+  matrix_.DrawBitmap(0, -32768, kBitmap, sizeof(kBitmap), 8);
   EXPECT_EQ(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }))
       << "far off the panel";
+}
+
+/* a bitmap less than a module high at the top row leaves the rows below it,
+ * where a whole column at once would have turned them off */
+TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
+  matrix_.FillRect(0, 0, 32, 8, true);
+
+  matrix_.DrawBitmap(10, 0, kBitmap, sizeof(kBitmap), 3);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
+              return x < 10 || x >= 15 || y >= 3 || bitRead(kBitmap[x - 10], y);
+            }));
 }
 
 }  // namespace
