@@ -47,7 +47,6 @@ Checks: >
   -cert-err33-c,
   -cert-err58-cpp,
   -bugprone-throwing-static-initialization,
-  -modernize-use-nodiscard,
   -modernize-concat-nested-namespaces,
   -misc-include-cleaner
 # MaxMatrix's own, for good:
@@ -79,10 +78,6 @@ Checks: >
 #   for every symbol it provides, and its fix names <cstdint>, which avr-gcc lacks, and
 #   <avr/pgmspace.h>, which the host lacks. Its includes are written by hand, in a pull request
 #   of their own.
-#   modernize-use-nodiscard, apart from the rest of modernize-*: 27 places in the host code, and
-#   FN-10 has a result marked with MAXMATRIX_NODISCARD, which MaxMatrix has no header for yet;
-#   [[nodiscard]] itself does not compile as gnu++11. It comes on with that header, and
-#   ReplacementString names the macro then.
 # house-*: the checks of our own, in tools/lib/tidy_module/; tools/tidy.sh loads them. Without
 #   the module, as in clangd, the name matches nothing.
 # bugprone-dynamic-static-initializers: it reports the extern declaration of a constant whose
@@ -177,6 +172,9 @@ CheckOptions:
   # expression wraps, as in Result<...> const end{ReadDigits(...)}: there a
   # comma would read as the start of a second value.
   readability-trailing-comma.MultiLineCommaPolicy: Ignore
+  # FN-10: a result that must not be dropped is marked with the macro of
+  # src/MaxMatrixAttributes.h, as [[nodiscard]] is C++17's.
+  modernize-use-nodiscard.ReplacementString: MAXMATRIX_NODISCARD
   # A struct with only public members is what Google calls a struct, and an
   # array type has to be one to stay an aggregate.
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true

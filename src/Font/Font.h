@@ -13,6 +13,7 @@
 #define MAXMATRIX_SRC_FONT_FONT_H_
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 
@@ -118,7 +119,7 @@ class Font {
    *         with `'F'`, version 1 or 2, a first char no later than the last and
    *         a height of 1 to 8, or its chars do not fill exactly `size` bytes.
    */
-  static Status CheckFont(uint8_t const* font, size_t size);
+  MAXMATRIX_NODISCARD static Status CheckFont(uint8_t const* font, size_t size);
 
   /*!
    * \brief Finds the glyph of a char in a font.
@@ -127,7 +128,8 @@ class Font {
    * \param[in] c The char, latin-1, as DecodeChar() gives it.
    * \return The glyph, or Error::kUnknownChar if the font has no char for it.
    */
-  static Result<Glyph> GetGlyph(uint8_t const* font, char c);
+  MAXMATRIX_NODISCARD static Result<Glyph> GetGlyph(uint8_t const* font,
+                                                    char c);
 
   /*!
    * \brief Decodes the next char of a string.

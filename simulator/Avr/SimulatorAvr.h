@@ -20,6 +20,8 @@
 #include <sim_elf.h>
 #include <stdint.h>
 
+#include "MaxMatrixAttributes.h"
+
 /* SimulatorAvr Parameter */
 constexpr char kSimulatorAvrMcu[] = "atmega328p";
 constexpr uint32_t kSimulatorAvrFrequency{16000000U};
@@ -90,7 +92,7 @@ class SimulatorAvr {
    *
    * \return The milliseconds since the AVR started, or 0 before Load().
    */
-  uint32_t GetMillis() const;
+  MAXMATRIX_NODISCARD uint32_t GetMillis() const;
 
   /*!
    * \brief Makes the AVR and loads an example into it.

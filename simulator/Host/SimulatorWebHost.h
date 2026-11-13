@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
+
 /* SimulatorWebHost Parameter */
 constexpr uint8_t kSimulatorWebHostMaxClients{4U};
 
@@ -40,7 +42,7 @@ class SimulatorWebHost {
   void ReadClient(uint8_t slot, std::vector<std::string>* messages);
   bool AnswerRequest(int socket, std::string const& request);
   void SendPage(int socket);
-  uint8_t FindFreeSlot() const;
+  MAXMATRIX_NODISCARD uint8_t FindFreeSlot() const;
   void DropClient(uint8_t slot);
   static std::string ReadRequest(int socket);
   static bool GetPath(std::string const& request, std::string* path);

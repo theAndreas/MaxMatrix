@@ -14,6 +14,7 @@
 #define MAXMATRIX_SRC_MAXMATRIXERROR_H_
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -87,7 +88,7 @@ class Status {
       : error_{error} {}
 
   /*! \brief Returns why the call failed, or Error::kOk. */
-  Error GetError() const { return error_; }
+  MAXMATRIX_NODISCARD Error GetError() const { return error_; }
 
   /*!
    * \brief Returns the error in a few words, in flash, for `Serial.print()`.
@@ -99,10 +100,10 @@ class Status {
    * \return The text; `"unknown error"` for a byte cast to the enum that is
    *         none of its values.
    */
-  __FlashStringHelper const* GetErrorText() const;
+  MAXMATRIX_NODISCARD __FlashStringHelper const* GetErrorText() const;
 
   /*! \brief Returns whether the call did what it was asked. */
-  bool IsOk() const { return error_ == Error::kOk; }
+  MAXMATRIX_NODISCARD bool IsOk() const { return error_ == Error::kOk; }
 
   /*!
    * \brief Returns whether the call failed for this reason.
@@ -160,18 +161,18 @@ class Result {
       : value_{}, error_{error} {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
-  ValueType GetValue() const { return value_; }
+  MAXMATRIX_NODISCARD ValueType GetValue() const { return value_; }
 
   /*! \brief Returns why there is no value, or Error::kOk. */
-  Error GetError() const { return error_; }
+  MAXMATRIX_NODISCARD Error GetError() const { return error_; }
 
   /*! \copydoc Status::GetErrorText() */
-  __FlashStringHelper const* GetErrorText() const {
+  MAXMATRIX_NODISCARD __FlashStringHelper const* GetErrorText() const {
     return Status(error_).GetErrorText();
   }
 
   /*! \brief Returns whether there is a value. */
-  bool IsOk() const { return error_ == Error::kOk; }
+  MAXMATRIX_NODISCARD bool IsOk() const { return error_ == Error::kOk; }
 
   /*! \copydoc Status::operator==(Error) const */
   bool operator==(Error other) const { return error_ == other; }

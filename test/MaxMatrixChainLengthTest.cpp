@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Command;
@@ -54,7 +55,7 @@ class MaxMatrixChainLengthTest
     EXPECT_EQ(mock::errors, 0);
   }
 
-  std::vector<std::string> Pattern() const {
+  MAXMATRIX_NODISCARD std::vector<std::string> Pattern() const {
     return Picture(::Pattern, number_of_columns_);
   }
 };

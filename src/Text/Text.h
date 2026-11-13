@@ -15,6 +15,7 @@
 #include "Arduino.h"
 #include "Font/Font.h"
 #include "Matrix/Panel.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -69,10 +70,12 @@ class Text {
   Text();
 
   /*! \brief Returns the empty columns between two chars of a text. */
-  byte GetSpaceBetweenChars() const { return space_between_chars_; }
+  MAXMATRIX_NODISCARD byte GetSpaceBetweenChars() const {
+    return space_between_chars_;
+  }
 
   /*! \brief Returns the font every char is drawn in. */
-  uint8_t const* GetFont() const {
+  MAXMATRIX_NODISCARD uint8_t const* GetFont() const {
     return font_ != nullptr ? font_ : kDefaultFont;
   }
 
@@ -86,7 +89,7 @@ class Text {
    * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
    *         it; the font then stays as it was.
    */
-  Status SetFont(uint8_t const* font, size_t size);
+  MAXMATRIX_NODISCARD Status SetFont(uint8_t const* font, size_t size);
 
   /*!
    * \brief Draws a char with its top left corner at `x`, `y`.
@@ -100,7 +103,8 @@ class Text {
    * \return Error::kOk, or Error::kUnknownChar if the font has no char for it;
    *         nothing is drawn then.
    */
-  Status SetChar(Panel& panel, int16_t x, int16_t y, char c) const;
+  MAXMATRIX_NODISCARD Status SetChar(Panel& panel, int16_t x, int16_t y,
+                                     char c) const;
 
   /*!
    * \brief Starts shifting a char in from the right, until it stands at the
@@ -110,7 +114,7 @@ class Text {
    * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
    *         the char; nothing starts then.
    */
-  Status SetCharWithShift(char c);
+  MAXMATRIX_NODISCARD Status SetCharWithShift(char c);
 
   /*!
    * \brief Draws a text from the left edge, as far as it fits.
@@ -121,7 +125,7 @@ class Text {
    *         Error::kUnknownChar if the font lacks a char of the text, with the
    *         chars before it drawn.
    */
-  Status SetText(Panel& panel, char const* text) const;
+  MAXMATRIX_NODISCARD Status SetText(Panel& panel, char const* text) const;
 
   /*!
    * \brief Starts shifting a text in from the right, until its last char stands
@@ -135,7 +139,7 @@ class Text {
    * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
    *         then.
    */
-  Status SetTextWithShift(char const* text, bool repeat);
+  MAXMATRIX_NODISCARD Status SetTextWithShift(char const* text, bool repeat);
 
   /*!
    * \brief Sets the empty columns between two chars of a text.

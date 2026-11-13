@@ -17,6 +17,8 @@
 #include <array>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
+
 class Max7219 {
  public:
   static uint8_t const kNumberOfDigits{8};
@@ -31,7 +33,7 @@ class Max7219 {
   Max7219() { Reset(); }
   void Reset();
   void Latch(uint8_t address, uint8_t data);
-  uint8_t Segments(uint8_t digit_index) const;
+  MAXMATRIX_NODISCARD uint8_t Segments(uint8_t digit_index) const;
 };
 
 /* How the LEDs of a module are wired to digits and segments, as the viewer sees
@@ -68,9 +70,10 @@ class Max7219Chain {
   void Shift(uint8_t value);
   void ShiftBit(bool value);
   void Latch();
-  bool IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
-             bool upside_down = false) const;
-  Max7219 const& ChipAt(uint16_t x, bool upside_down = false) const;
+  MAXMATRIX_NODISCARD bool IsLit(Max7219Wiring const& wiring, uint16_t x,
+                                 uint8_t y, bool upside_down = false) const;
+  MAXMATRIX_NODISCARD Max7219 const& ChipAt(uint16_t x,
+                                            bool upside_down = false) const;
 
  private:
   /* two bytes per chip, shift_register_[2 * Chip] its data byte and

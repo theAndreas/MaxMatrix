@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "ControlPort.h"
+#include "MaxMatrixAttributes.h"
 
 /*!
  * \brief A board's serial port, over `termios` on Linux and the Win32 API on
@@ -71,7 +72,7 @@ class ControlSerialPort final : public ControlPort {
    */
   static std::vector<std::string> List();
 
-  bool IsOpen() const override;
+  MAXMATRIX_NODISCARD bool IsOpen() const override;
   bool Write(std::string const& data) override;
   bool Read(std::string* data) override;
   void Close() override;

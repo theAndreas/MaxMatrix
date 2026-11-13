@@ -14,6 +14,7 @@
 #define MAXMATRIX_SRC_MATRIX_PANEL_H_
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "Wired.h"
@@ -101,7 +102,7 @@ class Panel {
   };
 
   static byte ReverseByte(byte input);
-  BufferDot ConvertDotToBuffer(byte column, byte row) const;
+  MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(byte column, byte row) const;
   byte GetLine(byte column, byte row, bool vertical);
   void SetLine(byte column, byte row, bool vertical, byte value);
   void SetFarDot(int32_t column, int32_t row, bool value);
@@ -129,24 +130,28 @@ class Panel {
         byte number_of_modules);
 
   /*! \brief Returns the modules of the chain. */
-  byte GetNumberOfModules() const {
+  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
     return wired_.GetChain().GetNumberOfModules();
   }
 
   /*! \brief Returns the columns of the panel, eight per module. */
-  byte GetNumberOfColumns() const { return wired_.GetNumberOfColumns(); }
+  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
+    return wired_.GetNumberOfColumns();
+  }
 
   /*! \brief Returns the matrix as it is wired, below this one. */
   Wired& GetWired() { return wired_; }
 
   /*! \copydoc GetWired() */
-  Wired const& GetWired() const { return wired_; }
+  MAXMATRIX_NODISCARD Wired const& GetWired() const { return wired_; }
 
   /*! \brief Returns how the LEDs of every module are wired. */
-  ModuleType GetModuleType() const { return module_type_; }
+  MAXMATRIX_NODISCARD ModuleType GetModuleType() const { return module_type_; }
 
   /*! \brief Returns how the whole matrix is turned. */
-  MatrixOrientation GetMatrixOrientation() const { return matrix_orientation_; }
+  MAXMATRIX_NODISCARD MatrixOrientation GetMatrixOrientation() const {
+    return matrix_orientation_;
+  }
 
   /*!
    * \brief Returns a column of the matrix.
@@ -156,7 +161,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
    *         the panel.
    */
-  Result<byte> GetColumn(int16_t column);
+  MAXMATRIX_NODISCARD Result<byte> GetColumn(int16_t column);
 
   /*!
    * \brief Returns a column of a module.
@@ -166,7 +171,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
    *         or the column does not exist.
    */
-  Result<byte> GetColumn(byte module, byte column);
+  MAXMATRIX_NODISCARD Result<byte> GetColumn(byte module, byte column);
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -178,7 +183,8 @@ class Panel {
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  Status GetRow(int16_t row, byte* values, byte number_of_values);
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row, byte* values,
+                                    byte number_of_values);
 
   /*!
    * \brief Returns a row of a module.
@@ -191,7 +197,7 @@ class Panel {
    * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
    *         module or the row does not exist.
    */
-  Result<byte> GetRow(byte module, byte row);
+  MAXMATRIX_NODISCARD Result<byte> GetRow(byte module, byte row);
 
   /*!
    * \brief Returns whether a dot is lit.
@@ -201,7 +207,7 @@ class Panel {
    * \return Whether the dot is lit, or Error::kOutOfRange if it lies off the
    *         panel.
    */
-  Result<bool> GetDot(int16_t column, int16_t row);
+  MAXMATRIX_NODISCARD Result<bool> GetDot(int16_t column, int16_t row);
 
   /*!
    * \brief Sets a column of the matrix.

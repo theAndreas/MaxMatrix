@@ -15,6 +15,7 @@
 #include <string>
 
 #include "ControlPort.h"
+#include "MaxMatrixAttributes.h"
 
 /*!
  * \brief The simulator's serial port on TCP, which `--tcp PORT` opens on
@@ -51,7 +52,7 @@ class ControlTcpPort final : public ControlPort {
    */
   bool Open(uint16_t port);
 
-  bool IsOpen() const override;
+  MAXMATRIX_NODISCARD bool IsOpen() const override;
   bool Write(std::string const& data) override;
   bool Read(std::string* data) override;
   void Close() override;

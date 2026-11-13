@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "Host/SimulatorWebHost.h"
+#include "MaxMatrixAttributes.h"
 #include "SimulatorPanel.h"
 
 /* SimulatorWeb Parameter */
@@ -45,8 +46,8 @@ class SimulatorWeb {
 
   void LogFrame();
   static void Command(SimulatorPanel& panel, std::string const& message);
-  std::string GetMessage(SimulatorPanel const& panel) const;
-  std::string GetLog() const;
+  MAXMATRIX_NODISCARD std::string GetMessage(SimulatorPanel const& panel) const;
+  MAXMATRIX_NODISCARD std::string GetLog() const;
   static std::string GetIntensities(SimulatorPanel const& panel);
 
  public:
