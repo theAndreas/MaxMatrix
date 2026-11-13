@@ -96,7 +96,7 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
     char const* line;
     Error error;
   };
-  std::array<Refused, 15> const cases{{
+  std::array<Refused, 16> const cases{{
       {"blink\n", Error::kUnknownCommand},
       {"clear=1\n", Error::kUnknownCommand},
       {"intensity=16\n", Error::kOutOfRange},
@@ -108,6 +108,7 @@ TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
        */
       {"speed=4294967296\n", Error::kOutOfRange},
       {"space=-1\n", Error::kNotANumber},
+      {"setDot=5\n", Error::kNotANumber},
       {"setDot=1,2\n", Error::kNotANumber},
       {"setDot=32,0,1\n", Error::kOutOfRange},
       {"setDot=1,8,1\n", Error::kOutOfRange},

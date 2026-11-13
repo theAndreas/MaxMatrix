@@ -170,6 +170,12 @@ add_simulator_variant(spi)
 # With the reports on, once and without the simulators: the tests check every report, and the transfer path makes no
 # difference to them.
 add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
+# The library's own report, which prints on Serial: in a binary of its own, as the tests above define the report
+# themselves to record it, and the default is linked only where nothing else defines it.
+add_executable(MaxMatrixErrorReportTest test/MaxMatrixErrorReportTest.cpp)
+set_target_properties(MaxMatrixErrorReportTest PROPERTIES CXX_STANDARD 17)
+target_link_libraries(MaxMatrixErrorReportTest PRIVATE MaxMatrix-det GTest::gtest_main)
+gtest_discover_tests(MaxMatrixErrorReportTest TEST_PREFIX "det/")
 
 # What the compiler has to report: a getter's result dropped, whose value is lost and the error that says whether there
 # was one (FN-10). In both standards, as MAXMATRIX_NODISCARD is another attribute in each; with code generated, as GCC

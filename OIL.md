@@ -886,6 +886,16 @@ gcovr 8 reads it. The coverage preset and `tools/coverage.sh` are the template's
 goes into embedded-cpp-template first and reaches MaxMatrix, Utl and Wordclock by
 `copier update`; whether a figure then fails the build is decided there as well.
 
+Decided on 2026-11-13: `make coverage` fails below 100 % of lines, branches and conditions of
+`src/`, an exclusion only by `GCOVR_EXCL_*` with its reason, as TS-4 has it. Measured here first,
+with GCC 15 and gcovr 8.8: 6 lines, 9 branches and 11 of 394 conditions no test reached, so
+MaxMatrix closes them before the template: the column of a module, a rectangle with a width but
+no height and the other way round, a bitmap less than a module high at the top, a column far
+above the panel, a char stopped while it shifts in, `setDot=` with one number, and the library's
+own report, which the other tests replace, in a binary of its own. A mutation of the bitmap at
+the top, a whole column for any height at row 0, passed every other test, though gcov counted its
+condition as shown already.
+
 ### 40 Braced initialization checked
 
 T-3 of CodingStyle.md has every variable initialized in braces, `int count{0};`, which refuses a
