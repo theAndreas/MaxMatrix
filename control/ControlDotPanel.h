@@ -16,6 +16,8 @@
 #include <functional>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
+
 /*!
  * \brief The LEDs of the whole panel, as the matrix shows them, to switch one
  *        by a click.
@@ -48,7 +50,7 @@ class ControlDotPanel : public wxPanel {
   void OnLeftUp(wxMouseEvent& event);
   void OnCaptureLost(wxMouseCaptureLostEvent& event);
   void PaintDot(uint8_t column, uint8_t row);
-  bool IsLit(uint8_t column, uint8_t row) const;
+  MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
   bool GetDotAt(wxPoint const& point, uint8_t* column, uint8_t* row) const;
 
  public:

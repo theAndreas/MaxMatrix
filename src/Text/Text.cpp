@@ -145,7 +145,7 @@ void Text::ReadNextChar() {
       DecodedChar const decoded{Font::DecodeChar(string_)};
       string_ += decoded.length;
       // A char the font lacks leaves the counter idle, and the loop reads on.
-      SetCharWithShift(decoded.c);
+      Discard(SetCharWithShift(decoded.c));
     }
   }
 }

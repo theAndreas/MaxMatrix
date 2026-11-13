@@ -121,6 +121,8 @@ exception goes at the end of a list, with its reason.
     what a function that can fail returns, with `GetErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
   - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `internal::kNullCharacter`.
+  - `MaxMatrixAttributes.h` — `MAXMATRIX_NODISCARD` and `Discard()` of FN-10, which the host
+    code uses as well.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -319,7 +321,7 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   `simulator/Host/SimulatorWebHost.cpp`. Google's `snake_case` for files was tried and dropped
   (#45); Utl keeps it, as it stands in for the STL. The files at the root of `src/` keep the
   prefix, against F-3: `src/MaxMatrix.h`, as a sketch includes it by the library's name, and
-  `MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixErrorReport.cpp` and
+  `MaxMatrixAttributes.h`, `MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixErrorReport.cpp` and
   `MaxMatrixStandardTypes.h`, as Arduino puts `src/` on the include path of every sketch and
   library it builds with MaxMatrix, where an `Error.h` or `Config.h` would meet another's. In a
   folder, the folder's name in the path keeps them apart.
@@ -399,6 +401,12 @@ reference). A new reason gets its own value in the enum, a text in `kErrorTexts`
 (`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
 call can fail and that it changes nothing. `Command::Feed()` answers a failed line with
 `GetErrorText()` on the `Print` it is given, and returns the reason as well.
+
+A result whose drop is a mistake is `MAXMATRIX_NODISCARD` (FN-10): a getter's, whose value would
+be lost, and the `Status` a part below the facade passes on. A setter's `Status`, as of
+`SetText()`, is not, nor what `Command::Feed()` returns: a sketch drops them when it has no one
+to tell, and the examples do. Where the library drops a marked result on purpose, it hands it to
+`Discard()` with the reason beside it.
 
 The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
 returns a constant per case into a table in `.rodata`, which the Uno copies into RAM, as it does

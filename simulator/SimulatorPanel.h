@@ -17,6 +17,7 @@
 #include <string>
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 /* SimulatorPanel Parameter */
@@ -49,10 +50,12 @@ class SimulatorPanel {
   SimulatorPanel();
 
   /*! \brief Returns the name of the chosen wiring. */
-  std::string const& GetWiringName() const { return wiring_name_; }
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const {
+    return wiring_name_;
+  }
 
   /*! \brief Returns whether the board is mounted upside down. */
-  bool IsUpsideDown() const { return upside_down_; }
+  MAXMATRIX_NODISCARD bool IsUpsideDown() const { return upside_down_; }
 
   /*! \brief Returns the modules of the model's chain, as mock::Reset() made it.
    */
@@ -87,7 +90,7 @@ class SimulatorPanel {
    *                   sees the panel.
    * \return The intensity register of its chip.
    */
-  uint8_t GetIntensity(uint8_t module) const;
+  MAXMATRIX_NODISCARD uint8_t GetIntensity(uint8_t module) const;
 
   /*!
    * \brief Chooses the wiring of the modules.
@@ -125,7 +128,7 @@ class SimulatorPanel {
    * \param[in] now The time, as `millis()` gives it.
    * \return True if it is time to draw.
    */
-  bool IsDrawDue(uint32_t now) const;
+  MAXMATRIX_NODISCARD bool IsDrawDue(uint32_t now) const;
 
   /*!
    * \brief Notes that the panel was drawn.

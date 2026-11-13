@@ -14,6 +14,7 @@
 #define MAXMATRIX_SRC_COMMAND_COMMAND_H_
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
@@ -80,14 +81,19 @@ class Command {
   byte line_length_{0};
   bool line_too_long_{false};
 
-  Result<CommandState> Execute(Matrix& matrix, char* text, Print& answer);
-  Status ExecuteTextShift(Matrix& matrix, char const* value);
-  static Status ExecuteText(Matrix& matrix, char const* value);
-  static Status ExecuteDot(Matrix& matrix, char* value);
-  static Status ExecuteSetting(Matrix& matrix, char const* name,
-                               char const* value);
+  MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix, char* text,
+                                                   Print& answer);
+  MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix,
+                                              char const* value);
+  MAXMATRIX_NODISCARD static Status ExecuteText(Matrix& matrix,
+                                                char const* value);
+  MAXMATRIX_NODISCARD static Status ExecuteDot(Matrix& matrix, char* value);
+  MAXMATRIX_NODISCARD static Status ExecuteSetting(Matrix& matrix,
+                                                   char const* name,
+                                                   char const* value);
   static void AnswerPicture(Matrix& matrix, Print& answer);
-  static Result<uint16_t> ConvertToNumber(char const* text, uint16_t maximum);
+  MAXMATRIX_NODISCARD static Result<uint16_t> ConvertToNumber(char const* text,
+                                                              uint16_t maximum);
   static char ConvertToHexDigit(byte value);
 
  public:

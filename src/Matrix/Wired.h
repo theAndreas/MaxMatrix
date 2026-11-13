@@ -15,6 +15,7 @@
 
 #include "Arduino.h"
 #include "Max7219/Chain.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -61,10 +62,10 @@ class Wired {
   Chain& GetChain() { return chain_; }
 
   /*! \copydoc GetChain() */
-  Chain const& GetChain() const { return chain_; }
+  MAXMATRIX_NODISCARD Chain const& GetChain() const { return chain_; }
 
   /*! \brief Returns the columns of the chain, eight per module. */
-  byte GetNumberOfColumns() const {
+  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
     return static_cast<byte>(chain_.GetNumberOfModules() *
                              kColumnNumberOfModule);
   }

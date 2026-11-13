@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "ControlPort.h"
+#include "MaxMatrixAttributes.h"
 
 /* ControlLink Parameter */
 /* what SerialControl says at the end of setup() */
@@ -85,11 +86,11 @@ class ControlLink {
   void Begin(bool wait_for_ready);
 
   /*! \brief Returns whether the port is open, ready or not. */
-  bool IsOpen() const { return port_.get().IsOpen(); }
+  MAXMATRIX_NODISCARD bool IsOpen() const { return port_.get().IsOpen(); }
 
   /*! \brief Returns whether the port is open and SerialControl takes commands.
    */
-  bool IsReady() const;
+  MAXMATRIX_NODISCARD bool IsReady() const;
 
   /*!
    * \brief Sends a command.
@@ -117,7 +118,9 @@ class ControlLink {
    * \return One byte per column as the viewer sees it, from the left, bit 0 the
    *         top row; empty until the first answer after Begin().
    */
-  std::vector<uint8_t> const& GetPicture() const { return picture_; }
+  MAXMATRIX_NODISCARD std::vector<uint8_t> const& GetPicture() const {
+    return picture_;
+  }
 
   /*!
    * \brief Reads what has arrived and cuts it into lines.

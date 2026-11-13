@@ -22,6 +22,7 @@
 #include "Font/Font.h"
 #include "Matrix/Panel.h"
 #include "Max7219/Chain.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
@@ -94,7 +95,7 @@ class Matrix {
       Update();
     }
   }
-  Status UpdateIfAuto(Status status) {
+  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
     UpdateIfAuto();
     return status;
   }
@@ -137,58 +138,68 @@ class Matrix {
   Matrix& operator=(Matrix const&) = delete;
 
   /*! \brief Returns the modules of the chain. */
-  byte GetNumberOfModules() const { return panel_.GetNumberOfModules(); }
+  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
+    return panel_.GetNumberOfModules();
+  }
 
   /*! \brief Returns the columns of the matrix, eight per module. */
-  byte GetNumberOfColumns() const { return panel_.GetNumberOfColumns(); }
+  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
+    return panel_.GetNumberOfColumns();
+  }
 
   /*! \brief Returns what the matrix is doing; State::kReady once a
    * shifted text is complete. */
-  State GetState() const { return state_; }
+  MAXMATRIX_NODISCARD State GetState() const { return state_; }
 
   /*! \brief Returns whether every function that draws sends its result at once;
    * see SetAutoUpdate(). */
-  bool GetAutoUpdate() const { return auto_update_; }
+  MAXMATRIX_NODISCARD bool GetAutoUpdate() const { return auto_update_; }
 
   /*! \brief Returns the milliseconds per column of a shifting text; see
    * SetShiftInterval(). */
-  uint16_t GetShiftInterval() const { return shift_interval_; }
+  MAXMATRIX_NODISCARD uint16_t GetShiftInterval() const {
+    return shift_interval_;
+  }
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
-  byte GetDataInPin() const {
+  MAXMATRIX_NODISCARD byte GetDataInPin() const {
     return panel_.GetWired().GetChain().GetDataInPin();
   }
 
   /*! \brief Returns the pin CS of the chain is connected to. */
-  byte GetChipSelectPin() const {
+  MAXMATRIX_NODISCARD byte GetChipSelectPin() const {
     return panel_.GetWired().GetChain().GetChipSelectPin();
   }
 
   /*! \brief Returns the pin CLK of the chain is connected to. */
-  byte GetClockPin() const {
+  MAXMATRIX_NODISCARD byte GetClockPin() const {
     return panel_.GetWired().GetChain().GetClockPin();
   }
 
   /*! \brief Returns how the LEDs of every module are wired; see
    * SetModuleType(). */
-  ModuleType GetModuleType() const { return panel_.GetModuleType(); }
+  MAXMATRIX_NODISCARD ModuleType GetModuleType() const {
+    return panel_.GetModuleType();
+  }
 
   /*! \brief Returns how the whole matrix is turned; see SetMatrixOrientation().
    */
-  MatrixOrientation GetMatrixOrientation() const {
+  MAXMATRIX_NODISCARD MatrixOrientation GetMatrixOrientation() const {
     return panel_.GetMatrixOrientation();
   }
 
   /*! \brief Returns the empty columns between two chars of a text. */
-  byte GetSpaceBetweenChars() const { return text_.GetSpaceBetweenChars(); }
+  MAXMATRIX_NODISCARD byte GetSpaceBetweenChars() const {
+    return text_.GetSpaceBetweenChars();
+  }
 
   /*! \copydoc internal::Panel::GetColumn(int16_t) */
-  Result<byte> GetColumn(int16_t column) {
+  MAXMATRIX_NODISCARD Result<byte> GetColumn(int16_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
   }
 
   /*! \copydoc internal::Panel::GetColumn(byte, byte) */
-  Result<byte> GetColumn(byte module, byte column) {
+  MAXMATRIX_NODISCARD Result<byte> GetColumn(byte module, byte column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -209,7 +220,8 @@ class Matrix {
    *         `values` has fewer bytes than there are modules.
    */
   template <size_t NumberOfValues>
-  Status GetRow(int16_t row, byte (&values)[NumberOfValues]) {
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row,
+                                    byte (&values)[NumberOfValues]) {
     return MAXMATRIX_REPORT_ERROR(
         "GetRow", panel_.GetRow(row, values,
                                 NumberOfValues > internal::kMaxRowBytes
@@ -218,17 +230,17 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::GetRow(byte, byte) */
-  Result<byte> GetRow(byte module, byte row) {
+  MAXMATRIX_NODISCARD Result<byte> GetRow(byte module, byte row) {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
   /*! \copydoc internal::Panel::GetDot(int16_t, int16_t) */
-  Result<bool> GetDot(int16_t column, int16_t row) {
+  MAXMATRIX_NODISCARD Result<bool> GetDot(int16_t column, int16_t row) {
     return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(column, row));
   }
 
   /*! \copydoc internal::Text::GetFont() */
-  uint8_t const* GetFont() const { return text_.GetFont(); }
+  MAXMATRIX_NODISCARD uint8_t const* GetFont() const { return text_.GetFont(); }
 
   /*!
    * \brief Sets the pin DIN of the chain is connected to.

@@ -34,7 +34,8 @@ enable_testing()
 # The model of the MAX7219 chain, which the stand-in drives: our own code, so its headers are
 # checked as every other of the tests.
 add_library(Max7219Model STATIC test/model/Max7219.cpp)
-target_include_directories(Max7219Model PUBLIC test/model)
+# src/ for MaxMatrixAttributes.h alone, which marks a result that must not be dropped (FN-10) and needs nothing else.
+target_include_directories(Max7219Model PUBLIC test/model src)
 
 add_library(ArduinoMock STATIC test/mock/Arduino.cpp)
 # SYSTEM, as the board takes the core it stands in for: neither the compiler nor clang-tidy
@@ -53,7 +54,8 @@ gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 # sketch, and the WebSocket half is tested on its own, without a network.
 add_library(SimulatorHosts STATIC simulator/Host/SimulatorSocket.cpp simulator/Host/SimulatorWebHost.cpp
                                   simulator/Host/SimulatorWebSocket.cpp simulator/Host/SimulatorSerialHost.cpp)
-target_include_directories(SimulatorHosts PUBLIC simulator)
+# src/ for MaxMatrixAttributes.h alone, as for the model.
+target_include_directories(SimulatorHosts PUBLIC simulator src)
 foreach(Test SimulatorWebSocketTest SimulatorWebHostTest SimulatorSerialHostTest)
     add_executable(${Test} test/${Test}.cpp)
     set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
@@ -168,6 +170,23 @@ add_simulator_variant(spi)
 # With the reports on, once and without the simulators: the tests check every report, and the transfer path makes no
 # difference to them.
 add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
+
+# What the compiler has to report: a getter's result dropped, whose value is lost and the error that says whether there
+# was one (FN-10). In both standards, as MAXMATRIX_NODISCARD is another attribute in each; with code generated, as GCC
+# reports warn_unused_result only then, not under -fsyntax-only. The case is written into the build folder rather than
+# kept in test/, whose every file clang-tidy reads from the database of the tests, where a file that must warn has no
+# place.
+set(DroppedResultCase ${CMAKE_CURRENT_BINARY_DIR}/DroppedGetColumn.cpp)
+file(CONFIGURE OUTPUT ${DroppedResultCase}
+     CONTENT "#include \"MaxMatrix.h\"\nvoid DropColumn(max_matrix::Matrix& matrix) { matrix.GetColumn(0); }\n")
+foreach(Standard gnu++11 c++17)
+    add_test(NAME nodiscard/DroppedGetColumn/${Standard}
+             COMMAND ${CMAKE_CXX_COMPILER} -std=${Standard} -c -o ${CMAKE_CURRENT_BINARY_DIR}/DroppedGetColumn-${Standard}.o
+                     -I${PROJECT_SOURCE_DIR}/src -isystem ${PROJECT_SOURCE_DIR}/test/mock -I${PROJECT_SOURCE_DIR}/test/model
+                     ${DroppedResultCase})
+    set_tests_properties(nodiscard/DroppedGetColumn/${Standard}
+                         PROPERTIES PASS_REGULAR_EXPRESSION "ignoring return value[^\n]*-Wunused-result")
+endforeach()
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.

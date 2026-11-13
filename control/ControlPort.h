@@ -12,6 +12,8 @@
 
 #include <string>
 
+#include "MaxMatrixAttributes.h"
+
 /*!
  * \brief One end the control program talks to: a board's serial port or the
  *        simulator's TCP port.
@@ -46,7 +48,7 @@ class ControlPort {
   ControlPort& operator=(ControlPort&&) = delete;
 
   /*! \brief Returns whether the port is open. */
-  virtual bool IsOpen() const = 0;
+  MAXMATRIX_NODISCARD virtual bool IsOpen() const = 0;
 
   /*!
    * \brief Sends all of `data`.

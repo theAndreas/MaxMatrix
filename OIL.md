@@ -47,7 +47,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 35 | Version 2.0.0: a namespace, and constants for macros | 34 | done | #70, #71 |
 | 36 | The template's checks, one group at a time | 35 | done | #73, #74, #78, #79, #80, #82, #85, #87, #88, #89, #90, #91 |
 | 37 | Files named as their class | 35 | done | #77 |
-| 38 | Results that must not be ignored | 36 | open | |
+| 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | open | |
 | 40 | Braced initialization checked | 34 | done | #93 |
 
@@ -853,6 +853,29 @@ that header, with the reason in a comment. MaxMatrix has neither yet, so `Status
 gnu++11. With the header, the library's results that say why a call failed are marked, the
 host code's as the check finds them, and the check comes on with `ReplacementString` naming the
 macro. `make examples` alone sees what avr-gcc 7 reports through a cast (Testing.md).
+
+As built, `src/MaxMatrixAttributes.h` holds the macro and `Discard()`, named as the other headers at
+the root of `src/` rather than `max_matrix/attributes.h` as FN-10 has it, since Arduino puts `src/`
+on the include path of every library a sketch is built with. Marked are the results whose drop is
+a mistake: the getters, the `Result<T>` ones and the `const` ones `modernize-use-nodiscard` finds,
+as `IsOk()`, and the `Status` the parts below `Matrix` pass on. Not a setter's `Status`, as of
+`SetText()` or `SetIntensity()`, which a sketch drops when it has no one to tell, nor what
+`Command::Feed()` returns, as it answers on its `Print` itself: the examples are unchanged, which is
+why Utl #27 took the attribute off its `Status` as well. The library dropped one result on purpose,
+a char the font lacks while a text shifts in, and hands it to `Discard()` now. The check is on, and
+found 29 places in the host code.
+
+Measured: avr-gcc 7.3, GCC 15 and clang 21 take `[[nodiscard]]` in gnu++11 as well, so the reason
+given for keeping the check off was wrong. And `warn_unused_result`, as FN-10 has it before C++17,
+made every example 10 to 30 bytes of flash larger on the Uno, from the marks in `internal::Text`
+and `internal::Panel`, while `[[nodiscard]]` left every example as it was, to the byte. So the
+macro is `[[nodiscard]]` wherever `__has_cpp_attribute` says the compiler has it, and
+`warn_unused_result` only elsewhere, against FN-10, which chooses by `__cplusplus`; the template
+should follow. clang warns of `[[nodiscard]]` before C++17 only under `-Wpedantic`. A test compiles a dropped
+`GetColumn()` in both standards and passes only on the compiler's warning; CMake writes it into the
+build folder, as `tools/tidy.sh` reads every file below `test/` but `compile_fail/` from the database
+of the tests, where a file that has to warn has no place. The model of the MAX7219 and the
+simulator's hosts have `src/` on their include path now, for this header alone.
 
 ### 39 MC/DC coverage
 

@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
 #include "SimulatorPanel.h"
 
 /* SimulatorOptions Parameter */
@@ -59,37 +60,41 @@ class SimulatorOptions {
 
   /*! \brief Returns the name of `--wiring`, or `kSimulatorPanelDefaultWiring`
    * without it. */
-  std::string const& GetWiringName() const { return wiring_name_; }
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const {
+    return wiring_name_;
+  }
 
   /*! \brief Returns whether `--upside-down` was given. */
-  bool IsUpsideDown() const { return upside_down_; }
+  MAXMATRIX_NODISCARD bool IsUpsideDown() const { return upside_down_; }
 
   /*! \brief Returns whether `--web` was given. */
-  bool IsWeb() const { return web_; }
+  MAXMATRIX_NODISCARD bool IsWeb() const { return web_; }
 
   /*! \brief Returns the port of `--port`, or `kSimulatorOptionsDefaultPort`
    * without it. */
-  uint16_t GetPort() const { return port_; }
+  MAXMATRIX_NODISCARD uint16_t GetPort() const { return port_; }
 
   /*! \brief Returns the port of `--tcp`, or 0 without it, for no serial port on
    * TCP. */
-  uint16_t GetTcpPort() const { return tcp_port_; }
+  MAXMATRIX_NODISCARD uint16_t GetTcpPort() const { return tcp_port_; }
 
   /*! \brief Returns the milliseconds of `--for`, or 0 without it, to run until
    * Ctrl+C. */
-  uint32_t GetRunFor() const { return run_for_; }
+  MAXMATRIX_NODISCARD uint32_t GetRunFor() const { return run_for_; }
 
   /*! \brief Returns the file of `--expect`, or nullptr without it. */
-  char const* GetExpectFile() const { return expect_file_; }
+  MAXMATRIX_NODISCARD char const* GetExpectFile() const { return expect_file_; }
 
   /*! \brief Returns the file of `--elf`, or nullptr without it. */
-  char const* GetElfFile() const { return elf_file_; }
+  MAXMATRIX_NODISCARD char const* GetElfFile() const { return elf_file_; }
 
   /*!
    * \brief Returns the lines of every `--serial`, each ended with a line feed,
    *        for the sketch's `Serial` to read.
    */
-  std::string const& GetSerialInput() const { return serial_input_; }
+  MAXMATRIX_NODISCARD std::string const& GetSerialInput() const {
+    return serial_input_;
+  }
 
   /*!
    * \brief Reads the command line, one option after the other.

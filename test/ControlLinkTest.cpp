@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "ControlCommand.h"
+#include "MaxMatrixAttributes.h"
 
 namespace {
 
@@ -24,7 +25,7 @@ class FakePort : public ControlPort {
   std::string written;
   std::string incoming;
 
-  bool IsOpen() const override { return open; }
+  MAXMATRIX_NODISCARD bool IsOpen() const override { return open; }
   bool Write(std::string const& data) override {
     if (!open) {
       return false;

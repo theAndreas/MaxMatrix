@@ -13,6 +13,7 @@
 #define MAXMATRIX_SRC_MAX7219_CHAIN_H_
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 namespace max_matrix {
@@ -161,16 +162,18 @@ class Chain {
         byte number_of_modules);
 
   /*! \brief Returns the MAX7219s in the chain. */
-  byte GetNumberOfModules() const { return number_of_modules_; }
+  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
+    return number_of_modules_;
+  }
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
-  byte GetDataInPin() const { return data_in_pin_; }
+  MAXMATRIX_NODISCARD byte GetDataInPin() const { return data_in_pin_; }
 
   /*! \brief Returns the pin CS of the chain is connected to. */
-  byte GetChipSelectPin() const { return chip_select_pin_; }
+  MAXMATRIX_NODISCARD byte GetChipSelectPin() const { return chip_select_pin_; }
 
   /*! \brief Returns the pin CLK of the chain is connected to. */
-  byte GetClockPin() const { return clock_pin_; }
+  MAXMATRIX_NODISCARD byte GetClockPin() const { return clock_pin_; }
 
   /*!
    * \brief Sets the pin DIN of the chain is connected to.
