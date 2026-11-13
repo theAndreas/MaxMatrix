@@ -39,7 +39,14 @@ main() {
   local copy="${BUILD_DIR}/arduino-lint/${name}"
   rm -rf "${BUILD_DIR}/arduino-lint"
   mkdir -p "${copy}"
+  # Without a file deleted and not yet staged, which git still lists and tar could not read.
+  local file
   git ls-files -z --cached --others --exclude-standard \
+    | while IFS= read -r -d '' file; do
+      if [[ -e "${file}" ]]; then
+        printf '%s\0' "${file}"
+      fi
+    done \
     | tar --null --files-from=- --create --file=- \
     | tar --extract --file=- --directory="${copy}"
   if ((copy_only)); then

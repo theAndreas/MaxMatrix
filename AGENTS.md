@@ -1,4 +1,5 @@
 # MaxMatrix: for a coding agent
+
 Drive chained 8x8 LED dot matrix modules with MAX7219. An embedded C++ library for targets from an 8-bit microcontroller to the host:
 C++11 as the least standard, without the standard library. This project builds and checks it on
 the host by GCC and clang, and for each target of `tools/project.sh` through arduino-cli and simavr.
