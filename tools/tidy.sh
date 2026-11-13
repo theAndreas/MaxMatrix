@@ -3,18 +3,25 @@
 # Copyright 2026 Andreas Burnickl
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Runs clang-tidy on the library and the examples, with the flags arduino-cli compiles them with
-# for the board, once for each of TIDY_VARIANTS in tools/project.sh, and on the tests on the
-# host; the checks are in .clang-tidy. With --database-only it writes the compilation database
-# of the first variant and stops: clangd reads it for the examples, see .clangd. clang-tidy
-# runs from the environment uv.lock pins, like the tools of lint.sh.
+# Runs clang-tidy on the library and its examples, or on a firmware and its platform/, with the
+# flags each target compiles them with, once for each of TIDY_VARIANTS in tools/project.sh, and on
+# the tests on the host; the checks are in .clang-tidy. The database of a target and variant is
+# build/tidy/targets/<target>/<variant>, written by target_database() of tools/common.sh:
+# arduino-cli's rewritten as below, a CMake build's by tools/lib/clang_database.py for clang.
+# build/tidy/clangd points to that of the first target and variant, which clangd reads for
+# examples/ and platform/, see .clangd.
+#
+# With --database-only it writes the database of the first variant of each target, lists in
+# build/tidy/databases the folders of those that name the target's own compiler, one per line,
+# for tools/self_contained_headers.py, and stops. clang-tidy runs from the environment uv.lock
+# pins, like the tools of lint.sh.
 #
 # arduino-cli compiles copies of a sketch's files in its build folder, and a finding there would
 # point to the copy. So the flags are taken from its compilation database, and a database of our
 # own names the files in the repository; an .ino is compiled as C++ with Arduino.h included
 # first, which is what arduino-cli adds to it.
 #
-# The library is read with the board's flags, not only through the host's database: an int has
+# The library is read with each target's flags, not only through the host's database: an int has
 # 16 bits on the AVR and 32 on the host, and a check that only saw the host would never meet the
 # code as the board does.
 #
@@ -29,79 +36,25 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 readonly RUN_CLANG_TIDY=(uv run --frozen run-clang-tidy.py)
 readonly TIDY_DIR="${BUILD_DIR}/tidy"
 
-# Prints, as a JSON array, the arguments arduino-cli compiles a file of the sketch
-# DATABASE_EXAMPLE with in VARIANT, without the file, its output and -w, and changed for clang.
-# Compiled with the defines of the variant, as arduino-cli finds the libraries a sketch needs by
-# its includes: one that only a variant includes, as SPI under a switch, has its folder in the
-# database of that variant alone. Only the defines: a plugin or an optimization of avr-gcc means
-# nothing to clang.
-# - The include folders outside the repository, the core's and the board's, become -isystem,
-#   so that nothing is reported from headers we do not own.
-# - -Wall -Wextra, so that clang's own warnings are reported as well.
-# - -Wno-unknown-attributes: clang does not know avr-gcc's attribute __progmem__, which
-#   PROGMEM stands for, and takes the tables as in RAM. That changes nothing clang-tidy checks.
-arduino_flags() {
-  local variant="$1"
-  local defines
-  defines="$(variant_flags "${variant}" | { grep -E '^-D' || true; } | paste -sd ' ' -)"
-  local args=(
-    --fqbn "${FQBN}"
-    --library "${ROOT_DIR}"
-    --only-compilation-database
-    --build-path "${TIDY_DIR}/arduino/${variant}"
-  )
-  if [[ -n "${defines}" ]]; then
-    args+=(--build-property "compiler.cpp.extra_flags=${defines}")
-  fi
-  arduino-cli compile "${args[@]}" "${ROOT_DIR}/examples/${DATABASE_EXAMPLE}" >/dev/null
-  jq --arg root "${ROOT_DIR}" '[.[] | select(.file | endswith(".ino.cpp"))][0]
-    | .file as $file
-    | .arguments
-    | del(.[index("-o"), index("-o") + 1])
-    | map(select(. != $file and . != "-w"))
-    | map(if startswith("-I") and (startswith("-I" + $root) | not)
-          then "-isystem" + .[2:] else . end)
-    + ["-Wall", "-Wextra", "-Wno-unknown-attributes"]' \
-    "${TIDY_DIR}/arduino/${variant}/compile_commands.json"
-}
-
-# Writes <dir>/compile_commands.json for the files given, with the flags of arduino_flags().
-# Arguments:
-#   dir, flags, then the files
-write_database() {
-  local dir="$1"
-  local flags="$2"
-  shift 2
-  mkdir -p "${dir}"
-  printf '%s\n' "$@" | jq -R . | jq -s \
-    --arg dir "${ROOT_DIR}" --argjson flags "${flags}" '
-    map({
-      directory: $dir,
-      file: .,
-      arguments: ($flags
-        + (if endswith(".ino") then ["-x", "c++", "-include", "Arduino.h"]
-           else [] end)
-        + [.])
-    })' > "${dir}/compile_commands.json"
-}
-
 # Runs clang-tidy on the files given, with the entries the database in <dir> has for them, one
 # file per core: clang-tidy alone reads one file after the other. run-clang-tidy prints the
 # findings of a file together, and reads every file of the database it is given, so it gets a
 # database of these files alone, written beside the others; a file the database lacks fails
-# here, as clang-tidy fails on it, rather than going unread.
+# here, as clang-tidy fails on it, rather than going unread. One entry per file: CMake compiles a
+# source of the library into each example, and the file would be read once for each.
 # Arguments:
 #   dir, the header filter (empty for that of .clang-tidy), then the files
 run_tidy() {
   local dir="$1"
   local header_filter="$2"
   shift 2
-  local selected="${TIDY_DIR}/selected/${dir##*/}"
+  local selected="${TIDY_DIR}/selected/${dir#"${BUILD_DIR}/"}"
   mkdir -p "${selected}"
   jq --arg root "${ROOT_DIR}" '
     def path: if (.file | startswith("/")) then .file else .directory + "/" + .file end;
     ($ARGS.positional | map($root + "/" + .)) as $wanted
-    | [.[] | select(path as $path | any($wanted[]; . == $path))] as $entries
+    | [.[] | select(path as $path | any($wanted[]; . == $path))] | unique_by(path)
+    | . as $entries
     | ($wanted - ($entries | map(path))) as $missing
     | if ($missing | length) > 0
       then error("in no entry of the database: " + ($missing | join(", ")))
@@ -130,38 +83,53 @@ main() {
   cd "${ROOT_DIR}"
   mkdir -p "${TIDY_DIR}"
   local sources
-  list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*'
+  list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*' 'platform/*'
   MODULE=''
   if ((!database_only)); then
     MODULE="$(tools/lib/tidy_module.sh)"
   fi
 
-  # Each variant takes other branches of #if. The first is the one clangd reads, see .clangd.
+  # Each variant takes other branches of #if, and each target other ones again. The first of both
+  # is the one clangd reads, see .clangd.
   local failed=0
+  local target
   local variant
-  local flags
-  for variant in "${TIDY_VARIANTS[@]}"; do
-    flags="$(arduino_flags "${variant}")"
-    write_database "${TIDY_DIR}/${variant}" "${flags}" "${sources[@]}"
-    if ((database_only)); then
-      echo "Wrote ${TIDY_DIR}/${variant}/compile_commands.json"
-      exit 0
-    fi
-    echo "clang-tidy, ${variant}:"
-    run_tidy "${TIDY_DIR}/${variant}" '' "${sources[@]}" || failed=1
+  local compiler_database
+  local dir
+  local label
+  local databases=()
+  for target in "${TARGETS[@]}"; do
+    select_target "${target}"
+    for variant in "${TIDY_VARIANTS[@]}"; do
+      dir="${TIDY_DIR}/targets/${target}/${variant}"
+      compiler_database="$(target_database "${variant}" "${dir}")"
+      if ((database_only)); then
+        databases+=("${compiler_database}")
+        break
+      fi
+      label="$(target_label "${variant}")"
+      echo "clang-tidy, ${label}:"
+      run_tidy "${dir}" '' "${sources[@]}" || failed=1
+    done
   done
+  ln -sfn "targets/${TARGETS[0]}/${TIDY_VARIANTS[0]}" "${TIDY_DIR}/clangd"
+  if ((database_only)); then
+    printf '%s\n' "${databases[@]}" > "${TIDY_DIR}/databases"
+    printf 'Wrote %s/compile_commands.json\n' "${databases[@]}"
+    exit 0
+  fi
 
   # The tests on the host, against the mock, with the database CMake writes. Only what lies in
   # test/: the tests are C++17, and the headers of the library, checked above as the gnu++11
   # they are, would be held to C++17. Not the mock in test/mock/, which stands in for the
   # Arduino core and follows it, not the Google style. Nor what lies in test/compile_fail/,
-  # which must not compile and is in no database. And the code of HOST_CODE, which CMake builds
-  # beside the tests, and its headers.
+  # which must not compile, and in test/compile_warn/, which warns on purpose: neither is in a
+  # database. And the code of HOST_CODE, which CMake builds beside the tests, and its headers.
   local host_code
   host_code_dirs host_code
-  local paths=('test/*' ':!test/mock/*' ':!test/compile_fail/*')
+  local paths=('test/*' ':!test/mock/*' ':!test/compile_fail/*' ':!test/compile_warn/*'
+    ':!test/fuzz/*')
   local filter='test'
-  local dir
   for dir in "${host_code[@]}"; do
     paths+=("${dir}/*")
     filter+="|${dir}"
@@ -171,6 +139,19 @@ main() {
   cmake --preset default >/dev/null
   echo "clang-tidy, the tests on the host:"
   run_tidy "${BUILD_DIR}/host" "(^|/)(${filter})/" "${tests[@]}" || failed=1
+
+  # The fuzzers, with the database of the preset fuzz, which alone builds them; configured, not
+  # built, as clang-tidy compiles each file itself.
+  local fuzzers=()
+  local found
+  found="$(git ls-files --cached --others --exclude-standard -- 'test/fuzz/*Fuzz.cpp' \
+    'test/fuzz/*_fuzz.cpp')"
+  if [[ -n "${found}" ]]; then
+    mapfile -t fuzzers <<< "${found}"
+    cmake --preset fuzz >/dev/null
+    echo "clang-tidy, the fuzzers:"
+    run_tidy "${BUILD_DIR}/fuzz" '(^|/)test/' "${fuzzers[@]}" || failed=1
+  fi
   exit "${failed}"
 }
 

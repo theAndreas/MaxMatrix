@@ -48,7 +48,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 36 | The template's checks, one group at a time | 35 | done | #73, #74, #78, #79, #80, #82, #85, #87, #88, #89, #90, #91 |
 | 37 | Files named as their class | 35 | done | #77 |
 | 38 | Results that must not be ignored | 36 | done | #94 |
-| 39 | MC/DC coverage | 34 | open | |
+| 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
 
 ### 1 Build with CMake
@@ -872,9 +872,11 @@ and `internal::Panel`, while `[[nodiscard]]` left every example as it was, to th
 macro is `[[nodiscard]]` wherever `__has_cpp_attribute` says the compiler has it, and
 `warn_unused_result` only elsewhere, against FN-10, which chooses by `__cplusplus`; the template
 should follow. clang warns of `[[nodiscard]]` before C++17 only under `-Wpedantic`. A test compiles a dropped
-`GetColumn()` in both standards and passes only on the compiler's warning; CMake writes it into the
-build folder, as `tools/tidy.sh` reads every file below `test/` but `compile_fail/` from the database
-of the tests, where a file that has to warn has no place. The model of the MAX7219 and the
+`GetColumn()` in both standards and passes only on the compiler's warning. CMake first wrote it into
+the build folder, as `tools/tidy.sh` read every file below `test/` but `compile_fail/` from the
+database of the tests, where a file that has to warn has no place; since template v0.7.0 it is
+`test/compile_warn/DroppedGetColumn.cpp`, which `add_compile_warn_tests()` builds and clang-tidy
+leaves out. The model of the MAX7219 and the
 simulator's hosts have `src/` on their include path now, for this header alone.
 
 ### 39 MC/DC coverage
@@ -895,6 +897,12 @@ above the panel, a char stopped while it shifts in, `setDot=` with one number, a
 own report, which the other tests replace, in a binary of its own. A mutation of the bitmap at
 the top, a whole column for any height at row 0, passed every other test, though gcov counted its
 condition as shown already.
+
+As built, template v0.7.0 adds `-fcondition-coverage` with GCC 14 and later, and
+`tools/coverage.sh` fails below 100 % of each of the three and lists the lines and branches
+missed; gcovr names no line for a condition, so the HTML report in `build/coverage/html/` shows
+those. The same release chooses the template's nodiscard macro as 38 found, and brings
+`add_compile_warn_tests()` for the case of 38.
 
 ### 40 Braced initialization checked
 

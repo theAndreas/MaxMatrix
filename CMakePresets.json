@@ -49,6 +49,18 @@
       "cacheVariables": { "MAXMATRIX_COVERAGE": "ON" }
     },
     {
+      "name": "fuzz",
+      "displayName": "Fuzzers",
+      "description": "The fuzzers of test/fuzz/ by clang, which brings libFuzzer, under ASan and UBSan; optimized, as a fuzzer is worth the inputs it gets through, with debug information for what it finds. tools/fuzz.sh runs them.",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/fuzz",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "MAXMATRIX_FUZZ": "ON"
+      }
+    },
+    {
       "name": "ci-default",
       "inherits": ["warnings-as-errors", "default"]
     },
@@ -62,6 +74,7 @@
     { "name": "clang", "configurePreset": "clang" },
     { "name": "sanitize", "configurePreset": "sanitize" },
     { "name": "coverage", "configurePreset": "coverage" },
+    { "name": "fuzz", "configurePreset": "fuzz" },
     { "name": "ci-default", "configurePreset": "ci-default" },
     { "name": "ci-clang", "configurePreset": "ci-clang" }
   ],
@@ -128,6 +141,13 @@
         { "type": "configure", "name": "coverage" },
         { "type": "build", "name": "coverage" },
         { "type": "test", "name": "coverage" }
+      ]
+    },
+    {
+      "name": "fuzz",
+      "steps": [
+        { "type": "configure", "name": "fuzz" },
+        { "type": "build", "name": "fuzz" }
       ]
     },
     {

@@ -5,12 +5,14 @@ written, and what the mock of the Arduino core may do. The code of a test follow
 [CodingStyle.md](CodingStyle.md), but for the exceptions `test/.clang-tidy` makes and gives its
 reasons for. Like CodingStyle.md, each rule has an id and says what checks it.
 
-## Three kinds of test
+## Five kinds of test
 
 | Kind | Where | Proves | Run by |
 |---|---|---|---|
 | **On the host** | `test/*_test.cpp`, GoogleTest against the mock in `test/mock/` | What the library computes: every function, every branch, every edge | `make tests`, `make clang`, `make sanitize`, `make coverage` |
 | **What must not compile** | `test/compile_fail/*.cpp` | That a misuse is stopped by the compiler, with the message it names | `make tests` |
+| **What must warn** | `test/compile_warn/*.cpp` | That a mistake the compiler only warns of, as a dropped result, is reported, with the warning it names, in every standard the library is built in | `make tests` |
+| **Fuzzed** | `test/fuzz/*_fuzz.cpp`, libFuzzer under ASan and UBSan | That what reads bytes or text, a parser or a protocol, holds for every input, not only for those a test thought of | `make fuzz` |
 | **On the target** | `examples/SelfCheck`, in simavr for the AVR | What only the target shows: the width of its `int`, text in its flash, the variants as its compiler builds them | `make self-check` |
 
 Where host and target differ, a test on the host passes and the device fails. What differs, and
@@ -27,9 +29,9 @@ what catches it:
 | Id | Rule | Checked by |
 |---|---|---|
 | TS-1 | Every behaviour is tested on the host; the target checks only what the host cannot show. A check in SelfCheck that the host could make is a test on the host instead. | Review |
-| TS-2 | A misuse that a `static_assert` stops has a case in `test/compile_fail/`, whose line `// Expected: ...` names the message. | `add_compile_fail_tests()` |
+| TS-2 | A misuse that a `static_assert` stops has a case in `test/compile_fail/`, whose line `// Expected: ...` names the message; a mistake an attribute makes the compiler warn of, as `MAXMATRIX_NODISCARD`, has one in `test/compile_warn/`, whose line names the warning. | `add_compile_fail_tests()`, `add_compile_warn_tests()` |
 | TS-3 | A bug is fixed after a test that shows it fails, and the test stays. | Review |
-| TS-4 | Every line and every branch of `src/` is reached by a test on the host. The tests follow what the documentation promises, not what the code does; a line they miss is first a question whether the promise is complete, then one for a test. A branch no test can reach is a question about the code, not about the test; where the code keeps it, as a way out the hardware may take, it is excluded with `GCOVR_EXCL_LINE: ` and the reason, and an exclusion without one fails. | `make coverage` |
+| TS-4 | Every line, every branch and every condition of `src/` is reached by a test on the host: each condition of a decision shown to turn its outcome alone (MC/DC), as GCC measures it from version 14. The tests follow what the documentation promises, not what the code does; a line they miss is first a question whether the promise is complete, then one for a test. A branch no test can reach is a question about the code, not about the test; where the code keeps it, as a way out the hardware may take, it is excluded with `GCOVR_EXCL_LINE: `, or `GCOVR_EXCL_BR_LINE: ` for its branches and conditions alone, and the reason, and an exclusion without one fails. | `make coverage`, which fails on anything missed |
 | TS-24 | Every test on the host passes under AddressSanitizer and UBSan as well, which find what a test passes by chance: a read beyond an array, an overflow of a signed type. | `make sanitize` |
 
 ## Files and names
@@ -57,7 +59,6 @@ what catches it:
 | TS-18 | Deterministic: no real time, no random number, no `sleep`. Time comes from the mock, set by the test. | Review |
 | TS-25 | Each function of the API has a test with an argument outside its contract as well as one inside, where the contract says what happens then: the error it returns, the value it clamps to, the call it ignores. | Review |
 | TS-26 | Calls with an order, as `Begin()` before `Update()`, are tested in the wrong one too: no `Begin()`, `Begin()` twice, `Update()` after `End()`. A state machine has a test for each transition, and one for each event that must change nothing. | Review |
-
 ## The mock of the Arduino core
 
 | Id | Rule | Checked by |
@@ -72,3 +73,12 @@ what catches it:
 |---|---|---|
 | TS-22 | A check of SelfCheck prints one line, `pass` or `FAIL` and what it checks, and the run ends with the number that failed; `SelfCheck.expected` is what a correct run prints. | `make self-check` |
 | TS-23 | The input of a check is `volatile`, so that the target computes it and not the compiler. | Review |
+
+## Fuzzed
+
+| Id | Rule | Checked by |
+|---|---|---|
+| TS-24 | Code that reads bytes or text from outside, a parser, a protocol, a stored blob, has a fuzzer: `test/fuzz/<name>_fuzz.cpp` for a family of functions, `<Class>Fuzz.cpp` for a class, defining `LLVMFuzzerTestOneInput()`. | Review |
+| TS-25 | A fuzzer states what must hold for every input and calls `std::abort()` where it does not; a crash, a read out of bounds and undefined behaviour are found by ASan and UBSan without a word of its own. | Review, `make fuzz` |
+| TS-26 | A fuzzer starts each input from the same state: what one input leaves behind makes a crash that its own file does not replay. | Review |
+| TS-27 | An input a fuzzer found to fail becomes a test on the host before it is fixed, and its file goes into `test/fuzz/corpus/<name>/`, so that the fuzzer starts from it. | Review |

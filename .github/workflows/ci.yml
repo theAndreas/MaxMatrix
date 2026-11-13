@@ -7,9 +7,10 @@
 #   tests          the tests on the host, by GCC, also under ASan and UBSan, and what they reach
 #                  of src/ into the job's summary
 #   clang          the same tests by clang, which warns about other things than GCC
-#   examples       SelfCheck in simavr, and every example in every variant, without a warning;
-#                  flash and RAM into the job's summary
-#   arduino-lint   the rules of the Arduino Library Manager
+#   examples       SelfCheck in simavr, and every example for every target and variant, without a
+#                  warning; flash and RAM into the job's summary; the deepest stack of each on an
+#                  AVR that CMake builds
+#   arduino-lint   the rules of the Arduino Library Manager, for an Arduino library
 #
 # Every job carries a timeout-minutes well above what it takes, for a job that has stopped
 # making progress; the apt installs go through .github/actions/apt-install, which caches the
@@ -107,12 +108,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install simavr
+      # simavr, and for a target CMake builds, CMake and the toolchain apt-packages.txt names.
+      - name: Install simavr and the toolchain
         uses: ./.github/actions/apt-install
         with:
-          packages: simavr
+          packages: simavr cmake ninja-build
+          file: .devcontainer/apt-packages.txt
 
-      - uses: ./.github/actions/arduino-setup
+      - uses: ./.github/actions/target-setup
 
       - name: SelfCheck in simavr
         run: make self-check
@@ -123,6 +126,9 @@ jobs:
       - name: The sizes in the README
         run: make sizes
 
+      - name: The deepest stack against the RAM
+        run: make stack
+
   arduino-lint:
     name: arduino-lint
     runs-on: ubuntu-26.04
@@ -131,8 +137,10 @@ jobs:
       - uses: actions/checkout@v7
 
       # "submit" while the library is not in the Library Manager; once it is, "update" adds the
-      # checks for a new release.
-      - uses: arduino/arduino-lint-action@v3
+      # checks for a new release. Only for an Arduino library: one of CMake alone has no
+      # library.properties, and the Library Manager's rules are not its.
+      - if: hashFiles('library.properties') != ''
+        uses: arduino/arduino-lint-action@v3
         with:
           project-type: library
           library-manager: submit

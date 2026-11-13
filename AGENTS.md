@@ -1,8 +1,7 @@
 # MaxMatrix: for a coding agent
-
 Drive chained 8x8 LED dot matrix modules with MAX7219. An embedded C++ library for targets from an 8-bit microcontroller to the host:
 C++11 as the least standard, without the standard library. This project builds and checks it on
-the host by GCC and clang, and on the AVR through arduino-cli and simavr.
+the host by GCC and clang, and for each target of `tools/project.sh` through arduino-cli and simavr.
 
 ## Before writing code, read
 
@@ -73,8 +72,8 @@ make tests     # GoogleTest on the host
 A change is done when all of these hold, not when it compiles:
 
 - `make check` passes: it is what CI runs, all of it.
-- Every line and branch the change adds is reached by a test: `make coverage` lists the lines
-  missed per file.
+- Every line, branch and condition the change adds is reached by a test: `make coverage` fails
+  otherwise and lists the lines missed per file.
 - What a sketch can use is documented (Documentation.md), and `make docs` passes.
 - The README's table of flash and RAM, if it has one, is what the build measures: after a change
   that moves them, `make examples` and `make sizes FIX=1`.
@@ -87,8 +86,8 @@ A change is done when all of these hold, not when it compiles:
 |---|---|
 | The library | `src/`, the header a sketch includes is `src/MaxMatrix.h` |
 | Tests | `test/`, GoogleTest against a mock of the Arduino core in `test/mock/` |
-| Examples | `examples/`; `SelfCheck` runs on the board in simavr |
-| The project's settings | `tools/project.sh` (board, variants, hooks), `tools/project.mk` (own targets) |
+| Examples | `examples/`, sketches; `SelfCheck` runs on the board in simavr |
+| The project's settings | `tools/project.sh` (targets, variants, hooks), `tools/project.mk` (own targets) |
 | The scripts behind `make` | `tools/`; `tools/README.md` says what each is, and when a script is shell or Python |
 
 `.clang-tidy`, `.clang-format`, `CPPLINT.cfg`, the `Makefile`, `tools/` and `.github/` come from
@@ -187,6 +186,8 @@ exception goes at the end of a list, with its reason.
   the library are a file per header, in folders as in `src/` (`test/Command/CommandTest.cpp`),
   so that clang-tidy reads them side by side; what they share, the fixtures `MaxMatrixTest`
   and `MaxMatrixMappingTest`, `Display()` and the reports, is in `MaxMatrixTestSupport.h`.
+  `test/compile_warn/` holds what has to make the compiler warn, a dropped result of a getter,
+  compiled under `compile_warn/` in gnu++11 and C++17 and left out by clang-tidy.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
   `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
   runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a

@@ -177,22 +177,9 @@ set_target_properties(MaxMatrixErrorReportTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(MaxMatrixErrorReportTest PRIVATE MaxMatrix-det GTest::gtest_main)
 gtest_discover_tests(MaxMatrixErrorReportTest TEST_PREFIX "det/")
 
-# What the compiler has to report: a getter's result dropped, whose value is lost and the error that says whether there
-# was one (FN-10). In both standards, as MAXMATRIX_NODISCARD is another attribute in each; with code generated, as GCC
-# reports warn_unused_result only then, not under -fsyntax-only. The case is written into the build folder rather than
-# kept in test/, whose every file clang-tidy reads from the database of the tests, where a file that must warn has no
-# place.
-set(DroppedResultCase ${CMAKE_CURRENT_BINARY_DIR}/DroppedGetColumn.cpp)
-file(CONFIGURE OUTPUT ${DroppedResultCase}
-     CONTENT "#include \"MaxMatrix.h\"\nvoid DropColumn(max_matrix::Matrix& matrix) { matrix.GetColumn(0); }\n")
-foreach(Standard gnu++11 c++17)
-    add_test(NAME nodiscard/DroppedGetColumn/${Standard}
-             COMMAND ${CMAKE_CXX_COMPILER} -std=${Standard} -c -o ${CMAKE_CURRENT_BINARY_DIR}/DroppedGetColumn-${Standard}.o
-                     -I${PROJECT_SOURCE_DIR}/src -isystem ${PROJECT_SOURCE_DIR}/test/mock -I${PROJECT_SOURCE_DIR}/test/model
-                     ${DroppedResultCase})
-    set_tests_properties(nodiscard/DroppedGetColumn/${Standard}
-                         PROPERTIES PASS_REGULAR_EXPRESSION "ignoring return value[^\n]*-Wunused-result")
-endforeach()
+# What the compiler has to warn of, test/compile_warn/: in gnu++11, as a sketch is built, and in C++17, as the tests are.
+add_compile_warn_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_warn STANDARDS gnu++11 c++17
+                       INCLUDES ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/test/mock ${PROJECT_SOURCE_DIR}/test/model)
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.

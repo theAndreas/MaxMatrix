@@ -2,11 +2,14 @@
 # own, as a badge reports a workflow and not a job, so that the README says separately that the
 # builds pass and that the analysers are quiet. Each step is a target of the Makefile.
 #
-#   clang-tidy   the library and the examples with the board's flags, once per variant whose
-#                defines differ, and the tests on the host; which checks, and why the rest are
-#                off, is in .clang-tidy; with the checks of our own, built against LLVM's headers
+#   clang-tidy   the library and the examples, or a firmware and its platform/, with each
+#                target's flags, once per variant whose defines differ, the tests on the host and
+#                the fuzzers; which checks, and why the rest are off, is in .clang-tidy; with the
+#                checks of our own, built against LLVM's headers
 #   cppcheck     the library, parsed by cppcheck itself, which reaches what clang does not
-#   headers      every header of src/ compiled on its own, for the host and for the board
+#   headers      every header of src/ compiled on its own, for the host and for each target
+#   fuzz         the fuzzers of test/fuzz/, FUZZ_SECONDS each, going on from the corpus the last
+#                run left
 #
 # Every job carries a timeout-minutes well above what it takes, for one that has stopped making
 # progress. This file comes from the template.
@@ -40,11 +43,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # CMake and GoogleTest for the database of the tests, jq for the board's.
+      # CMake and GoogleTest for the database of the tests, clang for that of the fuzzers, jq for
+      # the board's.
       - name: Install the toolchain
         uses: ./.github/actions/apt-install
         with:
-          packages: cmake ninja-build libgtest-dev jq
+          packages: cmake ninja-build libgtest-dev clang jq
           # And the project's own, as its dev container has them.
           file: .devcontainer/apt-packages.txt
 
@@ -53,8 +57,8 @@ jobs:
       # The headers the module of the checks of our own is compiled against.
       - uses: ./.github/actions/llvm-headers
 
-      # The board's flags come from arduino-cli's compilation database.
-      - uses: ./.github/actions/arduino-setup
+      # Each target's flags come from its build system's compilation database.
+      - uses: ./.github/actions/target-setup
 
       - name: Analyse
         run: make tidy
@@ -88,8 +92,44 @@ jobs:
           # And the project's own, as its dev container has them.
           file: .devcontainer/apt-packages.txt
 
-      # avr-g++ and the core, which the board's database names.
-      - uses: ./.github/actions/arduino-setup
+      # The compiler and the core each target's database names.
+      - uses: ./.github/actions/target-setup
 
       - name: Compile each header alone
         run: make headers
+
+  fuzz:
+    name: Fuzzers
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # clang, which brings libFuzzer, and GoogleTest, as the preset fuzz builds the tests too.
+      - name: Install the toolchain
+        uses: ./.github/actions/apt-install
+        with:
+          packages: cmake ninja-build libgtest-dev clang
+          file: .devcontainer/apt-packages.txt
+
+      # What the fuzzers found in earlier runs, so that a run goes on from there rather than from
+      # the seeds: a new key every run, the newest one restored.
+      - name: Restore the corpus
+        uses: actions/cache@v6
+        with:
+          path: build/fuzz/work
+          key: fuzz-${{ github.run_id }}
+          restore-keys: fuzz-
+
+      - name: Fuzz
+        run: make fuzz
+
+      # The input that failed, to replay with the fuzzer: build/fuzz/fuzz/<Name> crash-<hash>.
+      - name: Keep what failed
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-findings
+          path: |
+            build/fuzz/work/*/crash-*
+            build/fuzz/work/*/log.txt

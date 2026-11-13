@@ -1,3 +1,4 @@
+
 # Target profile: AVR through Arduino
 
 What holds for MaxMatrix on the AVR, built by avr-gcc through arduino-cli, beyond the
@@ -16,7 +17,7 @@ this profile where a target decides; the ids here start with `AVR-`.
 | Exceptions, RTTI | None; a sketch is built with `-fno-exceptions -fno-rtti` | M-2 |
 | Heap | `malloc` exists, but fragments 2 KiB | M-1 |
 | The table of `virtual` functions | Copied from flash into RAM at start, per class | C-6 |
-| Compiler | avr-gcc 7.3, `gnu++11` | The least standard; `[[nodiscard]]` as `MAXMATRIX_NODISCARD` (FN-10) |
+| Compiler | avr-gcc 7.3 of the Arduino core, `gnu++11` | The least standard; `[[nodiscard]]` as `MAXMATRIX_NODISCARD` (FN-10) |
 
 ## Rules
 

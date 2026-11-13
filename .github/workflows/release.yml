@@ -26,11 +26,12 @@ jobs:
     name: Analysis
     uses: ./.github/workflows/static-analysis.yml
 
-  # library.properties says the version, and the Arduino IDE shows it; a tag v0.2.0 on a commit
-  # whose library.properties still says 0.1.0 would publish a release that names itself otherwise.
-  # Asked here, before anything is published.
+  # library.properties says the version of an Arduino library, and the Arduino IDE shows it;
+  # project() in CMakeLists.txt says that of a library of CMake alone. A tag v0.2.0 on a commit
+  # that still says 0.1.0 would publish a release that names itself otherwise. Asked here, before
+  # anything is published.
   version:
-    name: The tag matches library.properties
+    name: The tag matches the version
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
@@ -39,12 +40,18 @@ jobs:
       - name: Compare
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          library=$(sed -n 's/^version=//p' library.properties)
-          if [ "$tag" != "$library" ]; then
-            echo "::error::The tag says $tag, library.properties says ${library:-nothing}"
+          if [ -f library.properties ]; then
+            file=library.properties
+            version=$(sed -n 's/^version=//p' library.properties)
+          else
+            file=CMakeLists.txt
+            version=$(sed -n 's/^project([^)]* VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          fi
+          if [ "$tag" != "$version" ]; then
+            echo "::error::The tag says $tag, $file says ${version:-nothing}"
             exit 1
           fi
-          echo "Version $library"
+          echo "Version $version"
 
   publish:
     name: Publish the release
@@ -54,14 +61,27 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The library as the Arduino IDE installs it, in a folder named after it: what git tracks,
-      # without the dev container, CI and the tools, which a sketch does not need.
-      - name: Pack the library
+      # The project in a folder named after it: what git tracks, without the dev container, CI
+      # and the tools, which a user of it does not need. An Arduino library as the Arduino IDE
+      # installs it, one of CMake alone with what add_subdirectory() reads, a firmware with its
+      # platform/ to build it from. Only what there is: git archive fails on a path it lacks.
+      - name: Pack the sources
         run: |
-          name=$(sed -n 's/^name=//p' library.properties)
+          if [ -f library.properties ]; then
+            name=$(sed -n 's/^name=//p' library.properties)
+            files=(library.properties)
+          else
+            name=$(sed -n 's/^project(\([A-Za-z0-9]*\).*/\1/p' CMakeLists.txt)
+            files=(CMakeLists.txt cmake)
+          fi
+          for path in LICENSE README.md src examples platform; do
+            if [ -e "$path" ]; then
+              files+=("$path")
+            fi
+          done
           git archive --format=zip --prefix="${name}/" \
             --output="${name}-${GITHUB_REF_NAME}.zip" HEAD \
-            -- library.properties LICENSE README.md src examples
+            -- "${files[@]}"
 
       - name: Publish
         env:

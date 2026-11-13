@@ -42,14 +42,25 @@ main() {
 
   cd "${ROOT_DIR}"
   local defines=()
+  local target
   local variant
   local flag
-  # The defines of the variants, so that the branches each takes are read as well.
-  for variant in "${TIDY_VARIANTS[@]}"; do
-    while IFS= read -r flag; do
-      defines+=("${flag}")
-    done < <(variant_flags "${variant}" | grep -E '^-D' || true)
+  # The defines of the variants of every target, so that the branches each takes are read as
+  # well.
+  for target in "${TARGETS[@]}"; do
+    select_target "${target}"
+    for variant in "${TIDY_VARIANTS[@]}"; do
+      while IFS= read -r flag; do
+        defines+=("${flag}")
+      done < <(variant_flags "${variant}" | grep -E '^-D' || true)
+    done
   done
+
+  # The mock of the Arduino core in place of the core, where the library is an Arduino library.
+  local mock=()
+  if [[ -d test/mock ]]; then
+    mock=(-Itest/mock)
+  fi
 
   # The headers as well, by name: given a folder, cppcheck reads only its .cpp
   # files, and a library of templates may have none.
@@ -67,7 +78,8 @@ main() {
     --error-exitcode=1 \
     --quiet \
     --cppcheck-build-dir="${BUILD_DIR}/cppcheck" \
-    -Isrc -Itest/mock \
+    -Isrc \
+    "${mock[@]}" \
     '-D__has_include(x)=1' \
     "${defines[@]}" \
     "${files[@]}"

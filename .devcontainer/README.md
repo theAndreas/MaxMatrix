@@ -49,9 +49,9 @@ clangd reads the compilation database that `.clangd` names for a path, as no sin
 everything:
 
 - `src/` and `test/` from CMake, against the mock of the core, in `build/host/`.
-- `examples/` from `tools/tidy.sh --database-only`, in `build/tidy/default/`, with the flags the
-  board is compiled with: only that one has the sketches, an `.ino` as C++ with `Arduino.h` included
-  first.
+- `examples/` and a firmware's `platform/` from `tools/tidy.sh --database-only`, in
+  `build/tidy/clangd/`, with the flags the first target is compiled with: only that one has them,
+  an `.ino` as C++ with `Arduino.h` included first.
 
 Both are written when the container is created. After adding a file, run `cmake --preset default`
 or `tools/tidy.sh --database-only` again. clangd inserts no includes: a sketch includes
