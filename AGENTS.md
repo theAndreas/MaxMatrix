@@ -186,6 +186,8 @@ exception goes at the end of a list, with its reason.
   the library are a file per header, in folders as in `src/` (`test/Command/CommandTest.cpp`),
   so that clang-tidy reads them side by side; what they share, the fixtures `MaxMatrixTest`
   and `MaxMatrixMappingTest`, `Display()` and the reports, is in `MaxMatrixTestSupport.h`.
+  `test/compile_warn/` holds what has to make the compiler warn, a dropped result of a getter,
+  compiled under `compile_warn/` in gnu++11 and C++17 and left out by clang-tidy.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
   `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
   runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a
