@@ -105,11 +105,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # clang, which brings libFuzzer, and GoogleTest, as the preset fuzz builds the tests too.
+      # clang with libFuzzer and the sanitizers, which it only recommends, and GoogleTest, as the
+      # preset fuzz builds the tests too.
       - name: Install the toolchain
         uses: ./.github/actions/apt-install
         with:
-          packages: cmake ninja-build libgtest-dev clang
+          packages: cmake ninja-build libgtest-dev clang libclang-rt-dev
           file: .devcontainer/apt-packages.txt
 
       # What the fuzzers found in earlier runs, so that a run goes on from there rather than from

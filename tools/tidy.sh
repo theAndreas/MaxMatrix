@@ -143,9 +143,13 @@ main() {
   # The fuzzers, with the database of the preset fuzz, which alone builds them; configured, not
   # built, as clang-tidy compiles each file itself.
   local fuzzers=()
-  local found
-  found="$(git ls-files --cached --others --exclude-standard -- 'test/fuzz/*Fuzz.cpp' \
-    'test/fuzz/*_fuzz.cpp')"
+  # Asked only where the folder is: git warns of one it cannot open, as a project has none
+  # until its first fuzzer.
+  local found=''
+  if [[ -d test/fuzz ]]; then
+    found="$(git ls-files --cached --others --exclude-standard -- 'test/fuzz/*Fuzz.cpp' \
+      'test/fuzz/*_fuzz.cpp')"
+  fi
   if [[ -n "${found}" ]]; then
     mapfile -t fuzzers <<< "${found}"
     cmake --preset fuzz >/dev/null
