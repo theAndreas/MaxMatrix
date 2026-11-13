@@ -1,10 +1,11 @@
 # Which compilation database clangd reads, by path. src/ and test/ come from
-# CMake, against the mock of the core (cmake --preset default writes it);
-# examples/ from tools/tidy.sh --database-only, with the flags the board is
-# compiled with, as only that one has the sketches, an .ino as C++ with
-# Arduino.h included first. Both add the warnings that .clang-tidy passes as
-# ExtraArgs, the checks of the Doxygen blocks among them, as clangd does not
-# read ExtraArgs.
+# CMake, against the mock of the core (cmake --preset default writes it), and
+# test/fuzz/ from the preset fuzz, which alone builds the fuzzers; examples/
+# and a firmware's platform/ from tools/tidy.sh --database-only, with the flags
+# the first target is compiled with, as only that one has them, an .ino as C++
+# with Arduino.h included first; build/tidy/clangd points to it. Each adds the
+# warnings that .clang-tidy passes as ExtraArgs, the checks of the Doxygen
+# blocks among them, as clangd does not read ExtraArgs.
 CompileFlags:
   CompilationDatabase: build/host
   Add: [-Wcast-qual, -Wcomma, -Wconditional-uninitialized, -Wdeprecated,
@@ -18,9 +19,9 @@ CompileFlags:
         -fcomment-block-commands=stddiff]
 ---
 If:
-  PathMatch: examples/.*
+  PathMatch: (examples|platform)/.*
 CompileFlags:
-  CompilationDatabase: build/tidy/default
+  CompilationDatabase: build/tidy/clangd
   Add: [-Wcast-qual, -Wcomma, -Wconditional-uninitialized, -Wdeprecated,
         -Wno-deprecated-redundant-constexpr-static-def, -Wdouble-promotion,
         -Wextra-semi, -Wformat=2, -Wimplicit-fallthrough, -Wloop-analysis,
@@ -30,6 +31,11 @@ CompileFlags:
         -Wunused-template, -Wzero-as-null-pointer-constant,
         -Wdocumentation, -Wdocumentation-unknown-command,
         -fcomment-block-commands=stddiff]
+---
+If:
+  PathMatch: test/fuzz/.*
+CompileFlags:
+  CompilationDatabase: build/fuzz
 ---
 # The clang-tidy module of our own, against the headers of LLVM the dev container keeps for it
 # (tools/lib/tidy_module.sh); the major version follows ARG LLVM_MAJOR of .devcontainer/Dockerfile.

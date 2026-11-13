@@ -185,8 +185,11 @@ CheckOptions:
   cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted: true
   # Google's "include what you use", with Arduino.h as what provides the
   # core and the board's pins: F(), __FlashStringHelper and A0 come through it,
-  # from the core's folder and from the variant's.
-  misc-include-cleaner.IgnoreHeaders: '.*/cores/arduino/.*;.*/variants/.*'
+  # from the core's folder and from the variant's. And <avr/io.h> as what
+  # provides a part's registers: avr-libc includes the part's header through
+  # it, at times through a second one, as iom2560.h through iomxx0_1.h, which
+  # include-cleaner does not take back to <avr/io.h>.
+  misc-include-cleaner.IgnoreHeaders: '.*/cores/arduino/.*;.*/variants/.*;.*/avr/io[^/]*\.h'
   # Google's names, which readability-identifier-naming checks only once it is told them; the
   # same block in every project, so that every project names alike. Two exceptions Google
   # makes itself are general: an accessor is named like the variable it gives (group(),

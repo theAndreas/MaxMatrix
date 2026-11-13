@@ -27,20 +27,22 @@ export CTEST_PARALLEL_LEVEL ?= $(shell nproc)
 
 STRICT ?= $(CI)
 PRESET = $(if $(STRICT),ci-)
+# How long each fuzzer runs; tools/fuzz.sh reads it.
+export FUZZ_SECONDS ?= 60
 PROJECT_CHECKS :=
 
 # Before the rules, as `check` reads PROJECT_CHECKS when it is read; its targets are listed after
 # these all the same, as `make help` reads the files in turn.
 -include tools/project.mk
 
-.PHONY: help check lint fmt setup tests clang sanitize coverage examples sizes self-check \
+.PHONY: help check lint fmt setup tests clang sanitize coverage examples sizes self-check stack fuzz \
         tidy cppcheck headers docs arduino-lint clean
 
 help: ## This list
 	@awk 'BEGIN { FS = ":.*## " } /^## / { printf "\n%s\n", substr($$0, 4) } \
 	      /^[a-z0-9-]+:.*## / { printf "  make %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo
-	@echo '  STRICT=1 for warnings as errors, as in CI.'
+	@echo '  STRICT=1 for warnings as errors, as in CI; FUZZ_SECONDS=n for a shorter fuzzing run.'
 
 ## Everything at once
 
@@ -48,7 +50,7 @@ help: ## This list
 check: STRICT := 1
 check: ## What CI runs, all of it
 check: lint arduino-lint tests clang tidy cppcheck headers docs sanitize coverage examples \
-       sizes self-check $(PROJECT_CHECKS)
+       sizes self-check stack fuzz $(PROJECT_CHECKS)
 
 lint: ## The checks of seconds: clang-format, cpplint, shellcheck, actionlint, ruff
 	tools/lint.sh
@@ -56,7 +58,7 @@ lint: ## The checks of seconds: clang-format, cpplint, shellcheck, actionlint, r
 fmt: ## Format the C++ sources and the Doxygen blocks in place
 	tools/lint.sh --fix
 
-setup: ## The pinned Arduino core, and what tools/project.sh prepares beyond it
+setup: ## The pinned Arduino core of each target, and what tools/project.sh prepares
 	tools/setup.sh
 
 ## Builds, each with its tests
@@ -77,7 +79,7 @@ coverage: ## The tests with --coverage, and what they reach of src/
 	    { echo '```text'; cat build/coverage/coverage.txt; echo '```'; } >> "$$GITHUB_STEP_SUMMARY"; \
 	fi
 
-examples: ## Every example in each variant, failing on a warning; flash and RAM as a table
+examples: ## Every example for each target and variant, failing on a warning; flash and RAM
 	tools/compile_examples.sh | tee -a "$${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 # The table of the last `make examples`, not a build of its own, so that `make check` compiles
@@ -85,23 +87,34 @@ examples: ## Every example in each variant, failing on a warning; flash and RAM 
 sizes: ## The table of flash and RAM in README.md against the last make examples
 	python3 tools/documented_sizes.py $(if $(FIX),--fix)
 
-self-check: ## examples/SelfCheck in simavr, in each variant
+self-check: ## examples/SelfCheck in simavr, for each target and variant
 	tools/self_check.sh
+
+# Where an AVR target is built by CMake: arduino:avr's avr-gcc 7.3 writes no call graph.
+stack: ## The deepest stack of each program against the RAM it leaves, on each AVR target
+	tools/stack.sh
+
+# Built with clang, which brings libFuzzer, into build/fuzz; what each found before is the corpus
+# it goes on from.
+fuzz: ## The fuzzers of test/fuzz/, FUZZ_SECONDS each, under ASan and UBSan
+	cmake --workflow --preset fuzz
+	tools/fuzz.sh
 
 ## Analysers
 
-tidy: ## clang-tidy: the library and the examples with the board's flags, and the tests
+tidy: ## clang-tidy: the library and the examples with each target's flags, and the tests
 	tools/tidy.sh
 
 cppcheck: ## cppcheck over the library
 	tools/cppcheck.sh
 
-# The host's database from CMake, the board's from tools/tidy.sh: each header is compiled by
-# the compiler that database names, so an #if only the board takes is compiled for the board.
-headers: ## Every header of src/ compiled on its own, for the host and for the board
+# The host's database from CMake, each target's from tools/tidy.sh, which lists them in
+# build/tidy/databases: each header is compiled by the compiler that database names, so an #if
+# only a board takes is compiled for that board.
+headers: ## Every header of src/ compiled on its own, for the host and for each target
 	cmake --preset default >/dev/null
 	tools/tidy.sh --database-only >/dev/null
-	python3 tools/self_contained_headers.py build/host build/tidy/default
+	python3 tools/self_contained_headers.py build/host @build/tidy/databases
 
 docs: ## The reference from the Doxygen blocks, failing on a gap
 	tools/docs.sh

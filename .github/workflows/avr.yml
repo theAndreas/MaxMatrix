@@ -40,7 +40,7 @@ jobs:
           file: .devcontainer/apt-packages.txt
 
       # arduino-cli and the pinned core, as in CI.
-      - uses: ./.github/actions/arduino-setup
+      - uses: ./.github/actions/target-setup
 
       - name: The examples in simavr
         run: make avr

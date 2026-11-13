@@ -25,6 +25,11 @@ main() {
   fi
 
   cd "${ROOT_DIR}"
+  # A library of CMake alone is no Arduino library, and the Library Manager's rules are not its.
+  if [[ ! -f library.properties ]]; then
+    echo "arduino_lint.sh: no library.properties, no Arduino library to check."
+    exit 0
+  fi
   local name
   name="$(sed -n 's/^name=//p' library.properties)"
   if [[ -z "${name}" ]]; then

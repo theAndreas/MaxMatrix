@@ -3,9 +3,9 @@
 # Copyright 2026 Andreas Burnickl
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Runs the tests on the host with --coverage and reports which lines of src/
-# they reach: the lines no test reaches on the terminal, and all of it as HTML
-# in build/coverage/html/. The variants of CMakeLists.txt count together, as
+# Runs the tests on the host with --coverage and fails unless they reach every
+# line, branch and condition of src/ (docs/Testing.md TS-4): what no test
+# reaches on the terminal, and all of it as HTML in build/coverage/html/. The variants of CMakeLists.txt count together, as
 # each takes other branches of #if. gcovr runs from the environment uv.lock
 # pins, like the tools of lint.sh.
 
@@ -55,6 +55,24 @@ check_exclusions() {
   fi
 }
 
+# Runs gcovr on the TRACEFILE with the further arguments given, the counts merged:
+# - separate: a function under an #if of a variant lies on another line in
+#   each, and is two functions, not one to merge.
+# - --merge-lines: gcov counts a template per instance, and each lambda is a
+#   type of its own, so a line reached by one instance stood as missed by
+#   another; merged, a line counts as reached if any instance reaches it. The
+#   tracefile keeps each instance, so it is merged where it is read.
+# Arguments:
+#   tracefile, then what gcovr is to write
+report() {
+  local tracefile="$1"
+  shift
+  uv run --frozen gcovr --root "${ROOT_DIR}" --json-add-tracefile "${tracefile}" \
+    --merge-mode-functions=separate \
+    --merge-lines \
+    "$@"
+}
+
 main() {
   cd "${ROOT_DIR}"
   check_exclusions
@@ -73,24 +91,41 @@ main() {
   fi
 
   mkdir -p "${COVERAGE_DIR}/html"
-  # separate: a function under an #if of a variant lies on another line in
-  # each, and is two functions, not one to merge.
-  # --merge-lines: gcov counts a template per instance, and each lambda is a
-  # type of its own, so a line reached by one instance stood as missed by
-  # another; merged, a line counts as reached if any instance reaches it.
+  # The counts are read from gcov once, into a tracefile, and each report is made from it: asked
+  # for several metrics, gcovr writes one table without the lines missed, so each metric gets a
+  # table of its own, one after the other in coverage.txt.
   # --exclude-throw-branches: on the host a call that may throw has a branch
   # to its exception, which no test takes; a sketch is built without
   # exceptions, so on the AVR there is no such branch to reach.
+  local tracefile="${COVERAGE_DIR}/coverage.json"
   uv run --frozen gcovr --root "${ROOT_DIR}" --filter 'src/' \
-    --merge-mode-functions=separate \
-    --merge-lines \
     --exclude-throw-branches \
-    --txt-metric line --txt "${COVERAGE_DIR}/coverage.txt" \
+    --json "${tracefile}" "${COVERAGE_DIR}"
+  local metric
+  : > "${COVERAGE_DIR}/coverage.txt"
+  for metric in line branch condition; do
+    report "${tracefile}" --txt-metric "${metric}" --txt "${COVERAGE_DIR}/${metric}.txt"
+    cat "${COVERAGE_DIR}/${metric}.txt" >> "${COVERAGE_DIR}/coverage.txt"
+  done
+  # --fail-under-*: gcovr checks the merged counts, and exits with 2, 4 and 8 for the lines,
+  # branches and conditions, or-ed, after it has written the reports.
+  local status=0
+  report "${tracefile}" \
     --html-details "${COVERAGE_DIR}/html/index.html" \
-    --print-summary "${COVERAGE_DIR}"
+    --fail-under-line 100 --fail-under-branch 100 --fail-under-condition 100 \
+    --print-summary || status=$?
   echo
-  # The files with lines missed, and which.
-  grep -v ' 100%' "${COVERAGE_DIR}/coverage.txt" || true
+  # The files with something missed, and the lines of what. gcovr names no line for a condition:
+  # it counts one as reached once either of its outcomes is. The HTML report marks it.
+  grep -vE ' (100|--)%' "${COVERAGE_DIR}/coverage.txt" || true
+  if (( status & ~14 )); then
+    exit "${status}"
+  fi
+  if (( status != 0 )); then
+    err "Not every line, branch and condition of src/ is reached by a test (Testing.md TS-4)."
+    err "The conditions missed are marked in ${COVERAGE_DIR}/html/index.html."
+    exit 1
+  fi
 }
 
 main "$@"
