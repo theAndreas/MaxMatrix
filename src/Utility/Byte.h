@@ -62,6 +62,73 @@ class Byte {
   // reads the private bits would be a friend, which C-12 rules out.
   MAXMATRIX_NODISCARD constexpr uint8_t ToInteger() const { return value_; }
 
+  /*! \brief Returns the bits that are not set in this byte. */
+  constexpr Byte operator~() const {
+    return Byte{static_cast<uint8_t>(~value_)};
+  }
+
+  /*!
+   * \brief Returns whether two bytes have the same bits.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr bool operator==(Byte left, Byte right) {
+    return left.value_ == right.value_;
+  }
+
+  /*!
+   * \brief Returns whether two bytes differ in a bit.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr bool operator!=(Byte left, Byte right) {
+    return !(left == right);
+  }
+
+  /*!
+   * \brief Returns the bits set in both bytes.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr Byte operator&(Byte left, Byte right) {
+    return Byte{static_cast<uint8_t>(left.value_ & right.value_)};
+  }
+
+  /*!
+   * \brief Returns the bits set in either byte.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr Byte operator|(Byte left, Byte right) {
+    return Byte{static_cast<uint8_t>(left.value_ | right.value_)};
+  }
+
+  /*!
+   * \brief Returns the bits moved `shift` places up; those beyond bit 7 fall
+   *        out.
+   *
+   * \param[in] value The byte.
+   * \param[in] shift The places, less than 8.
+   */
+  friend constexpr Byte operator<<(Byte value, uint8_t shift) {
+    return Byte{static_cast<uint8_t>(value.value_ << shift)};
+  }
+
+  /*!
+   * \brief Returns the bits moved `shift` places down; those below bit 0 fall
+   *        out.
+   *
+   * \param[in] value The byte.
+   * \param[in] shift The places, less than 8.
+   */
+  friend constexpr Byte operator>>(Byte value, uint8_t shift) {
+    return Byte{static_cast<uint8_t>(value.value_ >> shift)};
+  }
+
  private:
   /*
    * T-13: not initialized here, as std::byte's is not. Initialized, it made the
@@ -72,74 +139,6 @@ class Byte {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
   uint8_t value_;
 };
-
-/*!
- * \brief Returns whether two bytes have the same bits.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr bool operator==(Byte left, Byte right) {
-  return left.ToInteger() == right.ToInteger();
-}
-
-/*!
- * \brief Returns whether two bytes differ in a bit.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr bool operator!=(Byte left, Byte right) { return !(left == right); }
-
-/*!
- * \brief Returns the bits set in both bytes.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr Byte operator&(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(left.ToInteger() & right.ToInteger())};
-}
-
-/*!
- * \brief Returns the bits set in either byte.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr Byte operator|(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(left.ToInteger() | right.ToInteger())};
-}
-
-/*!
- * \brief Returns the bits that are not set in `value`.
- *
- * \param[in] value The byte.
- */
-constexpr Byte operator~(Byte value) {
-  return Byte{static_cast<uint8_t>(~value.ToInteger())};
-}
-
-/*!
- * \brief Returns the bits moved `shift` places up; those beyond bit 7 fall out.
- *
- * \param[in] value The byte.
- * \param[in] shift The places, less than 8.
- */
-constexpr Byte operator<<(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(value.ToInteger() << shift)};
-}
-
-/*!
- * \brief Returns the bits moved `shift` places down; those below bit 0 fall
- *        out.
- *
- * \param[in] value The byte.
- * \param[in] shift The places, less than 8.
- */
-constexpr Byte operator>>(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(value.ToInteger() >> shift)};
-}
 
 /*!
  * \brief Returns whether a bit is set, as the core's `bitRead()` for a number.
