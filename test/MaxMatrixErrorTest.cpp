@@ -32,7 +32,7 @@ Error FeedText(Matrix& matrix, std::string const& text) {
   return result.GetError();
 }
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
-  std::vector<byte> const before{
+  std::vector<uint8_t> const before{
       Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns)};
   int32_t const frames_before{mock::frames};
 
@@ -156,7 +156,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
   for (auto const& test_case : cases) {
     matrix_.Clear();
     int32_t const frames_before{mock::frames};
-    byte const intensity_before{ChipOfModule(0).intensity};
+    uint8_t const intensity_before{ChipOfModule(0).intensity};
     reports.clear();
     EXPECT_EQ(test_case.call(matrix_), test_case.expected) << test_case.name;
     EXPECT_EQ(ShownPicture(matrix_),
@@ -187,7 +187,7 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
               texts[error])
         << kErrorNames[error];
   }
-  EXPECT_EQ(Text(Result<byte>(Error::kUnknownChar).GetErrorText()),
+  EXPECT_EQ(Text(Result<uint8_t>(Error::kUnknownChar).GetErrorText()),
             "unknown char");
   /* a new error that kErrorNames lacks has a text of its own here, and fails */
   EXPECT_EQ(Text(Status(static_cast<Error>(kNumberOfErrors)).GetErrorText()),

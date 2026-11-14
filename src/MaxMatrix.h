@@ -27,6 +27,7 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Text/Text.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 
@@ -112,7 +113,7 @@ class Matrix {
    * elsewhere.
    *
    * \code{.cpp}
-   * byte buffer[max_matrix::BufferSize(4)];
+   * max_matrix::Byte buffer[max_matrix::BufferSize(4)];
    * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer,
    * 4);
    * \endcode
@@ -125,8 +126,8 @@ class Matrix {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `kMaxNumberOfModules`.
    */
-  Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
-         byte number_of_modules);
+  Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+         Byte* buffer, uint8_t number_of_modules);
 
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
@@ -138,12 +139,12 @@ class Matrix {
   Matrix& operator=(Matrix const&) = delete;
 
   /*! \brief Returns the modules of the chain. */
-  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
     return panel_.GetNumberOfModules();
   }
 
   /*! \brief Returns the columns of the matrix, eight per module. */
-  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfColumns() const {
     return panel_.GetNumberOfColumns();
   }
 
@@ -162,17 +163,17 @@ class Matrix {
   }
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetDataInPin() const {
+  MAXMATRIX_NODISCARD uint8_t GetDataInPin() const {
     return panel_.GetWired().GetChain().GetDataInPin();
   }
 
   /*! \brief Returns the pin CS of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetChipSelectPin() const {
+  MAXMATRIX_NODISCARD uint8_t GetChipSelectPin() const {
     return panel_.GetWired().GetChain().GetChipSelectPin();
   }
 
   /*! \brief Returns the pin CLK of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetClockPin() const {
+  MAXMATRIX_NODISCARD uint8_t GetClockPin() const {
     return panel_.GetWired().GetChain().GetClockPin();
   }
 
@@ -189,17 +190,17 @@ class Matrix {
   }
 
   /*! \brief Returns the empty columns between two chars of a text. */
-  MAXMATRIX_NODISCARD byte GetSpaceBetweenChars() const {
+  MAXMATRIX_NODISCARD uint8_t GetSpaceBetweenChars() const {
     return text_.GetSpaceBetweenChars();
   }
 
   /*! \copydoc internal::Panel::GetColumn(int16_t) */
-  MAXMATRIX_NODISCARD Result<byte> GetColumn(int16_t column) {
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(int16_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
   }
 
-  /*! \copydoc internal::Panel::GetColumn(byte, byte) */
-  MAXMATRIX_NODISCARD Result<byte> GetColumn(byte module, byte column) {
+  /*! \copydoc internal::Panel::GetColumn(uint8_t, uint8_t) */
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(uint8_t module, uint8_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -208,7 +209,7 @@ class Matrix {
    * \brief Gives a row of the matrix, one byte per module.
    *
    * \code{.cpp}
-   * byte row[4];
+   * max_matrix::Byte row[4];
    * matrix.GetRow(0, row);
    * \endcode
    *
@@ -221,7 +222,7 @@ class Matrix {
    */
   template <size_t NumberOfValues>
   MAXMATRIX_NODISCARD Status GetRow(int16_t row,
-                                    byte (&values)[NumberOfValues]) {
+                                    Byte (&values)[NumberOfValues]) {
     return MAXMATRIX_REPORT_ERROR(
         "GetRow", panel_.GetRow(row, values,
                                 NumberOfValues > internal::kMaxRowBytes
@@ -229,8 +230,8 @@ class Matrix {
                                     : NumberOfValues));
   }
 
-  /*! \copydoc internal::Panel::GetRow(byte, byte) */
-  MAXMATRIX_NODISCARD Result<byte> GetRow(byte module, byte row) {
+  /*! \copydoc internal::Panel::GetRow(uint8_t, uint8_t) */
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(uint8_t module, uint8_t row) {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
@@ -247,7 +248,7 @@ class Matrix {
    *
    * \param[in] data_in_pin The pin; Init() makes it an output.
    */
-  void SetDataInPin(byte data_in_pin) {
+  void SetDataInPin(uint8_t data_in_pin) {
     panel_.GetWired().GetChain().SetDataInPin(data_in_pin);
   }
 
@@ -256,7 +257,7 @@ class Matrix {
    *
    * \param[in] chip_select_pin The pin; Init() makes it an output.
    */
-  void SetChipSelectPin(byte chip_select_pin) {
+  void SetChipSelectPin(uint8_t chip_select_pin) {
     panel_.GetWired().GetChain().SetChipSelectPin(chip_select_pin);
   }
 
@@ -265,7 +266,7 @@ class Matrix {
    *
    * \param[in] clock_pin The pin; Init() makes it an output.
    */
-  void SetClockPin(byte clock_pin) {
+  void SetClockPin(uint8_t clock_pin) {
     panel_.GetWired().GetChain().SetClockPin(clock_pin);
   }
 
@@ -300,7 +301,7 @@ class Matrix {
    * \return Error::kOk, or Error::kOutOfRange above 15; the intensity then
    *         stays as it was.
    */
-  Status SetIntensity(byte intensity);
+  Status SetIntensity(uint8_t intensity);
 
   /*!
    * \brief Turns the LEDs of every MAX7219 off, or on again.
@@ -329,14 +330,14 @@ class Matrix {
    */
   void SetDisplayTest(bool display_test);
 
-  /*! \copydoc internal::Panel::SetColumn(int16_t, byte) */
-  void SetColumn(int16_t column, byte value) {
+  /*! \copydoc internal::Panel::SetColumn(int16_t, Byte) */
+  void SetColumn(int16_t column, Byte value) {
     panel_.SetColumn(column, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetColumn(byte, byte, byte) */
-  void SetColumn(byte module, byte column, byte value) {
+  /*! \copydoc internal::Panel::SetColumn(uint8_t, uint8_t, Byte) */
+  void SetColumn(uint8_t module, uint8_t column, Byte value) {
     panel_.SetColumn(module, column, value);
     UpdateIfAuto();
   }
@@ -353,7 +354,7 @@ class Matrix {
    *                   module.
    */
   template <size_t NumberOfValues>
-  void SetRow(int16_t row, byte const (&values)[NumberOfValues]) {
+  void SetRow(int16_t row, Byte const (&values)[NumberOfValues]) {
     panel_.SetRow(row, values,
                   NumberOfValues > internal::kMaxRowBytes
                       ? internal::kMaxRowBytes
@@ -361,8 +362,8 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetRow(byte, byte, byte) */
-  void SetRow(byte module, byte row, byte value) {
+  /*! \copydoc internal::Panel::SetRow(uint8_t, uint8_t, Byte) */
+  void SetRow(uint8_t module, uint8_t row, Byte value) {
     panel_.SetRow(module, row, value);
     UpdateIfAuto();
   }
@@ -403,11 +404,11 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, byte const*, byte,
-   * byte) */
+  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, uint8_t const*,
+   * uint8_t, uint8_t) */
   void DrawBitmap(  // NOLINT(readability-function-size)
-      int16_t x, int16_t y, byte const* bitmap, byte width,
-      byte height = kRowNumberOfModule) {
+      int16_t x, int16_t y, uint8_t const* bitmap, uint8_t width,
+      uint8_t height = kRowNumberOfModule) {
     panel_.DrawBitmap(x, y, bitmap, width, height);
     UpdateIfAuto();
   }
@@ -485,7 +486,7 @@ class Matrix {
    *
    * \param[in] space_between_chars The number of empty columns.
    */
-  void SetSpaceBetweenChars(byte space_between_chars) {
+  void SetSpaceBetweenChars(uint8_t space_between_chars) {
     text_.SetSpaceBetweenChars(space_between_chars);
   }
 
@@ -604,7 +605,7 @@ class Matrix {
    *                             `MAX7219_REG_..._ADDRESS`.
    * \param[in] register_value The value for every module.
    */
-  void RegisterWrite(byte register_address, byte register_value) {
+  void RegisterWrite(uint8_t register_address, uint8_t register_value) {
     panel_.GetWired().GetChain().WriteRegisterAll(register_address,
                                                   register_value);
   }
@@ -615,9 +616,9 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::ShiftLeft(byte) */
-  byte ShiftLeft(byte shifted_in) {
-    byte const shifted_out{panel_.ShiftLeft(shifted_in)};
+  /*! \copydoc internal::Panel::ShiftLeft(Byte) */
+  Byte ShiftLeft(Byte shifted_in) {
+    Byte const shifted_out{panel_.ShiftLeft(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }
@@ -628,9 +629,9 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::ShiftRight(byte) */
-  byte ShiftRight(byte shifted_in) {
-    byte const shifted_out{panel_.ShiftRight(shifted_in)};
+  /*! \copydoc internal::Panel::ShiftRight(Byte) */
+  Byte ShiftRight(Byte shifted_in) {
+    Byte const shifted_out{panel_.ShiftRight(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }
@@ -707,11 +708,11 @@ namespace internal {
  *
  * \tparam NumberOfModules The modules of the chain.
  */
-template <byte NumberOfModules>
+template <uint8_t NumberOfModules>
 class Buffer {
  protected:
   /*! \brief One byte per column. */
-  byte buffer_[BufferSize(NumberOfModules)];
+  Byte buffer_[BufferSize(NumberOfModules)];
 };
 
 }  // namespace internal
@@ -733,7 +734,7 @@ class Buffer {
  *
  * \tparam NumberOfModules The modules of the chain, 1 to `kMaxNumberOfModules`.
  */
-template <byte NumberOfModules>  // NOLINTNEXTLINE(misc-multiple-inheritance)
+template <uint8_t NumberOfModules>  // NOLINTNEXTLINE(misc-multiple-inheritance)
 class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
   static_assert(NumberOfModules >= 1 && NumberOfModules <= kMaxNumberOfModules,
                 "a chain has 1 to kMaxNumberOfModules modules");
@@ -748,7 +749,7 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    */
-  MatrixOf(byte data_in_pin, byte chip_select_pin, byte clock_pin)
+  MatrixOf(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
       : internal::Buffer<NumberOfModules>{},
         Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_,
                NumberOfModules} {}

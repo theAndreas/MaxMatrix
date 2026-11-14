@@ -37,10 +37,10 @@ Message const kMessages[]{
     {kFast, 15},
     {kSlow, 120},
 };
-byte const kNumberOfMessages{sizeof(kMessages) / sizeof(kMessages[0])};
+uint8_t const kNumberOfMessages{sizeof(kMessages) / sizeof(kMessages[0])};
 
 max_matrix::MatrixOf<4> matrix{11, 10, 13};
-byte current{0};
+uint8_t current{0};
 
 void Show(Message const& message) {
   matrix.SetShiftInterval(message.shift_interval_ms);
@@ -60,7 +60,7 @@ void loop() {
   matrix.ShiftTask();
   /* the text has been shifted in completely: on to the next one */
   if (matrix.GetState() == max_matrix::State::kReady) {
-    current = static_cast<byte>((current + 1) % kNumberOfMessages);
+    current = static_cast<uint8_t>((current + 1) % kNumberOfMessages);
     Show(kMessages[current]);
   }
 }

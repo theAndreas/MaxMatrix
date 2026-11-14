@@ -123,6 +123,8 @@ exception goes at the end of a list, with its reason.
   - `MaxMatrixStandardTypes.h` — `STD_ON`/`STD_OFF` and `internal::kNullCharacter`.
   - `MaxMatrixAttributes.h` — `MAXMATRIX_NODISCARD` and `Discard()` of FN-10, which the host
     code uses as well.
+  - `Utility/` — what neither the core nor a library gives (M-3): `Byte`, a byte of raw data
+    as `std::byte`, which avr-gcc lacks.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -316,6 +318,9 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   names what it uses with a using-declaration (`using max_matrix::Error;`), never with
   `using namespace`. The simulator is linked with the sketch and has no namespace yet, so its
   classes start with `Simulator`.
+- `Byte` stands in for `std::byte`, and is named `Byte` against the names of
+  `docs/CodingStyle.md`, which give such a type the standard's name: a `max_matrix::byte` would
+  meet Arduino's `byte` in a sketch that is `using namespace max_matrix` (OIL 41).
 - What Arduino names keeps its name: `setup()` and `loop()` in a sketch, and the stand-ins of
   the Arduino core in `test/mock/` (`digitalWrite()`, `Serial`, `SPI`), which carry a NOLINT.
 - Files are named exactly as the class they hold (F-3), in `PascalCase`, as Arduino names its own
@@ -340,13 +345,23 @@ else in `src/` does.
 
 #### Integer types
 
-Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `byte` for an
-unsigned 8-bit value, as the Arduino API names it, and `int8_t`, `int16_t`, `uint16_t`,
-`uint32_t` and so on for the rest — never `int`, `unsigned`, `short` or `long`. An `int` is 16
+Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `uint8_t`,
+`int8_t`, `int16_t`, `uint16_t`, `uint32_t` and so on — never `int`, `unsigned`, `short` or
+`long`, and never Arduino's `byte`, which says nothing of what it holds (T-17). An `int` is 16
 bits on the Uno and 32 on the host, so the same code would behave differently in the tests
 than on the board. A coordinate that can lie off the panel to the left or above is signed
-(`int16_t`); a `uint8_t` or `byte` that goes into a `std::ostream` is cast to `uint16_t` first,
-or it prints as a char.
+(`int16_t`); a `uint8_t` that goes into a `std::ostream` is cast to `uint16_t` first, or it
+prints as a char. Only the mock keeps `byte`, as the core it stands in for declares it.
+
+A byte of dots is raw data, no number (T-17): a column or a row, the buffer, what a shift takes
+in and gives out is a `Byte`, which takes only the bitwise operators and is a number only
+through `ToInteger()`. A value of a configuration register of the MAX7219, as the intensity
+or the scan limit, is a number and stays a `uint8_t`, `RegisterWrite()` among them; so does a
+table in flash, a font, a sprite or a bitmap, which mixes numbers with columns or is read by
+`pgm_read_byte()`, and is made a `Byte` column by column as it is read. Two things of `Byte`
+are measured choices, each with its reason at the code: its default constructor leaves it as
+`std::byte`'s does, against T-13, and `internal::Panel::ChangeMapping()` keeps its private
+array as numbers, as avr-gcc walks an array of a class by an index (OIL 41, 42).
 
 The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
 into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as

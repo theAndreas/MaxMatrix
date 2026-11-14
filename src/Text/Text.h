@@ -57,7 +57,7 @@ class Text {
   Glyph glyph_{};
   /* 16 bits, as a char and its space take up to 255 + 255 columns */
   uint16_t sprite_shift_counter_{kShiftIdle};
-  byte space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
+  uint8_t space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
   char const* string_{nullptr};
   /* the start of a text that starts over after its last char, NULL for one that
    * stops there */
@@ -70,7 +70,7 @@ class Text {
   Text();
 
   /*! \brief Returns the empty columns between two chars of a text. */
-  MAXMATRIX_NODISCARD byte GetSpaceBetweenChars() const {
+  MAXMATRIX_NODISCARD uint8_t GetSpaceBetweenChars() const {
     return space_between_chars_;
   }
 
@@ -146,7 +146,7 @@ class Text {
    *
    * \param[in] space_between_chars The number of empty columns.
    */
-  void SetSpaceBetweenChars(byte space_between_chars);
+  void SetSpaceBetweenChars(uint8_t space_between_chars);
 
   /*!
    * \brief Draws a sprite with its top left corner at `x`, `y`.

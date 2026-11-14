@@ -13,7 +13,7 @@ using max_matrix::Error;
 using max_matrix::MatrixOf;
 
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
-  for (byte module{0}; module < kNumberOfModules; module++) {
+  for (uint8_t module{0}; module < kNumberOfModules; module++) {
     SCOPED_TRACE(::testing::Message()
                  << "Module " << static_cast<uint16_t>(module));
     Max7219 const& chip{ChipOfModule(module)};
@@ -30,7 +30,7 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
   EXPECT_EQ(
       matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue).GetError(),
       Error::kOk);
-  for (byte module{0}; module < kNumberOfModules; module++) {
+  for (uint8_t module{0}; module < kNumberOfModules; module++) {
     EXPECT_EQ(ChipOfModule(module).intensity,
               max_matrix::max7219::kIntensityMaxValue)
         << "Module " << static_cast<uint16_t>(module);
@@ -40,10 +40,10 @@ TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
  * something, or none until Update(), which sends each changed column of a
  * module once */
 TEST_F(MaxMatrixTest, DrawingInBothModes) {
-  std::vector<byte> drawn;
+  std::vector<uint8_t> drawn;
   int32_t frames_before{mock::frames};
 
-  for (byte column{0}; column < kNumberOfColumns; column++) {
+  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
@@ -54,13 +54,13 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   matrix_.Clear();
   matrix_.SetAutoUpdate(false);
   frames_before = mock::frames;
-  for (byte column{0}; column < kNumberOfColumns; column++) {
+  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
         column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
         true);
   }
   EXPECT_EQ(mock::frames, frames_before);
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0))
       << "shown before Update()";
 
   matrix_.Update();
@@ -71,10 +71,10 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
 TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn) {
   matrix_.SetAutoUpdate(false);
   matrix_.SetText("Hi!");
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0));
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
 
   matrix_.SetAutoUpdate(true);
-  EXPECT_NE(Display(), std::vector<byte>(kNumberOfColumns, 0));
+  EXPECT_NE(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
 }
 
 TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
@@ -82,14 +82,14 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
 
   {
     Batch batch{matrix_};
-    for (byte column{0}; column < kNumberOfColumns; column++) {
+    for (uint8_t column{0}; column < kNumberOfColumns; column++) {
       matrix_.SetDot(
           column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
           true);
     }
     EXPECT_FALSE(matrix_.GetAutoUpdate());
     EXPECT_EQ(mock::frames, frames_before);
-    EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0))
+    EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0))
         << "shown inside the block";
   }
   EXPECT_TRUE(matrix_.GetAutoUpdate());
@@ -208,12 +208,12 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce) {
 /* shutdown darkens every module and loses nothing: a dot drawn meanwhile shows
  * once it ends, at the intensity set before */
 TEST_F(MaxMatrixTest, ShutdownKeepsThePicture) {
-  std::vector<byte> const dark(kNumberOfColumns, 0x00);
+  std::vector<uint8_t> const dark(kNumberOfColumns, 0x00);
 
   ASSERT_TRUE(matrix_.SetIntensity(9).IsOk());
   ASSERT_TRUE(matrix_.SetText("Hi").IsOk());
   matrix_.SetShutdown(true);
-  for (byte module{0}; module < kNumberOfModules; module++) {
+  for (uint8_t module{0}; module < kNumberOfModules; module++) {
     EXPECT_EQ(ChipOfModule(module).shutdown, 0)
         << "module " << static_cast<uint16_t>(module);
   }
@@ -231,13 +231,13 @@ TEST_F(MaxMatrixTest, ShutdownKeepsThePicture) {
  * shutdown, and the picture is back when it ends */
 TEST_F(MaxMatrixTest, DisplayTestLightsEveryLed) {
   ASSERT_TRUE(matrix_.SetText("Hi").IsOk());
-  std::vector<byte> const shown = Display();
+  std::vector<uint8_t> const shown = Display();
 
   matrix_.SetShutdown(true);
   matrix_.SetDisplayTest(true);
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0xFF));
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0xFF));
   matrix_.SetDisplayTest(false);
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0x00))
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0x00))
       << "still in shutdown";
   matrix_.SetShutdown(false);
   EXPECT_EQ(Display(), shown);

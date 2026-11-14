@@ -167,8 +167,8 @@ extern uint8_t clock_pin;
 extern bool transaction_open;
 extern int32_t errors;
 extern int32_t frames;
-extern std::vector<byte> frame;
-extern std::vector<byte> last_frame;
+extern std::vector<uint8_t> frame;
+extern std::vector<uint8_t> last_frame;
 extern Max7219Chain chain;
 /* the bytes Serial has yet to read, and what the sketch has printed */
 extern std::string serial_input;

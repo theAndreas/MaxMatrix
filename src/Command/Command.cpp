@@ -12,6 +12,7 @@
 #include "Command.h"
 
 #include "MaxMatrix.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 
@@ -33,7 +34,7 @@ constexpr uint16_t kMaxInterval{0xFFFF};
 constexpr uint8_t kDecimalBase{10};
 
 /* a byte of `picture` is two hex digits, the high nibble first */
-constexpr byte kLowNibble{0x0FU};
+constexpr uint8_t kLowNibble{0x0FU};
 constexpr uint8_t kNibbleWidth{4U};
 
 }  // namespace
@@ -196,7 +197,7 @@ Status Command::ExecuteSetting(Matrix& matrix, char const* name,
       return number.GetError();
     }
     // ConvertToNumber() held it to the intensity's 15.
-    matrix.SetIntensity(static_cast<byte>(number.GetValue()));
+    matrix.SetIntensity(static_cast<uint8_t>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxInterval)};
     if (!number.IsOk()) {
@@ -209,7 +210,7 @@ Status Command::ExecuteSetting(Matrix& matrix, char const* name,
       return number.GetError();
     }
     // ConvertToNumber() held it to a byte.
-    matrix.SetSpaceBetweenChars(static_cast<byte>(number.GetValue()));
+    matrix.SetSpaceBetweenChars(static_cast<uint8_t>(number.GetValue()));
   } else {
     return Error::kUnknownCommand;
   }
@@ -226,9 +227,9 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
 
   answer.print(F("picture="));
   for (int16_t column{0}; column < columns; column++) {
-    byte const value{matrix.GetColumn(column).GetValue()};
-    byte const high_nibble{static_cast<byte>(value >> kNibbleWidth)};
-    byte const low_nibble{static_cast<byte>(value & kLowNibble)};
+    uint8_t const value{ToInteger(matrix.GetColumn(column).GetValue())};
+    uint8_t const high_nibble{static_cast<uint8_t>(value >> kNibbleWidth)};
+    uint8_t const low_nibble{static_cast<uint8_t>(value & kLowNibble)};
     answer.write(static_cast<uint8_t>(ConvertToHexDigit(high_nibble)));
     answer.write(static_cast<uint8_t>(ConvertToHexDigit(low_nibble)));
   }
@@ -263,7 +264,7 @@ Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
 
 // Computed rather than looked up: a table of the digits would lie in RAM on the
 // Uno.
-char Command::ConvertToHexDigit(byte value) {
+char Command::ConvertToHexDigit(uint8_t value) {
   return static_cast<char>(value < kDecimalBase ? '0' + value
                                                 : 'A' + value - kDecimalBase);
 }

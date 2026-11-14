@@ -55,20 +55,31 @@ void max_matrix::ReportError(__FlashStringHelper const* api, Error error) {
 }
 #endif
 
-std::vector<byte> Bytes(byte const* data, size_t size) {
+std::vector<uint8_t> Bytes(uint8_t const* data, size_t size) {
   // T-20: the library's buffer is a pointer and a length
   // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  return std::vector<byte>(data, data + size);
+  return std::vector<uint8_t>(data, data + size);
 }
 
-Max7219 const& ChipOfModule(byte module) {
+std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size) {
+  std::vector<uint8_t> bytes;
+  // T-20: the library's buffer is a pointer and a length
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  for (max_matrix::Byte const* end{data + size}; data != end; data++) {
+    bytes.push_back(max_matrix::ToInteger(*data));
+  }
+  return bytes;
+}
+
+Max7219 const& ChipOfModule(uint8_t module) {
   return mock::chain.chips[mock::chain.chips.size() - 1 - module];
 }
 
-std::vector<byte> Display() {
-  std::vector<byte> columns;
-  for (byte module{0}; module < mock::chain.chips.size(); module++) {
-    for (byte column{0}; column < max_matrix::kColumnNumberOfModule; column++) {
+std::vector<uint8_t> Display() {
+  std::vector<uint8_t> columns;
+  for (uint8_t module{0}; module < mock::chain.chips.size(); module++) {
+    for (uint8_t column{0}; column < max_matrix::kColumnNumberOfModule;
+         column++) {
       columns.push_back(ChipOfModule(module).Segments(column));
     }
   }
@@ -92,8 +103,8 @@ std::vector<std::string> ShownPicture(Matrix& matrix) {
 }
 
 void DrawPattern(Matrix& matrix) {
-  for (byte x{0}; x < matrix.GetNumberOfColumns(); x++) {
-    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
+  for (uint8_t x{0}; x < matrix.GetNumberOfColumns(); x++) {
+    for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       matrix.SetDot(x, y, Pattern(x, y));
     }
   }

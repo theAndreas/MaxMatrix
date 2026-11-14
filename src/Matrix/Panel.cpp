@@ -17,40 +17,39 @@ namespace internal {
 namespace {
 
 /* a line of the panel is a byte, one dot per bit */
-constexpr byte kDotsPerLine{8};
+constexpr uint8_t kDotsPerLine{8};
 
 /* the upper bits of each half, pair and neighbour of a byte, which
  * ReverseByte() swaps with the lower ones */
-constexpr byte kUpperHalf{0xF0};
-constexpr byte kUpperPairs{0xCC};
-constexpr byte kUpperBits{0xAA};
+constexpr Byte kUpperHalf{0xF0};
+constexpr Byte kUpperPairs{0xCC};
+constexpr Byte kUpperBits{0xAA};
 
 // Returns `value` with the bits under `upper` swapped with those `shift` places
 // below them.
-byte SwapBits(byte value, byte upper, uint8_t shift) {
-  byte const high{static_cast<byte>(value & upper)};
-  byte const low{static_cast<byte>(value & static_cast<byte>(~upper))};
-  return static_cast<byte>(static_cast<byte>(high >> shift) |
-                           static_cast<byte>(low << shift));
+Byte SwapBits(Byte value, Byte upper, uint8_t shift) {
+  Byte const high{value & upper};
+  Byte const low{value & ~upper};
+  return (high >> shift) | (low << shift);
 }
 
 }  // namespace
 
 // FN-3: the three pins, the buffer and its length, as a sketch hands them
 // NOLINTNEXTLINE(readability-function-size)
-Panel::Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-             byte* buffer, byte number_of_modules)
+Panel::Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+             Byte* buffer, uint8_t number_of_modules)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer,
              number_of_modules} {}
 
-Result<byte> Panel::GetColumn(int16_t column) {
+Result<Byte> Panel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns()) {
-    return GetLine(static_cast<byte>(column), 0, true);
+    return GetLine(static_cast<uint8_t>(column), 0, true);
   }
   return Error::kOutOfRange;
 }
 
-Result<byte> Panel::GetColumn(byte module, byte column) {
+Result<Byte> Panel::GetColumn(uint8_t module, uint8_t column) {
   if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
     return GetColumn(
         static_cast<int16_t>((module * kColumnNumberOfModule) + column));
@@ -58,13 +57,13 @@ Result<byte> Panel::GetColumn(byte module, byte column) {
   return Error::kOutOfRange;
 }
 
-void Panel::SetColumn(int16_t column, byte value) {
+void Panel::SetColumn(int16_t column, Byte value) {
   if (column >= 0 && column < GetNumberOfColumns()) {
-    SetLine(static_cast<byte>(column), 0, true, value);
+    SetLine(static_cast<uint8_t>(column), 0, true, value);
   }
 }
 
-void Panel::SetColumn(byte module, byte column, byte value) {
+void Panel::SetColumn(uint8_t module, uint8_t column, Byte value) {
   // The column is checked against the module, not the panel, or column 8 of
   // module 0 would be drawn on module 1.
   if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
@@ -75,37 +74,37 @@ void Panel::SetColumn(byte module, byte column, byte value) {
 
 // The row is taken by reference rather than as a pointer: GetRow(module, 0)
 // would otherwise be ambiguous, as a literal 0 is a null pointer as well.
-Status Panel::GetRow(int16_t row, byte* values, byte number_of_values) {
+Status Panel::GetRow(int16_t row, Byte* values, uint8_t number_of_values) {
   if (row >= 0 && row < kRowNumberOfModule &&
       number_of_values >= GetNumberOfModules()) {
-    byte const modules{GetNumberOfModules()};
-    for (byte module{0}; module < modules; module++) {
-      values[module] = GetRow(module, static_cast<byte>(row)).GetValue();
+    uint8_t const modules{GetNumberOfModules()};
+    for (uint8_t module{0}; module < modules; module++) {
+      values[module] = GetRow(module, static_cast<uint8_t>(row)).GetValue();
     }
     return Error::kOk;
   }
   return Error::kOutOfRange;
 }
 
-Result<byte> Panel::GetRow(byte module, byte row) {
+Result<Byte> Panel::GetRow(uint8_t module, uint8_t row) {
   if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
     return ReverseByte(GetLine(module * kColumnNumberOfModule, row, false));
   }
   return Error::kOutOfRange;
 }
 
-void Panel::SetRow(int16_t row, byte const* values, byte number_of_values) {
+void Panel::SetRow(int16_t row, Byte const* values, uint8_t number_of_values) {
   if (row >= 0 && row < kRowNumberOfModule) {
-    byte const modules{GetNumberOfModules() < number_of_values
-                           ? GetNumberOfModules()
-                           : number_of_values};
-    for (byte module{0}; module < modules; module++) {
-      SetRow(module, static_cast<byte>(row), values[module]);
+    uint8_t const modules{GetNumberOfModules() < number_of_values
+                              ? GetNumberOfModules()
+                              : number_of_values};
+    for (uint8_t module{0}; module < modules; module++) {
+      SetRow(module, static_cast<uint8_t>(row), values[module]);
     }
   }
 }
 
-void Panel::SetRow(byte module, byte row, byte value) {
+void Panel::SetRow(uint8_t module, uint8_t row, Byte value) {
   if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
     SetLine(module * kColumnNumberOfModule, row, false, ReverseByte(value));
   }
@@ -114,9 +113,9 @@ void Panel::SetRow(byte module, byte row, byte value) {
 Result<bool> Panel::GetDot(int16_t column, int16_t row) {
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < kRowNumberOfModule) {
-    BufferDot const dot{
-        ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row))};
-    return static_cast<bool>(bitRead(wired_.GetColumn(dot.column), dot.bit));
+    BufferDot const dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                           static_cast<uint8_t>(row))};
+    return ReadBit(wired_.GetColumn(dot.column), dot.bit);
   }
   return Error::kOutOfRange;
 }
@@ -124,8 +123,8 @@ Result<bool> Panel::GetDot(int16_t column, int16_t row) {
 void Panel::SetDot(int16_t column, int16_t row, bool value) {
   if (column >= 0 && column < GetNumberOfColumns() && row >= 0 &&
       row < kRowNumberOfModule) {
-    BufferDot const dot{
-        ConvertDotToBuffer(static_cast<byte>(column), static_cast<byte>(row))};
+    BufferDot const dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                           static_cast<uint8_t>(row))};
     wired_.StoreBit(dot.column, dot.bit, value);
   }
 }
@@ -231,14 +230,14 @@ void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
 // column cannot overflow.
 // FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
 // NOLINTNEXTLINE(readability-function-size)
-void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
-                       byte height) {
+void Panel::DrawBitmap(int16_t x, int16_t y, uint8_t const* bitmap,
+                       uint8_t width, uint8_t height) {
   if (x >= GetNumberOfColumns()) {
     return;
   }
-  for (byte column{0}; column < width; column++) {
+  for (uint8_t column{0}; column < width; column++) {
     DrawColumn(static_cast<int16_t>(x + column), y, height,
-               pgm_read_byte(bitmap + column));
+               Byte{pgm_read_byte(bitmap + column)});
   }
 }
 
@@ -247,12 +246,12 @@ void Panel::DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
  * outside it are not its own. A column that starts eight rows or more off the
  * panel draws nothing, and one that starts nearer cannot overflow y plus a row.
  */
-void Panel::DrawColumn(int16_t x, int16_t y, byte height, byte value) {
+void Panel::DrawColumn(int16_t x, int16_t y, uint8_t height, Byte value) {
   if (height == kRowNumberOfModule && y == 0) {
     SetColumn(x, value);
   } else if (y > -kRowNumberOfModule && y < kRowNumberOfModule) {
-    for (byte row{0}; row < height; row++) {
-      SetDot(x, static_cast<int16_t>(y + row), bitRead(value, row));
+    for (uint8_t row{0}; row < height; row++) {
+      SetDot(x, static_cast<int16_t>(y + row), ReadBit(value, row));
     }
   }
 }
@@ -300,14 +299,14 @@ void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
  * copy of the whole picture would need its length at compile time.
  */
 void Panel::ShiftLeft(ShiftFill fill) {
-  ShiftLeft(GetFill(fill, 0, static_cast<byte>(GetNumberOfColumns() - 1)));
+  ShiftLeft(GetFill(fill, 0, static_cast<uint8_t>(GetNumberOfColumns() - 1)));
 }
 
-byte Panel::ShiftLeft(byte shifted_in) {
-  byte const last{static_cast<byte>(GetNumberOfColumns() - 1)};
-  byte const shifted_out{GetLine(0, 0, true)};
+Byte Panel::ShiftLeft(Byte shifted_in) {
+  uint8_t const last{static_cast<uint8_t>(GetNumberOfColumns() - 1)};
+  Byte const shifted_out{GetLine(0, 0, true)};
 
-  for (byte panel_column{0}; panel_column < last; panel_column++) {
+  for (uint8_t panel_column{0}; panel_column < last; panel_column++) {
     SetLine(panel_column, 0, true, GetLine(panel_column + 1, 0, true));
   }
   SetLine(last, 0, true, shifted_in);
@@ -315,14 +314,14 @@ byte Panel::ShiftLeft(byte shifted_in) {
 }
 
 void Panel::ShiftRight(ShiftFill fill) {
-  ShiftRight(GetFill(fill, static_cast<byte>(GetNumberOfColumns() - 1), 0));
+  ShiftRight(GetFill(fill, static_cast<uint8_t>(GetNumberOfColumns() - 1), 0));
 }
 
-byte Panel::ShiftRight(byte shifted_in) {
-  byte const last{static_cast<byte>(GetNumberOfColumns() - 1)};
-  byte const shifted_out{GetLine(last, 0, true)};
+Byte Panel::ShiftRight(Byte shifted_in) {
+  uint8_t const last{static_cast<uint8_t>(GetNumberOfColumns() - 1)};
+  Byte const shifted_out{GetLine(last, 0, true)};
 
-  for (byte panel_column{last}; panel_column > 0; panel_column--) {
+  for (uint8_t panel_column{last}; panel_column > 0; panel_column--) {
     SetLine(panel_column, 0, true, GetLine(panel_column - 1, 0, true));
   }
   SetLine(0, 0, true, shifted_in);
@@ -338,14 +337,15 @@ void Panel::ShiftDown(ShiftFill fill) { ShiftRows(false, fill); }
  * column at the edge it leaves, which falls out, or the one at the edge it
  * comes in at, as it is.
  */
-byte Panel::GetFill(ShiftFill fill, byte rotated_column, byte kept_column) {
+Byte Panel::GetFill(ShiftFill fill, uint8_t rotated_column,
+                    uint8_t kept_column) {
   if (fill == ShiftFill::kRotate) {
     return GetLine(rotated_column, 0, true);
   }
   if (fill == ShiftFill::kKeep) {
     return GetLine(kept_column, 0, true);
   }
-  return 0;
+  return Byte{};
 }
 
 /*
@@ -354,23 +354,21 @@ byte Panel::GetFill(ShiftFill fill, byte rotated_column, byte kept_column) {
  * its dot for kKeep.
  */
 void Panel::ShiftRows(bool up, ShiftFill fill) {
-  byte const columns{GetNumberOfColumns()};
-  byte const top{0};
-  byte const bottom{kRowNumberOfModule - 1};
+  uint8_t const columns{GetNumberOfColumns()};
+  uint8_t const top{0};
+  uint8_t const bottom{kRowNumberOfModule - 1};
 
-  for (byte column{0}; column < columns; column++) {
-    byte const value{GetLine(column, 0, true)};
-    byte const fill_row{up ? bottom : top};
+  for (uint8_t column{0}; column < columns; column++) {
+    Byte const value{GetLine(column, 0, true)};
+    uint8_t const fill_row{up ? bottom : top};
     bool fill_dot{false};
     if (fill == ShiftFill::kRotate) {
-      fill_dot = bitRead(value, up ? top : bottom) != 0;
+      fill_dot = ReadBit(value, up ? top : bottom);
     } else if (fill == ShiftFill::kKeep) {
-      fill_dot = bitRead(value, fill_row) != 0;
+      fill_dot = ReadBit(value, fill_row);
     }
-    byte shifted{up ? static_cast<byte>(value >> 1U)
-                    : static_cast<byte>(value << 1U)};
-    bitWrite(shifted, fill_row, fill_dot);
-    SetLine(column, 0, true, shifted);
+    Byte const shifted{up ? value >> 1U : value << 1U};
+    SetLine(column, 0, true, WriteBit(shifted, fill_row, fill_dot));
   }
 }
 
@@ -399,32 +397,39 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
 
   for (int16_t left{0}, right{static_cast<int16_t>(GetNumberOfModules() - 1)};
        left <= right; left++, right--) {
-    byte const left_column{static_cast<byte>(left * kColumnNumberOfModule)};
-    byte const right_column{static_cast<byte>(right * kColumnNumberOfModule)};
-    byte pair[2 * kColumnNumberOfModule];
+    uint8_t const left_column{
+        static_cast<uint8_t>(left * kColumnNumberOfModule)};
+    uint8_t const right_column{
+        static_cast<uint8_t>(right * kColumnNumberOfModule)};
+    /*
+     * T-17: the columns are kept as numbers, not as Byte: avr-gcc 7.3 walks an
+     * array of a class by a 16-bit index rather than a pointer, 80 bytes of
+     * flash more for this function on the Uno. The array does not leave it.
+     */
+    uint8_t pair[2 * kColumnNumberOfModule];
 
     matrix_orientation_ = old_matrix_orientation;
     module_type_ = old_module_type;
-    for (byte column{0}; column < kColumnNumberOfModule; column++) {
-      pair[column] = GetLine(left_column + column, 0, true);
+    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
+      pair[column] = ToInteger(GetLine(left_column + column, 0, true));
       pair[kColumnNumberOfModule + column] =
-          GetLine(right_column + column, 0, true);
+          ToInteger(GetLine(right_column + column, 0, true));
     }
     matrix_orientation_ = matrix_orientation;
     module_type_ = module_type;
-    for (byte column{0}; column < kColumnNumberOfModule; column++) {
-      SetLine(left_column + column, 0, true, pair[column]);
+    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
+      SetLine(left_column + column, 0, true, Byte{pair[column]});
       SetLine(right_column + column, 0, true,
-              pair[kColumnNumberOfModule + column]);
+              Byte{pair[kColumnNumberOfModule + column]});
     }
   }
 }
 
 // Returns `input` with its bits in the opposite order: the halves swapped, then
 // the pairs in each half, then the bits in each pair.
-byte Panel::ReverseByte(byte input) {
-  byte const halves_swapped{SwapBits(input, kUpperHalf, 4)};
-  byte const pairs_swapped{SwapBits(halves_swapped, kUpperPairs, 2)};
+Byte Panel::ReverseByte(Byte input) {
+  Byte const halves_swapped{SwapBits(input, kUpperHalf, 4)};
+  Byte const pairs_swapped{SwapBits(halves_swapped, kUpperPairs, 2)};
   return SwapBits(pairs_swapped, kUpperBits, 1);
 }
 
@@ -442,19 +447,19 @@ byte Panel::ReverseByte(byte input) {
  * than a case for each of the eight types, so that a mirrored module costs no
  * code of its own.
  */
-Panel::BufferDot Panel::ConvertDotToBuffer(byte column, byte row) const {
+Panel::BufferDot Panel::ConvertDotToBuffer(uint8_t column, uint8_t row) const {
   if (matrix_orientation_ == MatrixOrientation::k180) {
-    column = static_cast<byte>(GetNumberOfColumns() - 1 - column);
+    column = static_cast<uint8_t>(GetNumberOfColumns() - 1 - column);
     row = kRowNumberOfModule - 1 - row;
   }
 
-  byte const module{static_cast<byte>(column / kColumnNumberOfModule)};
-  byte const column_from_right{static_cast<byte>(
+  uint8_t const module{static_cast<uint8_t>(column / kColumnNumberOfModule)};
+  uint8_t const column_from_right{static_cast<uint8_t>(
       kColumnNumberOfModule - 1 - (column % kColumnNumberOfModule))};
-  byte const type{static_cast<byte>(module_type_)};
+  uint8_t const type{static_cast<uint8_t>(module_type_)};
   bool const digits_as_rows{(type & internal::kModuleTypeDigitsAsRows) != 0};
-  byte digit{digits_as_rows ? row : column_from_right};
-  byte segment{digits_as_rows ? column_from_right : row};
+  uint8_t digit{digits_as_rows ? row : column_from_right};
+  uint8_t segment{digits_as_rows ? column_from_right : row};
 
   if ((type & internal::kModuleTypeReversedRows) != 0) {
     digit = kColumnNumberOfModule - 1 - digit;
@@ -462,7 +467,8 @@ Panel::BufferDot Panel::ConvertDotToBuffer(byte column, byte row) const {
   if ((type & internal::kModuleTypeReversedColumns) != 0) {
     segment = kRowNumberOfModule - 1 - segment;
   }
-  return {static_cast<byte>((module * kColumnNumberOfModule) + digit), segment};
+  return {static_cast<uint8_t>((module * kColumnNumberOfModule) + digit),
+          segment};
 }
 
 /*
@@ -470,14 +476,15 @@ Panel::BufferDot Panel::ConvertDotToBuffer(byte column, byte row) const {
  * right, or downwards if `vertical`; the first in bit 0. The line has to lie
  * within the matrix.
  */
-byte Panel::GetLine(byte column, byte row, bool vertical) {
-  byte value{0};
+Byte Panel::GetLine(uint8_t column, uint8_t row, bool vertical) {
+  Byte value{};
 
-  for (byte dot{0}; dot < kDotsPerLine; dot++) {
+  for (uint8_t dot{0}; dot < kDotsPerLine; dot++) {
     BufferDot const buffer_dot{ConvertDotToBuffer(
         vertical ? column : column + dot, vertical ? row + dot : row)};
-    bitWrite(value, dot,
-             bitRead(wired_.GetColumn(buffer_dot.column), buffer_dot.bit));
+    value =
+        WriteBit(value, dot,
+                 ReadBit(wired_.GetColumn(buffer_dot.column), buffer_dot.bit));
   }
   return value;
 }
@@ -487,11 +494,11 @@ byte Panel::GetLine(byte column, byte row, bool vertical) {
  * right, or downwards if `vertical`; the first in bit 0 of `value`. The line
  * has to lie within one module.
  */
-void Panel::SetLine(byte column, byte row, bool vertical, byte value) {
-  for (byte dot{0}; dot < kDotsPerLine; dot++) {
+void Panel::SetLine(uint8_t column, uint8_t row, bool vertical, Byte value) {
+  for (uint8_t dot{0}; dot < kDotsPerLine; dot++) {
     BufferDot const buffer_dot{ConvertDotToBuffer(
         vertical ? column : column + dot, vertical ? row + dot : row)};
-    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, bitRead(value, dot));
+    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, ReadBit(value, dot));
   }
 }
 

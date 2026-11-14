@@ -36,8 +36,8 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
   }
 
   /* the display after every step of the shift running now, until it is done */
-  std::vector<std::vector<byte>> ShiftSteps() {
-    std::vector<std::vector<byte>> steps;
+  std::vector<std::vector<uint8_t>> ShiftSteps() {
+    std::vector<std::vector<uint8_t>> steps;
     for (uint16_t step{0}; step < 1000 && matrix_.GetState() != State::kReady;
          step++) {
       matrix_.ShiftTask();
@@ -50,7 +50,7 @@ class MaxMatrixCommandTest : public MaxMatrixTest {
 TEST_F(MaxMatrixCommandTest, TextShowsWhatSetTextShows) {
   matrix_.SetText("xx");
   ASSERT_EQ(FeedLine("text=Hi!\n"), CommandState::kDone);
-  std::vector<byte> const shown = Display();
+  std::vector<uint8_t> const shown = Display();
 
   matrix_.Clear();
   matrix_.SetText("Hi!");
@@ -74,7 +74,7 @@ TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix) {
 
   matrix_.SetText("Hi");
   EXPECT_EQ(FeedLine("clear\n"), CommandState::kDone);
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0));
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
 }
 
 /* SetTextWithShift() keeps only a pointer: a shift that read its text out of
@@ -84,7 +84,7 @@ TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow) {
 
   ASSERT_EQ(FeedLine("textShift=AB\n"), CommandState::kDone);
   ASSERT_EQ(FeedLine("intensity=3\n"), CommandState::kDone);
-  std::vector<std::vector<byte>> const commanded = ShiftSteps();
+  std::vector<std::vector<uint8_t>> const commanded = ShiftSteps();
 
   matrix_.Clear();
   ASSERT_EQ(matrix_.SetTextWithShift(text).GetError(), Error::kOk);
@@ -137,7 +137,7 @@ TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole) {
       "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
 
   EXPECT_EQ(FeedLine(long_text), Error::kLineTooLong);
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0));
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
   EXPECT_EQ(FeedLine("intensity=2\n"), CommandState::kDone);
   EXPECT_EQ(ChipOfModule(0).intensity, 2);
 }
@@ -169,7 +169,7 @@ TEST_F(MaxMatrixCommandTest, EveryLineIsAnsweredOnce) {
 /* picture answers in place of ok, and changes nothing */
 TEST_F(MaxMatrixCommandTest, PictureIsAnsweredWithTheColumns) {
   matrix_.SetText("Hi");
-  std::vector<byte> const shown = Display();
+  std::vector<uint8_t> const shown = Display();
 
   EXPECT_EQ(FeedLine("picture\n"), CommandState::kAnswered);
   ASSERT_EQ(answer_.text.size(), 8 + (2 * kNumberOfColumns) + 2);

@@ -78,7 +78,7 @@ class Command {
    */
   char line_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
   char shift_text_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
-  byte line_length_{0};
+  uint8_t line_length_{0};
   bool line_too_long_{false};
 
   MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix, char* text,
@@ -94,7 +94,7 @@ class Command {
   static void AnswerPicture(Matrix& matrix, Print& answer);
   MAXMATRIX_NODISCARD static Result<uint16_t> ConvertToNumber(char const* text,
                                                               uint16_t maximum);
-  static char ConvertToHexDigit(byte value);
+  static char ConvertToHexDigit(uint8_t value);
 
  public:
   /*! \brief Makes a reader at the start of an empty line. */

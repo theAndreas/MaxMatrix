@@ -111,7 +111,8 @@ set(MaxMatrixTestSources
     test/Matrix/PanelTest.cpp
     test/Matrix/WiredTest.cpp
     test/Max7219/ChainTest.cpp
-    test/Text/TextTest.cpp)
+    test/Text/TextTest.cpp
+    test/Utility/ByteTest.cpp)
 
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})

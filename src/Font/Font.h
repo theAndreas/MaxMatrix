@@ -31,7 +31,7 @@ constexpr uint16_t kDefaultFontSize{614};
  * SpriteByte names its bytes. A char of a font is a Glyph
  * instead.
  */
-using Sprite = byte[kSpriteNumberOfBytes];
+using Sprite = uint8_t[kSpriteNumberOfBytes];
 
 /*! \brief The bytes of a Sprite; a plain enum, as each indexes a Sprite. */
 enum SpriteByte : uint8_t {  // NOLINT(cppcoreguidelines-use-enum-class)
@@ -49,14 +49,14 @@ enum SpriteByte : uint8_t {  // NOLINT(cppcoreguidelines-use-enum-class)
 struct Glyph {
   uint8_t const*
       columns; /*!< Its columns in flash, leftmost first, bit 0 the top row. */
-  byte width;  /*!< The columns it takes, 1 to 255. */
-  byte height; /*!< The rows it takes, the height of its font, 1 to 8. */
+  uint8_t width;  /*!< The columns it takes, 1 to 255. */
+  uint8_t height; /*!< The rows it takes, the height of its font, 1 to 8. */
 };
 
 /*! \brief A char of a text, as Font::DecodeChar() reads it. */
 struct DecodedChar {
-  char c;      /*!< The char, latin-1. */
-  byte length; /*!< The bytes it took in the text, 1 or 2. */
+  char c;         /*!< The char, latin-1. */
+  uint8_t length; /*!< The bytes it took in the text, 1 or 2. */
 };
 
 /*!

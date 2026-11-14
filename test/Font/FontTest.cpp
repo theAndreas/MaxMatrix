@@ -41,8 +41,8 @@ static uint8_t const kWideFont[] PROGMEM{
 };
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */
 TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
-  std::vector<byte> utf8;
-  std::vector<byte> latin1;
+  std::vector<uint8_t> utf8;
+  std::vector<uint8_t> latin1;
 
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC3\x84\xC3\xB6\xC3\xBC!").GetError(),
@@ -73,14 +73,14 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
   std::array<char const*, 8> const chars{{"\xC3\x84", "\xC3\x96", "\xC3\x9C",
                                           "\xC3\xA4", "\xC3\xB6", "\xC3\xBC",
                                           "\xC3\x9F", "\xC2\xB0"}};
-  std::array<byte, 8> const codes{
+  std::array<uint8_t, 8> const codes{
       {0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF, 0xB0}};
 
-  for (byte i{0}; i < 8; i++) {
+  for (uint8_t i{0}; i < 8; i++) {
     SCOPED_TRACE(chars[i]);
     DecodedChar const decoded{Font::DecodeChar(chars[i])};
     EXPECT_EQ(decoded.length, 2);
-    EXPECT_EQ(static_cast<byte>(decoded.c), codes[i]);
+    EXPECT_EQ(static_cast<uint8_t>(decoded.c), codes[i]);
     EXPECT_EQ(Font::GetGlyph(kDefaultFont, decoded.c).GetError(), Error::kOk);
   }
 
@@ -100,9 +100,9 @@ TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn) {
     SCOPED_TRACE(text);
     matrix_.Clear();
     EXPECT_EQ(matrix_.SetText(text).GetError(), Error::kOk);
-    std::vector<byte> const shown = Display();
+    std::vector<uint8_t> const shown = Display();
     EXPECT_TRUE(std::any_of(shown.begin(), shown.end(),
-                            [](byte column) { return column != 0; }));
+                            [](uint8_t column) { return column != 0; }));
   }
 }
 
@@ -168,14 +168,14 @@ TEST_F(MaxMatrixTest, DefaultFontHasAsciiAndNothingBetween) {
  * not the panel's, so dot by dot; a char it lacks, by a width of 0 or beyond
  * its last, fails as one the default font lacks */
 TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
-  std::array<byte, 7> const expected{
+  std::array<uint8_t, 7> const expected{
       {0x42, 0x7F, 0x00, 0x3E, 0x41, 0x3E, 0x00}};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   EXPECT_EQ(matrix_.GetFont(), kDigitFont);
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
-  for (byte column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
+  for (uint8_t column{0}; column < expected.size(); column++) {
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
         << "column " << static_cast<uint16_t>(column);
   }
   EXPECT_EQ(matrix_.SetText("2").GetError(), Error::kUnknownChar);
@@ -188,12 +188,12 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
 /* version 2 gives first and last char in two bytes each, so its chars start two
  * bytes later */
 TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
-  std::array<byte, 6> const expected{{0x3E, 0x41, 0x3E, 0x00, 0x42, 0x7F}};
+  std::array<uint8_t, 6> const expected{{0x3E, 0x41, 0x3E, 0x00, 0x42, 0x7F}};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
-  for (byte column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
+  for (uint8_t column{0}; column < expected.size(); column++) {
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
         << "column " << static_cast<uint16_t>(column);
   }
 }
@@ -205,8 +205,8 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
 
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
-  for (byte column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1U << column)
+  for (uint8_t column{0}; column < 8; column++) {
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), 1U << column)
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -216,9 +216,10 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
-  for (byte column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue(),
-              1U << column)
+  for (uint8_t column{0}; column < 8; column++) {
+    EXPECT_EQ(
+        ToInteger(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue()),
+        1U << column)
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }
