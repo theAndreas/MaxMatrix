@@ -51,6 +51,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
 | 41 | The template's rules that review checks | 36 | open | |
+| 42 | A newer avr-gcc as a cross-check | 41 | done | |
+| 43 | Bit operations in one class, from the template | 41 | open | |
 
 ### 1 Build with CMake
 
@@ -966,6 +968,42 @@ A first look found, besides those two:
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
 rule or chapter, with what it finds fixed, F-10 first, as it changes no code.
+
+### 42 A newer avr-gcc as a cross-check
+
+`max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
+though every function of it is inlined. avr-gcc 7.3, which the Arduino AVR core brings and every
+user of the IDE compiles with, walks an array of a class by a 16-bit index rather than a pointer,
+and a class whose member is initialized has a constructor that is not trivial: the buffer of a
+`MatrixOf` is then cleared by a loop at start, and `memset()` may not clear it. The question was
+whether the two exceptions this called for, a private array of numbers in
+`internal::Panel::ChangeMapping()` and a constructor that leaves the byte as `std::byte` does,
+are needed for 7.3 alone.
+
+Measured on 2026-11-14 with avr-gcc 16.1 of [avr-gcc-build](https://github.com/ZakKemble/avr-gcc-build),
+flash of the examples on the Uno:
+
+| Example | `uint8_t` | `Byte`, initialized, array of `Byte` | `Byte` as built |
+|---|---|---|---|
+| Basics | 3658 | 3648 | 3604 |
+| ScrollText | 3470 | 3472 | 3426 |
+| Sprites | 2354 | 2344 | 2300 |
+
+16.1 compiles the plain `Byte` about as small as `uint8_t`, where 7.3 took 30 to 50 bytes more;
+the two exceptions save 44 to 54 bytes with 16.1 as well, and `ChangeMapping()` with an array
+of `Byte` is 46 bytes larger there too. So they stay for both. The library is measured with
+the avr-gcc the core brings; when the core moves to a newer one, the numbers are taken again.
+
+### 43 Bit operations in one class, from the template
+
+The bits of a byte are read and written in several ways today: the core's `bitRead()`,
+`bitWrite()` and `bitSet()`, which are macros (T-6) and shift a `1UL`, 32 bits on the Uno, and
+`ReadBit()` and `WriteBit()` of `Byte` (41). Utl has them in one class, `utl::Bit<Integer>`:
+a value read and written bit by bit, and static functions for a value only passed through.
+The template is to bring it to every project; once it does, MaxMatrix takes it, the core's
+macros go from `src/`, and `Byte` passes its bit functions on to it. 41 measured that shifting
+the value down to the bit, rather than a mask up to it, is 26 bytes smaller in `Basics`, while
+`Bit::ReadBit()` shifts the mask: to be measured there.
 
 ## Decisions
 
