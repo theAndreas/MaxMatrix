@@ -124,8 +124,9 @@ exception goes at the end of a list, with its reason.
   - `MaxMatrixAttributes.h` — `MAXMATRIX_NODISCARD` and `Discard()` of FN-10, which the host
     code uses as well.
   - `Utility/` — what neither the core nor a library gives (M-3): `Byte`, a byte of raw data
-    as `std::byte`, and `internal::reference_wrapper`, a member that refers to an object
-    another owns, as FN-15 asks; avr-gcc lacks both.
+    as `std::byte`; `array` and `make_array()`, an array that knows its size as T-20 asks, and
+    its size taken from its values; and `internal::reference_wrapper`, a member that refers to
+    an object another owns, as FN-15 asks. avr-gcc lacks all three.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -308,8 +309,7 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 - Constants, `constexpr` and `const` with static storage, start with `k`: `kErrorTexts`,
   `kDataInPin` in a sketch.
 - Enums are `enum class` with values in the same form: `State::kReady`,
-  `Error::kOutOfRange`. The indices of a sprite, `kSpriteWidth` and on, are a plain
-  enum, as they index an array.
+  `Error::kOutOfRange`.
 - Macros upper case and prefixed with the library: `MAXMATRIX_USE_SPI`. An include guard
   names the path:
   `MAXMATRIX_SRC_MATRIX_PANEL_H_`.
@@ -358,8 +358,9 @@ A byte of dots is raw data, no number (T-17): a column or a row, the buffer, wha
 in and gives out is a `Byte`, which takes only the bitwise operators and is a number only
 through `ToInteger()`. A value of a configuration register of the MAX7219, as the intensity
 or the scan limit, is a number and stays a `uint8_t`, `RegisterWrite()` among them; so does a
-table in flash, a font, a sprite or a bitmap, which mixes numbers with columns or is read by
-`pgm_read_byte()`, and is made a `Byte` column by column as it is read. Two things of `Byte`
+table in flash, a font or a bitmap, which mixes numbers with columns or is read by
+`pgm_read_byte()`, and so do the columns of a `Sprite`, which a sketch writes beside its width
+and height, as a font's; each is made a `Byte` column by column as it is read. Two things of `Byte`
 are measured choices, each with its reason at the code: its default constructor leaves it as
 `std::byte`'s does, against T-13, and `internal::Panel::ChangeMapping()` keeps its private
 array as numbers, as avr-gcc walks an array of a class by an index (OIL 41, 42).

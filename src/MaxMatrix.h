@@ -542,10 +542,9 @@ class Matrix {
    *
    * \param[in] x The column of the left edge; it may lie off the matrix.
    * \param[in] y The row of the top edge; it may lie off the matrix.
-   * \param[in] sprite Its width, its height and up to five columns, bit 0 the
-   *                   top row.
+   * \param[in] sprite The sprite.
    */
-  void SetSprite(int16_t x, int16_t y, Sprite const sprite) {
+  void SetSprite(int16_t x, int16_t y, Sprite const& sprite) {
     max_matrix::internal::Text::SetSprite(panel_, x, y, sprite);
     UpdateIfAuto();
   }
