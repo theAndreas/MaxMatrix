@@ -69,5 +69,30 @@ TEST(ArrayTest, MakeArrayTakesNegativeValuesThatFit) {
   EXPECT_EQ(kOffsets[2], 127);
 }
 
+/* texts that may be written, into an array that only reads them: the range
+ * check cast each pointer back to char*, which did not compile */
+TEST(ArrayTest, MakeArrayTakesWhatConvertsWithoutNarrowing) {
+  char first[] = "first";
+  char second[] = "second";
+
+  auto const texts{make_array<char const*>(first, second)};
+
+  EXPECT_EQ(texts[0], first);
+  EXPECT_EQ(texts[1], second);
+}
+
+/* an aggregate of the type, which the range check cannot compare */
+TEST(ArrayTest, MakeArrayTakesAnAggregateOfTheType) {
+  struct Point {
+    int8_t x;
+    int8_t y;
+  };
+
+  constexpr auto kCorners{make_array<Point>(Point{1, 2}, Point{3, 4})};
+
+  static_assert(kCorners[1].y == 4, "the aggregate as it is");
+  EXPECT_EQ(kCorners[0].x, 1);
+}
+
 }  // namespace
 }  // namespace max_matrix
