@@ -124,7 +124,8 @@ exception goes at the end of a list, with its reason.
   - `MaxMatrixAttributes.h` — `MAXMATRIX_NODISCARD` and `Discard()` of FN-10, which the host
     code uses as well.
   - `Utility/` — what neither the core nor a library gives (M-3): `Byte`, a byte of raw data
-    as `std::byte`, which avr-gcc lacks.
+    as `std::byte`, and `internal::reference_wrapper`, a member that refers to an object
+    another owns, as FN-15 asks; avr-gcc lacks both.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is

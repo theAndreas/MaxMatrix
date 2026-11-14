@@ -215,3 +215,5 @@ CheckOptions:
   readability-identifier-naming.EnumConstantPrefix: k
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
   readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z][A-Z0-9_]*_$'
+  # MaxMatrix's own: internal::reference_wrapper mimics the standard's, as FN-15 and M-3 ask.
+  readability-identifier-naming.ClassIgnoredRegexp: '^reference_wrapper$'
