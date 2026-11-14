@@ -935,8 +935,17 @@ rule wins, and the notes change with the code:
 - **T-17, no `byte`.** A byte that is a number, as a coordinate, a count or an intensity, is a
   `uint8_t`; one that is raw data, as a column of the buffer or a row of a glyph, a type that is
   no number, by M-3. `std::byte` is C++17 and avr-gcc brings no standard library, and MaxMatrix
-  depends on neither the ETL nor Utl (28), so which type that is, and what it costs a sketch that
-  passes a column as a literal today, is decided before the code changes.
+  depends on neither the ETL nor Utl (28), so the type is MaxMatrix's own: a class
+  `max_matrix::Byte` with the interface of `std::byte`, not the `enum class` T-17 names, as an
+  `enum class` cannot be made from a number in braces before C++17, `Byte{0x3C}`, which a sketch
+  would have to write as a `static_cast` (tried with avr-gcc 7.3 and GCC in gnu++11). Being no
+  number, it keeps a column and its value from being swapped, the reason
+  `bugprone-easily-swappable-parameters` is off. It is named `Byte` against the names of
+  CodingStyle.md, which give a type that mimics the standard's its name: a `max_matrix::byte`
+  would meet Arduino's `byte` in a sketch that is `using namespace max_matrix`. Not taken from
+  Utl, which is in no Library Manager yet and would be a dependency for every user for one type;
+  Utl gets a `utl::byte` of its own, and the template's T-17 the class for C++11, once MaxMatrix
+  has measured it. What it costs on the Uno is measured on a prototype before it is built.
 - **F-10, ASCII only.** A non-ASCII char in a string is written as its bytes in escapes; an escape
   takes every hex digit after it, so a string goes on in a literal of its own:
   `"\xC3\x96" "fen"`. In a comment the char is named, as `A umlaut`.
