@@ -7,8 +7,8 @@
 # CI. Not the working tree: the Library Manager sees the repository, and the working tree has
 # build/ and .venv beside it, whose links arduino-lint reports as a library's. So what git has,
 # tracked or new and not ignored, is copied into a folder of the library's name in build/, and
-# that is checked. With --copy-only it makes the copy, prints its path and stops, for a workflow
-# that checks it with arduino-lint's action.
+# that is checked. CI runs it as a developer does, through `make arduino-lint`, with arduino-lint
+# installed by the action arduino-lint-setup at the dev container's version.
 
 set -euo pipefail
 
@@ -16,11 +16,8 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 main() {
-  local copy_only=0
-  if [[ "${1:-}" == "--copy-only" ]]; then
-    copy_only=1
-  elif [[ $# -gt 0 ]]; then
-    err "Usage: $0 [--copy-only]"
+  if [[ $# -gt 0 ]]; then
+    err "Usage: $0"
     exit 2
   fi
 
@@ -49,10 +46,6 @@ main() {
     done \
     | tar --null --files-from=- --create --file=- \
     | tar --extract --file=- --directory="${copy}"
-  if ((copy_only)); then
-    echo "${copy}"
-    exit 0
-  fi
   arduino-lint --library-manager submit --compliance strict "${copy}"
 }
 

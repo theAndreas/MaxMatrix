@@ -14,7 +14,6 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -bugprone-dynamic-static-initializers,
   -cert-dcl37-c,
   -cert-dcl51-cpp,
   -cert-dcl58-cpp,
@@ -66,10 +65,9 @@ Checks: >
 #   <avr/pgmspace.h>, which the host lacks. Its includes are written by hand, in a pull request
 #   of their own.
 # house-*: the checks of our own, in tools/lib/tidy_module/; tools/tidy.sh loads them. Without
-#   the module, as in clangd, the name matches nothing.
-# bugprone-dynamic-static-initializers: it reports the extern declaration of a constant whose
-#   constexpr definition lies in a .cpp it cannot see, as an object identified by its address
-#   has to be.
+#   the module, as in clangd, the name matches nothing. house-bitwise-in-bit-class takes the
+#   bit class to be any class named Bit (docs/CodingStyle.md H-9); a project whose class has
+#   another name sets house-bitwise-in-bit-class.BitClasses below, names separated by `;`.
 # cert-dcl37-c, cert-dcl51-cpp, cert-dcl58-cpp: aliases of bugprone-reserved-identifier and
 #   bugprone-std-namespace-modification, which are on; two names would want two NOLINTs.
 # cppcoreguidelines-avoid-c-arrays, -avoid-magic-numbers, -c-copy-assignment-signature,
@@ -142,8 +140,9 @@ ExtraArgs:
   - -Wdocumentation-unknown-command
   - -fcomment-block-commands=stddiff
 # (^|/), as tools/tidy.sh names the files relative to the repository, and a
-# header beside an example is found as examples/.../font_error.h.
-HeaderFilterRegex: '(^|/)(src|examples)/'
+# header beside an example is found as examples/.../font_error.h. platform/ for a firmware's
+# backends, whose headers tools/tidy.sh reads with the target that compiles them.
+HeaderFilterRegex: '(^|/)(src|examples|platform)/'
 CheckOptions:
   # The size of a function, docs/CodingStyle.md FN-2 to FN-5: 40 lines of body,
   # 4 parameters, 3 levels within the body (the body itself is level 1 to the
@@ -155,6 +154,11 @@ CheckOptions:
   readability-function-cognitive-complexity.Threshold: 15
   # A text in PROGMEM is a char array, as F() and a table of texts need one.
   modernize-avoid-c-arrays.AllowStringArrays: true
+  # A literal's suffix, docs/CodingStyle.md T-22: every L upper case, which MISRA 5.13.5 asks
+  # and the check exists for; the u lower case rather than the check's U, which a hexadecimal
+  # value reads on as a digit. The check looks a suffix up in the list in either case and
+  # reports one written otherwise; one the list does not name, as the f of 1.0f, it leaves.
+  readability-uppercase-literal-suffix.NewSuffixes: 'u;uL;uLL;Lu;LLu;L;LL'
   # A list over several lines ends in a comma, unless it is one value whose
   # expression wraps, as in Result<...> const end{ReadDigits(...)}: there a
   # comma would read as the start of a second value.
@@ -175,8 +179,10 @@ CheckOptions:
   # from the core's folder and from the variant's. And <avr/io.h> as what
   # provides a part's registers: avr-libc includes the part's header through
   # it, at times through a second one, as iom2560.h through iomxx0_1.h, which
-  # include-cleaner does not take back to <avr/io.h>.
-  misc-include-cleaner.IgnoreHeaders: '.*/cores/arduino/.*;.*/variants/.*;.*/avr/io[^/]*\.h'
+  # include-cleaner does not take back to <avr/io.h>. Any core's folder, not
+  # only cores/arduino/ of Arduino's: a third party's core has its own, as
+  # cores/xmega/ of XMegaForArduino's, where Serial comes from.
+  misc-include-cleaner.IgnoreHeaders: '.*/cores/[^/]+/.*;.*/variants/.*;.*/avr/io[^/]*\.h'
   # Google's names, which readability-identifier-naming checks only once it is told them; the
   # same block in every project, so that every project names alike. Two exceptions Google
   # makes itself are general: an accessor is named like the variable it gives (group(),

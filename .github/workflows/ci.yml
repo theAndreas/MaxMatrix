@@ -136,11 +136,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # "submit" while the library is not in the Library Manager; once it is, "update" adds the
-      # checks for a new release. Only for an Arduino library: one of CMake alone has no
-      # library.properties, and the Library Manager's rules are not its.
+      # Only for an Arduino library: one of CMake alone and a firmware have no
+      # library.properties, and the Library Manager's rules are not theirs; `make arduino-lint`
+      # says so and passes. The flags, "submit" while the library is not in the Library Manager
+      # and "update" once it is, are tools/arduino_lint.sh's, the same here and for a developer.
       - if: hashFiles('library.properties') != ''
-        uses: arduino/arduino-lint-action@v3
-        with:
-          project-type: library
-          library-manager: submit
+        uses: ./.github/actions/arduino-lint-setup
+
+      - run: make arduino-lint

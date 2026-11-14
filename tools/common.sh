@@ -31,7 +31,7 @@ readonly BUILD_DIR="${ROOT_DIR}/build"
   PIO_DIR=""
   PIO_ENV=""
   FQBN="arduino:avr:uno"
-  ARDUINO_CORE="arduino:avr"
+  ARDUINO_CORE=(arduino:avr)
   ARDUINO_BOARD_URLS=""
   SIMAVR_MCU="atmega328p"
   SIMAVR_FREQUENCY=16000000
@@ -41,7 +41,9 @@ readonly BUILD_DIR="${ROOT_DIR}/build"
   TIDY_VARIANTS=(default)
   DOCS_INTERNAL_API=""
   CPPCHECK=1
+  COVERAGE_MINIMUM=(100 100 100)
   HOST_CODE=()
+  TIDY_SKIP=()
 }
 
 # The hooks, which do nothing unless tools/project.sh defines them again, and
@@ -61,6 +63,18 @@ readonly BUILD_DIR="${ROOT_DIR}/build"
   }
 
   check_elf() {
+    :
+  }
+
+  coverage_suites() {
+    :
+  }
+
+  cppcheck_flags() {
+    :
+  }
+
+  docs_inputs() {
     :
   }
 }

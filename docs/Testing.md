@@ -9,7 +9,7 @@ reasons for. Like CodingStyle.md, each rule has an id and says what checks it.
 
 | Kind | Where | Proves | Run by |
 |---|---|---|---|
-| **On the host** | `test/*_test.cpp`, GoogleTest against the mock in `test/mock/` | What the library computes: every function, every branch, every edge | `make tests`, `make clang`, `make sanitize`, `make coverage` |
+| **On the host** | `test/<Module>/<Class>Test.cpp` and `test/<Module>/<name>_test.cpp`, GoogleTest against the mock in `test/mock/` | What the library computes: every function, every branch, every edge | `make tests`, `make clang`, `make sanitize`, `make coverage` |
 | **What must not compile** | `test/compile_fail/*.cpp` | That a misuse is stopped by the compiler, with the message it names | `make tests` |
 | **What must warn** | `test/compile_warn/*.cpp` | That a mistake the compiler only warns of, as a dropped result, is reported, with the warning it names, in every standard the library is built in | `make tests` |
 | **Fuzzed** | `test/fuzz/*_fuzz.cpp`, libFuzzer under ASan and UBSan | That what reads bytes or text, a parser or a protocol, holds for every input, not only for those a test thought of | `make fuzz` |
@@ -29,9 +29,9 @@ what catches it:
 | Id | Rule | Checked by |
 |---|---|---|
 | TS-1 | Every behaviour is tested on the host; the target checks only what the host cannot show. A check in SelfCheck that the host could make is a test on the host instead. | Review |
-| TS-2 | A misuse that a `static_assert` stops has a case in `test/compile_fail/`, whose line `// Expected: ...` names the message; a mistake an attribute makes the compiler warn of, as `MAXMATRIX_NODISCARD`, has one in `test/compile_warn/`, whose line names the warning. | `add_compile_fail_tests()`, `add_compile_warn_tests()` |
+| TS-2 | A misuse that the compiler stops has a case in `test/compile_fail/`, whose line `// Expected: ...` names what only that stop says: the message of a `static_assert`, or the function that is not `constexpr` where a constant evaluation ends at it, as one a value that does not fit calls; a mistake an attribute makes the compiler warn of, as `MAXMATRIX_NODISCARD`, has one in `test/compile_warn/`, whose line names the warning. | `add_compile_fail_tests()`, `add_compile_warn_tests()` |
 | TS-3 | A bug is fixed after a test that shows it fails, and the test stays. | Review |
-| TS-4 | Every line, every branch and every condition of `src/` is reached by a test on the host: each condition of a decision shown to turn its outcome alone (MC/DC), as GCC measures it from version 14. The tests follow what the documentation promises, not what the code does; a line they miss is first a question whether the promise is complete, then one for a test. A branch no test can reach is a question about the code, not about the test; where the code keeps it, as a way out the hardware may take, it is excluded with `GCOVR_EXCL_LINE: `, or `GCOVR_EXCL_BR_LINE: ` for its branches and conditions alone, and the reason, and an exclusion without one fails. | `make coverage`, which fails on anything missed |
+| TS-4 | Every line, every branch and every condition of `src/` is reached by a test on the host: each condition of a decision shown to turn its outcome alone (MC/DC), as GCC measures it from version 14. The tests follow what the documentation promises, not what the code does; a line they miss is first a question whether the promise is complete, then one for a test. A branch no test can reach is a question about the code, not about the test; where the code keeps it, as a way out the hardware may take, it is excluded with `GCOVR_EXCL_LINE: `, or `GCOVR_EXCL_BR_LINE: ` for its branches and conditions alone, and the reason, and an exclusion without one fails. Tests that `CMakeLists.txt` does not build, as a backend's suite of its own, count as well, through `coverage_suites()` of `tools/project.sh`. A project brought in below this states what it reaches in `COVERAGE_MINIMUM` of `tools/project.sh`, lines, branches and conditions, and raises it as it reaches more. | `make coverage`, which fails on anything missed, or below `COVERAGE_MINIMUM` |
 | TS-24 | Every test on the host passes under AddressSanitizer and UBSan as well, which find what a test passes by chance: a read beyond an array, an overflow of a signed type. | `make sanitize` |
 
 ## Files and names
@@ -78,7 +78,7 @@ what catches it:
 
 | Id | Rule | Checked by |
 |---|---|---|
-| TS-24 | Code that reads bytes or text from outside, a parser, a protocol, a stored blob, has a fuzzer: `test/fuzz/<name>_fuzz.cpp` for a family of functions, `<Class>Fuzz.cpp` for a class, defining `LLVMFuzzerTestOneInput()`. | Review |
-| TS-25 | A fuzzer states what must hold for every input and calls `std::abort()` where it does not; a crash, a read out of bounds and undefined behaviour are found by ASan and UBSan without a word of its own. | Review, `make fuzz` |
-| TS-26 | A fuzzer starts each input from the same state: what one input leaves behind makes a crash that its own file does not replay. | Review |
-| TS-27 | An input a fuzzer found to fail becomes a test on the host before it is fixed, and its file goes into `test/fuzz/corpus/<name>/`, so that the fuzzer starts from it. | Review |
+| TS-28 | Code that reads bytes or text from outside, a parser, a protocol, a stored blob, has a fuzzer: `test/fuzz/<name>_fuzz.cpp` for a family of functions, `<Class>Fuzz.cpp` for a class, defining `LLVMFuzzerTestOneInput()`. | Review |
+| TS-29 | A fuzzer states what must hold for every input and calls `std::abort()` where it does not; a crash, a read out of bounds and undefined behaviour are found by ASan and UBSan without a word of its own. | Review, `make fuzz` |
+| TS-30 | A fuzzer starts each input from the same state: what one input leaves behind makes a crash that its own file does not replay. | Review |
+| TS-31 | An input a fuzzer found to fail becomes a test on the host before it is fixed, and its file goes into `test/fuzz/corpus/<name>/`, so that the fuzzer starts from it. | Review |

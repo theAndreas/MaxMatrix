@@ -70,11 +70,11 @@ clang: ## The same tests by clang, which warns about other things
 	cmake --workflow --preset $(PRESET)clang
 
 sanitize: ## The tests under AddressSanitizer and UBSan
-	cmake --workflow --preset sanitize
+	cmake --workflow --preset $(PRESET)sanitize
 
 # Into the job's summary as well when there is one, which is CI's.
 coverage: ## The tests with --coverage, and what they reach of src/
-	tools/coverage.sh
+	tools/coverage.sh $(PRESET)coverage
 	if [[ -n "$${GITHUB_STEP_SUMMARY:-}" ]]; then \
 	    { echo '```text'; cat build/coverage/coverage.txt; echo '```'; } >> "$$GITHUB_STEP_SUMMARY"; \
 	fi
@@ -97,7 +97,7 @@ stack: ## The deepest stack of each program against the RAM it leaves, on each A
 # Built with clang, which brings libFuzzer, into build/fuzz; what each found before is the corpus
 # it goes on from.
 fuzz: ## The fuzzers of test/fuzz/, FUZZ_SECONDS each, under ASan and UBSan
-	cmake --workflow --preset fuzz
+	cmake --workflow --preset $(PRESET)fuzz
 	tools/fuzz.sh
 
 ## Analysers

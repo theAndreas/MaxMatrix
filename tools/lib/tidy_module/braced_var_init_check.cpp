@@ -33,6 +33,7 @@ using clang::SourceLocation;
 // What the check does with an initializer.
 enum class Verdict {
   kFix,        // reported with a fix-it
+  kText,       // reported with a fix-it: a text in a C array, braced
   kNarrowing,  // reported without one: an argument narrows
   kDependent,  // reported without one: depends on the instantiation
   kExplicit,   // reported without one: braces would consider an explicit
@@ -194,6 +195,32 @@ std::optional<Temporary> AsTemporary(Expr const& expr, QualType type,
 bool IsStringArray(QualType type, Expr const& init) {
   return type->isArrayType() &&
          llvm::isa<clang::StringLiteral>(init.IgnoreImplicit());
+}
+
+// `char kName[] = {"font"};` or `char kName[]{"font"};`, the text in braces:
+// the fix-it writes it as T-20 does, `= "font"`, the one form
+// modernize-avoid-c-arrays' AllowStringArrays lets through. `equal` says
+// whether an `=` stands before the braces, which the fix-it then keeps.
+std::optional<Finding> BracedText(QualType type, Expr const& init, bool equal) {
+  auto const* const list =
+      llvm::dyn_cast<clang::InitListExpr>(init.IgnoreImplicit());
+  if (!type->isArrayType() || list == nullptr || list->getNumInits() != 1 ||
+      !llvm::isa<clang::StringLiteral>(list->getInit(0)->IgnoreImplicit()) ||
+      list->getLBraceLoc().isMacroID() || list->getRBraceLoc().isMacroID()) {
+    return std::nullopt;
+  }
+  Finding finding;
+  finding.verdict = Verdict::kText;
+  finding.where = list->getLBraceLoc();
+  finding.written = equal ? "'=' and braces" : "braces";
+  if (equal) {
+    finding.fixes.push_back(FixItHint::CreateRemoval(list->getLBraceLoc()));
+  } else {
+    finding.fixes.push_back(
+        FixItHint::CreateReplacement(list->getLBraceLoc(), " = "));
+  }
+  finding.fixes.push_back(FixItHint::CreateRemoval(list->getRBraceLoc()));
+  return finding;
 }
 
 // `T x = value;`, `T x = {1, 2};` or `T x = T(1, 2);`, of a variable or of a
@@ -379,29 +406,38 @@ void BracedVarInitCheck::check(
         IsStringArray(var->getType(), *var->getInit())) {
       return;
     }
-    switch (var->getInitStyle()) {
-      case clang::VarDecl::CInit:
-        finding = CopyInit(source, context, var->getLocation(), var->getType(),
-                           *var->getInit(), DeducedOf(*var));
-        break;
-      case clang::VarDecl::CallInit:
-      case clang::VarDecl::ParenListInit:
-        finding = CallInit(source, context, var->getLocation(), var->getType(),
-                           *var->getInit(), DeducedOf(*var));
-        break;
-      case clang::VarDecl::ListInit:
-        break;
+    finding = BracedText(var->getType(), *var->getInit(),
+                         var->getInitStyle() == clang::VarDecl::CInit);
+    if (!finding) {
+      switch (var->getInitStyle()) {
+        case clang::VarDecl::CInit:
+          finding = CopyInit(source, context, var->getLocation(),
+                             var->getType(), *var->getInit(), DeducedOf(*var));
+          break;
+        case clang::VarDecl::CallInit:
+        case clang::VarDecl::ParenListInit:
+          finding = CallInit(source, context, var->getLocation(),
+                             var->getType(), *var->getInit(), DeducedOf(*var));
+          break;
+        case clang::VarDecl::ListInit:
+          break;
+      }
     }
   } else if (auto const* field =
                  result.Nodes.getNodeAs<clang::FieldDecl>("field")) {
     decl = field;
-    if (field->getInClassInitStyle() != clang::ICIS_CopyInit ||
+    if (field->getInClassInitStyle() == clang::ICIS_NoInit ||
         field->getLocation().isMacroID() ||
         IsStringArray(field->getType(), *field->getInClassInitializer())) {
       return;
     }
-    finding = CopyInit(source, context, field->getLocation(), field->getType(),
-                       *field->getInClassInitializer(), Deduced::kNone);
+    finding = BracedText(field->getType(), *field->getInClassInitializer(),
+                         field->getInClassInitStyle() == clang::ICIS_CopyInit);
+    if (!finding && field->getInClassInitStyle() == clang::ICIS_CopyInit) {
+      finding =
+          CopyInit(source, context, field->getLocation(), field->getType(),
+                   *field->getInClassInitializer(), Deduced::kNone);
+    }
   }
   if (!finding) {
     return;
@@ -411,6 +447,12 @@ void BracedVarInitCheck::check(
   switch (finding->verdict) {
     case Verdict::kFix:
       diag(finding->where, "initialize '%0' with braces, not %1")
+          << name << finding->written << finding->fixes;
+      break;
+    case Verdict::kText:
+      diag(finding->where,
+           "initialize '%0', a text in a C array, with '=' and the literal "
+           "alone, not %1 (CodingStyle T-20)")
           << name << finding->written << finding->fixes;
       break;
     case Verdict::kNarrowing:

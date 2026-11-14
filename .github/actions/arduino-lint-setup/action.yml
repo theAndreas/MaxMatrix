@@ -1,0 +1,37 @@
+# arduino-lint for a CI job that runs `make arduino-lint`, at the dev container's version: the
+# version and the checksum are the ARG ARDUINO_LINT_VERSION and ARDUINO_LINT_SHA256_AMD64 lines
+# of .devcontainer/Dockerfile, read from there as target-setup reads arduino-cli's and uv-sync
+# uv's, so there is one place that says which arduino-lint; the runner is amd64. The binary goes
+# into a folder of the runner's temp, put on the PATH, which needs no sudo.
+#
+# So CI runs the same `make arduino-lint` as a developer does, with the flags of
+# tools/arduino_lint.sh, rather than arduino-lint's action with flags of its own.
+name: Set up arduino-lint
+description: arduino-lint at the dev container's version, for make arduino-lint
+
+inputs:
+  root:
+    description: The folder that holds .devcontainer, the repository's if not given
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: Install arduino-lint as the Dockerfile does
+      shell: bash
+      run: |
+        dockerfile="${{ inputs.root }}/.devcontainer/Dockerfile"
+        version=$(sed -n 's/^ARG ARDUINO_LINT_VERSION=//p' "$dockerfile")
+        sha256=$(sed -n 's/^ARG ARDUINO_LINT_SHA256_AMD64=//p' "$dockerfile")
+        if [ -z "$version" ] || [ -z "$sha256" ]; then
+          echo "::error::$dockerfile names no ARG ARDUINO_LINT_VERSION with its ARDUINO_LINT_SHA256_AMD64"
+          exit 1
+        fi
+        archive="$RUNNER_TEMP/arduino-lint.tar.gz"
+        curl -fsSL -o "$archive" \
+          "https://github.com/arduino/arduino-lint/releases/download/${version}/arduino-lint_${version}_Linux_64bit.tar.gz"
+        echo "${sha256}  ${archive}" | sha256sum -c -
+        mkdir -p "$RUNNER_TEMP/arduino-lint"
+        tar -xzf "$archive" -C "$RUNNER_TEMP/arduino-lint" arduino-lint
+        rm "$archive"
+        echo "$RUNNER_TEMP/arduino-lint" >> "$GITHUB_PATH"

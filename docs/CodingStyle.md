@@ -75,7 +75,7 @@ it:
 | FN-12 | A default argument only where its value is self-evident, and never on a `virtual` function. | `google-default-arguments`, Review |
 | FN-13 | No code copied and changed a little: what two places do alike is one function. | Review |
 | FN-14 | A loop that only looks for something is a function of its own, named as a question, with early returns: `bool ContainsPin(...)`, not a flag set inside a loop. | Review |
-| FN-15 | A parameter that may be absent is a pointer, and its block says that it may be null; any other the function reads or writes is a reference. A member that refers to an object the class does not own, and that may be absent, is a pointer. One that must exist is a `reference_wrapper`, taken by reference in the constructor, so that it is never null and the class stays assignable: `explicit Display(Spi& spi) : spi_{spi} {}`. Which one, by M-3: `std::reference_wrapper` where every target has `<functional>`, else the counterpart of the ETL or Utl, else one of the project's own with its interface. Where an object of the class is made when compiling, as a global one (M-5), the wrapper's constructor has to be `constexpr` as well: the standard's is so only from C++20. Never a reference or a `const` member, which take the assignment from the class. What the class changes through the member counts for FN-11. | `cppcoreguidelines-avoid-const-or-ref-data-members`, Review |
+| FN-15 | A parameter that may be absent is a pointer, and its block says that it may be null; any other the function reads or writes is a reference. A member that refers to an object the class does not own, and that may be absent, is a pointer. One that must exist is a `reference_wrapper`, taken by reference in the constructor, so that it is never null and the class stays assignable: `explicit Display(Spi& spi) : spi_{spi} {}`. Which one, by M-3: `std::reference_wrapper` where every target has `<functional>`, else the counterpart of the ETL or Utl, else one of the project's own with its interface. Where an object of the class is made when compiling, as a global one (M-5), the wrapper's constructor has to be `constexpr` as well: the standard's is so only from C++20. Never a reference or a `const` member, which take the assignment from the class. What the class changes through the member counts for FN-11. | `cppcoreguidelines-avoid-const-or-ref-data-members`, which leaves out a class that can be neither copied nor moved; Review |
 | FN-16 | Two parameters of the same type whose order means something and that a caller can swap unnoticed, as a pin and a count, take a type each: a small `struct` or an `enum class`, which costs nothing once optimized. A `using` makes no type of its own (T-16). | `bugprone-easily-swappable-parameters`, Review |
 
 ## Types and values
@@ -103,6 +103,7 @@ it:
 | T-19 | Arithmetic on a type narrower than `int` is done in `int`, after the promotion, and `int` has a sign and on an 8-bit microcontroller 16 bits: there `uint8_t * uint8_t` overflows from 182 * 182 on, on the host `uint16_t * uint16_t` from 46341 * 46341, and the overflow of a signed type is undefined. An operand is widened before the operation, to the least unsigned width that holds the result: `uint32_t const area{static_cast<uint32_t>(width) * height};`. Not wider: on an 8-bit target an operation of 32 bits costs several of 16 (P-1). `~` of a `uint8_t` is a negative `int`, cast back before it is compared or shifted. | `-Wconversion` for the narrowing back, `make sanitize` for the widths of the host, Review |
 | T-20 | An array is a class that knows its size, `std::array` or its counterpart by M-3, which does not decay to a pointer; a C array only for a string literal: `char const kName[] = "font";`. An element is reached by index, not by arithmetic on a pointer. | `modernize-avoid-c-arrays`, `cppcoreguidelines-pro-bounds-pointer-arithmetic` |
 | T-21 | A `char` is widened to a number through `unsigned char`: whether `char` has a sign depends on the target, and where it has one, a character above 127 turns negative. | `bugprone-signed-char-misuse` |
+| T-22 | A literal's suffix with the `u` in lower case and every `L` in upper case: `192u`, `1000uL`, `1LL`, `1.0L`. An `l` is read as a 1; a `U` reads as one more digit of a hexadecimal value, as in `0x04U`, where a `u` stands apart. A float's `f` is written either way. | `readability-uppercase-literal-suffix` |
 
 T-18 in an example:
 
@@ -130,9 +131,33 @@ if (elapsed && running) {
 | C-9 | Data members are `private` and end in `_`. | `readability-identifier-naming` |
 | C-10 | A function that overrides says `override`, or `final`, and not `virtual` again. | `modernize-use-override` |
 | C-11 | `mutable` only for what is not part of the state a user sees, as a cache (FN-11). | Review |
-| C-12 | `friend` only where nothing else will do, as an operator that needs the members; with its reason. | Review |
+| C-12 | No `friend`: a class is reached through its public functions, by its own code as by a test (Testing.md TS-8). Neither a friend class nor a friend function, and no friend operator declared in the class and defined outside it. The one exception is an operator defined in the class, a hidden friend (C-15). | `house-no-friend` |
 | C-13 | An operator is overloaded only where its meaning is obvious: `Point + Point`, not `Point * Point`. | `misc-unconventional-assign-operator`, Review |
 | C-14 | A special member that does what the compiler's would is `= default`, not written out: `Sensor() = default;`, not `Sensor() {}`. | `modernize-use-equals-default` |
+| C-15 | An operator takes one of two forms, by what it does. A **member**: one the language makes a member (`=`, `[]`, `()`, `->`, a conversion), one that changes its operand (`+=` and its like, `++`, `--`), and a unary one (`-x`, `!x`, `~x`, `*x`). A **hidden friend**, a `friend` defined in the class with both operands as its parameters: every other binary operator, `+`, `==`, `<`, `<<`. Both operands convert alike, which a member's left one does not, and the operator is found only through its class, so it neither turns up in the overloads the compiler weighs for every other `operator==` nor in their error messages. It is built on the others where it can: `+` on `+=`, `!=` on `==`, `>`, `<=` and `>=` on `<`. An operator of an `enum`, which can have no friend, is a free function beside it; so is one of a class of another file, which cannot be its friend, as a test's `operator<<` that prints a type of the library. | `house-operator-form` |
+
+C-15 in an example:
+
+```cpp
+class Duration {
+ public:
+  explicit constexpr Duration(uint32_t milliseconds) : milliseconds_{milliseconds} {}
+
+  Duration& operator+=(Duration other) {
+    milliseconds_ += other.milliseconds_;
+    return *this;
+  }
+
+  friend Duration operator+(Duration a, Duration b) { return a += b; }
+  friend bool operator==(Duration a, Duration b) {
+    return a.milliseconds_ == b.milliseconds_;
+  }
+  friend bool operator!=(Duration a, Duration b) { return !(a == b); }
+
+ private:
+  uint32_t milliseconds_;
+};
+```
 
 ## Memory and the microcontroller
 
@@ -143,7 +168,7 @@ if (elapsed && running) {
 | M-3 | Reuse before writing, in this order: (1) what the project has already, a function or class that does it; (2) the standard library, where every target of the project has it, and only its parts that need neither heap nor exceptions (M-1, M-2), as `std::array`, `<algorithm>`, `<type_traits>`; where a target lacks it, `std::` stands only in the code of the targets that have it; (3) a library in the style of the standard library that the project uses, as the [ETL](https://github.com/ETLCPP/etl) or Utl; (4) only where none has it, it is written: once, for reuse, with the interface of the standard library's counterpart, so that it can give way to `std::` or `etl::` later, in a module folder of its own, as `src/max_matrix/Utility/`, with its test. The tests on the host may use the standard library. | Review |
 | M-4 | Constant data, as text and tables, is `constexpr` or `const`, so that it can lie in flash. Where a target needs more to put it there and read it, its profile says how. A constant in a header whose address is taken, as a table read by an index known only at run time, is declared `extern` there and defined once in a `.cpp`: a `constexpr` at namespace scope gives every file that takes its address a copy of its own. A value used as a value may stay `constexpr` in the header; from C++17, `inline constexpr` does both. | Review, the profile |
 | M-5 | No global object with a constructor that does work: the order of initialization across files is not defined. An object of static storage is initialized when compiling, by a `constexpr` constructor, and has no destructor of its own, which would cost flash for an end the device never reaches. What has to start with work gets a `Begin()` that the application calls in `setup()`. | `cppcoreguidelines-avoid-non-const-global-variables`, `cert-err58-cpp` |
-| M-7 | The cost of an entity in flash and RAM, where it matters, is stated in its Doxygen block. | Review |
+| M-6 | The cost of an entity in flash and RAM, where it matters, is stated in its Doxygen block. | Review |
 
 ## Time, hardware and interrupts
 
@@ -156,7 +181,8 @@ if (elapsed && running) {
 | H-5 | An interrupt routine does the least it can: it copies a value or sets a flag, and returns. No output, no wait, no floating point, no call that takes long. | Review |
 | H-6 | What an interrupt routine and the rest share is `volatile`. The rest reads or changes it in a critical section, with the interrupts off, where it is wider than what the target reads in one access or is read and written in one step, as `++count`. The profile says how a critical section is written. | Review |
 | H-7 | Fixed point before `float` where the smallest target has no floating point unit, as the profile says: there the first `float` brings the soft-float routines and their flash. A `float` takes its reason in a comment. No `double`: its width differs between targets, 32 bits on some and 64 on the host, so that a test on the host does not compute what the device does. | `-Wdouble-promotion`, Review |
-| H-8 | Bitwise operators on unsigned types only, the masks named: `constexpr uint8_t kReadyBit{0x04U};`. A shift is by less than the width of its type, after the promotion to `int` that a `uint8_t` takes. | `-Wshift-count-overflow`, Review |
+| H-8 | Bitwise operators on unsigned types only, the masks named: `constexpr uint8_t kReadyBit{0x04u};`. A shift is by less than the width of its type, after the promotion to `int` that a `uint8_t` takes. Since H-9 this holds in the bit class, the one place for them. | `-Wshift-count-overflow`, Review |
+| H-9 | Bits are read and written through one class, `Bit` of `max_matrix/Bit.h`: no `&`, `\|`, `^`, `~`, `<<` or `>>` on an integer outside it, nor `&=` and its like. `Bit<uint8_t>::SetBits(DDRB, _BV(DDB5))`, not `DDRB \|= _BV(DDB5)`; `Bit<uint8_t>::ReadBit(flags, 3)`, not `(flags >> 3) & 1u`. The class holds once, and its test proves once, what such an expression gets wrong in its own way: the promotion to `int` (T-19), a shift as wide as the type (H-8), the read-modify-write of a register. One exception: a mask made of named masks by `\|`, in a `constexpr`: `constexpr uint8_t kFault{kOverheat \| kUndervoltage};`; `Bit::Combine()` makes it anywhere. A macro of the platform, as `_BV()`, counts as a name. What a class misses is added to it, not written beside it. Where the project uses a library with such a class, as Utl's `Bit`, it takes that one (M-3); one of another name goes into `.clang-tidy`, as the option `house-bitwise-in-bit-class.BitClasses`. A type of raw data with bitwise operators of its own, as `std::byte` (T-17), may use the built-in ones in their bodies: `&`, `\|` and `^` of two of the type, `~` of one, a shift of one by a count that gives the type back; not a stream's `<<`. | `house-bitwise-in-bit-class` |
 
 ## Errors
 

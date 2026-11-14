@@ -85,8 +85,10 @@ EOF
   rm -rf "${dest}"
   mkdir -p "${dest}"
   cp -RL "${tmp}/root/usr/lib/llvm-${major}/include/." "${dest}/"
-  echo "llvm-headers: $(sed -n 's/^#define LLVM_VERSION_STRING "\(.*\)"/\1/p' \
-    "${dest}/llvm/Config/llvm-config.h") in ${dest}"
+  local version
+  version="$(sed -n 's/^#define LLVM_VERSION_STRING "\(.*\)"/\1/p' \
+    "${dest}/llvm/Config/llvm-config.h")"
+  echo "llvm-headers: ${version} in ${dest}"
 }
 
 main "$@"
