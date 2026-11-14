@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | open | |
 
@@ -963,7 +963,15 @@ A first look found, besides those two:
   36 named for it.
 - S-5: the reasons in `.clang-tidy` for `bugprone-easily-swappable-parameters` and
   `bugprone-too-small-loop-variable` name `MaxMatrixChain` and `MAXMATRIX_NUMBER_OF_COLUMNS`,
-  which are gone.
+  which are gone. As built, every check the project turns off was run again with clang-tidy 23.
+  `bugprone-too-small-loop-variable` found nothing in `src/` any more, but eight loops of the
+  tests, `docu/` and the simulator that counted to a size in a `uint8_t`, against T-1: they
+  count in `size_t` now, and the check is on. `cert-err33-c` found one call left, whose result
+  goes to `Discard()` now, and is on as well. `bugprone-easily-swappable-parameters` still
+  reports coordinates and pins; its reason names them as they are now, and it waits for the
+  review of FN-16. The reason given for `readability-*` went, as 36 turned the group on.
+  `bugprone-dynamic-static-initializers`, an exception of the template's, reports nothing
+  either, which is the template's to take up.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per

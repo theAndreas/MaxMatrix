@@ -182,9 +182,10 @@ uint8_t CountLit(uint8_t chip, uint8_t digit, DocuLed* led) {
 bool FindLed(DocuLed* led) {
   uint8_t lit{0};
 
-  for (uint8_t chip{0}; chip < mock::chain.chips.size(); chip++) {
+  for (size_t chip{0}; chip < mock::chain.chips.size(); chip++) {
     for (uint8_t digit{0}; digit < Max7219::kNumberOfDigits; digit++) {
-      lit = static_cast<uint8_t>(lit + CountLit(chip, digit, led));
+      lit = static_cast<uint8_t>(
+          lit + CountLit(static_cast<uint8_t>(chip), digit, led));
     }
   }
   return lit == 1;
@@ -621,7 +622,7 @@ std::vector<std::pair<std::string, std::string>> DrawPictures() {
   pictures.emplace_back("Coordinates.svg", DrawCoordinates());
   // The module types in the order of the model's wirings, whose names the files
   // take.
-  for (uint8_t type{0}; type < kMax7219Wirings.size(); type++) {
+  for (size_t type{0}; type < kMax7219Wirings.size(); type++) {
     pictures.emplace_back(
         std::string("Wiring_") + kMax7219Wirings[type].name + ".svg",
         DrawWiring(static_cast<max_matrix::ModuleType>(type)));

@@ -106,7 +106,7 @@ std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size);
 
 /* the library sends the pair of module 0 first, so it ends up in the chip at
  * the far end of the chain */
-Max7219 const& ChipOfModule(uint8_t module);
+Max7219 const& ChipOfModule(size_t module);
 
 /* what the chain shows, laid out like matrix_buffer_: a column of a module is a
  * digit, a row a segment */

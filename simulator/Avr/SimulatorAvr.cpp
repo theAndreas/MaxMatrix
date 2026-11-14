@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 
 namespace {
 
@@ -53,7 +54,8 @@ __attribute__((format(printf, 3, 0))) void LogSimavr(
   // simavr also reports every section of the .elf it loads, which would stand
   // between the panel and the command line.
   if (level <= LOG_ERROR) {
-    vfprintf(stderr, format, arguments);
+    // A log that cannot be written has nobody to tell.
+    max_matrix::Discard(vfprintf(stderr, format, arguments));
   }
 }
 

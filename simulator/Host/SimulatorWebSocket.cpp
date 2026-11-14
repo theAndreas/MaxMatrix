@@ -170,7 +170,7 @@ SimulatorSha1Digest SimulatorWebSocket::CalculateSha1(
   for (size_t offset{0}; offset < padded.size(); offset += kSha1BlockLength) {
     state = ProcessSha1Block(padded, offset, state);
   }
-  for (uint8_t word{0}; word < state.size(); word++) {
+  for (size_t word{0}; word < state.size(); word++) {
     for (uint8_t part{0}; part < kSha1BytesPerWord; part++) {
       auto const bytes_after{
           static_cast<uint8_t>(kSha1BytesPerWord - 1U - part)};
