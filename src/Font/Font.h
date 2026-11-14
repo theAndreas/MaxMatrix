@@ -60,9 +60,9 @@ struct DecodedChar {
 };
 
 /*!
- * \brief The font MaxMatrix starts with: ASCII from the space to the tilde, Ä,
- *        Ö, Ü, ä, ö, ü, ß and the degree sign, 8 rows high and up to 5 columns
- *        wide.
+ * \brief The font MaxMatrix starts with: ASCII from the space to the tilde, the
+ *        German umlauts, the sharp s and the degree sign, 8 rows high and up to
+ *        5 columns wide.
  *
  * In the format of Font, which Matrix::SetFont() takes. 614 bytes
  * of flash.
@@ -97,9 +97,9 @@ extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
  * \endcode
  *
  * A char is found by walking from the first char to it, as MD_MAX72XX does: in
- * the default font 34 us for an A and 211 us for an ü, 220 chars on, on the Uno
- * (measured in simavr), against an index that would take two bytes of flash per
- * char. A shifting text looks a char up once.
+ * the default font 34 us for an A and 211 us for a u umlaut, 220 chars on, on
+ * the Uno (measured in simavr), against an index that would take two bytes of
+ * flash per char. A shifting text looks a char up once.
  *
  * It keeps no font of its own: every function is handed the font, and
  * internal::Text keeps which one is set.

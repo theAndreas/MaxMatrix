@@ -13,7 +13,7 @@
 namespace max_matrix {
 
 /*
- * The texts and the table of them lie in flash. A switch that returned F("…")
+ * The texts and the table of them lie in flash. A switch that returned F("...")
  * for each error was turned by avr-gcc into a table of pointers in .rodata,
  * which the Uno copies into RAM: 14 bytes for seven errors.
  */

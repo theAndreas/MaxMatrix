@@ -45,14 +45,17 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
   std::vector<byte> latin1;
 
   matrix_.Clear();
-  EXPECT_EQ(matrix_.SetText("Äöü!").GetError(), Error::kOk);
+  EXPECT_EQ(matrix_.SetText("\xC3\x84\xC3\xB6\xC3\xBC!").GetError(),
+            Error::kOk);
   utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC4\xF6\xFC!").GetError(), Error::kOk);
   latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
   EXPECT_EQ(utf8, latin1);
 
-  char shift_utf8[] = "Grüße Ä";
+  char shift_utf8[] =
+      "Gr\xC3\xBC\xC3\x9F"
+      "e \xC3\x84";
   char shift_latin1[] =
       "Gr\xFC\xDF"
       "e \xC4";
@@ -67,8 +70,9 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
 /* the chars beyond ASCII lie at their latin-1 codes in the default font, each
  * its own */
 TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
-  std::array<char const*, 8> const chars{
-      {"Ä", "Ö", "Ü", "ä", "ö", "ü", "ß", "°"}};
+  std::array<char const*, 8> const chars{{"\xC3\x84", "\xC3\x96", "\xC3\x9C",
+                                          "\xC3\xA4", "\xC3\xB6", "\xC3\xBC",
+                                          "\xC3\x9F", "\xC2\xB0"}};
   std::array<byte, 8> const codes{
       {0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF, 0xB0}};
 
@@ -80,16 +84,17 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
     EXPECT_EQ(Font::GetGlyph(kDefaultFont, decoded.c).GetError(), Error::kOk);
   }
 
-  /* the Ü sprite used to be a copy of the O */
+  /* the sprite of the U umlaut used to be a copy of the O */
   Glyph const ue{Font::GetGlyph(kDefaultFont, '\xDC').GetValue()};
   Glyph const o{Font::GetGlyph(kDefaultFont, 'O').GetValue()};
   EXPECT_NE(Bytes(ue.columns, ue.width), Bytes(o.columns, o.width));
 }
 
-/* Bug: the font had no ß and no °, so SetText() failed on them and a shifting
- * text, "Grüße" or "21 °C", lost them without a word */
+/* Bug: the font had no sharp s and no degree sign, so SetText() failed on
+ * them and a shifting text lost them without a word */
 TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn) {
-  std::array<char const*, 4> const texts{{"ß", "°", "\xDF", "\xB0"}};
+  std::array<char const*, 4> const texts{
+      {"\xC3\x9F", "\xC2\xB0", "\xDF", "\xB0"}};
 
   for (char const* text : texts) {
     SCOPED_TRACE(text);
