@@ -71,7 +71,7 @@ TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
   uint16_t const pair{0x0222};
 
   for (uint8_t bit{15}; bit >= 1; bit--) {
-    chain.ShiftBit((pair & (1U << bit)) != 0U);
+    chain.ShiftBit((pair & (1u << bit)) != 0u);
   }
   chain.Latch();
   EXPECT_EQ(chain.chips[0].digit[0], 0x11);
@@ -148,7 +148,7 @@ TEST(Max7219Test, CodeBDecodesOnlyTheSelectedDigits) {
   SendFrame(chain, {{0x09, 0x01}});
   SendFrame(chain, {{0x01, 0x85}});
   SendFrame(chain, {{0x02, 0x85}});
-  EXPECT_EQ(chain.chips[0].Segments(0), 0x80U | 0x5BU);  // DP and '5'
+  EXPECT_EQ(chain.chips[0].Segments(0), 0x80u | 0x5Bu);  // DP and '5'
   EXPECT_EQ(chain.chips[0].Segments(1), 0x85);
 }
 
@@ -162,7 +162,7 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
 Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                  uint8_t digit, uint8_t segment) {
   Max7219Chain chain{ChainInNormalOperation(number_of_chips)};
-  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1U << segment);
+  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1u << segment);
   return chain;
 }
 
@@ -193,7 +193,7 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce) {
       for (uint8_t segment{0}; segment < 8; segment++) {
         std::vector<Led> leds =
             LitLeds(ChainWithOneSegment(1, 0, digit, segment), wiring);
-        ASSERT_EQ(leds.size(), 1U);
+        ASSERT_EQ(leds.size(), 1u);
         seen.push_back(leds[0]);
       }
     }
@@ -216,7 +216,7 @@ TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
     SCOPED_TRACE(test_case.first->name);
     std::vector<Led> leds =
         LitLeds(ChainWithOneSegment(1, 0, 0, 0), *test_case.first);
-    ASSERT_EQ(leds.size(), 1U);
+    ASSERT_EQ(leds.size(), 1u);
     EXPECT_EQ(leds[0], test_case.second);
   }
 }
@@ -225,13 +225,13 @@ TEST(Max7219Test, ChainRunsFromRightToLeft) {
   Max7219Chain chain{ChainWithOneSegment(2, 0, 0, 0)};
 
   std::vector<Led> leds = LitLeds(chain, kMaX7219WiringFC16);
-  ASSERT_EQ(leds.size(), 1U);
+  ASSERT_EQ(leds.size(), 1u);
   EXPECT_EQ(leds[0], Led(15, 0));
 
   /* upside down, the chain starts on the left and the LED is in the opposite
    * corner of its module */
   leds = LitLeds(chain, kMaX7219WiringFC16, true);
-  ASSERT_EQ(leds.size(), 1U);
+  ASSERT_EQ(leds.size(), 1u);
   EXPECT_EQ(leds[0], Led(0, 7));
 
   EXPECT_EQ(&chain.ChipAt(0), &chain.chips[1]);

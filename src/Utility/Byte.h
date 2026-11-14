@@ -157,8 +157,8 @@ constexpr Byte operator>>(Byte value, uint8_t shift) {
 // bytes less in Basics on the Uno. Shifted as an unsigned int, as a uint8_t
 // would be promoted to an int, which has a sign.
 constexpr bool ReadBit(Byte value, uint8_t bit) {
-  using ShiftType = decltype(uint8_t{} | 0U);
-  return ((static_cast<ShiftType>(ToInteger(value)) >> bit) & 1U) != 0U;
+  using ShiftType = decltype(uint8_t{} | 0u);
+  return ((static_cast<ShiftType>(ToInteger(value)) >> bit) & 1u) != 0u;
 }
 
 /*!

@@ -27,9 +27,9 @@ namespace {
 
 /* the Uno's pins 10, 11 and 13 are PB2, PB3 and PB5 */
 constexpr char kPort{'B'};
-constexpr uint8_t kChipSelectBit{2U};
-constexpr uint8_t kDataInBit{3U};
-constexpr uint8_t kClockBit{5U};
+constexpr uint8_t kChipSelectBit{2u};
+constexpr uint8_t kDataInBit{3u};
+constexpr uint8_t kClockBit{5u};
 
 /* Serial is the first and only UART of the ATmega328P */
 constexpr char kUart{'0'};
@@ -187,9 +187,9 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
     return;
   }
   mock::chain.ShiftBit(simulator->data_in_);
-  uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1U)};
+  uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1u)};
   simulator->bits_ =
-      static_cast<uint8_t>(shifted | (simulator->data_in_ ? 1U : 0U));
+      static_cast<uint8_t>(shifted | (simulator->data_in_ ? 1u : 0u));
   if (++simulator->bit_count_ == kBitsPerByte) {
     simulator->TakeByte(simulator->bits_);
     simulator->bit_count_ = 0;

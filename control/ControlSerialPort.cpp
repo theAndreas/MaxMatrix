@@ -32,7 +32,7 @@
 namespace {
 
 /* ControlSerialPort Parameter */
-constexpr size_t kChunkLength{256U};
+constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
 /* the rates of the Arduino IDE's serial monitor that termios names on every

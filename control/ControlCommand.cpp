@@ -61,7 +61,7 @@ bool ControlCommand::DecodePicture(std::string const& line,
   }
   columns->clear();
   if (line.size() !=
-      kName.size() + (2U * static_cast<size_t>(kControlNumberOfColumns))) {
+      kName.size() + (2u * static_cast<size_t>(kControlNumberOfColumns))) {
     return true;
   }
   for (size_t i{kName.size()}; i < line.size(); i += 2) {

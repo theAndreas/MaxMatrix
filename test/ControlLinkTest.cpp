@@ -104,7 +104,7 @@ TEST(ControlLinkTest, CutsALineThatNeverEnds) {
   link.Begin(false);
   port.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
   link.Task(&lines);
-  ASSERT_EQ(lines.size(), 1U);
+  ASSERT_EQ(lines.size(), 1u);
   EXPECT_EQ(lines[0].size(), kControlLinkMaxLineLength);
 }
 

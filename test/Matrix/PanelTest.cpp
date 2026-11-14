@@ -50,7 +50,7 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in;
   PanelRow out;
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    in[module] = Byte{static_cast<uint8_t>(0xA5U ^ (module * 0x3CU))};
+    in[module] = Byte{static_cast<uint8_t>(0xA5u ^ (module * 0x3Cu))};
   }
 
   for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
@@ -134,7 +134,7 @@ TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    row[module] = Byte{static_cast<uint8_t>(0x81U ^ (module * 0x16U))};
+    row[module] = Byte{static_cast<uint8_t>(0x81u ^ (module * 0x16u))};
   }
 
   matrix_.SetRow(2, row);
@@ -155,7 +155,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
     Result<Byte> const value{matrix_.GetRow(0, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(ToInteger(value.GetValue()),
-              bitRead(0xA3, y) ? 1U << (7U - 5U) : 0U)
+              bitRead(0xA3, y) ? 1u << (7u - 5u) : 0u)
         << "Row " << static_cast<uint16_t>(y);
   }
 }
@@ -290,7 +290,7 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
-      bool const expected{(((column * 3U) + row) & 1U) != 0U};
+      bool const expected{(((column * 3u) + row) & 1u) != 0u};
       matrix_.SetDot(column, row, expected);
       Result<bool> const value{matrix_.GetDot(column, row)};
       EXPECT_EQ(value.GetError(), Error::kOk);
@@ -485,7 +485,7 @@ void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
   bool const ideal_on_panel{std::round(ideal) >= 0 &&
                             std::round(ideal) < breadth};
   if (inside && ideal_on_panel) {
-    EXPECT_EQ(lit, 1U) << "at " << along;
+    EXPECT_EQ(lit, 1u) << "at " << along;
   }
 }
 

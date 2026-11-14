@@ -361,7 +361,7 @@ void Panel::ShiftRows(bool up, ShiftFill fill) {
     } else if (fill == ShiftFill::kKeep) {
       fill_dot = ReadBit(value, fill_row);
     }
-    Byte const shifted{up ? value >> 1U : value << 1U};
+    Byte const shifted{up ? value >> 1u : value << 1u};
     SetLine(column, 0, true, WriteBit(shifted, fill_row, fill_dot));
   }
 }

@@ -205,7 +205,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), 1U << column)
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), 1u << column)
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -218,7 +218,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   for (uint8_t column{0}; column < 8; column++) {
     EXPECT_EQ(
         ToInteger(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue()),
-        1U << column)
+        1u << column)
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

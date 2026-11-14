@@ -34,8 +34,8 @@ constexpr uint16_t kMaxInterval{0xFFFF};
 constexpr uint8_t kDecimalBase{10};
 
 /* a byte of `picture` is two hex digits, the high nibble first */
-constexpr uint8_t kLowNibble{0x0FU};
-constexpr uint8_t kNibbleWidth{4U};
+constexpr uint8_t kLowNibble{0x0Fu};
+constexpr uint8_t kNibbleWidth{4u};
 
 }  // namespace
 

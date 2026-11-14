@@ -164,7 +164,7 @@ void Chain::ShiftOut(uint8_t value) {
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (uint8_t bit{kFirstBit}; bit != 0U; bit >>= 1U) {
+  for (uint8_t bit{kFirstBit}; bit != 0u; bit >>= 1u) {
     if ((value & bit) != 0) {
       *data_in_register |= data_in_mask_;
     } else {

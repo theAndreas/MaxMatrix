@@ -39,19 +39,19 @@ void Max7219::Reset() {
  * the register; 0x0D and 0x0E are no register at all and change nothing, like
  * the no-op */
 void Max7219::Latch(uint8_t address, uint8_t data) {
-  address &= 0x0FU;
+  address &= 0x0Fu;
   if (address >= 0x01 && address <= 0x08) {
     digit[address - 1] = data;
   } else if (address == 0x09) {
     decode_mode = data;
   } else if (address == 0x0A) {
-    intensity = data & 0x0FU;
+    intensity = data & 0x0Fu;
   } else if (address == 0x0B) {
-    scan_limit = data & 0x07U;
+    scan_limit = data & 0x07u;
   } else if (address == 0x0C) {
-    shutdown = data & 0x01U;
+    shutdown = data & 0x01u;
   } else if (address == 0x0F) {
-    display_test = data & 0x01U;
+    display_test = data & 0x01u;
   }
 }
 
@@ -66,14 +66,14 @@ uint8_t Max7219::Segments(uint8_t digit_index) const {
       {0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x01, 0x4F,
        0x37, 0x0E, 0x67, 0x00}};
 
-  if (display_test != 0U) {
+  if (display_test != 0u) {
     return 0xFF;
   }
-  if ((shutdown == 0U) || digit_index > scan_limit) {
+  if ((shutdown == 0u) || digit_index > scan_limit) {
     return 0x00;
   }
-  if ((decode_mode & (1U << digit_index)) != 0U) {
-    return (digit[digit_index] & 0x80U) | kCodeB[digit[digit_index] & 0x0FU];
+  if ((decode_mode & (1u << digit_index)) != 0u) {
+    return (digit[digit_index] & 0x80u) | kCodeB[digit[digit_index] & 0x0Fu];
   }
   return digit[digit_index];
 }
@@ -85,8 +85,8 @@ void Max7219Chain::Reset(uint8_t number_of_chips) {
 
 /* a byte as the wire carries it, most significant bit first */
 void Max7219Chain::Shift(uint8_t value) {
-  for (uint8_t mask{0x80U}; mask != 0U; mask >>= 1U) {
-    ShiftBit((value & mask) != 0U);
+  for (uint8_t mask{0x80u}; mask != 0u; mask >>= 1u) {
+    ShiftBit((value & mask) != 0u);
   }
 }
 
@@ -101,12 +101,12 @@ void Max7219Chain::ShiftBit(bool value) {
     return;
   }
   for (size_t i{shift_register_.size() - 1}; i > 0; i--) {
-    uint8_t const shifted{static_cast<uint8_t>(shift_register_[i] << 1U)};
-    uint8_t const carry{static_cast<uint8_t>(shift_register_[i - 1] >> 7U)};
+    uint8_t const shifted{static_cast<uint8_t>(shift_register_[i] << 1u)};
+    uint8_t const carry{static_cast<uint8_t>(shift_register_[i - 1] >> 7u)};
     shift_register_[i] = static_cast<uint8_t>(shifted | carry);
   }
-  uint8_t const shifted{static_cast<uint8_t>(shift_register_[0] << 1U)};
-  shift_register_[0] = static_cast<uint8_t>(shifted | (value ? 1U : 0U));
+  uint8_t const shifted{static_cast<uint8_t>(shift_register_[0] << 1u)};
+  shift_register_[0] = static_cast<uint8_t>(shifted | (value ? 1u : 0u));
 }
 
 /* every chip latches whatever its register holds on the rising edge of chip
@@ -144,7 +144,7 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
   if (wiring.reversed_columns) {
     segment = Max7219::kNumberOfDigits - 1 - segment;
   }
-  return (chip.Segments(digit) & (1U << segment)) != 0U;
+  return (chip.Segments(digit) & (1u << segment)) != 0u;
 }
 
 /* the chip that drives the LEDs in column X of the panel, by the same placement

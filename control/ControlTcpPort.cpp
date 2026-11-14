@@ -30,7 +30,7 @@ namespace {
 
 /* ControlTcpPort Parameter */
 constexpr intptr_t kNone{(-1)};
-constexpr size_t kChunkLength{256U};
+constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
 #ifdef _WIN32

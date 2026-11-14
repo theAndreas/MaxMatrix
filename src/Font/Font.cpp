@@ -35,17 +35,17 @@ constexpr size_t kHeightPosition2{6};
 
 /* the bits of a two byte UTF-8 sequence: the lead byte carries the two high
  * bits of the char, the continuation byte, 10xxxxxx, the six low ones */
-constexpr uint8_t kUtf8LeadBits{0x03U};
-constexpr uint8_t kUtf8ContinuationMask{0xC0U};
-constexpr uint8_t kUtf8ContinuationTag{0x80U};
-constexpr uint8_t kUtf8ContinuationBits{0x3FU};
-constexpr uint8_t kUtf8ContinuationWidth{6U};
+constexpr uint8_t kUtf8LeadBits{0x03u};
+constexpr uint8_t kUtf8ContinuationMask{0xC0u};
+constexpr uint8_t kUtf8ContinuationTag{0x80u};
+constexpr uint8_t kUtf8ContinuationBits{0x3Fu};
+constexpr uint8_t kUtf8ContinuationWidth{6u};
 
 // Reads a number of two bytes from flash, the high byte first, as the header
 // of a font of version 2 holds it.
 uint16_t ReadNumber(span<uint8_t const> font, size_t position) {
   uint16_t const high{
-      static_cast<uint16_t>(pgm_read_byte(&font[position]) << 8U)};
+      static_cast<uint16_t>(pgm_read_byte(&font[position]) << 8u)};
   return static_cast<uint16_t>(high | pgm_read_byte(&font[position + 1]));
 }
 
@@ -225,7 +225,7 @@ Status Font::CheckFont(span<uint8_t const> font) {
     if (offset >= font.size()) {
       return Error::kNotAFont;
     }
-    offset += ReadByte(font, offset) + 1U;
+    offset += ReadByte(font, offset) + 1u;
     if (code == last) {
       break;
     }
@@ -261,7 +261,7 @@ Result<Glyph> Font::GetGlyph(span<uint8_t const> font, char c) {
     return Error::kUnknownChar;
   }
   for (uint16_t skipped{first}; skipped < code; skipped++) {
-    offset += ReadByte(font, offset) + 1U;
+    offset += ReadByte(font, offset) + 1u;
   }
   uint8_t const width{ReadByte(font, offset)};
   if (width == 0) {

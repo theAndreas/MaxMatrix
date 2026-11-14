@@ -54,14 +54,14 @@ TEST(ByteTest, CombinesBitsWithAndOrAndNot) {
 }
 
 TEST(ByteTest, ShiftsItsBitsOutAtTheEdges) {
-  static_assert((Byte{0x81} << 1U) == Byte{0x02}, "left");
-  static_assert((Byte{0x81} >> 1U) == Byte{0x40}, "right");
+  static_assert((Byte{0x81} << 1u) == Byte{0x02}, "left");
+  static_assert((Byte{0x81} >> 1u) == Byte{0x40}, "right");
 
-  EXPECT_EQ(Byte{0x81} << 1U, Byte{0x02});
-  EXPECT_EQ(Byte{0x81} >> 1U, Byte{0x40});
-  EXPECT_EQ(Byte{0x01} << 7U, Byte{0x80});
-  EXPECT_EQ(Byte{0x80} >> 7U, Byte{0x01});
-  EXPECT_EQ(Byte{0xFF} << 0U, Byte{0xFF});
+  EXPECT_EQ(Byte{0x81} << 1u, Byte{0x02});
+  EXPECT_EQ(Byte{0x81} >> 1u, Byte{0x40});
+  EXPECT_EQ(Byte{0x01} << 7u, Byte{0x80});
+  EXPECT_EQ(Byte{0x80} >> 7u, Byte{0x01});
+  EXPECT_EQ(Byte{0xFF} << 0u, Byte{0xFF});
 }
 
 TEST(ByteTest, ReadsEachBit) {

@@ -38,7 +38,7 @@ namespace {
 
 /* ControlWindow Parameter */
 /* what SerialControl opens its Serial with */
-constexpr uint32_t kBaudRate{115200U};
+constexpr uint32_t kBaudRate{115200u};
 /* the port the README starts the simulator with, beside the page's 8080 */
 constexpr int kTcpPort{8081};
 constexpr int kPollMs{20};

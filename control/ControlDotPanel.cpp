@@ -182,13 +182,13 @@ void ControlDotPanel::PaintDot(uint8_t column, uint8_t row) {
   if (IsLit(column, row) == paint_lit_) {
     return;
   }
-  columns_[column] ^= static_cast<uint8_t>(1U << row);
+  columns_[column] ^= static_cast<uint8_t>(1u << row);
   Refresh();
   on_switch_(column, row, paint_lit_);
 }
 
 bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
-  return (columns_[column] & (1U << row)) != 0U;
+  return (columns_[column] & (1u << row)) != 0u;
 }
 
 /*
