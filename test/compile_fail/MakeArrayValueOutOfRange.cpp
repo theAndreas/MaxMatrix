@@ -4,6 +4,7 @@
 // A value that does not fit the element type: make_array() has to stop the
 // build, where braces only warn in a sketch, as Arduino compiles with
 // -Wno-error=narrowing.
+// Expected: ValueOutOfRange
 
 #include <stdint.h>
 

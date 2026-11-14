@@ -3,6 +3,7 @@
 
 // A negative value for an element type without a sign: make_array() has to stop
 // the build rather than take 255 for it.
+// Expected: ValueOutOfRange
 
 #include <stdint.h>
 

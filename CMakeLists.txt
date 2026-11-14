@@ -185,18 +185,11 @@ gtest_discover_tests(MaxMatrixErrorReportTest TEST_PREFIX "det/")
 # What the compiler has to warn of, test/compile_warn/: in gnu++11, as a sketch is built, and in C++17, as the tests are.
 add_compile_warn_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_warn STANDARDS gnu++11 c++17
                        INCLUDES ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/test/mock ${PROJECT_SOURCE_DIR}/test/model)
-# What must not compile, test/compile_fail/, in both standards: make_array() given a value that does not fit, which
-# stops the constant evaluation with a call of ValueOutOfRange(). No static_assert can name it, as the value is a
-# function's argument, so add_compile_fail_tests() of the template, which expects one, cannot take these.
-file(GLOB CompileFailCases CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/test/compile_fail/*.cpp)
-foreach(case IN LISTS CompileFailCases)
-    get_filename_component(name ${case} NAME_WE)
-    foreach(standard IN ITEMS gnu++11 c++17)
-        add_test(NAME compile_fail/${name}/${standard}
-                 COMMAND ${CMAKE_CXX_COMPILER} -std=${standard} -fsyntax-only -I${PROJECT_SOURCE_DIR}/src ${case})
-        set_tests_properties(compile_fail/${name}/${standard} PROPERTIES PASS_REGULAR_EXPRESSION "ValueOutOfRange")
-    endforeach()
-endforeach()
+# What must not compile, test/compile_fail/: make_array() given a value that does not fit, which stops the constant
+# evaluation with a call of ValueOutOfRange(), which each case's "// Expected:" line names. In gnu++11, as a sketch is
+# built; the template's function takes one standard.
+add_compile_fail_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_fail STANDARD gnu++11
+                       INCLUDES ${PROJECT_SOURCE_DIR}/src)
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.
