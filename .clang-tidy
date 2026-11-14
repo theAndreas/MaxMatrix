@@ -215,5 +215,8 @@ CheckOptions:
   readability-identifier-naming.EnumConstantPrefix: k
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
   readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z][A-Z0-9_]*_$'
-  # MaxMatrix's own: internal::reference_wrapper mimics the standard's, as FN-15 and M-3 ask.
+  # MaxMatrix's own: what mimics the standard's, by M-3: internal::reference_wrapper (FN-15),
+  # array and make_array() (T-20).
   readability-identifier-naming.ClassIgnoredRegexp: '^reference_wrapper$'
+  readability-identifier-naming.StructIgnoredRegexp: '^array$'
+  readability-identifier-naming.FunctionIgnoredRegexp: '^make_array$'

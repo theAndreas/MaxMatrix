@@ -9,6 +9,7 @@
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Error;
+using max_matrix::Sprite;
 using max_matrix::State;
 
 /* SetTextWithShift() took a char*, though the shift only reads the text, so
@@ -101,4 +102,24 @@ TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(steps, 4 + 255);
+}
+
+/* a sprite draws as many columns as its width and as many rows as its height,
+ * from its top left corner; the bits beyond its height, and the columns beyond
+ * its width, stay dark */
+TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
+  Sprite const sprite{3, 2, {{0x03, 0x05, 0x06, 0xFF, 0xFF}}};
+  int16_t const left{1};
+  int16_t const top{2};
+
+  matrix_.SetSprite(left, top, sprite);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture([&sprite](int16_t x, int16_t y) {
+              int16_t const column{static_cast<int16_t>(x - left)};
+              int16_t const row{static_cast<int16_t>(y - top)};
+              bool const inside{column >= 0 && column < sprite.width &&
+                                row >= 0 && row < sprite.height};
+              return inside &&
+                     bitRead(sprite.columns[static_cast<size_t>(column)], row);
+            }));
 }

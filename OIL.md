@@ -955,6 +955,31 @@ rule wins, and the notes change with the code:
 A first look found, besides those two:
 
 - T-17: `byte` in 248 lines of `src/`; and T-20: `Sprite` is a C array.
+
+  T-20 went further than `Sprite`: `src/.clang-tidy` and `examples/.clang-tidy` turn its two
+  checks off for the library and the examples, as avr-gcc has no `std::array`, which M-3 no
+  longer accepts as a reason. Turned on, they reported 16 C arrays and 41 places of pointer
+  arithmetic. Decided on 2026-11-14: T-20 holds everywhere, also for what a sketch hands in,
+  as 3.0.0. A font or a bitmap is written `constexpr auto kFont PROGMEM{max_matrix::make_array<uint8_t>(...)}`,
+  its values as MD_MAX72XX writes them. Measured with avr-gcc 7.3 on a font of 1501 bytes: in
+  flash, as large as the C array; `to_array<uint8_t>({...})` of C++20 does not compile there,
+  as GCC 7 does not take the size from a list of `int` into an array of `uint8_t`, and Utl's
+  `make_array()`, which takes the type from the first value, refuses every `int` after it as
+  narrowing. In four pull requests: `array` and `make_array()` with `Sprite` as a struct; the
+  arrays inside the library; what a sketch hands in, with the examples and the docs; a `span`
+  for the pointer arithmetic, and the two files go.
+
+  As built, the first: `max_matrix::array` and `make_array<T>()` in `Utility/array.h`, by M-3,
+  only with what is used. A value that does not fit `T` stops the build, also in a sketch,
+  which Arduino compiles with `-Wno-error=narrowing`. `Sprite` is a struct of its width, its
+  height and an array of its columns, `Sprite const kInvader{5, 5, {{0x16, ...}}}`, and the
+  enum that indexed its bytes is gone. Every example is the same size in every variant. Its
+  columns stay numbers, as the sketch writes them beside its width and height, against T-17,
+  which the review of T-17 may take up. For others: Utl could have `make_array<T>()` beside
+  its own, where `make_array<uint8_t>(uint8_t{1}, uint8_t{2})` would then match both; and the
+  template's `add_compile_fail_tests()` expects a `static_assert`, which a value out of range
+  cannot give, as it is a function's argument, so `CMakeLists.txt` runs `test/compile_fail/`
+  itself.
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;

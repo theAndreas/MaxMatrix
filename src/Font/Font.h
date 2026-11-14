@@ -16,32 +16,30 @@
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
+#include "Utility/array.h"
 
 namespace max_matrix {
 
-/*! The bytes of a Sprite: width, height and five columns. */
-constexpr uint8_t kSpriteNumberOfBytes{7};
+/*! The most columns a Sprite has. */
+constexpr uint8_t kSpriteMaxWidth{5};
 /*! The bytes of kDefaultFont. */
 constexpr uint16_t kDefaultFontSize{614};
 
 /*!
- * \brief A sprite of your own: its width, its height and up to five columns,
- *        bit 0 the top row.
+ * \brief A sprite of your own: its width, its height and up to five columns.
  *
- * SpriteByte names its bytes. A char of a font is a Glyph
- * instead.
+ * \code{.cpp}
+ * max_matrix::Sprite const kInvader{5, 5, {{0x16, 0x0D, 0x07, 0x0D, 0x16}}};
+ * \endcode
+ *
+ * A char of a font is a Glyph instead.
  */
-using Sprite = uint8_t[kSpriteNumberOfBytes];
-
-/*! \brief The bytes of a Sprite; a plain enum, as each indexes a Sprite. */
-enum SpriteByte : uint8_t {  // NOLINT(cppcoreguidelines-use-enum-class)
-  kSpriteWidth,              /*!< The columns it takes, 1 to 5. */
-  kSpriteHeight,             /*!< The rows it takes, 1 to 8. */
-  kSpriteColumn1,            /*!< Its leftmost column. */
-  kSpriteColumn2,            /*!< Its second column. */
-  kSpriteColumn3,            /*!< Its third column. */
-  kSpriteColumn4,            /*!< Its fourth column. */
-  kSpriteColumn5             /*!< Its fifth column. */
+struct Sprite {
+  uint8_t width;  /*!< The columns it takes, 1 to kSpriteMaxWidth. */
+  uint8_t height; /*!< The rows it takes, 1 to 8. */
+  /*! Its columns, the leftmost first, bit 0 the top row; those beyond `width`
+   * are not drawn. */
+  array<uint8_t, kSpriteMaxWidth> columns;
 };
 
 /*! \brief A char of a font, as it lies in flash: where its columns are, and how

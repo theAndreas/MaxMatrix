@@ -13,7 +13,9 @@ Error	KEYWORD1
 CommandState	KEYWORD1
 Sprite	KEYWORD1
 Glyph	KEYWORD1
+array	KEYWORD1
 Init	KEYWORD2
+make_array	KEYWORD2
 Clear	KEYWORD2
 ShiftTask	KEYWORD2
 StopShift	KEYWORD2
@@ -92,5 +94,4 @@ kPending	LITERAL1
 kDone	LITERAL1
 kAnswered	LITERAL1
 kDefaultFont	LITERAL1
-kSpriteWidth	LITERAL1
-kSpriteHeight	LITERAL1
+kSpriteMaxWidth	LITERAL1
