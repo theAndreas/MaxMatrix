@@ -28,6 +28,7 @@
 #include "MaxMatrixStandardTypes.h"
 #include "Text/Text.h"
 #include "Utility/Byte.h"
+#include "Utility/reference_wrapper.h"
 
 namespace max_matrix {
 
@@ -673,7 +674,7 @@ class Matrix {
  */
 class Batch {
  private:
-  Matrix& matrix_;
+  internal::reference_wrapper<Matrix> matrix_;
   bool previous_auto_update_;
 
  public:
@@ -683,13 +684,13 @@ class Batch {
    * \param[in,out] matrix The matrix; it has to outlive the batch.
    */
   explicit Batch(Matrix& matrix)
-      : matrix_{matrix}, previous_auto_update_{matrix_.GetAutoUpdate()} {
-    matrix_.SetAutoUpdate(false);
+      : matrix_{matrix}, previous_auto_update_{matrix.GetAutoUpdate()} {
+    matrix.SetAutoUpdate(false);
   }
 
   /*! \brief Puts auto update back as it was, which sends the picture if it was
    * on. */
-  ~Batch() { matrix_.SetAutoUpdate(previous_auto_update_); }
+  ~Batch() { matrix_.get().SetAutoUpdate(previous_auto_update_); }
 
   /*! \brief Not copyable: a copy would put auto update back twice. */
   Batch(Batch const&) = delete;

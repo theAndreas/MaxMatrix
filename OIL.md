@@ -958,7 +958,14 @@ A first look found, besides those two:
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;
-  why no check reported it is to be found out as well.
+  why no check reported it is to be found out as well. As built, `Batch` holds it in an
+  `internal::reference_wrapper` of MaxMatrix's own, by M-3: avr-gcc brings no `<functional>`,
+  and MaxMatrix depends on neither the ETL nor Utl, whose `utl::reference_wrapper` it follows
+  without what nothing here calls. Every example is the same size in every variant. No check
+  reported it, as `cppcoreguidelines-avoid-const-or-ref-data-members` of clang-tidy 23 leaves
+  out a class whose assignment is deleted, as `Batch`'s is: the check follows the reason of
+  the rule, assignability, where the rule says never. That is the template's to take up, in
+  the rule's text or its "Checked by". `Batch` was the only such member in the repository.
 - F-5: `misc-include-cleaner` is still off, with some 540 places, waiting for the pull request
   36 named for it.
 - S-5: the reasons in `.clang-tidy` for `bugprone-easily-swappable-parameters` and
