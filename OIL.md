@@ -969,6 +969,15 @@ The rest a review finds, chapter by chapter, as the files of `docs/` group them:
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
 rule or chapter, with what it finds fixed, F-10 first, as it changes no code.
 
+As built for T-17: every `byte` is a `uint8_t` first, the same type, and then the raw data a
+`Byte`: the buffer, a column, a row, what a shift takes in and gives out, the digit registers.
+The values of the configuration registers are numbers and stay `uint8_t`, as does a table in
+flash: a `constexpr Byte` passed by value is odr-used and lay in RAM, 4 bytes in `Basics`.
+Measured on the Uno with avr-gcc 7.3 against `uint8_t`: every example 34 to 50 bytes of flash
+smaller, in every variant, and the same RAM; at first, with an initialized member and an array
+of `Byte` in `ChangeMapping()`, 30 to 50 bytes larger, see 42. A sketch writes
+`SetColumn(3, max_matrix::Byte{0x3C})` now.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
