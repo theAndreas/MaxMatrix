@@ -17,7 +17,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
       (module * max_matrix::kColumnNumberOfModule) + 3, 1, true);
   matrix_.Update();
   EXPECT_EQ(mock::frames - frames_before, 1);
-  ASSERT_EQ(mock::last_frame.size(), 2U * kNumberOfModules);
+  ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (uint8_t i{0}; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
     EXPECT_EQ(mock::last_frame[size_t{2} * i],

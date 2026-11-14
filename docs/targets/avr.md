@@ -10,7 +10,7 @@ this profile where a target decides; the ids here start with `AVR-`.
 | What | On the AVR (ATmega328P as the measure) | Consequence |
 |---|---|---|
 | `int` | 16 bits | Fixed widths (T-1); an overflow the host does not show |
-| RAM, flash | 2 KiB, 32 KiB | No recursion (FN-6), the cost of an entity in its block (M-7) |
+| RAM, flash | 2 KiB, 32 KiB | No recursion (FN-6), the cost of an entity in its block (M-6) |
 | Floating point | No unit; `float` in software | Fixed point first (H-7) |
 | `double` | 32 bits, the same as `float` | No `double` (H-7) |
 | Standard library | None | A library like it, as the ETL or Utl, or written for reuse (M-3) |

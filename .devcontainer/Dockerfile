@@ -175,15 +175,18 @@ RUN printf '# SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU\n%s %s\n%s %s\n
 
 # The project's own packages, from apt-packages.txt beside this file, which the project's
 # workflows install as well. Last, so that a change to the list builds this layer alone and none
-# of the downloads above. Nothing to do for an empty list.
-COPY apt-packages.txt /tmp/apt-packages.txt
-RUN packages="$(sed -e 's/#.*//' /tmp/apt-packages.txt | xargs)" && \
+# of the downloads above. Nothing to do for an empty list, nor without one: the template's
+# repository builds this Dockerfile for its own container and has the list only as a template.
+# The folder is copied, not the file, which a COPY could not leave out where it is missing.
+COPY . /tmp/devcontainer/
+RUN list=/tmp/devcontainer/apt-packages.txt && \
+    packages="$(if [ -f "${list}" ]; then sed -e 's/#.*//' "${list}" | xargs; fi)" && \
     if [ -n "${packages}" ]; then \
         apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${packages} && \
         rm -rf /var/lib/apt/lists/*; \
     fi && \
-    rm /tmp/apt-packages.txt
+    rm -rf /tmp/devcontainer
 
 ENV TZ=Europe/Berlin
 

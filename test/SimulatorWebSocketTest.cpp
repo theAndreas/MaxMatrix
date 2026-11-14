@@ -17,7 +17,17 @@
 #include <sstream>
 #include <string>
 
+#include "Utility/Bit.h"
+
 namespace {
+
+using ByteBits = max_matrix::Bit<uint8_t>;
+using SizeBits = max_matrix::Bit<size_t>;
+
+/* the bit of the second byte that says the frame is masked */
+constexpr uint8_t kMasked{0x80u};
+constexpr uint8_t kByte{0xFFu};
+constexpr uint8_t kBitsPerByte{8u};
 
 std::string Sha1Hex(std::string const& message) {
   std::ostringstream text;
@@ -41,15 +51,17 @@ std::string ClientFrame(std::string const& payload) {
 
   frame += static_cast<char>(0x81);
   if (payload.size() < 126) {
-    frame += static_cast<char>(0x80U | payload.size());
+    frame += static_cast<char>(SizeBits::Combine(kMasked, payload.size()));
   } else {
-    frame += static_cast<char>(0x80U | 126U);
-    frame += static_cast<char>(payload.size() >> 8U);
-    frame += static_cast<char>(payload.size() & 0xFFU);
+    frame += static_cast<char>(ByteBits::Combine(kMasked, 126u));
+    frame += static_cast<char>(
+        SizeBits::ReadBitGroup(payload.size(), kByte, kBitsPerByte));
+    frame += static_cast<char>(SizeBits::ReadBitGroup(payload.size(), kByte));
   }
   frame.append(mask.begin(), mask.end());
   for (size_t i{0}; i < payload.size(); i++) {
-    frame += static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask[i % 4]);
+    frame += static_cast<char>(
+        ByteBits::ToggleBits(static_cast<uint8_t>(payload[i]), mask[i % 4]));
   }
   return frame;
 }
@@ -109,7 +121,7 @@ TEST(SimulatorWebSocketTest, EncodeUsesTheShortLengthUpTo125Bytes) {
   std::string const frame =
       SimulatorWebSocket::EncodeFrame(std::string(125, 'x'));
 
-  ASSERT_EQ(frame.size(), 2U + 125U);
+  ASSERT_EQ(frame.size(), 2u + 125u);
   EXPECT_EQ(static_cast<uint8_t>(frame[0]), 0x81);
   EXPECT_EQ(static_cast<uint8_t>(frame[1]), 125);
 }
@@ -118,10 +130,11 @@ TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes) {
   std::string const frame =
       SimulatorWebSocket::EncodeFrame(std::string(300, 'x'));
 
-  ASSERT_EQ(frame.size(), 4U + 300U);
+  ASSERT_EQ(frame.size(), 4u + 300u);
   EXPECT_EQ(static_cast<uint8_t>(frame[1]), 126);
-  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 300U >> 8U);
-  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 300U & 0xFFU);
+  // 300 is 0x012C, the high byte first
+  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 0x01u);
+  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 0x2Cu);
   EXPECT_EQ(frame.substr(4), std::string(300, 'x'));
 }
 

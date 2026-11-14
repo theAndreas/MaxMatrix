@@ -53,10 +53,14 @@ if(MAXMATRIX_FUZZ)
 endif()
 
 # What must not compile: each .cpp file in DIRECTORY uses the library wrongly, and its test
-# passes only if the compiler stops it with the message of the static_assert that its line
-# "// Expected: ..." names. A static_assert that went missing, or another error, fails it. The
-# compiler is called directly, with -fsyntax-only and in STANDARD, as avr-gcc builds a sketch:
-# no target, so that tests run in parallel never build in the same tree at once.
+# passes only if the compiler stops it with an error that names what its line
+# "// Expected: ..." names, in the error's own line or in a note on it: the message of a
+# static_assert, or the name of the function that is not constexpr and so ends a constant
+# evaluation, as one does that a value which does not fit calls; no static_assert can test a
+# function's argument. A stop that went missing, or another error, fails it, so the line names
+# what only the intended stop says. The compiler is called directly, with -fsyntax-only and in
+# STANDARD, as avr-gcc builds a sketch: no target, so that tests run in parallel never build in
+# the same tree at once.
 function(add_compile_fail_tests)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "DIRECTORY;STANDARD" "INCLUDES")
   set(includes)
@@ -74,12 +78,14 @@ function(add_compile_fail_tests)
     add_test(NAME compile_fail/${name}
              COMMAND ${CMAKE_CXX_COMPILER} -std=${arg_STANDARD} -fsyntax-only
                      ${includes} ${case})
-    # GCC says "static assertion failed: <message>", Clang "static assertion failed due to
-    # requirement '...': <message>"; both on one line.
+    # GCC says "error: static assertion failed: <message>", Clang "error: static assertion
+    # failed due to requirement '...': <message>", both on one line. Of a function that is not
+    # constexpr, GCC names it in the error, Clang in a note below. Not in the lines of source
+    # both print, which start with a number: they show the case's own text.
     set_tests_properties(
       compile_fail/${name}
       PROPERTIES PASS_REGULAR_EXPRESSION
-                 "static assertion failed[^\n]*${expected}")
+                 "(error|note): [^\n]*${expected}")
   endforeach()
 endfunction()
 

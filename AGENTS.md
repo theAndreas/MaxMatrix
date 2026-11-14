@@ -125,8 +125,10 @@ exception goes at the end of a list, with its reason.
     code uses as well.
   - `Utility/` — what neither the core nor a library gives (M-3): `Byte`, a byte of raw data
     as `std::byte`; `array` and `make_array()`, an array that knows its size as T-20 asks, and
-    its size taken from its values; and `internal::reference_wrapper`, a member that refers to
-    an object another owns, as FN-15 asks. avr-gcc lacks all three.
+    its size taken from its values; `internal::reference_wrapper`, a member that refers to
+    an object another owns, as FN-15 asks; and `Bit`, the one class whose functions use the
+    bitwise operators, as H-9 asks, in `Utility/Bit.h` rather than the `max_matrix/Bit.h` the
+    rule names, beside the others. avr-gcc lacks all four.
 - `examples/` — one sketch per folder, compiled by `arduino-cli` and checked by `arduino-lint`.
 - `docu/` — the coordinates a sketch uses (`Coordinates.svg`, shown in the README) and how the
   bytes of `matrix_buffer_` lie on a module of each module type (`Wiring_*.svg`). None is
@@ -365,6 +367,14 @@ and height, as a font's; each is made a `Byte` column by column as it is read. T
 are measured choices, each with its reason at the code: its default constructor leaves it as
 `std::byte`'s does, against T-13, and `internal::Panel::ChangeMapping()` keeps its private
 array as numbers, as avr-gcc walks an array of a class by an index (OIL 41, 42).
+
+Bits of a number are read and written through `Bit` (H-9), in the host code as well: the
+simulator's SHA-1 and Base64, the frames of the WebSocket, the model and the tests. `Byte`
+keeps the built-in operators in the bodies of its own `&`, `|`, `~`, `<<` and `>>`, as H-9
+allows a type of raw data. `Bit::SetBits()` and `ClearBits()` take the target as a template, so
+that the mock's port registers, objects with `|=` and `&=` of their own, are written as the
+board's are. A combination of flags of an outside interface that takes them as an `int`, as
+wxWidgets' and POSIX's, is named once, in a `constexpr`, which H-9 allows.
 
 The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
 into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as

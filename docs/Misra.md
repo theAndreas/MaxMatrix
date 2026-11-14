@@ -6,14 +6,14 @@ deviates. The C++ Core Guidelines and MISRA C++ are the standards the code follo
 
 ## How to read the matrix
 
-The ids of the 4 directives and 175 rules of MISRA C++:2023 are those MathWorks lists for
-Polyspace Bug Finder, the categories those Cppcheck lists (`lib/checkers.cpp`). The texts of
-the rules are MISRA's and licensed; the topic below is a short note of our own, not the rule.
-Read the rule in the standard.
+The matrix lists the 4 directives and 175 rules of MISRA C++:2023 with their categories. The
+texts of the rules are MISRA's and licensed; the topic below is a short note of our own, not the
+rule. Read the rule in the standard.
 
 - **Covered by**: the check that enforces the rule, the compiler's warning, a test, a rule of
-  CodingStyle.md, or *Review*. Empty means not yet assessed; *n/a* means it cannot occur in this
-  code, with the reason.
+  CodingStyle.md, or *Review*. *In part* means the check finds only some of the cases the rule
+  names, and review takes the rest; *Review* means no free tool is known to check it. Empty
+  means not yet assessed; *n/a* means it cannot occur in this code, with the reason.
 - **Deviation**: where the project departs from the rule, as a whole, with its reason. A
   deviation at one place is a `NOLINT` that names the check and the rule
   (`// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast): MISRA 8.2.5, F() of the core`).
@@ -24,11 +24,6 @@ No free tool checks MISRA C++ as a whole: clang-tidy has no MISRA module, Cppche
 knows MISRA C only. Where a project needs evidence of compliance, a checker such as Cppcheck
 Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
-> **To be checked against the standard.** What covers a rule is assigned from the topic of the
-> rule, not from its full text: a check named may cover a rule only in part, and *Review* is
-> where no tool is known to check it. The category of Rule 16.5.1, missing in Cppcheck's list,
-> is to be looked up.
-
 ## The matrix
 
 ### Directives
@@ -38,7 +33,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Dir 0.3.1 | Advisory | Floating-point arithmetic used appropriately | CodingStyle H-7 | |
 | Dir 0.3.2 | Required | Calls meet the preconditions of the callee | CodingStyle E-2, Review | |
 | Dir 5.7.2 | Advisory | No commented-out code | AGENTS.md, Review | |
-| Dir 15.8.1 | Required | Assignment handles self-assignment | `bugprone-unhandled-self-assignment` | |
+| Dir 15.8.1 | Required | Assignment handles self-assignment | `bugprone-unhandled-self-assignment`, in part | |
 
 ### Rules of chapter 0
 
@@ -50,14 +45,14 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Rule 0.1.2 | Required | Return values used | `-Wunused-result`, CodingStyle FN-10 |  |
 | Rule 0.2.1 | Advisory | Variables of limited visibility are used | `-Wunused-variable` |  |
 | Rule 0.2.2 | Required | Named parameters are used | `-Wunused-parameter` |  |
-| Rule 0.2.3 | Advisory | Types of limited visibility are used | `-Wunused-local-typedef` |  |
+| Rule 0.2.3 | Advisory | Types of limited visibility are used | `-Wunused-local-typedef`, in part |  |
 | Rule 0.2.4 | Advisory | Functions of limited visibility are used | `-Wunused-function`, `-Wunused-member-function`, `-Wunused-template` |  |
 
 ### Rules of chapter 4
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 4.1.1 | Required | Conforms to C++17 | Review | C++11 as the least standard, and every standard to C++20; `gnu++11` on the AVR (targets/avr.md); the tests C++17 |
+| Rule 4.1.1 | Required | Conforms to C++17 | Review | C++11 as the least standard, and every standard to C++20; `gnu++11` on the AVR (targets/avr.md); the tests C++17. `-fno-exceptions -fno-rtti` on the AVR (CodingStyle M-2) |
 | Rule 4.1.2 | Advisory | No deprecated features | `-Wdeprecated` |  |
 | Rule 4.1.3 | Required | No undefined or critical unspecified behaviour | `make sanitize`, `clang-analyzer-*` |  |
 | Rule 4.6.1 | Required | Memory operations sequenced | `-Wunsequenced`, `-Wsequence-point` |  |
@@ -82,7 +77,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 6.0.1 | Required | Block declarations not ambiguous | `-Wvexing-parse` |  |
+| Rule 6.0.1 | Required | Block declarations not ambiguous | `-Wvexing-parse`, in part |  |
 | Rule 6.0.2 | Advisory | External arrays with a size | Review |  |
 | Rule 6.0.3 | Advisory | Few declarations in the global namespace | CodingStyle F-9 |  |
 | Rule 6.0.4 | Required | `main` only as the global function | n/a: a sketch has no `main`, the library none either |  |
@@ -90,16 +85,16 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Rule 6.2.2 | Required | Same types across declarations | the compiler and linker |  |
 | Rule 6.2.3 | Required | An entity defined once | Review |  |
 | Rule 6.2.4 | Required | No non-inline definitions in headers | `misc-definitions-in-headers` |  |
-| Rule 6.4.1 | Required | No name hides another | `-Wshadow-all` |  |
-| Rule 6.4.2 | Required | No derived function hides a base one | `-Woverloaded-virtual` |  |
+| Rule 6.4.1 | Required | No variable hides another | `-Wshadow-all` |  |
+| Rule 6.4.2 | Required | No derived function hides a base one | `-Woverloaded-virtual`, in part |  |
 | Rule 6.4.3 | Required | No unqualified lookup into a dependent base | Review |  |
 | Rule 6.5.1 | Advisory | External entities declared in a header | `misc-use-internal-linkage` |  |
-| Rule 6.5.2 | Advisory | Internal linkage where it fits | `misc-use-internal-linkage` |  |
+| Rule 6.5.2 | Advisory | Internal linkage by an unnamed namespace, not `static` | `readability-static-definition-in-anonymous-namespace`, in part |  |
 | Rule 6.7.1 | Required | No static local variables | Review |  |
 | Rule 6.7.2 | Required | No global variables | `cppcoreguidelines-avoid-non-const-global-variables` |  |
 | Rule 6.8.1 | Required | No access outside an object's lifetime | `make sanitize`, `clang-analyzer-*` |  |
 | Rule 6.8.2 | Mandatory | No reference or pointer to a local returned | `-Wreturn-stack-address` |  |
-| Rule 6.8.3 | Required | No local address kept longer | `clang-analyzer-core.StackAddressEscape` |  |
+| Rule 6.8.3 | Required | No local address kept longer | `clang-analyzer-core.StackAddressEscape`, in part |  |
 | Rule 6.8.4 | Advisory | Members returning `*this` ref-qualified | Review |  |
 | Rule 6.9.1 | Required | Same type aliases in all declarations | Review |  |
 | Rule 6.9.2 | Advisory | No standard integer type names | CodingStyle T-1, Review |  |
@@ -108,10 +103,10 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 7.0.1 | Required | No conversion from `bool` | `readability-implicit-bool-conversion` |  |
+| Rule 7.0.1 | Required | No conversion from `bool` | `readability-implicit-bool-conversion`, in part |  |
 | Rule 7.0.2 | Required | No conversion to `bool` | `readability-implicit-bool-conversion` |  |
 | Rule 7.0.3 | Required | No numeric value of a character | Review |  |
-| Rule 7.0.4 | Required | Operands of bitwise and shift operators | CodingStyle H-8, Review |  |
+| Rule 7.0.4 | Required | Operands of bitwise and shift operators | CodingStyle H-8 and H-9: only in the bit class, `house-bitwise-in-bit-class`; there by review |  |
 | Rule 7.0.5 | Required | Promotions keep signedness | `-Wconversion`, `-Wsign-conversion`, CodingStyle T-19 |  |
 | Rule 7.0.6 | Required | Numeric assignments appropriate | `-Wconversion`, `bugprone-narrowing-conversions` |  |
 | Rule 7.11.1 | Required | `nullptr` the only null pointer | `modernize-use-nullptr`, `-Wzero-as-null-pointer-constant` |  |
@@ -123,7 +118,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 8.0.1 | Advisory | Parentheses make the meaning clear | `readability-math-missing-parentheses`, `-Wparentheses` |  |
-| Rule 8.1.1 | Required | No implicit capture of `this` | Review |  |
+| Rule 8.1.1 | Required | No implicit capture of `this` | `cppcoreguidelines-misleading-capture-default-by-value`, in part |  |
 | Rule 8.1.2 | Advisory | Lambda captures explicit | Review |  |
 | Rule 8.2.1 | Required | Virtual bases cast by `dynamic_cast` only | n/a: no virtual base (13.1.1), no RTTI |  |
 | Rule 8.2.2 | Required | No C-style or functional cast | `google-readability-casting`, `cppcoreguidelines-pro-type-cstyle-cast`, `-Wold-style-cast` |  |
@@ -140,7 +135,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Rule 8.3.2 | Advisory | No unary plus | Review |  |
 | Rule 8.7.1 | Required | Pointer arithmetic stays valid | `cppcoreguidelines-pro-bounds-pointer-arithmetic` |  |
 | Rule 8.7.2 | Required | Pointer subtraction within one array | `cppcoreguidelines-pro-bounds-pointer-arithmetic` |  |
-| Rule 8.9.1 | Required | Pointer comparison within one array | `cppcoreguidelines-pro-bounds-pointer-arithmetic` |  |
+| Rule 8.9.1 | Required | Pointer comparison within one array | Review |  |
 | Rule 8.14.1 | Advisory | No side effect in the right operand of `&&`, `\|\|` | Review |  |
 | Rule 8.18.1 | Mandatory | No copy into an overlapping object | Review |  |
 | Rule 8.18.2 | Advisory | Result of an assignment not used | `bugprone-assignment-in-if-condition`, CodingStyle T-14 |  |
@@ -151,12 +146,12 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 9.2.1 | Required | No explicit conversion as a statement | Review |  |
+| Rule 9.2.1 | Required | No explicit conversion as a statement | `bugprone-unused-raii`, in part |  |
 | Rule 9.3.1 | Required | Bodies are compound statements | `readability-braces-around-statements` |  |
 | Rule 9.4.1 | Required | `if … else if` ends with `else` | Review (ROADMAP C-3) |  |
 | Rule 9.4.2 | Required | Structure of a `switch` | `bugprone-switch-missing-default-case`, `-Wswitch`, `-Wimplicit-fallthrough`, CodingStyle T-15 |  |
-| Rule 9.5.1 | Required | Simple counting `for` loops | Review |  |
-| Rule 9.5.2 | Advisory | Range-for initializer with one call at most | Review |  |
+| Rule 9.5.1 | Advisory | Simple counting `for` loops | Review |  |
+| Rule 9.5.2 | Required | Range-for initializer with one call at most | Review |  |
 | Rule 9.6.1 | Advisory | No `goto` | `cppcoreguidelines-avoid-goto` |  |
 | Rule 9.6.2 | Required | `goto` to a label in an enclosing block | n/a: no `goto` (9.6.1) |  |
 | Rule 9.6.3 | Required | `goto` jumps forward | n/a: no `goto` (9.6.1) |  |
@@ -217,7 +212,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 15.0.1 | Required | Special member functions as needed | `cppcoreguidelines-special-member-functions`, CodingStyle C-3 |  |
-| Rule 15.0.2 | Advisory | Signatures of copy and move functions | `misc-unconventional-assign-operator` |  |
+| Rule 15.0.2 | Advisory | Signatures of copy and move functions | `misc-unconventional-assign-operator`, `performance-noexcept-move-constructor`, in part |  |
 | Rule 15.1.1 | Required | No dynamic type used in a constructor or destructor | `clang-analyzer-optin.cplusplus.VirtualCall` |  |
 | Rule 15.1.2 | Advisory | Constructors initialize every base | Review |  |
 | Rule 15.1.3 | Required | Conversions by one argument explicit | cpplint `runtime/explicit`, CodingStyle C-4 |  |
@@ -228,9 +223,9 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 16.5.1 | Required? | No overloaded `&&` or `\|\|` | `google-runtime-operator`, in part |  |
+| Rule 16.5.1 | Required | No overloaded `&&` or `\|\|` | Review |  |
 | Rule 16.5.2 | Required | No overloaded address-of | `google-runtime-operator` |  |
-| Rule 16.6.1 | Advisory | Symmetric operators as non-members | Review |  |
+| Rule 16.6.1 | Advisory | Symmetric operators as non-members | CodingStyle C-15, as hidden friends: `house-operator-form` |  |
 
 ### Rules of chapter 17
 
@@ -276,9 +271,9 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 21.2.1 | Required | No `atof`, `atoi`, `atol`, `atoll` | Review |  |
-| Rule 21.2.2 | Required | No unsafe string functions | Review |  |
-| Rule 21.2.3 | Required | No `system()` | Review |  |
+| Rule 21.2.1 | Required | No `atof`, `atoi`, `atol`, `atoll` | `cert-err34-c` |  |
+| Rule 21.2.2 | Required | No C string functions | Review |  |
+| Rule 21.2.3 | Required | No `system()` | `cert-env33-c` |  |
 | Rule 21.2.4 | Required | No `offsetof` | Review |  |
 | Rule 21.6.1 | Advisory | No dynamic memory | `cppcoreguidelines-no-malloc`, `cppcoreguidelines-owning-memory`, CodingStyle M-1 |  |
 | Rule 21.6.2 | Required | Dynamic memory managed automatically | n/a: no heap (21.6.1) |  |
@@ -286,14 +281,14 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 | Rule 21.6.4 | Required | Sized and unsized `operator delete` | n/a: no heap (21.6.1) |  |
 | Rule 21.6.5 | Required | No `delete` of an incomplete type | n/a: no heap (21.6.1) |  |
 | Rule 21.10.1 | Required | No `<cstdarg>` | `cppcoreguidelines-pro-type-vararg` |  |
-| Rule 21.10.2 | Required | No `<csetjmp>` | Review |  |
+| Rule 21.10.2 | Required | No `<csetjmp>` | `cert-err52-cpp` |  |
 | Rule 21.10.3 | Required | No `<csignal>` | Review |  |
 
 ### Rules of chapter 22
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 22.3.1 | Required | `assert` not of a constant | Review |  |
+| Rule 22.3.1 | Required | `assert` not of a constant | `misc-static-assert`, in part |  |
 | Rule 22.4.1 | Required | Only zero assigned to `errno` | Review |  |
 
 ### Rules of chapter 23

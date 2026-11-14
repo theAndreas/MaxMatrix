@@ -4,12 +4,14 @@
 #
 #   simulator/Test/WebTest.sh SIMULATOR PORT
 set -eu
+# shellcheck source=simulator/Test/WebTestLib.sh
 source "$(dirname "$0")/WebTestLib.sh"
 
 Port=$2
 startSimulator "$1" "$Port" 3
 
-curl -s "http://localhost:$Port/" | grep -q '<title>MaxMatrix Simulator</title>' || fail "the page did not arrive"
+Page=$(curl -s "http://localhost:$Port/" || true)
+grep -q '<title>MaxMatrix Simulator</title>' <<< "$Page" || fail "the page did not arrive"
 Status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$Port/nothing" || true)
 [ "$Status" = 404 ] || fail "an unknown path got $Status rather than 404"
 

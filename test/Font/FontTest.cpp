@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "MaxMatrixTestSupport.h"
+#include "Utility/Bit.h"
 
+using max_matrix::Bit;
 using max_matrix::DecodedChar;
 using max_matrix::Error;
 using max_matrix::Font;
@@ -171,7 +173,7 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
     EXPECT_EQ(
-        ToInteger(matrix_.GetColumn(static_cast<int16_t>(column)).GetValue()),
+        matrix_.GetColumn(static_cast<int16_t>(column)).GetValue().ToInteger(),
         expected[column])
         << "column " << column;
   }
@@ -191,7 +193,7 @@ TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
     EXPECT_EQ(
-        ToInteger(matrix_.GetColumn(static_cast<int16_t>(column)).GetValue()),
+        matrix_.GetColumn(static_cast<int16_t>(column)).GetValue().ToInteger(),
         expected[column])
         << "column " << column;
   }
@@ -205,7 +207,8 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), 1U << column)
+    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(),
+              Bit<uint8_t>::ToMask(column))
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -216,9 +219,10 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(
-        ToInteger(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue()),
-        1U << column)
+    EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column)
+                  .GetValue()
+                  .ToInteger(),
+              Bit<uint8_t>::ToMask(column))
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

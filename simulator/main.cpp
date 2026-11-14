@@ -45,11 +45,11 @@
 namespace {
 
 /* the pins every example puts the chain on */
-constexpr uint8_t kDataInPin{11U};
-constexpr uint8_t kChipSelectPin{10U};
-constexpr uint8_t kClockPin{13U};
+constexpr uint8_t kDataInPin{11u};
+constexpr uint8_t kChipSelectPin{10u};
+constexpr uint8_t kClockPin{13u};
 /* the chain every example has, max_matrix::MatrixOf<4> */
-constexpr uint8_t kNumberOfModules{4U};
+constexpr uint8_t kNumberOfModules{4u};
 
 /* exit codes */
 constexpr int kExitOk{0};

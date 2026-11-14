@@ -21,7 +21,7 @@
 namespace {
 
 /* SimulatorSerialHost Parameter */
-constexpr size_t kChunkLength{256U};
+constexpr size_t kChunkLength{256u};
 
 }  // namespace
 

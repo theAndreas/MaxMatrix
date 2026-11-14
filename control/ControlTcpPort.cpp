@@ -25,12 +25,13 @@
 #include <string>
 
 #include "ControlTcpPort.h"
+#include "Utility/Bit.h"
 
 namespace {
 
 /* ControlTcpPort Parameter */
 constexpr intptr_t kNone{(-1)};
-constexpr size_t kChunkLength{256U};
+constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
 #ifdef _WIN32
@@ -44,6 +45,10 @@ void CloseSocket(Socket socket) { closesocket(socket); }
 int Poll(pollfd* descriptor, int timeout) {
   return WSAPoll(descriptor, 1, timeout);
 }
+bool SetNonBlocking(Socket socket) {
+  u_long non_blocking = 1;
+  return ioctlsocket(socket, FIONBIO, &non_blocking) == 0;
+}
 #else
 using Socket = int;
 using Length = size_t;
@@ -55,6 +60,15 @@ bool WouldBlock() { return errno == EAGAIN || errno == EWOULDBLOCK; }
 void CloseSocket(Socket socket) { close(socket); }
 int Poll(pollfd* descriptor, int timeout) {
   return poll(descriptor, 1, timeout);
+}
+bool SetNonBlocking(Socket socket) {
+  int const flags{fcntl(socket, F_GETFL, 0)};
+  // H-8: fcntl() takes its flags as an int, or'ed here as the bits they are.
+  int const non_blocking_flags{
+      static_cast<int>(max_matrix::Bit<uint32_t>::Combine(
+          static_cast<uint32_t>(flags), static_cast<uint32_t>(O_NONBLOCK)))};
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
+  return fcntl(socket, F_SETFL, non_blocking_flags) == 0;
 }
 #endif
 
@@ -91,24 +105,12 @@ bool ControlTcpPort::Open(uint16_t port) {
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  bool opened{
+  bool const connected{
       connect(ToSocket(socket_),
               // the sockets API takes every address as a sockaddr
               // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
               reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0};
-#ifdef _WIN32
-  u_long non_blocking = 1;
-  opened =
-      opened && ioctlsocket(ToSocket(socket_), FIONBIO, &non_blocking) == 0;
-#else
-  if (opened) {
-    int const flags{fcntl(ToSocket(socket_), F_GETFL, 0)};
-    // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, fcntl() takes flags as int
-    int const non_blocking_flags{flags | O_NONBLOCK};
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
-    opened = fcntl(ToSocket(socket_), F_SETFL, non_blocking_flags) == 0;
-  }
-#endif
+  bool const opened{connected && SetNonBlocking(ToSocket(socket_))};
   if (!opened) {
     Close();
   }

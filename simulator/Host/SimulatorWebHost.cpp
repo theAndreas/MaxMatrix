@@ -27,9 +27,9 @@
 namespace {
 
 /* SimulatorWebHost Parameter */
-constexpr size_t kRequestChunkLength{4096U};
-constexpr size_t kFrameChunkLength{2048U};
-constexpr uint32_t kRequestTimeoutMs{100U};
+constexpr size_t kRequestChunkLength{4096u};
+constexpr size_t kFrameChunkLength{2048u};
+constexpr uint32_t kRequestTimeoutMs{100u};
 constexpr char kWebSocketPath[] = "/ws";
 
 }  // namespace

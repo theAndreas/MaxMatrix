@@ -24,7 +24,7 @@
 
 /* SimulatorAvr Parameter */
 constexpr char kSimulatorAvrMcu[] = "atmega328p";
-constexpr uint32_t kSimulatorAvrFrequency{16000000U};
+constexpr uint32_t kSimulatorAvrFrequency{16000000u};
 
 /*!
  * \brief An ATmega328P in simavr that runs the .elf of an example, wired to the

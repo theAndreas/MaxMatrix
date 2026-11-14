@@ -11,6 +11,9 @@
 
 #include <stdint.h>
 
+#include "MaxMatrixAttributes.h"
+#include "Utility/Bit.h"
+
 namespace max_matrix {
 
 /*!
@@ -55,14 +58,77 @@ class Byte {
    */
   constexpr explicit Byte(uint8_t value) : value_{value} {}
 
+  /*! \brief Returns the bits as a number. */
+  // A member, where std::byte's to_integer() is a free function: one that
+  // reads the private bits would be a friend, which C-12 rules out.
+  MAXMATRIX_NODISCARD constexpr uint8_t ToInteger() const { return value_; }
+
+  /*! \brief Returns the bits that are not set in this byte. */
+  constexpr Byte operator~() const {
+    return Byte{static_cast<uint8_t>(~value_)};
+  }
+
   /*!
-   * \brief Returns the bits as a number.
+   * \brief Returns whether two bytes have the same bits.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr bool operator==(Byte left, Byte right) {
+    return left.value_ == right.value_;
+  }
+
+  /*!
+   * \brief Returns whether two bytes differ in a bit.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr bool operator!=(Byte left, Byte right) {
+    return !(left == right);
+  }
+
+  /*!
+   * \brief Returns the bits set in both bytes.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr Byte operator&(Byte left, Byte right) {
+    return Byte{static_cast<uint8_t>(left.value_ & right.value_)};
+  }
+
+  /*!
+   * \brief Returns the bits set in either byte.
+   *
+   * \param[in] left The one byte.
+   * \param[in] right The other.
+   */
+  friend constexpr Byte operator|(Byte left, Byte right) {
+    return Byte{static_cast<uint8_t>(left.value_ | right.value_)};
+  }
+
+  /*!
+   * \brief Returns the bits moved `shift` places up; those beyond bit 7 fall
+   *        out.
    *
    * \param[in] value The byte.
+   * \param[in] shift The places, less than 8.
    */
-  // C-12: std::byte's to_integer() is a free function as well, so that a
-  // switch to std::byte changes only its name.
-  friend constexpr uint8_t ToInteger(Byte value) { return value.value_; }
+  friend constexpr Byte operator<<(Byte value, uint8_t shift) {
+    return Byte{static_cast<uint8_t>(value.value_ << shift)};
+  }
+
+  /*!
+   * \brief Returns the bits moved `shift` places down; those below bit 0 fall
+   *        out.
+   *
+   * \param[in] value The byte.
+   * \param[in] shift The places, less than 8.
+   */
+  friend constexpr Byte operator>>(Byte value, uint8_t shift) {
+    return Byte{static_cast<uint8_t>(value.value_ >> shift)};
+  }
 
  private:
   /*
@@ -75,90 +141,14 @@ class Byte {
   uint8_t value_;
 };
 
-// A friend defined in its class is found only by its argument; declared here
-// as well, so that max_matrix::ToInteger() finds it.
-constexpr uint8_t ToInteger(Byte value);
-
-/*!
- * \brief Returns whether two bytes have the same bits.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr bool operator==(Byte left, Byte right) {
-  return ToInteger(left) == ToInteger(right);
-}
-
-/*!
- * \brief Returns whether two bytes differ in a bit.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr bool operator!=(Byte left, Byte right) { return !(left == right); }
-
-/*!
- * \brief Returns the bits set in both bytes.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr Byte operator&(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(ToInteger(left) & ToInteger(right))};
-}
-
-/*!
- * \brief Returns the bits set in either byte.
- *
- * \param[in] left The one byte.
- * \param[in] right The other.
- */
-constexpr Byte operator|(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(ToInteger(left) | ToInteger(right))};
-}
-
-/*!
- * \brief Returns the bits that are not set in `value`.
- *
- * \param[in] value The byte.
- */
-constexpr Byte operator~(Byte value) {
-  return Byte{static_cast<uint8_t>(~ToInteger(value))};
-}
-
-/*!
- * \brief Returns the bits moved `shift` places up; those beyond bit 7 fall out.
- *
- * \param[in] value The byte.
- * \param[in] shift The places, less than 8.
- */
-constexpr Byte operator<<(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(ToInteger(value) << shift)};
-}
-
-/*!
- * \brief Returns the bits moved `shift` places down; those below bit 0 fall
- *        out.
- *
- * \param[in] value The byte.
- * \param[in] shift The places, less than 8.
- */
-constexpr Byte operator>>(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(ToInteger(value) >> shift)};
-}
-
 /*!
  * \brief Returns whether a bit is set, as the core's `bitRead()` for a number.
  *
  * \param[in] value The byte.
  * \param[in] bit The bit, 0 to 7.
  */
-// The value shifted down to the bit rather than a mask shifted up to it: 26
-// bytes less in Basics on the Uno. Shifted as an unsigned int, as a uint8_t
-// would be promoted to an int, which has a sign.
 constexpr bool ReadBit(Byte value, uint8_t bit) {
-  using ShiftType = decltype(uint8_t{} | 0U);
-  return ((static_cast<ShiftType>(ToInteger(value)) >> bit) & 1U) != 0U;
+  return Bit<uint8_t>::ReadBit(value.ToInteger(), bit);
 }
 
 /*!
@@ -170,7 +160,7 @@ constexpr bool ReadBit(Byte value, uint8_t bit) {
  * \param[in] set True to set the bit, false to clear it.
  */
 constexpr Byte WriteBit(Byte value, uint8_t bit, bool set) {
-  return set ? (value | (Byte{1} << bit)) : (value & ~(Byte{1} << bit));
+  return Byte{Bit<uint8_t>::WriteBit(value.ToInteger(), bit, set)};
 }
 
 }  // namespace max_matrix

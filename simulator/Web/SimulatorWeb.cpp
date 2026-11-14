@@ -27,8 +27,8 @@ constexpr char kCommandUpsideDown[] = "upside-down 1";
 constexpr char kCommandSerial[] = "serial ";
 
 /* JSON, RFC 8259: the printable ASCII range; the rest is written as \u00XX */
-constexpr uint8_t kJsonFirstPlain{0x20U};
-constexpr uint8_t kJsonLastPlain{0x7EU};
+constexpr uint8_t kJsonFirstPlain{0x20u};
+constexpr uint8_t kJsonLastPlain{0x7Eu};
 
 // Returns `value` as `digits` hex digits in upper case, as JSON escapes a char
 // and the frame log shows a byte.

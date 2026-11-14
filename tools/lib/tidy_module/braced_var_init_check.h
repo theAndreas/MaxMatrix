@@ -19,7 +19,9 @@ namespace house {
  * condition, and the default of a data member. Not a parameter's default, the
  * variable of a range-based `for`, a structured binding or a lambda's capture,
  * nor a C array from a string literal, `char const kName[] = "font";`, which
- * T-20 writes with `=`, as modernize-avoid-c-arrays allows no other form.
+ * T-20 writes with `=`, as modernize-avoid-c-arrays allows no other form: the
+ * text in braces, `= {"font"}` or `{"font"}`, is reported with a fix-it to
+ * that form instead.
  *
  * The fix-it writes braces where that keeps the meaning, and only there:
  *

@@ -23,7 +23,15 @@
 #
 # The library is read with each target's flags, not only through the host's database: an int has
 # 16 bits on the AVR and 32 on the host, and a check that only saw the host would never meet the
-# code as the board does.
+# code as the board does. A header is read where a source includes it, and every header of src/
+# through build/tidy/headers.cpp as well, which includes them all: one that no source includes,
+# as one of templates alone, is read so too.
+#
+# A firmware of several targets has a folder of platform/ for each, and a target compiles its own
+# and leaves the others' out. So a source of src/ or examples/ is read with every target, and one
+# of platform/ with those whose database has it; one of platform/ that no target compiles fails,
+# as it would otherwise never be read. The code of HOST_CODE is read with the tests, and that of
+# TIDY_SKIP by a target of the project's own, with a database of its own.
 #
 # The checks of our own, house-*, are a module of clang-tidy's that tools/lib/tidy_module.sh builds
 # from tools/lib/tidy_module/ and clang-tidy loads; the database alone does not need it.
@@ -35,6 +43,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 readonly RUN_CLANG_TIDY=(uv run --frozen run-clang-tidy.py)
 readonly TIDY_DIR="${BUILD_DIR}/tidy"
+# Relative to the repository, as run_tidy() takes its files.
+readonly HEADERS_SOURCE="${TIDY_DIR#"${ROOT_DIR}/"}/headers.cpp"
 
 # Runs clang-tidy on the files given, with the entries the database in <dir> has for them, one
 # file per core: clang-tidy alone reads one file after the other. run-clang-tidy prints the
@@ -71,6 +81,69 @@ run_tidy() {
   "${RUN_CLANG_TIDY[@]}" "${args[@]}"
 }
 
+# Writes HEADERS_SOURCE, a file that includes every header of src/, so that clang-tidy reads a
+# header that no source includes, as one of templates alone, which the tests include but read
+# as C++17 and with a filter that leaves src/ out. One file, not one per header: each header
+# alone is what tools/self_contained_headers.py compiles, and here it would only cost time.
+# Prints nothing and writes nothing where src/ has no header.
+write_headers_source() {
+  local headers
+  headers="$(git ls-files --cached --others --exclude-standard -- 'src/*.h')"
+  if [[ -z "${headers}" ]]; then
+    return 0
+  fi
+  local header
+  {
+    echo '// Written by tools/tidy.sh: every header of src/, for clang-tidy alone.'
+    echo '// NOLINTBEGIN(misc-include-cleaner): included to be read, not used'
+    while IFS= read -r header; do
+      printf '#include "%s/%s"\n' "${ROOT_DIR}" "${header}"
+    done <<< "${headers}"
+    echo '// NOLINTEND(misc-include-cleaner)'
+  } > "${ROOT_DIR}/${HEADERS_SOURCE}"
+  echo "${HEADERS_SOURCE}"
+}
+
+# Adds to the database in <dir> an entry for HEADERS_SOURCE, with the flags of a source of src/,
+# else of an example, as a library of headers alone has no source: the flags the library is
+# compiled with on that target. An entry of an earlier run is replaced.
+# Arguments:
+#   dir
+add_headers_entry() {
+  local dir="$1"
+  local database="${dir}/compile_commands.json"
+  jq --arg root "${ROOT_DIR}" --arg headers "${ROOT_DIR}/${HEADERS_SOURCE}" '
+    def path: if (.file | startswith("/")) then .file else .directory + "/" + .file end;
+    def from($part; $suffix):
+      map(select(path | startswith($root + "/" + $part) and endswith($suffix)));
+    map(select(path != $headers))
+    | (from("src/"; ".cpp") + from("examples/"; ".ino") + from("examples/"; ".cpp")) as $library
+    | if ($library | length) == 0
+      then error("no source of src/ or examples/ in the database")
+      else . end
+    | $library[0] as $entry
+    | . + [$entry
+      | if has("arguments")
+        then .arguments |= map(if . == $entry.file or . == ($entry | path)
+                               then $headers else . end)
+        else .command |= (split($entry.file) | join($headers)) end
+      | .file = $headers]' \
+    "${database}" > "${database}.new" && mv "${database}.new" "${database}"
+}
+
+# Prints those of the files given that the database in <dir> has an entry for, one per line.
+# Arguments:
+#   dir, then the files, relative to the repository
+in_database() {
+  local dir="$1"
+  shift
+  jq -r --arg root "${ROOT_DIR}" '
+    def path: if (.file | startswith("/")) then .file else .directory + "/" + .file end;
+    map(path) as $paths
+    | $ARGS.positional[] | select(($root + "/" + .) as $wanted | any($paths[]; . == $wanted))' \
+    "${dir}/compile_commands.json" --args "$@"
+}
+
 main() {
   local database_only=0
   if [[ "${1:-}" == "--database-only" ]]; then
@@ -83,10 +156,29 @@ main() {
   cd "${ROOT_DIR}"
   mkdir -p "${TIDY_DIR}"
   local sources
-  list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*' 'platform/*'
+  list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*'
+  local host_code
+  host_code_dirs host_code
+  local platform_paths=('platform/*')
+  local dir
+  for dir in "${host_code[@]}" "${TIDY_SKIP[@]}"; do
+    platform_paths+=(":!${dir%/}/*")
+  done
+  # Asked only where the folder is: a library has none, and list_files fails on no file.
+  local platform_sources=()
+  if [[ -d platform ]]; then
+    list_files platform_sources '\.cpp$' "${platform_paths[@]}"
+  fi
+  local -A compiled=()
   MODULE=''
+  local headers=()
+  local headers_source
   if ((!database_only)); then
     MODULE="$(tools/lib/tidy_module.sh)"
+    headers_source="$(write_headers_source)"
+    if [[ -n "${headers_source}" ]]; then
+      headers=("${headers_source}")
+    fi
   fi
 
   # Each variant takes other branches of #if, and each target other ones again. The first of both
@@ -95,8 +187,10 @@ main() {
   local target
   local variant
   local compiler_database
-  local dir
   local label
+  local found
+  local own
+  local source
   local databases=()
   for target in "${TARGETS[@]}"; do
     select_target "${target}"
@@ -108,10 +202,31 @@ main() {
         break
       fi
       label="$(target_label "${variant}")"
+      if ((${#headers[@]} > 0)); then
+        add_headers_entry "${dir}" || failed=1
+      fi
+      own=()
+      if ((${#platform_sources[@]} > 0)); then
+        found="$(in_database "${dir}" "${platform_sources[@]}")"
+        if [[ -n "${found}" ]]; then
+          mapfile -t own <<< "${found}"
+        fi
+      fi
+      for source in "${own[@]}"; do
+        compiled["${source}"]=1
+      done
       echo "clang-tidy, ${label}:"
-      run_tidy "${dir}" '' "${sources[@]}" || failed=1
+      run_tidy "${dir}" '' "${sources[@]}" "${own[@]}" "${headers[@]}" || failed=1
     done
   done
+  if ((!database_only)); then
+    for source in "${platform_sources[@]}"; do
+      if [[ -z "${compiled[${source}]:-}" ]]; then
+        err "${source} is compiled by no target of tools/project.sh, so clang-tidy never reads it."
+        failed=1
+      fi
+    done
+  fi
   ln -sfn "targets/${TARGETS[0]}/${TIDY_VARIANTS[0]}" "${TIDY_DIR}/clangd"
   if ((database_only)); then
     printf '%s\n' "${databases[@]}" > "${TIDY_DIR}/databases"
@@ -121,18 +236,21 @@ main() {
 
   # The tests on the host, against the mock, with the database CMake writes. Only what lies in
   # test/: the tests are C++17, and the headers of the library, checked above as the gnu++11
-  # they are, would be held to C++17. Not the mock in test/mock/, which stands in for the
-  # Arduino core and follows it, not the Google style. Nor what lies in test/compile_fail/,
-  # which must not compile, and in test/compile_warn/, which warns on purpose: neither is in a
-  # database. And the code of HOST_CODE, which CMake builds beside the tests, and its headers.
-  local host_code
-  host_code_dirs host_code
+  # they are, would be held to C++17. Not the sources of the mock in test/mock/, which stands in
+  # for the Arduino core and follows it, not the Google style; its headers are read through the
+  # tests that include them, as the filter below takes all of test/. Nor what lies in
+  # test/compile_fail/, which must not compile, and in test/compile_warn/, which warns on
+  # purpose: neither is in a database. And the code of HOST_CODE, which CMake builds beside
+  # the tests, and its headers.
   local paths=('test/*' ':!test/mock/*' ':!test/compile_fail/*' ':!test/compile_warn/*'
     ':!test/fuzz/*')
   local filter='test'
   for dir in "${host_code[@]}"; do
     paths+=("${dir}/*")
     filter+="|${dir}"
+  done
+  for dir in "${TIDY_SKIP[@]}"; do
+    paths+=(":!${dir%/}/*")
   done
   local tests
   list_files tests '\.cpp$' "${paths[@]}"

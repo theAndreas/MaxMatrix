@@ -108,16 +108,22 @@ class Status {
   /*!
    * \brief Returns whether the call failed for this reason.
    *
-   * \param[in] other The error to compare with.
+   * \param[in] status The status of the call.
+   * \param[in] error The error to compare with.
    */
-  bool operator==(Error other) const { return error_ == other; }
+  friend bool operator==(Status status, Error error) {
+    return status.error_ == error;
+  }
 
   /*!
    * \brief Returns whether the call did not fail for this reason.
    *
-   * \param[in] other The error to compare with.
+   * \param[in] status The status of the call.
+   * \param[in] error The error to compare with.
    */
-  bool operator!=(Error other) const { return error_ != other; }
+  friend bool operator!=(Status status, Error error) {
+    return !(status == error);
+  }
 };
 
 /*!
@@ -174,11 +180,25 @@ class Result {
   /*! \brief Returns whether there is a value. */
   MAXMATRIX_NODISCARD bool IsOk() const { return error_ == Error::kOk; }
 
-  /*! \copydoc Status::operator==(Error) const */
-  bool operator==(Error other) const { return error_ == other; }
+  /*!
+   * \brief Returns whether there is no value for this reason.
+   *
+   * \param[in] result The result of the call.
+   * \param[in] error The error to compare with.
+   */
+  friend bool operator==(Result const& result, Error error) {
+    return result.error_ == error;
+  }
 
-  /*! \copydoc Status::operator!=(Error) const */
-  bool operator!=(Error other) const { return error_ != other; }
+  /*!
+   * \brief Returns whether there is a value, or none for another reason.
+   *
+   * \param[in] result The result of the call.
+   * \param[in] error The error to compare with.
+   */
+  friend bool operator!=(Result const& result, Error error) {
+    return !(result == error);
+  }
 };
 
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)

@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include "Utility/Bit.h"
+
 namespace {
 
 /* SimulatorSocket Parameter */
@@ -59,9 +61,12 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 
 void SimulatorSocket::SetNonBlocking(int socket) {
   int const flags{fcntl(socket, F_GETFL, 0)};
-  // H-8: fcntl() takes flags as int, and has no other form than a vararg
-  // NOLINTNEXTLINE(bugprone-signed-bitwise,cppcoreguidelines-pro-type-vararg)
-  fcntl(socket, F_SETFL, flags | O_NONBLOCK);
+  // H-8: fcntl() takes its flags as an int, or'ed here as the bits they are.
+  int const non_blocking_flags{
+      static_cast<int>(max_matrix::Bit<uint32_t>::Combine(
+          static_cast<uint32_t>(flags), static_cast<uint32_t>(O_NONBLOCK)))};
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
+  fcntl(socket, F_SETFL, non_blocking_flags);
 }
 
 void SimulatorSocket::SetReceiveTimeout(int socket, uint32_t milliseconds) {

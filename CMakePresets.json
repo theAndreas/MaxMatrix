@@ -15,7 +15,7 @@
     {
       "name": "warnings-as-errors",
       "hidden": true,
-      "description": "What the ci- presets add: every warning of cmake/checks.cmake fails the build.",
+      "description": "What the ci- presets add: every warning of cmake/checks.cmake fails the build. Each build make check runs has its ci- twin, the instrumented ones too, as a warning may come only with the sanitizers or --coverage.",
       "cacheVariables": { "CMAKE_COMPILE_WARNING_AS_ERROR": "ON" }
     },
     {
@@ -67,6 +67,18 @@
     {
       "name": "ci-clang",
       "inherits": ["warnings-as-errors", "clang"]
+    },
+    {
+      "name": "ci-sanitize",
+      "inherits": ["warnings-as-errors", "sanitize"]
+    },
+    {
+      "name": "ci-coverage",
+      "inherits": ["warnings-as-errors", "coverage"]
+    },
+    {
+      "name": "ci-fuzz",
+      "inherits": ["warnings-as-errors", "fuzz"]
     }
   ],
   "buildPresets": [
@@ -76,7 +88,10 @@
     { "name": "coverage", "configurePreset": "coverage" },
     { "name": "fuzz", "configurePreset": "fuzz" },
     { "name": "ci-default", "configurePreset": "ci-default" },
-    { "name": "ci-clang", "configurePreset": "ci-clang" }
+    { "name": "ci-clang", "configurePreset": "ci-clang" },
+    { "name": "ci-sanitize", "configurePreset": "ci-sanitize" },
+    { "name": "ci-coverage", "configurePreset": "ci-coverage" },
+    { "name": "ci-fuzz", "configurePreset": "ci-fuzz" }
   ],
   "testPresets": [
     {
@@ -107,6 +122,16 @@
     {
       "name": "ci-clang",
       "configurePreset": "ci-clang",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "ci-sanitize",
+      "configurePreset": "ci-sanitize",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "ci-coverage",
+      "configurePreset": "ci-coverage",
       "output": { "outputOnFailure": true }
     }
   ],
@@ -164,6 +189,29 @@
         { "type": "configure", "name": "ci-clang" },
         { "type": "build", "name": "ci-clang" },
         { "type": "test", "name": "ci-clang" }
+      ]
+    },
+    {
+      "name": "ci-sanitize",
+      "steps": [
+        { "type": "configure", "name": "ci-sanitize" },
+        { "type": "build", "name": "ci-sanitize" },
+        { "type": "test", "name": "ci-sanitize" }
+      ]
+    },
+    {
+      "name": "ci-coverage",
+      "steps": [
+        { "type": "configure", "name": "ci-coverage" },
+        { "type": "build", "name": "ci-coverage" },
+        { "type": "test", "name": "ci-coverage" }
+      ]
+    },
+    {
+      "name": "ci-fuzz",
+      "steps": [
+        { "type": "configure", "name": "ci-fuzz" },
+        { "type": "build", "name": "ci-fuzz" }
       ]
     }
   ]

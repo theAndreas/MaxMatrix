@@ -22,7 +22,7 @@
 #include "MaxMatrixAttributes.h"
 
 /* SimulatorWebHost Parameter */
-constexpr uint8_t kSimulatorWebHostMaxClients{4U};
+constexpr uint8_t kSimulatorWebHostMaxClients{4u};
 
 /*!
  * \brief A small HTTP and WebSocket server for the simulator, on loopback only.

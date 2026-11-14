@@ -26,7 +26,7 @@ TEST(SpanTest, ReachesTheElementsItIsMadeOf) {
   array<uint8_t, 3> rows{{0x18, 0x3C, 0x7E}};
   span<uint8_t> const view{rows.data(), 2};
 
-  EXPECT_EQ(view.size(), 2U);
+  EXPECT_EQ(view.size(), 2u);
   EXPECT_EQ(view.data(), rows.data());
   EXPECT_EQ(view[1], 0x3C);
   view[0] = 0x42;
@@ -40,8 +40,8 @@ TEST(SpanTest, TakesTheSizeOfAnArray) {
   span<uint8_t> const writable{rows};
   span<uint8_t const> const readable{font};
 
-  EXPECT_EQ(writable.size(), 3U);
-  EXPECT_EQ(readable.size(), 4U);
+  EXPECT_EQ(writable.size(), 3u);
+  EXPECT_EQ(readable.size(), 4u);
   EXPECT_EQ(readable[3], 7);
 }
 
@@ -49,7 +49,7 @@ TEST(SpanTest, TakesTheSizeOfAnArray) {
 TEST(SpanTest, TakesTheSizeOfACArray) {
   span<char const> const text{"Hi"};
 
-  EXPECT_EQ(text.size(), 3U);
+  EXPECT_EQ(text.size(), 3u);
   EXPECT_EQ(text[1], 'i');
 }
 
@@ -60,7 +60,7 @@ TEST(SpanTest, PassesAsOneThatCannotWrite) {
   span<uint8_t const> const readable{writable};
 
   EXPECT_EQ(readable.data(), writable.data());
-  EXPECT_EQ(readable.size(), 2U);
+  EXPECT_EQ(readable.size(), 2u);
 }
 
 /* only where a pointer to the elements converts, so that an overload for
@@ -86,9 +86,9 @@ TEST(SpanTest, GivesTheElementsFromAnOffsetOn) {
   span<uint8_t const> const rest{all.subspan(1)};
   span<uint8_t const> const none{all.subspan(4)};
 
-  EXPECT_EQ(rest.size(), 3U);
+  EXPECT_EQ(rest.size(), 3u);
   EXPECT_EQ(rest[0], 2);
-  EXPECT_EQ(none.size(), 0U);
+  EXPECT_EQ(none.size(), 0u);
 }
 
 TEST(SpanTest, GivesItsFirstElements) {
@@ -97,7 +97,7 @@ TEST(SpanTest, GivesItsFirstElements) {
 
   span<uint8_t const> const first{all.first(2)};
 
-  EXPECT_EQ(first.size(), 2U);
+  EXPECT_EQ(first.size(), 2u);
   EXPECT_EQ(first.data(), all.data());
 }
 

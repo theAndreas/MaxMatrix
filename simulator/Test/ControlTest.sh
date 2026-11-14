@@ -6,6 +6,7 @@
 #
 # The arguments go to the simulator: --elf FILE, for SimulatorAvr.
 set -eu
+# shellcheck source=simulator/Test/WebTestLib.sh
 source "$(dirname "$0")/WebTestLib.sh"
 
 Port=$2

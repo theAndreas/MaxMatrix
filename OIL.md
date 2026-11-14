@@ -52,7 +52,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 40 | Braced initialization checked | 34 | done | #93 |
 | 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
-| 43 | Bit operations in one class, from the template | 41 | open | |
+| 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
 ### 1 Build with CMake
 
@@ -1104,6 +1104,25 @@ The same update brings the template's #78, unreleased after v0.9.0: `add_compile
 takes a stop of a constant evaluation as well as a `static_assert`. `test/compile_fail/` then
 goes back to it, and the loop of its own that 41 put into `CMakeLists.txt` for `make_array()`
 goes, its cases naming `ValueOutOfRange` in their `// Expected: ...` line.
+
+As built, with the template at v0.10.1, which brings `house-bitwise-in-bit-class`,
+`house-no-friend` and `house-operator-form` of its v0.8.0 and the lower-case `u` of T-22: the
+template brings its `Bit` only to a project it makes, so MaxMatrix has its own in
+`Utility/Bit.h`, by M-3, with the static functions of `utl::Bit` and what the simulator's SHA-1
+and Base64 need, a rotation, a toggle, an inversion and the shifts; its tests are
+`test/Utility/BitTest.cpp`. `ReadBit()` shifts the value down, as 41 measured; built on
+`ShiftDown()` it is as large. `SetBits()` and `ClearBits()` take their target as a template,
+as the mock's port registers are objects. Everything that read or wrote bits goes through it,
+the simulator, the control program, the model and the tests among it; `Byte` passes
+`ReadBit()` and `WriteBit()` on to it and keeps the built-in operators in its own, as H-9
+allows a type of raw data. The core's macros were gone from `src/` already; `docu/` used
+`bitRead()` once. A friend, `Byte`'s `ToInteger()`, is a member now, and the operators of
+`Byte`, `Status` and `Result` are hidden friends or members, as C-15 asks. Measured on the Uno
+with avr-gcc 7.3, every example in all three variants: the same size as before, SerialControl
+2 bytes smaller. The UTF-8 of a char is put together in one expression with the lead byte not
+masked first; masked first, every example that draws a text took 2 bytes more. The cases of
+`test/compile_fail/` run through `add_compile_fail_tests()` of the template, in gnu++11 alone,
+as the function takes one standard; the loop of its own ran them in C++17 as well.
 
 ## Decisions
 

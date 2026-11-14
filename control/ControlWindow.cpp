@@ -38,7 +38,7 @@ namespace {
 
 /* ControlWindow Parameter */
 /* what SerialControl opens its Serial with */
-constexpr uint32_t kBaudRate{115200U};
+constexpr uint32_t kBaudRate{115200u};
 /* the port the README starts the simulator with, beside the page's 8080 */
 constexpr int kTcpPort{8081};
 constexpr int kPollMs{20};
@@ -52,6 +52,33 @@ constexpr int kLogHeight{200};
 constexpr int kBorder{8};
 /* the height of the sliders of intensity and speed */
 constexpr int kSliderHeight{140};
+
+/* What a sizer does with an item and a control looks like, each combination of
+ * wxWidgets' flags named once: a | of named masks in a constexpr, the one place
+ * it may stand outside the bit class (CodingStyle H-9). Or'ed as uint32_t, as
+ * H-8 asks; wxWidgets takes a sizer's flags as an int and a style as a long. */
+constexpr int kFillWithBorder{
+    static_cast<int>(static_cast<uint32_t>(wxEXPAND) | wxALL)};
+constexpr int kFillBorderButTop{static_cast<int>(
+    static_cast<uint32_t>(wxEXPAND) | wxLEFT | wxRIGHT | wxBOTTOM)};
+constexpr int kFillBorderButLeft{static_cast<int>(
+    static_cast<uint32_t>(wxEXPAND) | wxTOP | wxBOTTOM | wxRIGHT)};
+constexpr int kFillBorderBelow{
+    static_cast<int>(static_cast<uint32_t>(wxEXPAND) | wxBOTTOM)};
+constexpr int kFillBorderRight{
+    static_cast<int>(static_cast<uint32_t>(wxEXPAND) | wxRIGHT)};
+constexpr int kMiddleBorderRight{
+    static_cast<int>(static_cast<uint32_t>(wxALIGN_CENTER_VERTICAL) | wxRIGHT)};
+constexpr int kCentreWithBorder{
+    static_cast<int>(static_cast<uint32_t>(wxALIGN_CENTER_HORIZONTAL) | wxALL)};
+constexpr int kBorderButTop{
+    static_cast<int>(static_cast<uint32_t>(wxLEFT) | wxRIGHT | wxBOTTOM)};
+constexpr int32_t kFixedRightLabel{static_cast<int32_t>(
+    static_cast<uint32_t>(wxALIGN_RIGHT) | wxST_NO_AUTORESIZE)};
+constexpr int32_t kLevelSlider{static_cast<int32_t>(
+    static_cast<uint32_t>(wxSL_VERTICAL) | wxSL_INVERSE | wxSL_VALUE_LABEL)};
+constexpr int32_t kLogText{static_cast<int32_t>(
+    static_cast<uint32_t>(wxTE_MULTILINE) | wxTE_READONLY)};
 
 }  // namespace
 
@@ -74,11 +101,11 @@ ControlWindow::ControlWindow()
   controls->Add(MakeMatrix(controls_), 0, wxEXPAND);
   controls->Add(MakeText(controls_), 1, wxEXPAND);
   controls_->SetSizer(controls);
-  columns->Add(controls_, 1, wxEXPAND | wxALL, FromDIP(kBorder));
+  columns->Add(controls_, 1, kFillWithBorder, FromDIP(kBorder));
   columns->Add(
       MakeConnections(content), 0,
       // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-      wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(kBorder));
+      kFillBorderButLeft, FromDIP(kBorder));
   content->SetSizer(columns);
   SetClientSize(content->GetBestSize());
   SetMinClientSize(content->GetBestSize());
@@ -131,47 +158,46 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   bytes_left_ = new wxStaticText(
       page, wxID_ANY, wxEmptyString, wxDefaultPosition,
       // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-      wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE);
+      wxDefaultSize, kFixedRightLabel);
   // as wide as the longest it says, so that the field does not change its width
   // as one types
   bytes_left_->SetMinSize(bytes_left_->GetTextExtent("000 bytes too long"));
-  intensity_ = new wxSlider(
-      intensity_box->GetStaticBox(), wxID_ANY, MAXMATRIX_INTENSITY_INIT_VALUE,
-      0, kMaxIntensity, wxDefaultPosition, FromDIP(wxSize(-1, kSliderHeight)),
-      wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
-  speed_ =
-      new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
-                   MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed, kMaxSpeed,
-                   wxDefaultPosition, FromDIP(wxSize(-1, kSliderHeight)),
-                   wxSL_VERTICAL | wxSL_INVERSE | wxSL_VALUE_LABEL);
+  intensity_ = new wxSlider(intensity_box->GetStaticBox(), wxID_ANY,
+                            MAXMATRIX_INTENSITY_INIT_VALUE, 0, kMaxIntensity,
+                            wxDefaultPosition,
+                            FromDIP(wxSize(-1, kSliderHeight)), kLevelSlider);
+  speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
+                        MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed,
+                        kMaxSpeed, wxDefaultPosition,
+                        FromDIP(wxSize(-1, kSliderHeight)), kLevelSlider);
   shift_ = new wxCheckBox(page, wxID_ANY, "Shift in");
   space_ = new wxSpinCtrl(page, wxID_ANY, wxEmptyString, wxDefaultPosition,
                           wxDefaultSize, wxSP_ARROW_KEYS, 0, kMaxSpace,
                           MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
 
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  intensity_box->Add(intensity_, 1, wxALIGN_CENTER_HORIZONTAL | wxALL, border);
+  intensity_box->Add(intensity_, 1, kCentreWithBorder, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  speed_box->Add(speed_, 1, wxALIGN_CENTER_HORIZONTAL | wxALL, border);
+  speed_box->Add(speed_, 1, kCentreWithBorder, border);
   space_row->Add(
       new wxStaticText(page, wxID_ANY, "Space"), 0,
       // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-      wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
+      kMiddleBorderRight, border);
   space_row->Add(space_, 1);
   actions->Add(shift_, 0, wxBOTTOM, border);
-  actions->Add(space_row, 0, wxEXPAND | wxBOTTOM, border);
+  actions->Add(space_row, 0, kFillBorderBelow, border);
   actions->AddStretchSpacer();
-  actions->Add(clear, 0, wxEXPAND | wxBOTTOM, border);
+  actions->Add(clear, 0, kFillBorderBelow, border);
   actions->Add(send_, 0, wxEXPAND);
-  settings->Add(intensity_box, 0, wxEXPAND | wxRIGHT, border);
-  settings->Add(speed_box, 0, wxEXPAND | wxRIGHT, border);
+  settings->Add(intensity_box, 0, kFillBorderRight, border);
+  settings->Add(speed_box, 0, kFillBorderRight, border);
   settings->Add(actions, 1, wxEXPAND);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  text_row->Add(text_, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
+  text_row->Add(text_, 1, kMiddleBorderRight, border);
   text_row->Add(bytes_left_, 0, wxALIGN_CENTER_VERTICAL);
-  rows->Add(text_row, 0, wxEXPAND | wxALL, border);
+  rows->Add(text_row, 0, kFillWithBorder, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  rows->Add(settings, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, border);
+  rows->Add(settings, 1, kFillBorderButTop, border);
   page->SetSizer(rows);
 
   text_->Bind(wxEVT_TEXT_ENTER, &ControlWindow::OnSend, this);
@@ -233,31 +259,29 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
   simulator_status_ =
       new wxStaticText(simulator_box->GetStaticBox(), wxID_ANY, wxEmptyString);
   log_ = new wxTextCtrl(log_box->GetStaticBox(), wxID_ANY, wxEmptyString,
-                        wxDefaultPosition, wxDefaultSize,
-                        wxTE_MULTILINE | wxTE_READONLY);
+                        wxDefaultPosition, wxDefaultSize, kLogText);
 
   board_row->Add(board_button_, 0, wxRIGHT, border);
   board_row->Add(board_status_, 1, wxALIGN_CENTER_VERTICAL);
-  board_box->Add(serial_port_name_, 0, wxEXPAND | wxALL, border);
+  board_box->Add(serial_port_name_, 0, kFillWithBorder, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  board_box->Add(board_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, border);
+  board_box->Add(board_row, 0, kFillBorderButTop, border);
   port_row->Add(
       new wxStaticText(simulator_box->GetStaticBox(), wxID_ANY, "Port"), 0,
       // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-      wxALIGN_CENTER_VERTICAL | wxRIGHT, border);
+      kMiddleBorderRight, border);
   port_row->Add(tcp_port_number_, 1);
   simulator_row->Add(simulator_button_, 0, wxRIGHT, border);
   simulator_row->Add(simulator_status_, 1, wxALIGN_CENTER_VERTICAL);
-  simulator_box->Add(port_row, 0, wxEXPAND | wxALL, border);
+  simulator_box->Add(port_row, 0, kFillWithBorder, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  simulator_box->Add(simulator_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM,
-                     border);
+  simulator_box->Add(simulator_row, 0, kFillBorderButTop, border);
   log_->SetMinSize(FromDIP(wxSize(-1, kLogHeight)));
-  log_box->Add(log_, 1, wxEXPAND | wxALL, border);
+  log_box->Add(log_, 1, kFillWithBorder, border);
   // NOLINTNEXTLINE(bugprone-signed-bitwise): H-8, wx's flags are int
-  log_box->Add(clear_log, 0, wxLEFT | wxRIGHT | wxBOTTOM, border);
-  rows->Add(board_box, 0, wxEXPAND | wxBOTTOM, border);
-  rows->Add(simulator_box, 0, wxEXPAND | wxBOTTOM, border);
+  log_box->Add(clear_log, 0, kBorderButTop, border);
+  rows->Add(board_box, 0, kFillBorderBelow, border);
+  rows->Add(simulator_box, 0, kFillBorderBelow, border);
   rows->Add(log_box, 1, wxEXPAND);
   rows->SetMinSize(FromDIP(wxSize(kConnectionsWidth, -1)));
   column->SetSizer(rows);

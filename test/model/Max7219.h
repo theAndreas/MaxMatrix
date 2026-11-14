@@ -68,7 +68,7 @@ class Max7219Chain {
 
   void Reset(uint8_t number_of_chips);
   void Shift(uint8_t value);
-  void ShiftBit(bool value);
+  void ShiftBit(bool bit);
   void Latch();
   MAXMATRIX_NODISCARD bool IsLit(Max7219Wiring const& wiring, uint16_t x,
                                  uint8_t y, bool upside_down = false) const;

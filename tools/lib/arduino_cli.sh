@@ -17,7 +17,7 @@ list_examples() {
   done
 }
 
-# Installs the core of the selected target, pinned, from the index of ARDUINO_BOARD_URLS as well
+# Installs the cores of the selected target, pinned, from the index of ARDUINO_BOARD_URLS as well
 # if it names one.
 arduino_cli_setup() {
   local urls=()
@@ -25,7 +25,7 @@ arduino_cli_setup() {
     urls=(--additional-urls "${ARDUINO_BOARD_URLS}")
   fi
   arduino-cli core update-index "${urls[@]}"
-  arduino-cli core install "${ARDUINO_CORE}" "${urls[@]}"
+  arduino-cli core install "${ARDUINO_CORE[@]}" "${urls[@]}"
 }
 
 # Prints the bin directory of the avr-gcc that arduino-cli uses for FQBN.
@@ -74,7 +74,8 @@ arduino_cli_log() {
 }
 
 # Compiles every example in a variant, or the one named, and fails where one does not compile
-# or warns outside the Arduino core.
+# or warns outside the board's core: cores/arduino/ of Arduino's own, or another of a third
+# party's, as cores/xmega/ of XMegaForArduino's.
 # Arguments:
 #   variant: one of VARIANTS
 #   example: optional, the name of a folder in examples/
@@ -104,7 +105,7 @@ arduino_cli_build() {
       continue
     fi
     echo "${output}" > "${log}"
-    warnings="$(grep 'warning:' <<< "${output}" | grep -v '/cores/arduino/' || true)"
+    warnings="$(grep 'warning:' <<< "${output}" | grep -Ev '/cores/[^/]+/' || true)"
     if [[ -n "${warnings}" ]]; then
       err "${example} (${label}) warns:"
       err "${warnings}"
