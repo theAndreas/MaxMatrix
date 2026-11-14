@@ -52,7 +52,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 40 | Braced initialization checked | 34 | done | #93 |
 | 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
-| 43 | Bit operations in one class, from the template | 41 | done | |
+| 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
 ### 1 Build with CMake
 
