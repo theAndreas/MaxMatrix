@@ -14,10 +14,10 @@ using max_matrix::MatrixOf;
 
 namespace {
 
-constexpr byte kDataInPin{11};
-constexpr byte kChipSelectPin{10};
-constexpr byte kClockPin{13};
-constexpr byte kNumberOfModules{4};
+constexpr uint8_t kDataInPin{11};
+constexpr uint8_t kChipSelectPin{10};
+constexpr uint8_t kClockPin{13};
+constexpr uint8_t kNumberOfModules{4};
 
 /* a call that fails prints its name and the error on Serial */
 TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {

@@ -186,10 +186,10 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
     return Error::kNotAFont;
   }
 
-  byte const version{pgm_read_byte(font + 1)};
+  uint8_t const version{pgm_read_byte(font + 1)};
   uint16_t first{0};
   uint16_t last{0};
-  byte height{0};
+  uint8_t height{0};
   size_t offset{0};
 
   if (version == kVersion1) {
@@ -229,7 +229,7 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
  */
 Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
   bool const version_1{pgm_read_byte(font + 1) == kVersion1};
-  uint16_t const code{static_cast<byte>(c)};
+  uint16_t const code{static_cast<uint8_t>(c)};
   uint16_t first{0};
   uint16_t last{0};
   Glyph glyph{};
@@ -260,18 +260,19 @@ Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
 }
 
 DecodedChar Font::DecodeChar(char const* text) {
-  byte const lead_byte{static_cast<byte>(text[0])};
-  byte const next_byte{static_cast<byte>(text[1])};
+  uint8_t const lead_byte{static_cast<uint8_t>(text[0])};
+  uint8_t const next_byte{static_cast<uint8_t>(text[1])};
 
   /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
   bool const is_latin_1_lead{0xC2 == lead_byte || 0xC3 == lead_byte};
   bool const is_continuation{kUtf8ContinuationTag ==
                              (next_byte & kUtf8ContinuationMask)};
   if (is_latin_1_lead && is_continuation) {
-    byte const high_bits{static_cast<byte>(lead_byte & kUtf8LeadBits)};
-    byte const low_bits{static_cast<byte>(next_byte & kUtf8ContinuationBits)};
-    byte const latin_1{static_cast<byte>(
-        static_cast<byte>(high_bits << kUtf8ContinuationWidth) | low_bits)};
+    uint8_t const high_bits{static_cast<uint8_t>(lead_byte & kUtf8LeadBits)};
+    uint8_t const low_bits{
+        static_cast<uint8_t>(next_byte & kUtf8ContinuationBits)};
+    uint8_t const latin_1{static_cast<uint8_t>(
+        static_cast<uint8_t>(high_bits << kUtf8ContinuationWidth) | low_bits)};
     return {static_cast<char>(latin_1), 2};
   }
   return {static_cast<char>(lead_byte), 1};

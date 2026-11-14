@@ -340,13 +340,13 @@ else in `src/` does.
 
 #### Integer types
 
-Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `byte` for an
-unsigned 8-bit value, as the Arduino API names it, and `int8_t`, `int16_t`, `uint16_t`,
-`uint32_t` and so on for the rest — never `int`, `unsigned`, `short` or `long`. An `int` is 16
+Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `uint8_t`,
+`int8_t`, `int16_t`, `uint16_t`, `uint32_t` and so on — never `int`, `unsigned`, `short` or
+`long`, and never Arduino's `byte`, which says nothing of what it holds (T-17). An `int` is 16
 bits on the Uno and 32 on the host, so the same code would behave differently in the tests
 than on the board. A coordinate that can lie off the panel to the left or above is signed
-(`int16_t`); a `uint8_t` or `byte` that goes into a `std::ostream` is cast to `uint16_t` first,
-or it prints as a char.
+(`int16_t`); a `uint8_t` that goes into a `std::ostream` is cast to `uint16_t` first, or it
+prints as a char. Only the mock keeps `byte`, as the core it stands in for declares it.
 
 The type stays where an outside interface fixes it: `main(int argc, char** argv)` and an index
 into `argv`; `millis()`, `micros()` and `delay()` in the mock, declared with `unsigned long` as

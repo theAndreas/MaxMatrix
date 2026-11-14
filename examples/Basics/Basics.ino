@@ -32,7 +32,7 @@ void ShowText() {
 /* a diagonal line, dot by dot */
 void DrawDiagonal() {
   matrix.Clear();
-  for (byte column{0}; column < matrix.GetNumberOfColumns(); column++) {
+  for (uint8_t column{0}; column < matrix.GetNumberOfColumns(); column++) {
     matrix.SetDot(column, column % max_matrix::kRowNumberOfModule, true);
     delay(30);
   }
@@ -41,7 +41,7 @@ void DrawDiagonal() {
 
 /* row 3 on every module */
 void FillRow() {
-  for (byte module{0}; module < matrix.GetNumberOfModules(); module++) {
+  for (uint8_t module{0}; module < matrix.GetNumberOfModules(); module++) {
     matrix.SetRow(module, 3, 0xFF);
   }
   delay(1000);
@@ -53,11 +53,11 @@ void DrawFrame() {
     // nothing is sent until the end of this block
     max_matrix::Batch const batch{matrix};
     matrix.Clear();
-    for (byte column{0}; column < matrix.GetNumberOfColumns(); column++) {
+    for (uint8_t column{0}; column < matrix.GetNumberOfColumns(); column++) {
       matrix.SetDot(column, 0, true);
       matrix.SetDot(column, max_matrix::kRowNumberOfModule - 1, true);
     }
-    for (byte row{0}; row < max_matrix::kRowNumberOfModule; row++) {
+    for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
       matrix.SetDot(0, row, true);
       matrix.SetDot(matrix.GetNumberOfColumns() - 1, row, true);
     }
@@ -67,7 +67,7 @@ void DrawFrame() {
 
 /* the intensity, from dark to bright */
 void FadeIn() {
-  for (byte intensity{0}; intensity <= 15; intensity++) {
+  for (uint8_t intensity{0}; intensity <= 15; intensity++) {
     matrix.SetIntensity(intensity);
     delay(100);
   }

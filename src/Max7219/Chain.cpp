@@ -24,13 +24,13 @@ namespace internal {
 namespace {
 
 /* the MAX7219 takes a byte most significant bit first */
-constexpr byte kFirstBit{0x80};
+constexpr uint8_t kFirstBit{0x80};
 
 }  // namespace
 #endif
 
-Chain::Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-             byte number_of_modules)
+Chain::Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+             uint8_t number_of_modules)
     : data_in_pin_{data_in_pin},
       chip_select_pin_{chip_select_pin},
       clock_pin_{clock_pin},
@@ -68,18 +68,18 @@ void Chain::Init() {
                    max7219::kDisplayTestNormalOperation);  // no display test
 }
 
-void Chain::WriteRegisterAll(byte register_address, byte register_value) {
+void Chain::WriteRegisterAll(uint8_t register_address, uint8_t register_value) {
   StartTransmission();
-  for (byte module{0}; module < number_of_modules_; module++) {
+  for (uint8_t module{0}; module < number_of_modules_; module++) {
     Transfer(register_address, register_value);
   }
   StopTransmission();
 }
 
-void Chain::WriteRegisterEach(byte register_address,
-                              byte const* register_values, byte stride) {
+void Chain::WriteRegisterEach(uint8_t register_address,
+                              uint8_t const* register_values, uint8_t stride) {
   StartTransmission();
-  for (byte module{0}; module < number_of_modules_;
+  for (uint8_t module{0}; module < number_of_modules_;
        module++, register_values += stride) {
     Transfer(register_address, *register_values);
   }
@@ -120,7 +120,7 @@ void Chain::StopTransmission() {
 // has to come first. Neither const nor static: it changes the chain, and bit
 // banging needs the pins, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
-void Chain::Transfer(byte register_address, byte register_value) {
+void Chain::Transfer(uint8_t register_address, uint8_t register_value) {
 #if (MAXMATRIX_USE_SPI == STD_ON)
   // the core's SPI object; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
@@ -145,7 +145,7 @@ void Chain::Transfer(byte register_address, byte register_value) {
  */
 // Not const: it changes the chain this object stands for, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
-void Chain::ShiftOut(byte value) {
+void Chain::ShiftOut(uint8_t value) {
   /*
    * The core's portOutputRegister() makes the register's address, a number read
    * from flash, a pointer, and SREG is the status register at its fixed
@@ -156,18 +156,18 @@ void Chain::ShiftOut(byte value) {
       data_in_port_)}; /* NOLINT(performance-no-int-to-ptr) */
   auto* const clock_register{
       portOutputRegister(clock_port_)}; /* NOLINT(performance-no-int-to-ptr) */
-  byte const status_register{
+  uint8_t const status_register{
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (byte bit{kFirstBit}; bit != 0U; bit >>= 1U) {
+  for (uint8_t bit{kFirstBit}; bit != 0U; bit >>= 1U) {
     if ((value & bit) != 0) {
       *data_in_register |= data_in_mask_;
     } else {
-      *data_in_register &= static_cast<byte>(~data_in_mask_);
+      *data_in_register &= static_cast<uint8_t>(~data_in_mask_);
     }
     *clock_register |= clock_mask_;
-    *clock_register &= static_cast<byte>(~clock_mask_);
+    *clock_register &= static_cast<uint8_t>(~clock_mask_);
   }
   SREG = status_register;
 }
@@ -175,18 +175,18 @@ void Chain::ShiftOut(byte value) {
 
 // Sets the pin of `mask` in `port` high or low, with the interrupts held off,
 // as ShiftOut() does.
-void Chain::WritePin(byte port, byte mask, bool high) {
+void Chain::WritePin(uint8_t port, uint8_t mask, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
   auto* const port_register{
       portOutputRegister(port)}; /* NOLINT(performance-no-int-to-ptr) */
-  byte const status_register{
+  uint8_t const status_register{
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
   if (high) {
     *port_register |= mask;
   } else {
-    *port_register &= static_cast<byte>(~mask);
+    *port_register &= static_cast<uint8_t>(~mask);
   }
   SREG = status_register;
 }

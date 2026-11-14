@@ -197,7 +197,7 @@ draw it inside a block that starts with a `max_matrix::Batch`; the picture is se
 {
     max_matrix::Batch batch(matrix);   // nothing is sent until the end of this block
     matrix.Clear();
-    for(byte column = 0; column < matrix.GetNumberOfColumns(); column++) matrix.SetDot(column, column % 8, true);
+    for(uint8_t column = 0; column < matrix.GetNumberOfColumns(); column++) matrix.SetDot(column, column % 8, true);
 }                                   // the whole picture at once, in at most eight frames
 ```
 

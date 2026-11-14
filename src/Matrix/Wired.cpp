@@ -18,21 +18,21 @@ namespace internal {
 namespace {
 
 /* a bit for each column of a module, all set */
-constexpr byte kAllColumnsChanged{0xFF};
+constexpr uint8_t kAllColumnsChanged{0xFF};
 
 }  // namespace
 
 // FN-3: the three pins, the buffer and its length, as a sketch hands them
 // NOLINTNEXTLINE(readability-function-size)
-Wired::Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-             byte* buffer, byte number_of_modules)
+Wired::Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+             uint8_t* buffer, uint8_t number_of_modules)
     : chain_{data_in_pin, chip_select_pin, clock_pin, number_of_modules},
       matrix_buffer_{buffer} {
   memset(matrix_buffer_, 0, GetNumberOfColumns());
 }
 
-void Wired::StoreBit(byte column, byte bit, bool value) {
-  byte column_value{matrix_buffer_[column]};
+void Wired::StoreBit(uint8_t column, uint8_t bit, bool value) {
+  uint8_t column_value{matrix_buffer_[column]};
 
   bitWrite(column_value, bit, value);
   if (column_value != matrix_buffer_[column]) {
@@ -50,7 +50,7 @@ void Wired::Clear() {
 // from there rather than through an array of one per module, which would need
 // its length at compile time.
 void Wired::Send() {
-  for (byte column{0}; column < kColumnNumberOfModule; column++) {
+  for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
     if (bitRead(changed_columns_, column)) {
       chain_.WriteRegisterEach(max7219::kDigit0Address + column,
                                matrix_buffer_ + column, kColumnNumberOfModule);

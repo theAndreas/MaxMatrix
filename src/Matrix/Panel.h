@@ -97,20 +97,21 @@ class Panel {
 
   /* where a dot lies in the buffer: the buffer column and its bit */
   struct BufferDot {
-    byte column;
-    byte bit;
+    uint8_t column;
+    uint8_t bit;
   };
 
-  static byte ReverseByte(byte input);
-  MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(byte column, byte row) const;
-  byte GetLine(byte column, byte row, bool vertical);
-  void SetLine(byte column, byte row, bool vertical, byte value);
+  static uint8_t ReverseByte(uint8_t input);
+  MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(uint8_t column,
+                                                   uint8_t row) const;
+  uint8_t GetLine(uint8_t column, uint8_t row, bool vertical);
+  void SetLine(uint8_t column, uint8_t row, bool vertical, uint8_t value);
   void SetFarDot(int32_t column, int32_t row, bool value);
   void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
                 bool value);
   void ChangeMapping(MatrixOrientation matrix_orientation,
                      ModuleType module_type);
-  byte GetFill(ShiftFill fill, byte rotated_column, byte kept_column);
+  uint8_t GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
   void ShiftRows(bool up, ShiftFill fill);
 
  public:
@@ -126,16 +127,16 @@ class Panel {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `kMaxNumberOfModules`.
    */
-  Panel(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
-        byte number_of_modules);
+  Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+        uint8_t* buffer, uint8_t number_of_modules);
 
   /*! \brief Returns the modules of the chain. */
-  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
     return wired_.GetChain().GetNumberOfModules();
   }
 
   /*! \brief Returns the columns of the panel, eight per module. */
-  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfColumns() const {
     return wired_.GetNumberOfColumns();
   }
 
@@ -161,7 +162,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
    *         the panel.
    */
-  MAXMATRIX_NODISCARD Result<byte> GetColumn(int16_t column);
+  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(int16_t column);
 
   /*!
    * \brief Returns a column of a module.
@@ -171,7 +172,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
    *         or the column does not exist.
    */
-  MAXMATRIX_NODISCARD Result<byte> GetColumn(byte module, byte column);
+  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(uint8_t module, uint8_t column);
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -183,8 +184,8 @@ class Panel {
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row, byte* values,
-                                    byte number_of_values);
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row, uint8_t* values,
+                                    uint8_t number_of_values);
 
   /*!
    * \brief Returns a row of a module.
@@ -197,7 +198,7 @@ class Panel {
    * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
    *         module or the row does not exist.
    */
-  MAXMATRIX_NODISCARD Result<byte> GetRow(byte module, byte row);
+  MAXMATRIX_NODISCARD Result<uint8_t> GetRow(uint8_t module, uint8_t row);
 
   /*!
    * \brief Returns whether a dot is lit.
@@ -218,7 +219,7 @@ class Panel {
    *                   modules.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(int16_t column, byte value);
+  void SetColumn(int16_t column, uint8_t value);
 
   /*!
    * \brief Sets a column of a module.
@@ -229,7 +230,7 @@ class Panel {
    * \param[in] column The column within the module, 0 to 7.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(byte module, byte column, byte value);
+  void SetColumn(uint8_t module, uint8_t column, uint8_t value);
 
   /*!
    * \brief Sets a row of the matrix, one byte per module.
@@ -242,7 +243,7 @@ class Panel {
    *                   module.
    * \param[in] number_of_values The bytes in `values`.
    */
-  void SetRow(int16_t row, byte const* values, byte number_of_values);
+  void SetRow(int16_t row, uint8_t const* values, uint8_t number_of_values);
 
   /*!
    * \brief Sets a row of a module.
@@ -253,7 +254,7 @@ class Panel {
    * \param[in] row The row within the module, 0 to 7.
    * \param[in] value The row, bit 7 the leftmost column.
    */
-  void SetRow(byte module, byte row, byte value);
+  void SetRow(uint8_t module, uint8_t row, uint8_t value);
 
   /*!
    * \brief Lights a dot or turns it off.
@@ -340,8 +341,8 @@ class Panel {
    * \param[in] width The columns of the picture.
    * \param[in] height The rows of the picture, 1 to 8.
    */
-  void DrawBitmap(int16_t x, int16_t y, byte const* bitmap, byte width,
-                  byte height = kRowNumberOfModule);
+  void DrawBitmap(int16_t x, int16_t y, uint8_t const* bitmap, uint8_t width,
+                  uint8_t height = kRowNumberOfModule);
 
   /*!
    * \brief Draws one column of a picture, `height` rows from `y` on.
@@ -354,7 +355,7 @@ class Panel {
    * \param[in] height The rows to draw, 1 to 8.
    * \param[in] value The column, bit 0 at `y`.
    */
-  void DrawColumn(int16_t x, int16_t y, byte height, byte value);
+  void DrawColumn(int16_t x, int16_t y, uint8_t height, uint8_t value);
 
   /*!
    * \brief Sets how the LEDs of every module are wired.
@@ -395,7 +396,7 @@ class Panel {
    * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the left, bit 0 the top row.
    */
-  byte ShiftLeft(byte shifted_in);
+  uint8_t ShiftLeft(uint8_t shifted_in);
 
   /*!
    * \brief Shifts the whole picture one column to the right.
@@ -412,7 +413,7 @@ class Panel {
    * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the right, bit 0 the top row.
    */
-  byte ShiftRight(byte shifted_in);
+  uint8_t ShiftRight(uint8_t shifted_in);
 
   /*!
    * \brief Shifts the whole picture one row up.

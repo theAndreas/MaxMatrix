@@ -14,14 +14,14 @@
 #include <MaxMatrix.h>
 
 uint32_t const kShowMs{1000};
-byte const kNumberOfShapes{4};
+uint8_t const kNumberOfShapes{4};
 
 /* a heart, a column per byte, bit 0 the top row */
-byte const kHeart[] PROGMEM{0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06};
+uint8_t const kHeart[] PROGMEM{0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06};
 
 max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
-byte shape{0};
+uint8_t shape{0};
 uint32_t last_shape{0};
 
 void DrawShape() {
@@ -64,6 +64,6 @@ void loop() {
   }
   last_shape = millis();
 
-  shape = static_cast<byte>((shape + 1) % kNumberOfShapes);
+  shape = static_cast<uint8_t>((shape + 1) % kNumberOfShapes);
   DrawShape();
 }

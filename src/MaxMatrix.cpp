@@ -15,8 +15,8 @@ namespace max_matrix {
 
 // FN-3: the three pins, the buffer and its length, as a sketch hands them
 // NOLINTNEXTLINE(readability-function-size)
-Matrix::Matrix(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-               byte* buffer, byte number_of_modules)
+Matrix::Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+               uint8_t* buffer, uint8_t number_of_modules)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer,
              number_of_modules} {}
 
@@ -58,7 +58,7 @@ void Matrix::SetAutoUpdate(bool auto_update) {
   UpdateIfAuto();
 }
 
-Status Matrix::SetIntensity(byte intensity) {
+Status Matrix::SetIntensity(uint8_t intensity) {
   if (intensity > max7219::kIntensityMaxValue) {
     return MAXMATRIX_REPORT_ERROR("SetIntensity", Status(Error::kOutOfRange));
   }

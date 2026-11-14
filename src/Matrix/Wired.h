@@ -34,14 +34,14 @@ class Wired {
   Chain chain_;
   // The sketch's, BufferSize() of the chain's modules long;
   // MatrixOf brings one.
-  byte* matrix_buffer_;
+  uint8_t* matrix_buffer_;
   /*
    * A frame carries one register of every module, so the same column of all
    * modules goes out in one frame. The buffer therefore keeps which columns of
    * a module have changed, one bit each, and Send() needs one frame per changed
    * column: eight at most for a whole picture, however many calls drew it.
    */
-  byte changed_columns_{0};
+  uint8_t changed_columns_{0};
 
  public:
   /*!
@@ -55,8 +55,8 @@ class Wired {
    * \param[in] number_of_modules The modules in the chain, 1 to
    *                              `kMaxNumberOfModules`.
    */
-  Wired(byte data_in_pin, byte chip_select_pin, byte clock_pin, byte* buffer,
-        byte number_of_modules);
+  Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+        uint8_t* buffer, uint8_t number_of_modules);
 
   /*! \brief Returns the chain the matrix sends to. */
   Chain& GetChain() { return chain_; }
@@ -65,9 +65,9 @@ class Wired {
   MAXMATRIX_NODISCARD Chain const& GetChain() const { return chain_; }
 
   /*! \brief Returns the columns of the chain, eight per module. */
-  MAXMATRIX_NODISCARD byte GetNumberOfColumns() const {
-    return static_cast<byte>(chain_.GetNumberOfModules() *
-                             kColumnNumberOfModule);
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfColumns() const {
+    return static_cast<uint8_t>(chain_.GetNumberOfModules() *
+                                kColumnNumberOfModule);
   }
 
   /*!
@@ -77,7 +77,7 @@ class Wired {
    *
    * \param[in] column The column in the buffer.
    */
-  byte GetColumn(byte column) { return matrix_buffer_[column]; }
+  uint8_t GetColumn(uint8_t column) { return matrix_buffer_[column]; }
 
   /*!
    * \brief Sets one bit of the buffer.
@@ -92,7 +92,7 @@ class Wired {
    * \pre `column` lies within the buffer and `bit` within a byte: Panel has
    *      checked and mapped them.
    */
-  void StoreBit(byte column, byte bit, bool value);
+  void StoreBit(uint8_t column, uint8_t bit, bool value);
 
   /*!
    * \brief Turns every LED off in the buffer, and marks every column as

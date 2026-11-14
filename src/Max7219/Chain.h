@@ -26,79 +26,79 @@ namespace max7219 {
 
 /* the addresses of the registers */
 /*! No-op: a module that is not addressed in a frame gets it. */
-constexpr byte kNoOpAddress{0x00};
+constexpr uint8_t kNoOpAddress{0x00};
 /*! Digit 0: the LEDs of one row or column of a module. */
-constexpr byte kDigit0Address{0x01};
+constexpr uint8_t kDigit0Address{0x01};
 /*! Digit 1: the LEDs of one row or column of a module. */
-constexpr byte kDigit1Address{0x02};
+constexpr uint8_t kDigit1Address{0x02};
 /*! Digit 2: the LEDs of one row or column of a module. */
-constexpr byte kDigit2Address{0x03};
+constexpr uint8_t kDigit2Address{0x03};
 /*! Digit 3: the LEDs of one row or column of a module. */
-constexpr byte kDigit3Address{0x04};
+constexpr uint8_t kDigit3Address{0x04};
 /*! Digit 4: the LEDs of one row or column of a module. */
-constexpr byte kDigit4Address{0x05};
+constexpr uint8_t kDigit4Address{0x05};
 /*! Digit 5: the LEDs of one row or column of a module. */
-constexpr byte kDigit5Address{0x06};
+constexpr uint8_t kDigit5Address{0x06};
 /*! Digit 6: the LEDs of one row or column of a module. */
-constexpr byte kDigit6Address{0x07};
+constexpr uint8_t kDigit6Address{0x07};
 /*! Digit 7: the LEDs of one row or column of a module. */
-constexpr byte kDigit7Address{0x08};
+constexpr uint8_t kDigit7Address{0x08};
 /*! Decode mode: BCD code B per digit, or none. */
-constexpr byte kDecodeModeAddress{0x09};
+constexpr uint8_t kDecodeModeAddress{0x09};
 /*! Intensity: the brightness, 0 to 15. */
-constexpr byte kIntensityAddress{0x0A};
+constexpr uint8_t kIntensityAddress{0x0A};
 /*! Scan limit: how many digits, here rows or columns, are lit. */
-constexpr byte kScanLimitAddress{0x0B};
+constexpr uint8_t kScanLimitAddress{0x0B};
 /*! Shutdown: off, or normal operation. */
-constexpr byte kShutdownAddress{0x0C};
+constexpr uint8_t kShutdownAddress{0x0C};
 /*! Display test: every LED on, or normal operation. */
-constexpr byte kDisplayTestAddress{0x0F};
+constexpr uint8_t kDisplayTestAddress{0x0F};
 
 /* the values of the decode mode register */
 /*! No digit decoded: each bit is an LED. */
-constexpr byte kDecodeModeNoDecode{0x00};
+constexpr uint8_t kDecodeModeNoDecode{0x00};
 /*! Code B for digit 0, none for 7 to 1. */
-constexpr byte kDecodeModeCodeBDecodeDigit0{0x01};
+constexpr uint8_t kDecodeModeCodeBDecodeDigit0{0x01};
 /*! Code B for digits 3 to 0, none for 7 to 4. */
-constexpr byte kDecodeModeCodeBDecodeDigit3To0{0x0F};
+constexpr uint8_t kDecodeModeCodeBDecodeDigit3To0{0x0F};
 /*! Code B for every digit. */
-constexpr byte kDecodeModeCodeBDecodeDigit7To0{0xFF};
+constexpr uint8_t kDecodeModeCodeBDecodeDigit7To0{0xFF};
 
 /* the values of the intensity register */
 /*! The lowest brightness, 1/32 duty cycle. */
-constexpr byte kIntensityMinValue{0x00};
+constexpr uint8_t kIntensityMinValue{0x00};
 /*! The highest brightness, 31/32 duty cycle. */
-constexpr byte kIntensityMaxValue{0x0F};
+constexpr uint8_t kIntensityMaxValue{0x0F};
 
 /* the values of the scan limit register */
 /*! Digit 0 alone is lit. */
-constexpr byte kScanLimitDisplayDigit0{0x00};
+constexpr uint8_t kScanLimitDisplayDigit0{0x00};
 /*! Digits 0 to 1 are lit. */
-constexpr byte kScanLimitDisplayDigit0To1{0x01};
+constexpr uint8_t kScanLimitDisplayDigit0To1{0x01};
 /*! Digits 0 to 2 are lit. */
-constexpr byte kScanLimitDisplayDigit0To2{0x02};
+constexpr uint8_t kScanLimitDisplayDigit0To2{0x02};
 /*! Digits 0 to 3 are lit. */
-constexpr byte kScanLimitDisplayDigit0To3{0x03};
+constexpr uint8_t kScanLimitDisplayDigit0To3{0x03};
 /*! Digits 0 to 4 are lit. */
-constexpr byte kScanLimitDisplayDigit0To4{0x04};
+constexpr uint8_t kScanLimitDisplayDigit0To4{0x04};
 /*! Digits 0 to 5 are lit. */
-constexpr byte kScanLimitDisplayDigit0To5{0x05};
+constexpr uint8_t kScanLimitDisplayDigit0To5{0x05};
 /*! Digits 0 to 6 are lit. */
-constexpr byte kScanLimitDisplayDigit0To6{0x06};
+constexpr uint8_t kScanLimitDisplayDigit0To6{0x06};
 /*! Digits 0 to 7 are lit. */
-constexpr byte kScanLimitDisplayDigit0To7{0x07};
+constexpr uint8_t kScanLimitDisplayDigit0To7{0x07};
 
 /* the values of the shutdown register */
 /*! Shut down: the LEDs off, the registers kept. */
-constexpr byte kShutdownModeShutdownMode{0x00};
+constexpr uint8_t kShutdownModeShutdownMode{0x00};
 /*! Normal operation. */
-constexpr byte kShutdownModeNormalOperation{0x01};
+constexpr uint8_t kShutdownModeNormalOperation{0x01};
 
 /* the values of the display test register */
 /*! Normal operation. */
-constexpr byte kDisplayTestNormalOperation{0x00};
+constexpr uint8_t kDisplayTestNormalOperation{0x00};
 /*! Display test: every LED on at full brightness. */
-constexpr byte kDisplayTestDisplayTestMode{0x01};
+constexpr uint8_t kDisplayTestDisplayTestMode{0x01};
 
 }  // namespace max7219
 
@@ -112,10 +112,10 @@ namespace internal {
  */
 class Chain {
  private:
-  byte data_in_pin_;
-  byte chip_select_pin_;
-  byte clock_pin_;
-  byte number_of_modules_;
+  uint8_t data_in_pin_;
+  uint8_t chip_select_pin_;
+  uint8_t clock_pin_;
+  uint8_t number_of_modules_;
   /*
    * The port and the bit of each pin, looked up once in Init(): digitalWrite()
    * looks both up in tables in flash on every call, which made a byte bit
@@ -124,13 +124,13 @@ class Chain {
    * statement expression, which decltype() cannot take outside a function, so
    * it is read where it is written. Data in and clock only bit bang.
    */
-  byte chip_select_port_{0};
-  byte chip_select_mask_{0};
+  uint8_t chip_select_port_{0};
+  uint8_t chip_select_mask_{0};
 #if (MAXMATRIX_USE_SPI == STD_OFF)
-  byte data_in_port_{0};
-  byte data_in_mask_{0};
-  byte clock_port_{0};
-  byte clock_mask_{0};
+  uint8_t data_in_port_{0};
+  uint8_t data_in_mask_{0};
+  uint8_t clock_port_{0};
+  uint8_t clock_mask_{0};
 #endif
 
   /*
@@ -142,11 +142,11 @@ class Chain {
    */
   void StartTransmission();
   void StopTransmission();
-  void Transfer(byte register_address, byte register_value);
+  void Transfer(uint8_t register_address, uint8_t register_value);
 #if (MAXMATRIX_USE_SPI == STD_OFF)
-  void ShiftOut(byte value);
+  void ShiftOut(uint8_t value);
 #endif
-  static void WritePin(byte port, byte mask, bool high);
+  static void WritePin(uint8_t port, uint8_t mask, bool high);
 
  public:
   /*!
@@ -158,22 +158,24 @@ class Chain {
    * \param[in] number_of_modules The MAX7219s in the chain, 1 to
    *                              `kMaxNumberOfModules`.
    */
-  Chain(byte data_in_pin, byte chip_select_pin, byte clock_pin,
-        byte number_of_modules);
+  Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
+        uint8_t number_of_modules);
 
   /*! \brief Returns the MAX7219s in the chain. */
-  MAXMATRIX_NODISCARD byte GetNumberOfModules() const {
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
     return number_of_modules_;
   }
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetDataInPin() const { return data_in_pin_; }
+  MAXMATRIX_NODISCARD uint8_t GetDataInPin() const { return data_in_pin_; }
 
   /*! \brief Returns the pin CS of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetChipSelectPin() const { return chip_select_pin_; }
+  MAXMATRIX_NODISCARD uint8_t GetChipSelectPin() const {
+    return chip_select_pin_;
+  }
 
   /*! \brief Returns the pin CLK of the chain is connected to. */
-  MAXMATRIX_NODISCARD byte GetClockPin() const { return clock_pin_; }
+  MAXMATRIX_NODISCARD uint8_t GetClockPin() const { return clock_pin_; }
 
   /*!
    * \brief Sets the pin DIN of the chain is connected to.
@@ -181,7 +183,7 @@ class Chain {
    * \param[in] data_in_pin The pin; the next Init() makes it an output and
    *                        takes it.
    */
-  void SetDataInPin(byte data_in_pin) { data_in_pin_ = data_in_pin; }
+  void SetDataInPin(uint8_t data_in_pin) { data_in_pin_ = data_in_pin; }
 
   /*!
    * \brief Sets the pin CS of the chain is connected to.
@@ -189,7 +191,7 @@ class Chain {
    * \param[in] chip_select_pin The pin; the next Init() makes it an output and
    *                            takes it.
    */
-  void SetChipSelectPin(byte chip_select_pin) {
+  void SetChipSelectPin(uint8_t chip_select_pin) {
     chip_select_pin_ = chip_select_pin;
   }
 
@@ -199,7 +201,7 @@ class Chain {
    * \param[in] clock_pin The pin; the next Init() makes it an output and takes
    *                      it.
    */
-  void SetClockPin(byte clock_pin) { clock_pin_ = clock_pin; }
+  void SetClockPin(uint8_t clock_pin) { clock_pin_ = clock_pin; }
 
   /*!
    * \brief Sets the pins up, and every MAX7219 to drive an 8x8 matrix.
@@ -217,7 +219,7 @@ class Chain {
    *                             `MAX7219_REG_..._ADDRESS`.
    * \param[in] register_value The value.
    */
-  void WriteRegisterAll(byte register_address, byte register_value);
+  void WriteRegisterAll(uint8_t register_address, uint8_t register_value);
 
   /*!
    * \brief Writes the same register of every MAX7219, each with its own value.
@@ -231,8 +233,8 @@ class Chain {
    *                   array of values, or the columns of a module to take one
    *                   column of every module straight from the matrix buffer.
    */
-  void WriteRegisterEach(byte register_address, byte const* register_values,
-                         byte stride);
+  void WriteRegisterEach(uint8_t register_address,
+                         uint8_t const* register_values, uint8_t stride);
 };
 
 }  // namespace internal

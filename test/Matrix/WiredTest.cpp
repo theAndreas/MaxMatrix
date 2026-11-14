@@ -10,7 +10,7 @@
 /* a changed column of a module goes out in one frame with the same column of
  * every other module */
 TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
-  byte const module{kNumberOfModules - 2};
+  uint8_t const module{kNumberOfModules - 2};
   int32_t const frames_before{mock::frames};
 
   matrix_.panel_.wired_.StoreBit(
@@ -18,7 +18,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   matrix_.Update();
   EXPECT_EQ(mock::frames - frames_before, 1);
   ASSERT_EQ(mock::last_frame.size(), 2U * kNumberOfModules);
-  for (byte i{0}; i < kNumberOfModules; i++) {
+  for (uint8_t i{0}; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
     EXPECT_EQ(mock::last_frame[size_t{2} * i],
               max_matrix::max7219::kDigit3Address);
@@ -37,7 +37,7 @@ TEST_F(MaxMatrixTest, InitClearsWhatThePowerUpLeft) {
     }
   }
   matrix_.Init();
-  EXPECT_EQ(Display(), std::vector<byte>(kNumberOfColumns, 0));
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
 }
 
 TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {

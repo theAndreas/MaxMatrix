@@ -35,16 +35,16 @@
 #include "MaxMatrix.h"
 #undef private
 
-static byte const kDataInPin{11};
-static byte const kChipSelectPin{10};
-static byte const kClockPin{13};
+static uint8_t const kDataInPin{11};
+static uint8_t const kChipSelectPin{10};
+static uint8_t const kClockPin{13};
 /* the chain of the examples; the tests of other lengths make their own */
-static byte const kNumberOfModules{4};
-static byte const kNumberOfColumns{kNumberOfModules *
-                                   max_matrix::kColumnNumberOfModule};
+static uint8_t const kNumberOfModules{4};
+static uint8_t const kNumberOfColumns{kNumberOfModules *
+                                      max_matrix::kColumnNumberOfModule};
 /* a row of the whole panel, one byte per module */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-using PanelRow = byte[kNumberOfModules];
+using PanelRow = uint8_t[kNumberOfModules];
 
 /* an array that is no font, for SetFont() */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
@@ -98,15 +98,15 @@ extern std::vector<Report> reports;
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only
  * says that something differs */
-std::vector<byte> Bytes(byte const* data, size_t size);
+std::vector<uint8_t> Bytes(uint8_t const* data, size_t size);
 
 /* the library sends the pair of module 0 first, so it ends up in the chip at
  * the far end of the chain */
-Max7219 const& ChipOfModule(byte module);
+Max7219 const& ChipOfModule(uint8_t module);
 
 /* what the chain shows, laid out like matrix_buffer_: a column of a module is a
  * digit, a row a segment */
-std::vector<byte> Display();
+std::vector<uint8_t> Display();
 
 class MaxMatrixTest : public ::testing::Test {
  protected:
@@ -188,7 +188,8 @@ bool Pattern(int16_t x, int16_t y);
 
 /* a picture as rows of '#' and '.', so that a failure prints both pictures */
 template <typename DotType>
-std::vector<std::string> Picture(DotType dot, byte columns = kNumberOfColumns) {
+std::vector<std::string> Picture(DotType dot,
+                                 uint8_t columns = kNumberOfColumns) {
   std::vector<std::string> rows;
   for (int16_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     std::string row;

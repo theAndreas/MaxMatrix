@@ -28,7 +28,7 @@ namespace {
 
 /* a picture in flash, a column per byte, for DrawBitmap() */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, as a sketch has one
-byte const kBitmap[] PROGMEM{0x01, 0x82, 0xFF, 0x00, 0x3C};
+uint8_t const kBitmap[] PROGMEM{0x01, 0x82, 0xFF, 0x00, 0x3C};
 
 std::string MappingName(::testing::TestParamInfo<MappingPair> const& info) {
   return std::string("matrix") +
@@ -46,11 +46,11 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in;
   PanelRow out;
-  for (byte module{0}; module < kNumberOfModules; module++) {
-    in[module] = static_cast<byte>(0xA5U ^ (module * 0x3CU));
+  for (uint8_t module{0}; module < kNumberOfModules; module++) {
+    in[module] = static_cast<uint8_t>(0xA5U ^ (module * 0x3CU));
   }
 
-  for (byte row{0}; row < max_matrix::kRowNumberOfModule; row++) {
+  for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
     matrix_.SetRow(row, in);
     EXPECT_EQ(matrix_.GetRow(row, out).GetError(), Error::kOk);
@@ -123,7 +123,7 @@ TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x == 10 && bitRead(0xA3, y);
             }));
-  Result<byte> const value{matrix_.GetColumn(1, 2)};
+  Result<uint8_t> const value{matrix_.GetColumn(1, 2)};
   EXPECT_EQ(value.GetError(), Error::kOk);
   EXPECT_EQ(value.GetValue(), 0xA3);
 }
@@ -132,8 +132,8 @@ TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
  * turned the whole panel while SetRow turned each module */
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
-  for (byte module{0}; module < kNumberOfModules; module++) {
-    row[module] = static_cast<byte>(0x81U ^ (module * 0x16U));
+  for (uint8_t module{0}; module < kNumberOfModules; module++) {
+    row[module] = static_cast<uint8_t>(0x81U ^ (module * 0x16U));
   }
 
   matrix_.SetRow(2, row);
@@ -148,8 +148,8 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x == 5 && bitRead(0xA3, y);
             }));
-  for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-    Result<byte> const value{matrix_.GetRow(0, y)};
+  for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
+    Result<uint8_t> const value{matrix_.GetRow(0, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(value.GetValue(), bitRead(0xA3, y) ? 1U << (7U - 5U) : 0U)
         << "Row " << static_cast<uint16_t>(y);
@@ -220,7 +220,7 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
 TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
   DrawPattern(matrix_);
   std::vector<std::string> const before = ShownPicture(matrix_);
-  byte const leftmost{matrix_.GetColumn(0).GetValue()};
+  uint8_t const leftmost{matrix_.GetColumn(0).GetValue()};
 
   EXPECT_EQ(matrix_.ShiftLeft(0xA5), leftmost);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
@@ -237,27 +237,27 @@ TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
  * other edge in the order they went in: what a sketch passes on to a second
  * matrix */
 TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
-  std::vector<byte> band;
+  std::vector<uint8_t> band;
   band.reserve(size_t{3} * kNumberOfColumns);
   for (uint16_t index{0}; index < 3 * kNumberOfColumns; index++) {
-    band.push_back(static_cast<byte>((index * 37) + 11));
+    band.push_back(static_cast<uint8_t>((index * 37) + 11));
   }
-  std::vector<byte> out;
+  std::vector<uint8_t> out;
   out.reserve(band.size());
 
-  for (byte const column : band) {
+  for (uint8_t const column : band) {
     out.push_back(matrix_.ShiftLeft(column));
   }
-  for (byte column{0}; column < kNumberOfColumns; column++) {
+  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     EXPECT_EQ(matrix_.GetColumn(column).GetValue(),
               band[band.size() - kNumberOfColumns + column])
         << "column " << static_cast<uint16_t>(column);
   }
-  EXPECT_EQ(std::vector<byte>(out.begin(), out.begin() + kNumberOfColumns),
-            std::vector<byte>(kNumberOfColumns, 0x00))
+  EXPECT_EQ(std::vector<uint8_t>(out.begin(), out.begin() + kNumberOfColumns),
+            std::vector<uint8_t>(kNumberOfColumns, 0x00))
       << "the empty panel first";
-  EXPECT_EQ(std::vector<byte>(out.begin() + kNumberOfColumns, out.end()),
-            std::vector<byte>(band.begin(), band.end() - kNumberOfColumns))
+  EXPECT_EQ(std::vector<uint8_t>(out.begin() + kNumberOfColumns, out.end()),
+            std::vector<uint8_t>(band.begin(), band.end() - kNumberOfColumns))
       << "then the band, in its order";
 }
 
@@ -281,8 +281,8 @@ TEST_P(MaxMatrixMappingTest, PictureStaysWhenTheMappingChanges) {
 }
 
 TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
-  for (byte column{0}; column < kNumberOfColumns; column++) {
-    for (byte row{0}; row < max_matrix::kRowNumberOfModule; row++) {
+  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
+    for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
@@ -336,8 +336,8 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
   matrix_.SetMatrixOrientation(upside_down ? MatrixOrientation::k180
                                            : MatrixOrientation::k0);
   matrix_.SetModuleType(module_type);
-  for (byte x{0}; x < kNumberOfColumns; x++) {
-    for (byte y{0}; y < max_matrix::kRowNumberOfModule; y++) {
+  for (uint8_t x{0}; x < kNumberOfColumns; x++) {
+    for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       matrix_.SetDot(x, y, pattern(x, y));
     }
   }
