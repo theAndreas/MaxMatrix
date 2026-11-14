@@ -172,7 +172,9 @@ using Led = std::pair<uint16_t, uint16_t>;
 std::vector<Led> LitLeds(Max7219Chain const& chain, Max7219Wiring const& wiring,
                          bool upside_down = false) {
   std::vector<Led> leds;
-  for (uint16_t x{0}; x < chain.chips.size() * Max7219::kNumberOfDigits; x++) {
+  uint16_t const width{
+      static_cast<uint16_t>(chain.chips.size() * Max7219::kNumberOfDigits)};
+  for (uint16_t x{0}; x < width; x++) {
     for (uint8_t y{0}; y < Max7219::kNumberOfDigits; y++) {
       if (chain.IsLit(wiring, x, y, upside_down)) {
         leds.emplace_back(x, y);

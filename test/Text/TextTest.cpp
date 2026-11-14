@@ -36,7 +36,8 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   matrix_.Clear();
   matrix_.SetDot(0, 0, true);
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
-  for (uint16_t step{0}; step < kNumberOfColumns + (3 * pass); step++) {
+  uint16_t const steps{static_cast<uint16_t>(kNumberOfColumns + (3 * pass))};
+  for (uint16_t step{0}; step < steps; step++) {
     matrix_.ShiftTask();
     pictures.push_back(ShownPicture(matrix_));
   }

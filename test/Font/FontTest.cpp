@@ -174,9 +174,11 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   EXPECT_EQ(matrix_.GetFont(), kDigitFont);
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
-  for (uint8_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
-        << "column " << static_cast<uint16_t>(column);
+  for (size_t column{0}; column < expected.size(); column++) {
+    EXPECT_EQ(
+        ToInteger(matrix_.GetColumn(static_cast<int16_t>(column)).GetValue()),
+        expected[column])
+        << "column " << column;
   }
   EXPECT_EQ(matrix_.SetText("2").GetError(), Error::kUnknownChar);
   EXPECT_EQ(matrix_.SetText("A").GetError(), Error::kUnknownChar);
@@ -192,9 +194,11 @@ TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
 
   ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
-  for (uint8_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
-        << "column " << static_cast<uint16_t>(column);
+  for (size_t column{0}; column < expected.size(); column++) {
+    EXPECT_EQ(
+        ToInteger(matrix_.GetColumn(static_cast<int16_t>(column)).GetValue()),
+        expected[column])
+        << "column " << column;
   }
 }
 

@@ -71,13 +71,13 @@ std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size) {
   return bytes;
 }
 
-Max7219 const& ChipOfModule(uint8_t module) {
+Max7219 const& ChipOfModule(size_t module) {
   return mock::chain.chips[mock::chain.chips.size() - 1 - module];
 }
 
 std::vector<uint8_t> Display() {
   std::vector<uint8_t> columns;
-  for (uint8_t module{0}; module < mock::chain.chips.size(); module++) {
+  for (size_t module{0}; module < mock::chain.chips.size(); module++) {
     for (uint8_t column{0}; column < max_matrix::kColumnNumberOfModule;
          column++) {
       columns.push_back(ChipOfModule(module).Segments(column));
