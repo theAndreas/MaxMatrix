@@ -6,7 +6,8 @@
  *
  * Scrolls several texts one after the other, each at a speed of its own,
  * without blocking loop(). Umlauts can be typed as they are: the library reads
- * the UTF-8 the Arduino IDE saves.
+ * the UTF-8 the Arduino IDE saves. This file writes them as their two bytes of
+ * UTF-8 only to stay ASCII, as the library's sources do.
  *
  * Wiring (Arduino Uno / Nano):
  *   DIN -> 11, CS -> 10, CLK -> 13
@@ -17,7 +18,11 @@
  * variable; the blanks at the end let it leave the matrix before the next one
  * comes in */
 char const kHello[] = "Hello!    ";
-char const kUmlauts[] = "Grüne Äpfel, schöne Öfen    ";
+/* "Gruene Aepfel, schoene Oefen" with umlauts; an escape takes every hex digit
+ * after it, so the text goes on in a string of its own before the f */
+char const kUmlauts[] =
+    "Gr\xC3\xBCne \xC3\x84pfel, sch\xC3\xB6ne \xC3\x96"
+    "fen    ";
 char const kFast[] = "fast...    ";
 char const kSlow[] = "and slow    ";
 

@@ -479,12 +479,15 @@ definition in the `.cpp`, never between a Doxygen block and its declaration.
 
 ### Encoding and umlauts
 
-All files are **UTF-8**, as `.editorconfig` says. The Arduino IDE saves sketches as UTF-8 as
-well, so an `ä` in a user's text arrives as the two bytes `0xC3 0xA4`.
+A source file of this repository is **ASCII**, an example and a test as well (F-10 of
+CodingStyle.md). A user's sketch is not: the Arduino IDE saves it as UTF-8, so an a umlaut in a
+user's text arrives as the two bytes `0xC3 0xA4`.
 
-- **Never compare against a character literal such as `'ä'`.** In a UTF-8 source file it is a
-  two-byte multi-character constant that never equals a `char`. Compare against the latin-1
-  code (`0xE4`) and put the character in a comment beside it, as `kDefaultFont` does.
+- **A char beyond ASCII is written as its bytes:** in a string as escapes, in a comment by its
+  name (`A umlaut`, `sharp s`), as `kDefaultFont` does. An escape takes every hex digit after
+  it, so a string that goes on with one starts a literal of its own: `"\xC3\x96" "fen"`.
+- **Compare against the latin-1 code** (`0xE4`), never a character literal: an umlaut in
+  quotes would be two bytes of UTF-8 that never equal a `char`.
 - Text goes through `DecodeChar()`, which turns a two-byte UTF-8 sequence into one latin-1
   char before the glyph lookup. A new function that walks a string uses it too.
 - A font holds its chars at their latin-1 codes, a char it lacks as a width of 0: a char added

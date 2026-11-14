@@ -37,7 +37,7 @@ exec 3<>"/dev/tcp/127.0.0.1/$Port"
 expect "text=Hi" "ok"
 # "Hi" from the left edge, two hex digits per column, and the 24 empty columns after it
 expect "picture" "picture=7F08087F00447D40$(printf '00%.0s' {1..24})"
-expect "text=Grüße" "ok"
+expect "text=Gr"$'\xC3\xBC\xC3\x9F'"e" "ok"
 expect "blink" "error: unknown command"
 expect "intensity=16" "error: out of range"
 expect "clear" "ok"
