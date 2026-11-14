@@ -80,17 +80,16 @@ Status Text::SetTextWithShift(char const* text, bool repeat) {
   return Error::kOk;
 }
 
-void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
+void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const& sprite) {
   // As in Panel::DrawBitmap(): right of the panel x plus a column
   // could overflow.
   if (x >= panel.GetNumberOfColumns()) {
     return;
   }
-  for (uint8_t sprite_column{0}; sprite_column < sprite[kSpriteWidth];
+  for (uint8_t sprite_column{0}; sprite_column < sprite.width;
        sprite_column++) {
-    panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y,
-                     sprite[kSpriteHeight],
-                     Byte{sprite[kSpriteColumn1 + sprite_column]});
+    panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y, sprite.height,
+                     Byte{sprite.columns[sprite_column]});
   }
 }
 

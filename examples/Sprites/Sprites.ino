@@ -24,8 +24,9 @@ int16_t const kSpriteY{2};
  *   #####      #####
  *   .#.#.      .#.#.
  *   #...#      .#.#.  */
-max_matrix::Sprite const kInvaderLegsOut{5, 5, 0x16, 0x0D, 0x07, 0x0D, 0x16};
-max_matrix::Sprite const kInvaderLegsIn{5, 5, 0x06, 0x1D, 0x07, 0x1D, 0x06};
+max_matrix::Sprite const kInvaderLegsOut{
+    5, 5, {{0x16, 0x0D, 0x07, 0x0D, 0x16}}};
+max_matrix::Sprite const kInvaderLegsIn{5, 5, {{0x06, 0x1D, 0x07, 0x1D, 0x06}}};
 
 max_matrix::MatrixOf<4> matrix{11, 10, 13};
 
@@ -36,7 +37,7 @@ void setup() {
 }
 
 void loop() {
-  int16_t const width{kInvaderLegsOut[max_matrix::kSpriteWidth]};
+  int16_t const width{kInvaderLegsOut.width};
 
   for (int16_t x{matrix.GetNumberOfColumns()}; x >= -width; x--) {
     {

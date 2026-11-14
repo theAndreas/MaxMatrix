@@ -156,11 +156,10 @@ class Text {
    * \param[in,out] panel The panel to draw on.
    * \param[in] x The column of the left edge; it may lie off the panel.
    * \param[in] y The row of the top edge; it may lie off the panel.
-   * \param[in] sprite Its width, its height and up to five columns, bit 0 the
-   *                   top row.
+   * \param[in] sprite The sprite.
    */
   static void SetSprite(Panel& panel, int16_t x, int16_t y,
-                        Sprite const sprite);
+                        Sprite const& sprite);
 
   /*!
    * \brief Draws a glyph of a font with its top left corner at `x`, `y`.
