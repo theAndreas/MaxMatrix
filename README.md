@@ -58,7 +58,7 @@ A chain whose length is known only at run time hands `MaxMatrix` a buffer of its
 modules there are:
 
 ```cpp
-max_matrix::Byte buffer[max_matrix::BufferSize(6)];
+max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(6)> buffer;
 max_matrix::Matrix matrix(11, 10, 13, buffer);
 ```
 
@@ -321,12 +321,15 @@ the last, and the height in rows, and then every char from the first to the last
 bit 0 the top row. A char of width 0 is not in the font. Version 1 gives each code in one byte, version 2 in two, high
 byte first. A char may be wider than a sprite's 5 columns.
 
+The bytes go into `max_matrix::make_array<uint8_t>()`, which counts them, rather than a C array: a font of
+MD_MAX72XX keeps its bytes as they are, and only its first and its last line change. A value that does not fit a byte
+stops the build.
+
 ```cpp
-uint8_t const kDigits[] PROGMEM = {
+constexpr auto kDigits PROGMEM{max_matrix::make_array<uint8_t>(
     'F', 1, '0', '1', 7,                // version 1, the chars 0 to 1, 7 rows high
     3, B00111110, B01000001, B00111110, // 0
-    2, B01000010, B01111111,            // 1
-};
+    2, B01000010, B01111111)};          // 1
 
 matrix.SetFont(kDigits);                // max_matrix::Error::kNotAFont for an array that is not a font of its length
 matrix.SetText("10");

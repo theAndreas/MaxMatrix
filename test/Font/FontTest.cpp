@@ -23,23 +23,17 @@ using max_matrix::State;
  * and 1, 7 rows high, with a 2 of width 0 that the font lacks, in version 1 and
  * in version 2; and a char of 8 columns. kNoFont, which the tests of errors
  * use as well, lies in MaxMatrixTestSupport.h */
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-static uint8_t const kDigitFont[] PROGMEM{
-    'F', 1,         '0',       '2', 7, 3, B00111110, B01000001, B00111110,  // 0
-    2,   B01000010, B01111111,                                              // 1
-    0,  // 2, not in the font
-};
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-static uint8_t const kDigitFontVersion2[] PROGMEM{
-    'F', 2,         0,         '0',       0,         '1',
-    7,   3,         B00111110, B01000001, B00111110,  // 0
-    2,   B01000010, B01111111,                        // 1
-};
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-static uint8_t const kWideFont[] PROGMEM{
-    'F',  1,    'W',  'W',  8,    8,    0x01,
-    0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,  // W, a diagonal
-};
+static constexpr auto kDigitFont PROGMEM{max_matrix::make_array<uint8_t>(
+    'F', 1, '0', '2', 7, 3, B00111110, B01000001, B00111110,  // 0
+    2, B01000010, B01111111,                                  // 1
+    0)};  // 2, not in the font
+static constexpr auto kDigitFontVersion2 PROGMEM{
+    max_matrix::make_array<uint8_t>('F', 2, 0, '0', 0, '1', 7, 3, B00111110,
+                                    B01000001, B00111110,       // 0
+                                    2, B01000010, B01111111)};  // 1
+static constexpr auto kWideFont PROGMEM{max_matrix::make_array<uint8_t>(
+    'F', 1, 'W', 'W', 8, 8, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+    0x80)};  // W, a diagonal
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */
 TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
   std::vector<uint8_t> utf8;
@@ -146,7 +140,7 @@ TEST_F(MaxMatrixTest, UnknownChars) {
  * ASCII char from the space to the tilde, no char between the tilde and the
  * degree sign, and 8 rows high */
 TEST_F(MaxMatrixTest, DefaultFontHasAsciiAndNothingBetween) {
-  EXPECT_EQ(matrix_.GetFont().data(), kDefaultFont);
+  EXPECT_EQ(matrix_.GetFont().data(), kDefaultFont.data());
   EXPECT_TRUE(Font::CheckFont(kDefaultFont).IsOk());
   for (uint16_t code{32}; code <= 126; code++) {
     Result<Glyph> const glyph{
@@ -173,7 +167,7 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
       {0x42, 0x7F, 0x00, 0x3E, 0x41, 0x3E, 0x00}};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
-  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont.data());
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
     EXPECT_EQ(
@@ -231,25 +225,25 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
 
 /* only what starts as a font is taken, and the font set before stays */
 TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kVersion3[] PROGMEM{'F', 3, 32, 32, 8, 1, 0};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kNoHeight[] PROGMEM{'F', 1, 32, 32, 0, 1, 0};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kTooHigh[] PROGMEM{'F', 1, 32, 32, 9, 1, 0};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kLastBeforeFirst[] PROGMEM{'F', 1, 33, 32, 8, 1, 0};
+  static constexpr auto kVersion3 PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 3, 32, 32, 8, 1, 0)};
+  static constexpr auto kNoHeight PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, 32, 32, 0, 1, 0)};
+  static constexpr auto kTooHigh PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, 32, 32, 9, 1, 0)};
+  static constexpr auto kLastBeforeFirst PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, 33, 32, 8, 1, 0)};
   struct BadFont {
     uint8_t const* font;
     size_t size;
   };
   std::array<BadFont, 6> const fonts{{
       {nullptr, 0},
-      {kNoFont, sizeof(kNoFont)},
-      {kVersion3, sizeof(kVersion3)},
-      {kNoHeight, sizeof(kNoHeight)},
-      {kTooHigh, sizeof(kTooHigh)},
-      {kLastBeforeFirst, sizeof(kLastBeforeFirst)},
+      {kNoFont.data(), kNoFont.size()},
+      {kVersion3.data(), kVersion3.size()},
+      {kNoHeight.data(), kNoHeight.size()},
+      {kTooHigh.data(), kTooHigh.size()},
+      {kLastBeforeFirst.data(), kLastBeforeFirst.size()},
   }};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
@@ -257,7 +251,7 @@ TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
     EXPECT_EQ(matrix_.SetFont({font.font, font.size}).GetError(),
               Error::kNotAFont)
         << static_cast<void const*>(font.font);
-    EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
+    EXPECT_EQ(matrix_.GetFont().data(), kDigitFont.data());
   }
 }
 
@@ -266,21 +260,18 @@ TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
  * char beyond its end was read from whatever lay behind it in flash. Now the
  * chars have to fill the array exactly, from a header that fits into it. */
 TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kLastBeyondTheEnd[] PROGMEM{'F', 1, '0', '1',
-                                                   7,   1, 0x7F};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kByteAfterTheLast[] PROGMEM{'F', 1, '0',  '0',
-                                                   7,   1, 0x7F, 0};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kWidthBeyondTheEnd[] PROGMEM{'F', 1, '0', '0',
-                                                    7,   3, 0x7F};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kShortHeader[] PROGMEM{'F', 1, '0', '0'};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kShortHeaderVersion2[] PROGMEM{'F', 2, 0, '0', 0, '0'};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-  static uint8_t const kOneChar[] PROGMEM{'F', 1, '0', '0', 7, 1, 0x7F};
+  static constexpr auto kLastBeyondTheEnd PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, '0', '1', 7, 1, 0x7F)};
+  static constexpr auto kByteAfterTheLast PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F, 0)};
+  static constexpr auto kWidthBeyondTheEnd PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 3, 0x7F)};
+  static constexpr auto kShortHeader PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, '0', '0')};
+  static constexpr auto kShortHeaderVersion2 PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 2, 0, '0', 0, '0')};
+  static constexpr auto kOneChar PROGMEM{
+      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F)};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   EXPECT_EQ(matrix_.SetFont(kLastBeyondTheEnd).GetError(), Error::kNotAFont);
@@ -288,15 +279,17 @@ TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
   EXPECT_EQ(matrix_.SetFont(kWidthBeyondTheEnd).GetError(), Error::kNotAFont);
   EXPECT_EQ(matrix_.SetFont(kShortHeader).GetError(), Error::kNotAFont);
   EXPECT_EQ(matrix_.SetFont(kShortHeaderVersion2).GetError(), Error::kNotAFont);
-  EXPECT_EQ(matrix_.SetFont({kDigitFont, sizeof(kDigitFont) - 1}).GetError(),
-            Error::kNotAFont);
-  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
+  EXPECT_EQ(
+      matrix_.SetFont({kDigitFont.data(), kDigitFont.size() - 1}).GetError(),
+      Error::kNotAFont);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont.data());
 
   /* the same chars, filling the array, are taken, by the array and by its
    * address and length */
   EXPECT_EQ(matrix_.SetFont(kOneChar).GetError(), Error::kOk);
-  EXPECT_EQ(matrix_.SetFont({kDigitFontVersion2, sizeof(kDigitFontVersion2)})
-                .GetError(),
-            Error::kOk);
-  EXPECT_EQ(matrix_.GetFont().data(), kDigitFontVersion2);
+  EXPECT_EQ(
+      matrix_.SetFont({kDigitFontVersion2.data(), kDigitFontVersion2.size()})
+          .GetError(),
+      Error::kOk);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFontVersion2.data());
 }

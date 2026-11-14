@@ -43,12 +43,11 @@ static uint8_t const kNumberOfModules{4};
 static uint8_t const kNumberOfColumns{kNumberOfModules *
                                       max_matrix::kColumnNumberOfModule};
 /* a row of the whole panel, one byte per module */
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-using PanelRow = max_matrix::Byte[kNumberOfModules];
+using PanelRow = max_matrix::array<max_matrix::Byte, kNumberOfModules>;
 
 /* an array that is no font, for SetFont() */
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
-static uint8_t const kNoFont[] PROGMEM{'G', 1, 32, 126, 8};
+static constexpr auto kNoFont PROGMEM{
+    max_matrix::make_array<uint8_t>('G', 1, 32, 126, 8)};
 
 /* every error by name, in the order of the enum */
 static std::array<char const*, 8> const kErrorNames{

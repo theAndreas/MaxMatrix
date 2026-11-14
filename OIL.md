@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | open | |
 
@@ -1018,6 +1018,12 @@ A first look found, besides those two:
   avr-gcc 7.3 crashed on `Text.h` alone, as the check of self-contained headers compiles it
   with `-Os`, `-Wnonnull` or `-Wrestrict` and `-fsyntax-only`, where the span of the default
   font was made inline; it is made in `Text.cpp` now. A real compile never crashed.
+
+  As built, the fourth: a font, a bitmap and a row of a sketch are a `max_matrix::array`, made
+  by `make_array<uint8_t>()`, `kDefaultFont` among them, and the examples, the docs and the
+  tests write them so. `src/.clang-tidy` is gone, and `examples/.clang-tidy` no longer turns
+  T-20's checks off; a text in quotes is the one C array left, as T-20 allows. Every example
+  is the same size as after the third step. T-20 holds everywhere now.
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;
@@ -1040,8 +1046,10 @@ A first look found, besides those two:
   goes to `Discard()` now, and is on as well. `bugprone-easily-swappable-parameters` still
   reports coordinates and pins; its reason names them as they are now, and it waits for the
   review of FN-16. The reason given for `readability-*` went, as 36 turned the group on.
-  `bugprone-dynamic-static-initializers`, an exception of the template's, reports nothing
-  either, which is the template's to take up.
+  `bugprone-dynamic-static-initializers`, an exception of the template's, reports one place
+  only, the declaration of `kDefaultFont` in `Font.h`, which carries its `NOLINT`; on the
+  board it does so even with the definition `constexpr`, as the other files cannot see it.
+  Whether the template needs the exception is the template's to take up.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
@@ -1091,6 +1099,11 @@ The template is to bring it to every project; once it does, MaxMatrix takes it, 
 macros go from `src/`, and `Byte` passes its bit functions on to it. 41 measured that shifting
 the value down to the bit, rather than a mask up to it, is 26 bytes smaller in `Basics`, while
 `Bit::ReadBit()` shifts the mask: to be measured there.
+
+The same update brings the template's #78, unreleased after v0.9.0: `add_compile_fail_tests()`
+takes a stop of a constant evaluation as well as a `static_assert`. `test/compile_fail/` then
+goes back to it, and the loop of its own that 41 put into `CMakeLists.txt` for `make_array()`
+goes, its cases naming `ValueOutOfRange` in their `// Expected: ...` line.
 
 ## Decisions
 

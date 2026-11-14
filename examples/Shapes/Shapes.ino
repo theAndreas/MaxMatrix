@@ -17,7 +17,8 @@ uint32_t const kShowMs{1000};
 uint8_t const kNumberOfShapes{4};
 
 /* a heart, a column per byte, bit 0 the top row */
-uint8_t const kHeart[] PROGMEM{0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06};
+constexpr auto kHeart PROGMEM{
+    max_matrix::make_array<uint8_t>(0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06)};
 
 max_matrix::MatrixOf<4> matrix{11, 10, 13};
 

@@ -30,8 +30,8 @@ using max_matrix::State;
 namespace {
 
 /* a picture in flash, a column per byte, for DrawBitmap() */
-// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, as a sketch has one
-uint8_t const kBitmap[] PROGMEM{0x01, 0x82, 0xFF, 0x00, 0x3C};
+constexpr auto kBitmap PROGMEM{
+    max_matrix::make_array<uint8_t>(0x01, 0x82, 0xFF, 0x00, 0x3C)};
 
 std::string MappingName(::testing::TestParamInfo<MappingPair> const& info) {
   return std::string("matrix") +
@@ -140,7 +140,8 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   matrix_.SetRow(2, row);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
               return y == 2 &&
-                     ReadBit(row[x / max_matrix::kColumnNumberOfModule],
+                     ReadBit(row[static_cast<size_t>(
+                                 x / max_matrix::kColumnNumberOfModule)],
                              static_cast<uint8_t>(
                                  7 - (x % max_matrix::kColumnNumberOfModule)));
             }));
@@ -645,8 +646,9 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
  * leaves the rows below its height */
 TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
   auto bitmap_dot{[](int16_t column, int16_t row) {
-    return column >= 0 && column < static_cast<int16_t>(sizeof(kBitmap)) &&
-           row >= 0 && row < 8 && bitRead(kBitmap[column], row);
+    return column >= 0 && column < static_cast<int16_t>(kBitmap.size()) &&
+           row >= 0 && row < 8 &&
+           bitRead(kBitmap[static_cast<size_t>(column)], row);
   }};
 
   matrix_.DrawBitmap(3, 0, kBitmap);
@@ -687,7 +689,7 @@ struct TakesAWidthAfterTheBitmap : std::false_type {};
 template <typename Matrix>
 struct TakesAWidthAfterTheBitmap<
     Matrix, std::void_t<decltype(std::declval<Matrix&>().DrawBitmap(
-                0, 0, kBitmap, sizeof(kBitmap)))>> : std::true_type {};
+                0, 0, kBitmap, kBitmap.size()))>> : std::true_type {};
 
 /* Bug, of the width taken from the bitmap: DrawBitmap(x, y, bitmap, width), as
  * it was called before, compiled with the height last and drew the width as
@@ -705,7 +707,8 @@ TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
   matrix_.DrawBitmap(10, 0, 3, kBitmap);
 
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return x < 10 || x >= 15 || y >= 3 || bitRead(kBitmap[x - 10], y);
+              return x < 10 || x >= 15 || y >= 3 ||
+                     bitRead(kBitmap[static_cast<size_t>(x - 10)], y);
             }));
 }
 

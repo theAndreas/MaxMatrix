@@ -84,6 +84,7 @@ class span {
    * \param[in] elements The array.
    */
   template <size_t N>
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a text in quotes is one
   constexpr span(T (&elements)[N])  // NOLINT(runtime/explicit): as std
       : data_{elements}, size_{N} {}
 

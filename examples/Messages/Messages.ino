@@ -34,13 +34,10 @@ struct Message {
   uint16_t shift_interval_ms;
 };
 
-Message const kMessages[]{
-    {kHello, 50},
-    {kUmlauts, 50},
-    {kFast, 15},
-    {kSlow, 120},
-};
-uint8_t const kNumberOfMessages{sizeof(kMessages) / sizeof(kMessages[0])};
+constexpr auto kMessages{
+    max_matrix::make_array<Message>(Message{kHello, 50}, Message{kUmlauts, 50},
+                                    Message{kFast, 15}, Message{kSlow, 120})};
+uint8_t const kNumberOfMessages{kMessages.size()};
 
 max_matrix::MatrixOf<4> matrix{11, 10, 13};
 uint8_t current{0};

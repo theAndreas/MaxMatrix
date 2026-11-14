@@ -145,15 +145,11 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
  * chain is taken up to the chain, one shorter is refused by GetRow() and drawn
  * as far as it reaches by SetRow() */
 TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  Byte const values[6]{Byte{0x81}, Byte{0x42}, Byte{0x24},
-                       Byte{0x18}, Byte{0xF0}, Byte{0x0F}};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  Byte read[6]{};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  Byte read_one[1]{};
-  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-  Byte const one[1]{Byte{0xFF}};
+  max_matrix::array<Byte, 6> const values{
+      {Byte{0x81}, Byte{0x42}, Byte{0x24}, Byte{0x18}, Byte{0xF0}, Byte{0x0F}}};
+  max_matrix::array<Byte, 6> read{};
+  max_matrix::array<Byte, 1> read_one{};
+  max_matrix::array<Byte, 1> const one{{Byte{0xFF}}};
 
   matrix_.SetRow(2, values);
   ASSERT_EQ(matrix_.GetRow(2, read).GetError(), Error::kOk);
