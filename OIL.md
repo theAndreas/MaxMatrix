@@ -50,6 +50,9 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
+| 41 | The template's rules that review checks | 36 | open | |
+| 42 | A newer avr-gcc as a cross-check | 41 | done | |
+| 43 | Bit operations in one class, from the template | 41 | open | |
 
 ### 1 Build with CMake
 
@@ -920,6 +923,87 @@ N3922, as `MaxMatrixError.cpp` compiles for the board. v0.6.0 also rewrote a tex
 this update, the template leaves such a text alone since v0.6.1. The fix-its were taken with the
 board's flags, where an `int` has 16 bits; one in `Shapes` narrowed on the host, which only the
 simulator's build showed.
+
+### 41 The template's rules that review checks
+
+34 to 40 made the code pass every rule of the template that a tool checks. The rules that
+`docs/` marks "Review", 53 of CodingStyle.md, 25 of Testing.md, 84 of Misra.md and 7 of
+`targets/avr.md`, were never gone through one by one: they held as far as each pull request's
+author and reviewer saw them.
+
+Decided on 2026-11-14: where the project's notes in `AGENTS.md` say otherwise, the template's
+rule wins, and the notes change with the code:
+
+- **T-17, no `byte`.** A byte that is a number, as a coordinate, a count or an intensity, is a
+  `uint8_t`; one that is raw data, as a column of the buffer or a row of a glyph, a type that is
+  no number, by M-3. `std::byte` is C++17 and avr-gcc brings no standard library, and MaxMatrix
+  depends on neither the ETL nor Utl (28), so the type is MaxMatrix's own: a class
+  `max_matrix::Byte` with the interface of `std::byte`, not the `enum class` T-17 names, as an
+  `enum class` cannot be made from a number in braces before C++17, `Byte{0x3C}`, which a sketch
+  would have to write as a `static_cast` (tried with avr-gcc 7.3 and GCC in gnu++11). Being no
+  number, it keeps a column and its value from being swapped, the reason
+  `bugprone-easily-swappable-parameters` is off. It is named `Byte` against the names of
+  CodingStyle.md, which give a type that mimics the standard's its name: a `max_matrix::byte`
+  would meet Arduino's `byte` in a sketch that is `using namespace max_matrix`. Not taken from
+  Utl, which is in no Library Manager yet and would be a dependency for every user for one type;
+  Utl gets a `utl::byte` of its own, and the template's T-17 the class for C++11, once MaxMatrix
+  has measured it. What it costs on the Uno is measured on a prototype before it is built.
+- **F-10, ASCII only.** A non-ASCII char in a string is written as its bytes in escapes; an escape
+  takes every hex digit after it, so a string goes on in a literal of its own:
+  `"\xC3\x96" "fen"`. In a comment the char is named, as `A umlaut`.
+
+A first look found, besides those two:
+
+- T-17: `byte` in 248 lines of `src/`; and T-20: `Sprite` is a C array.
+- F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
+  `simulator/Test/TcpTest.sh`.
+- FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;
+  why no check reported it is to be found out as well.
+- F-5: `misc-include-cleaner` is still off, with some 540 places, waiting for the pull request
+  36 named for it.
+- S-5: the reasons in `.clang-tidy` for `bugprone-easily-swappable-parameters` and
+  `bugprone-too-small-loop-variable` name `MaxMatrixChain` and `MAXMATRIX_NUMBER_OF_COLUMNS`,
+  which are gone.
+
+The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
+functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
+rule or chapter, with what it finds fixed, F-10 first, as it changes no code.
+
+### 42 A newer avr-gcc as a cross-check
+
+`max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
+though every function of it is inlined. avr-gcc 7.3, which the Arduino AVR core brings and every
+user of the IDE compiles with, walks an array of a class by a 16-bit index rather than a pointer,
+and a class whose member is initialized has a constructor that is not trivial: the buffer of a
+`MatrixOf` is then cleared by a loop at start, and `memset()` may not clear it. The question was
+whether the two exceptions this called for, a private array of numbers in
+`internal::Panel::ChangeMapping()` and a constructor that leaves the byte as `std::byte` does,
+are needed for 7.3 alone.
+
+Measured on 2026-11-14 with avr-gcc 16.1 of [avr-gcc-build](https://github.com/ZakKemble/avr-gcc-build),
+flash of the examples on the Uno:
+
+| Example | `uint8_t` | `Byte`, initialized, array of `Byte` | `Byte` as built |
+|---|---|---|---|
+| Basics | 3658 | 3648 | 3604 |
+| ScrollText | 3470 | 3472 | 3426 |
+| Sprites | 2354 | 2344 | 2300 |
+
+16.1 compiles the plain `Byte` about as small as `uint8_t`, where 7.3 took 30 to 50 bytes more;
+the two exceptions save 44 to 54 bytes with 16.1 as well, and `ChangeMapping()` with an array
+of `Byte` is 46 bytes larger there too. So they stay for both. The library is measured with
+the avr-gcc the core brings; when the core moves to a newer one, the numbers are taken again.
+
+### 43 Bit operations in one class, from the template
+
+The bits of a byte are read and written in several ways today: the core's `bitRead()`,
+`bitWrite()` and `bitSet()`, which are macros (T-6) and shift a `1UL`, 32 bits on the Uno, and
+`ReadBit()` and `WriteBit()` of `Byte` (41). Utl has them in one class, `utl::Bit<Integer>`:
+a value read and written bit by bit, and static functions for a value only passed through.
+The template is to bring it to every project; once it does, MaxMatrix takes it, the core's
+macros go from `src/`, and `Byte` passes its bit functions on to it. 41 measured that shifting
+the value down to the bit, rather than a mask up to it, is 26 bytes smaller in `Basics`, while
+`Bit::ReadBit()` shifts the mask: to be measured there.
 
 ## Decisions
 
