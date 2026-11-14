@@ -44,7 +44,7 @@ static uint8_t const kNumberOfColumns{kNumberOfModules *
                                       max_matrix::kColumnNumberOfModule};
 /* a row of the whole panel, one byte per module */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a row as a sketch has one
-using PanelRow = uint8_t[kNumberOfModules];
+using PanelRow = max_matrix::Byte[kNumberOfModules];
 
 /* an array that is no font, for SetFont() */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a font as a sketch has one
@@ -99,6 +99,10 @@ extern std::vector<Report> reports;
 /* GoogleTest prints a vector element by element, where a failed memcmp only
  * says that something differs */
 std::vector<uint8_t> Bytes(uint8_t const* data, size_t size);
+
+/* the bits of each byte, as numbers, so that a test compares the buffer with
+ * the display or with numbers it writes down */
+std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size);
 
 /* the library sends the pair of module 0 first, so it ends up in the chip at
  * the far end of the chain */

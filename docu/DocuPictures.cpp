@@ -571,11 +571,10 @@ std::string DrawCoordinates() {
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   for (uint8_t bit{0}; bit < max_matrix::kRowNumberOfModule; bit++) {
     matrix.Clear();
-    matrix.SetColumn(kExampleColumn, static_cast<uint8_t>(1U << bit));
+    matrix.SetColumn(kExampleColumn, max_matrix::Byte{1} << bit);
     LabelLitDots(bit, &column_labels);
     matrix.Clear();
-    matrix.SetRow(kExampleRowModule, kExampleRow,
-                  static_cast<uint8_t>(1U << bit));
+    matrix.SetRow(kExampleRowModule, kExampleRow, max_matrix::Byte{1} << bit);
     LabelLitDots(bit, &row_labels);
   }
 

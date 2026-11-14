@@ -57,7 +57,7 @@ is a matrix of four modules and brings their buffer, eight bytes per module, and
 A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own:
 
 ```cpp
-byte buffer[max_matrix::BufferSize(6)];
+max_matrix::Byte buffer[max_matrix::BufferSize(6)];
 max_matrix::Matrix matrix(11, 10, 13, buffer, 6);
 ```
 
@@ -113,12 +113,15 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 `GetNumberOfColumns() - 1`, eight columns per module, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
 This holds for every type of module once the module type is set, see [Module type](#module-type).
 
-The two functions that set eight LEDs at once read their byte in different directions:
+Eight LEDs at once are a `max_matrix::Byte`, a byte of dots that is no number, so that a column and its value
+cannot be swapped: `matrix.SetColumn(3, max_matrix::Byte{0x3C})`. `ToInteger()` gives its bits as a number, and it
+takes the bitwise operators `&`, `|`, `~`, `<<` and `>>`, as `std::byte` does. The two functions that set eight LEDs
+at once read their byte in different directions:
 
 - `SetColumn(x, value)` sets a column, **bit 0 at the top**.
 - `SetRow(module, row, value)` sets the row of one module, **bit 7 on the left**, so the byte reads as it is
-  written: `0b10000000` lights the leftmost LED. `SetRow(row, values)` sets a whole row, one byte per module,
-  module 0 first.
+  written: `max_matrix::Byte{0b10000000}` lights the leftmost LED. `SetRow(row, values)` sets a whole row, an array
+  of one `Byte` per module, module 0 first.
 
 ## Functions
 

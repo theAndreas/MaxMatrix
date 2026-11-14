@@ -61,6 +61,16 @@ std::vector<uint8_t> Bytes(uint8_t const* data, size_t size) {
   return std::vector<uint8_t>(data, data + size);
 }
 
+std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size) {
+  std::vector<uint8_t> bytes;
+  // T-20: the library's buffer is a pointer and a length
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  for (max_matrix::Byte const* end{data + size}; data != end; data++) {
+    bytes.push_back(max_matrix::ToInteger(*data));
+  }
+  return bytes;
+}
+
 Max7219 const& ChipOfModule(uint8_t module) {
   return mock::chain.chips[mock::chain.chips.size() - 1 - module];
 }

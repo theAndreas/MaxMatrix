@@ -170,7 +170,7 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
   EXPECT_EQ(matrix_.GetFont(), kDigitFont);
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
   for (uint8_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
         << "column " << static_cast<uint16_t>(column);
   }
   EXPECT_EQ(matrix_.SetText("2").GetError(), Error::kUnknownChar);
@@ -188,7 +188,7 @@ TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
   ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
   for (uint8_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), expected[column])
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), expected[column])
         << "column " << static_cast<uint16_t>(column);
   }
 }
@@ -201,7 +201,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue(), 1U << column)
+    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()), 1U << column)
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -212,8 +212,9 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue(),
-              1U << column)
+    EXPECT_EQ(
+        ToInteger(matrix_.GetColumn(kNumberOfColumns - 10 + column).GetValue()),
+        1U << column)
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

@@ -16,7 +16,7 @@ namespace max_matrix {
 // FN-3: the three pins, the buffer and its length, as a sketch hands them
 // NOLINTNEXTLINE(readability-function-size)
 Matrix::Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-               uint8_t* buffer, uint8_t number_of_modules)
+               Byte* buffer, uint8_t number_of_modules)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer,
              number_of_modules} {}
 

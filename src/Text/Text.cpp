@@ -10,6 +10,8 @@
 
 #include "Text.h"
 
+#include "Utility/Byte.h"
+
 namespace max_matrix {
 namespace internal {
 
@@ -88,7 +90,7 @@ void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const sprite) {
        sprite_column++) {
     panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y,
                      sprite[kSpriteHeight],
-                     sprite[kSpriteColumn1 + sprite_column]);
+                     Byte{sprite[kSpriteColumn1 + sprite_column]});
   }
 }
 
@@ -104,7 +106,7 @@ void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
 bool Text::CharShiftTask(Panel& panel) {
   // An empty column comes in, by the column rather than ShiftFill, so
   // that a sketch that only shifts text does not link the other fills.
-  panel.ShiftLeft(static_cast<uint8_t>(0));
+  panel.ShiftLeft(Byte{});
   sprite_shift_counter_++;
 
   /* if sprite is completed set only spaces */
@@ -157,7 +159,7 @@ bool Text::StringShiftTask(Panel& panel) {
     if (sprite_shift_counter_ == kShiftStart) {
       CharShiftTask(panel);
     } else { /* end of string reached, task has finished */
-      panel.ShiftLeft(static_cast<uint8_t>(0));
+      panel.ShiftLeft(Byte{});
       return false;
     }
   } else {

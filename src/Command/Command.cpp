@@ -12,6 +12,7 @@
 #include "Command.h"
 
 #include "MaxMatrix.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 
@@ -226,7 +227,7 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
 
   answer.print(F("picture="));
   for (int16_t column{0}; column < columns; column++) {
-    uint8_t const value{matrix.GetColumn(column).GetValue()};
+    uint8_t const value{ToInteger(matrix.GetColumn(column).GetValue())};
     uint8_t const high_nibble{static_cast<uint8_t>(value >> kNibbleWidth)};
     uint8_t const low_nibble{static_cast<uint8_t>(value & kLowNibble)};
     answer.write(static_cast<uint8_t>(ConvertToHexDigit(high_nibble)));

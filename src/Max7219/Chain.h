@@ -15,6 +15,7 @@
 #include "Arduino.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 
@@ -233,8 +234,8 @@ class Chain {
    *                   array of values, or the columns of a module to take one
    *                   column of every module straight from the matrix buffer.
    */
-  void WriteRegisterEach(uint8_t register_address,
-                         uint8_t const* register_values, uint8_t stride);
+  void WriteRegisterEach(uint8_t register_address, Byte const* register_values,
+                         uint8_t stride);
 };
 
 }  // namespace internal

@@ -77,11 +77,11 @@ void Chain::WriteRegisterAll(uint8_t register_address, uint8_t register_value) {
 }
 
 void Chain::WriteRegisterEach(uint8_t register_address,
-                              uint8_t const* register_values, uint8_t stride) {
+                              Byte const* register_values, uint8_t stride) {
   StartTransmission();
   for (uint8_t module{0}; module < number_of_modules_;
        module++, register_values += stride) {
-    Transfer(register_address, *register_values);
+    Transfer(register_address, ToInteger(*register_values));
   }
   StopTransmission();
 }

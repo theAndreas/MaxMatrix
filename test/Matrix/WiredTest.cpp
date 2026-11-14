@@ -45,6 +45,6 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {
   int32_t const frames_before{mock::frames};
 
   matrix_.SetText("Hi!");
-  matrix_.SetDot(0, 0, (matrix_.panel_.wired_.GetColumn(0) & 1U) != 0U);
+  matrix_.SetDot(0, 0, ReadBit(matrix_.panel_.wired_.GetColumn(0), 0));
   EXPECT_EQ(mock::frames, frames_before);
 }

@@ -27,6 +27,7 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Text/Text.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 
@@ -112,7 +113,7 @@ class Matrix {
    * elsewhere.
    *
    * \code{.cpp}
-   * byte buffer[max_matrix::BufferSize(4)];
+   * max_matrix::Byte buffer[max_matrix::BufferSize(4)];
    * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer,
    * 4);
    * \endcode
@@ -126,7 +127,7 @@ class Matrix {
    *                              `kMaxNumberOfModules`.
    */
   Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-         uint8_t* buffer, uint8_t number_of_modules);
+         Byte* buffer, uint8_t number_of_modules);
 
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
@@ -194,13 +195,12 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::GetColumn(int16_t) */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(int16_t column) {
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(int16_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
   }
 
   /*! \copydoc internal::Panel::GetColumn(uint8_t, uint8_t) */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(uint8_t module,
-                                                uint8_t column) {
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(uint8_t module, uint8_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -209,7 +209,7 @@ class Matrix {
    * \brief Gives a row of the matrix, one byte per module.
    *
    * \code{.cpp}
-   * byte row[4];
+   * max_matrix::Byte row[4];
    * matrix.GetRow(0, row);
    * \endcode
    *
@@ -222,7 +222,7 @@ class Matrix {
    */
   template <size_t NumberOfValues>
   MAXMATRIX_NODISCARD Status GetRow(int16_t row,
-                                    uint8_t (&values)[NumberOfValues]) {
+                                    Byte (&values)[NumberOfValues]) {
     return MAXMATRIX_REPORT_ERROR(
         "GetRow", panel_.GetRow(row, values,
                                 NumberOfValues > internal::kMaxRowBytes
@@ -231,7 +231,7 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::GetRow(uint8_t, uint8_t) */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetRow(uint8_t module, uint8_t row) {
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(uint8_t module, uint8_t row) {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
@@ -330,14 +330,14 @@ class Matrix {
    */
   void SetDisplayTest(bool display_test);
 
-  /*! \copydoc internal::Panel::SetColumn(int16_t, uint8_t) */
-  void SetColumn(int16_t column, uint8_t value) {
+  /*! \copydoc internal::Panel::SetColumn(int16_t, Byte) */
+  void SetColumn(int16_t column, Byte value) {
     panel_.SetColumn(column, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetColumn(uint8_t, uint8_t, uint8_t) */
-  void SetColumn(uint8_t module, uint8_t column, uint8_t value) {
+  /*! \copydoc internal::Panel::SetColumn(uint8_t, uint8_t, Byte) */
+  void SetColumn(uint8_t module, uint8_t column, Byte value) {
     panel_.SetColumn(module, column, value);
     UpdateIfAuto();
   }
@@ -354,7 +354,7 @@ class Matrix {
    *                   module.
    */
   template <size_t NumberOfValues>
-  void SetRow(int16_t row, uint8_t const (&values)[NumberOfValues]) {
+  void SetRow(int16_t row, Byte const (&values)[NumberOfValues]) {
     panel_.SetRow(row, values,
                   NumberOfValues > internal::kMaxRowBytes
                       ? internal::kMaxRowBytes
@@ -362,8 +362,8 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetRow(uint8_t, uint8_t, uint8_t) */
-  void SetRow(uint8_t module, uint8_t row, uint8_t value) {
+  /*! \copydoc internal::Panel::SetRow(uint8_t, uint8_t, Byte) */
+  void SetRow(uint8_t module, uint8_t row, Byte value) {
     panel_.SetRow(module, row, value);
     UpdateIfAuto();
   }
@@ -616,9 +616,9 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::ShiftLeft(uint8_t) */
-  uint8_t ShiftLeft(uint8_t shifted_in) {
-    uint8_t const shifted_out{panel_.ShiftLeft(shifted_in)};
+  /*! \copydoc internal::Panel::ShiftLeft(Byte) */
+  Byte ShiftLeft(Byte shifted_in) {
+    Byte const shifted_out{panel_.ShiftLeft(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }
@@ -629,9 +629,9 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::ShiftRight(uint8_t) */
-  uint8_t ShiftRight(uint8_t shifted_in) {
-    uint8_t const shifted_out{panel_.ShiftRight(shifted_in)};
+  /*! \copydoc internal::Panel::ShiftRight(Byte) */
+  Byte ShiftRight(Byte shifted_in) {
+    Byte const shifted_out{panel_.ShiftRight(shifted_in)};
     UpdateIfAuto();
     return shifted_out;
   }
@@ -712,7 +712,7 @@ template <uint8_t NumberOfModules>
 class Buffer {
  protected:
   /*! \brief One byte per column. */
-  uint8_t buffer_[BufferSize(NumberOfModules)];
+  Byte buffer_[BufferSize(NumberOfModules)];
 };
 
 }  // namespace internal

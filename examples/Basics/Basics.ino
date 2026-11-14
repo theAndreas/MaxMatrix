@@ -42,7 +42,7 @@ void DrawDiagonal() {
 /* row 3 on every module */
 void FillRow() {
   for (uint8_t module{0}; module < matrix.GetNumberOfModules(); module++) {
-    matrix.SetRow(module, 3, 0xFF);
+    matrix.SetRow(module, 3, max_matrix::Byte{0xFF});
   }
   delay(1000);
 }

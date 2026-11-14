@@ -17,6 +17,7 @@
 #include "Max7219/Chain.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
+#include "Utility/Byte.h"
 
 namespace max_matrix {
 namespace internal {
@@ -34,14 +35,14 @@ class Wired {
   Chain chain_;
   // The sketch's, BufferSize() of the chain's modules long;
   // MatrixOf brings one.
-  uint8_t* matrix_buffer_;
+  Byte* matrix_buffer_;
   /*
    * A frame carries one register of every module, so the same column of all
    * modules goes out in one frame. The buffer therefore keeps which columns of
    * a module have changed, one bit each, and Send() needs one frame per changed
    * column: eight at most for a whole picture, however many calls drew it.
    */
-  uint8_t changed_columns_{0};
+  Byte changed_columns_{};
 
  public:
   /*!
@@ -56,7 +57,7 @@ class Wired {
    *                              `kMaxNumberOfModules`.
    */
   Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        uint8_t* buffer, uint8_t number_of_modules);
+        Byte* buffer, uint8_t number_of_modules);
 
   /*! \brief Returns the chain the matrix sends to. */
   Chain& GetChain() { return chain_; }
@@ -77,7 +78,7 @@ class Wired {
    *
    * \param[in] column The column in the buffer.
    */
-  uint8_t GetColumn(uint8_t column) { return matrix_buffer_[column]; }
+  Byte GetColumn(uint8_t column) { return matrix_buffer_[column]; }
 
   /*!
    * \brief Sets one bit of the buffer.

@@ -17,6 +17,7 @@
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
+#include "Utility/Byte.h"
 #include "Wired.h"
 
 namespace max_matrix {
@@ -101,17 +102,17 @@ class Panel {
     uint8_t bit;
   };
 
-  static uint8_t ReverseByte(uint8_t input);
+  static Byte ReverseByte(Byte input);
   MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(uint8_t column,
                                                    uint8_t row) const;
-  uint8_t GetLine(uint8_t column, uint8_t row, bool vertical);
-  void SetLine(uint8_t column, uint8_t row, bool vertical, uint8_t value);
+  Byte GetLine(uint8_t column, uint8_t row, bool vertical);
+  void SetLine(uint8_t column, uint8_t row, bool vertical, Byte value);
   void SetFarDot(int32_t column, int32_t row, bool value);
   void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
                 bool value);
   void ChangeMapping(MatrixOrientation matrix_orientation,
                      ModuleType module_type);
-  uint8_t GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
+  Byte GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
   void ShiftRows(bool up, ShiftFill fill);
 
  public:
@@ -128,7 +129,7 @@ class Panel {
    *                              `kMaxNumberOfModules`.
    */
   Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        uint8_t* buffer, uint8_t number_of_modules);
+        Byte* buffer, uint8_t number_of_modules);
 
   /*! \brief Returns the modules of the chain. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
@@ -162,7 +163,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
    *         the panel.
    */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(int16_t column);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(int16_t column);
 
   /*!
    * \brief Returns a column of a module.
@@ -172,7 +173,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
    *         or the column does not exist.
    */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetColumn(uint8_t module, uint8_t column);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(uint8_t module, uint8_t column);
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -184,7 +185,7 @@ class Panel {
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row, uint8_t* values,
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row, Byte* values,
                                     uint8_t number_of_values);
 
   /*!
@@ -198,7 +199,7 @@ class Panel {
    * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
    *         module or the row does not exist.
    */
-  MAXMATRIX_NODISCARD Result<uint8_t> GetRow(uint8_t module, uint8_t row);
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(uint8_t module, uint8_t row);
 
   /*!
    * \brief Returns whether a dot is lit.
@@ -219,7 +220,7 @@ class Panel {
    *                   modules.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(int16_t column, uint8_t value);
+  void SetColumn(int16_t column, Byte value);
 
   /*!
    * \brief Sets a column of a module.
@@ -230,7 +231,7 @@ class Panel {
    * \param[in] column The column within the module, 0 to 7.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(uint8_t module, uint8_t column, uint8_t value);
+  void SetColumn(uint8_t module, uint8_t column, Byte value);
 
   /*!
    * \brief Sets a row of the matrix, one byte per module.
@@ -243,7 +244,7 @@ class Panel {
    *                   module.
    * \param[in] number_of_values The bytes in `values`.
    */
-  void SetRow(int16_t row, uint8_t const* values, uint8_t number_of_values);
+  void SetRow(int16_t row, Byte const* values, uint8_t number_of_values);
 
   /*!
    * \brief Sets a row of a module.
@@ -254,7 +255,7 @@ class Panel {
    * \param[in] row The row within the module, 0 to 7.
    * \param[in] value The row, bit 7 the leftmost column.
    */
-  void SetRow(uint8_t module, uint8_t row, uint8_t value);
+  void SetRow(uint8_t module, uint8_t row, Byte value);
 
   /*!
    * \brief Lights a dot or turns it off.
@@ -355,7 +356,7 @@ class Panel {
    * \param[in] height The rows to draw, 1 to 8.
    * \param[in] value The column, bit 0 at `y`.
    */
-  void DrawColumn(int16_t x, int16_t y, uint8_t height, uint8_t value);
+  void DrawColumn(int16_t x, int16_t y, uint8_t height, Byte value);
 
   /*!
    * \brief Sets how the LEDs of every module are wired.
@@ -396,7 +397,7 @@ class Panel {
    * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the left, bit 0 the top row.
    */
-  uint8_t ShiftLeft(uint8_t shifted_in);
+  Byte ShiftLeft(Byte shifted_in);
 
   /*!
    * \brief Shifts the whole picture one column to the right.
@@ -413,7 +414,7 @@ class Panel {
    * \param[in] shifted_in The column that comes in, bit 0 the top row.
    * \return The column that fell out at the right, bit 0 the top row.
    */
-  uint8_t ShiftRight(uint8_t shifted_in);
+  Byte ShiftRight(Byte shifted_in);
 
   /*!
    * \brief Shifts the whole picture one row up.
