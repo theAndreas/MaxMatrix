@@ -54,11 +54,12 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 
 The length of the chain is not configured here but in the sketch, where the Arduino IDE lets it change: `max_matrix::MatrixOf<4>`
 is a matrix of four modules and brings their buffer, eight bytes per module, and `max_matrix::MatrixOf<8>` one of eight, up to 31.
-A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own:
+A chain whose length is known only at run time hands `MaxMatrix` a buffer of its own, whose length says how many
+modules there are:
 
 ```cpp
 max_matrix::Byte buffer[max_matrix::BufferSize(6)];
-max_matrix::Matrix matrix(11, 10, 13, buffer, 6);
+max_matrix::Matrix matrix(11, 10, 13, buffer);
 ```
 
 ## Usage
@@ -88,8 +89,12 @@ step, for a sketch that times the steps itself. A call that comes late, because 
 does not catch up.
 
 With `true`, `SetTextWithShift()` starts the text over with its first char right after its last, so the spaces at the
-end of the text keep the two apart; `StopShift()` ends it. `SetTextWithShift()` only stores a pointer to the text, so
-the text has to stay valid as long as it shifts.
+end of the text keep the two apart; `StopShift()` ends it. `SetTextWithShift()` only keeps where the text is and how
+long, so the text has to stay valid as long as it shifts.
+
+A text in quotes or in a `char` array passes as it is, and its length goes with it: the text ends at its null
+character or at the end of its array, whichever comes first. A text known only by a pointer, as `String::c_str()`
+gives one, goes with its length: `matrix.SetText({text, strlen(text)})`.
 
 More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
@@ -137,7 +142,7 @@ at once read their byte in different directions:
 | `DrawLine(x0, y0, x1, y1, value)` | a straight line, both ends included |
 | `DrawRect(x, y, width, height, value)`, `FillRect(…)` | the outline of a rectangle, or the rectangle with its inside |
 | `DrawCircle(x, y, radius, value)` | the outline of a circle; radius 3 fills the height |
-| `DrawBitmap(x, y, bitmap, width)` | a picture in `PROGMEM`, a column per byte, bit 0 at the top |
+| `DrawBitmap(x, y, bitmap)`, `DrawBitmap(x, y, height, bitmap)` | a picture in `PROGMEM`, a column per byte as wide as its array, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
 | `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
 | `StopShift()` | stops a shifting char or text where it stands |
@@ -328,10 +333,10 @@ matrix.SetText("10");
 matrix.SetFont(max_matrix::kDefaultFont);  // the font MaxMatrix starts with
 ```
 
-`SetFont()` takes the array itself, not a pointer, so that it knows the length: the chars from the first to the last
-have to fill it exactly, and no char can then be read past its end. A font forgotten in RAM, without `PROGMEM`, is
-refused as well, almost always, as the Uno reads it from flash. A font known only by its address, from a table of
-fonts, goes with its length: `SetFont(font, sizeof(kDigits))`.
+`SetFont()` takes the array with its length, so that the chars from the first to the last have to fill it exactly,
+and no char can then be read past its end. A font forgotten in RAM, without `PROGMEM`, is refused as well, almost
+always, as the Uno reads it from flash. A font known only by its address, from a table of fonts, goes with its
+length: `SetFont({font, sizeof(kDigits)})`.
 
 The font has to stay where it is as long as it is set, as a `PROGMEM` array does. Chars are looked up by their latin-1
 code, the one `DecodeChar()` makes of UTF-8. The default font holds ASCII and the chars of [Umlauts](#umlauts), 8 rows

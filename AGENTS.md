@@ -212,11 +212,12 @@ The buffer is what `get…` functions read — the MAX7219 cannot be read back.
 
 The buffer is the sketch's, and so is the length of the chain: `MatrixOf<N>` brings a buffer
 of `BufferSize(N)` bytes in a base class, which is made before the `Matrix` it is
-handed to, and `Matrix` takes any buffer and length at run time, as the Arduino IDE passes a
-sketch's defines to no library. So nothing in the library may size an array by the chain: what
-needs the whole panel works in place, a column at a time, or on a pair of modules, as
-`internal::Panel::ChangeOrientation()` does, and `Send()` hands the chain a column of every
-module straight from the buffer, a module's columns apart.
+handed to, and `Matrix` takes any buffer at run time, as a span whose length says how many
+modules the chain has, as the Arduino IDE passes a sketch's defines to no library. So nothing
+in the library may size an array by the chain: what needs the whole panel works in place, a
+column at a time, or on a pair of modules, as `internal::Panel::ChangeOrientation()` does,
+and `Send()` hands the chain the buffer and a column, whose values lie a module's columns
+apart.
 
 Drawing only changes the buffer. `internal::Wired` keeps which columns of a module changed, one
 bit each in `changed_columns_`, and `Send()` sends each of them in one frame for all modules:
@@ -338,11 +339,11 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 
 FN-3 allows four parameters, and the library departs from it where a sketch writer knows the
 function by five: the shapes take their coordinates as Adafruit GFX and MD_MAX72XX do,
-`DrawLine(x0, y0, x1, y1, value)`, `DrawRect(x, y, width, height, value)` and `DrawBitmap`, and
-the constructors of `Matrix`, `Panel` and `Wired` take the three pins, the buffer and its length.
-A struct for a point or the pins was weighed and left for 2.0.0: every sketch that draws a shape
-would change, for a rule of review. Each carries a `NOLINT(readability-function-size)`; nothing
-else in `src/` does.
+`DrawLine(x0, y0, x1, y1, value)`, `DrawRect(x, y, width, height, value)` and `FillRect`. A
+struct for a point was weighed and left for 2.0.0: every sketch that draws a shape would change,
+for a rule of review. Each carries a `NOLINT(readability-function-size)`; nothing else in
+`src/` does. `DrawBitmap(x, y, height, bitmap)` and the constructors, three pins and the
+buffer, have four, as a span brings its length.
 
 #### Integer types
 
@@ -383,16 +384,19 @@ mock, which stands in for it, and the examples follow this repository all the sa
 clang-format puts it there, `QualifierAlignment: Right` of `.clang-format`, and `make lint`
 fails on one left of it.
 
-What a function only reads through a pointer points to `const` (CodingStyle T-5), also where
-it keeps the pointer: `SetTextWithShift()` keeps it in a member, and took a `char*` while it
-read the text only, so that a sketch could not make its text `const`. No check finds that: the
-const checks of clang-tidy take a pointer stored in a member that is not `const` for a write,
-so review does.
+What a function only reads through a pointer or a span is `const` (CodingStyle T-5), also
+where it keeps it: `SetTextWithShift()` keeps its `span<char const>` in a member, and once took
+a `char*` while it read the text only, so that a sketch could not make its text `const`. No
+check finds that: the const checks of clang-tidy take a pointer stored in a member that is not
+`const` for a write, so review does.
 
 A text itself is an array, `char const kText[] = "...";` (T-20): the object is the chars, and
-only an array takes `PROGMEM`. `char const*` is a pointer that picks a text that exists
-already, as `text` of `Message` in `Messages`. Only as a parameter are the two the same, and
-there it is written `char const*`, as the function gets a pointer and no array.
+only an array takes `PROGMEM`. A `span<char const>` picks a text that exists already, with its
+length, as `text` of `Message` in `Messages`, and is what a function of the library takes for a
+text: the text ends at its null character or at the end of the span, whichever comes first,
+so that a buffer without one is not read past its end. `Command` alone walks its own line by
+byte positions, as that line always ends with a null character and a span cost SerialControl
+flash (OIL 41).
 
 #### Constants and configuration
 

@@ -37,12 +37,9 @@ Byte SwapBits(Byte value, Byte upper, uint8_t shift) {
 
 }  // namespace
 
-// FN-3: the three pins, the buffer and its length, as a sketch hands them
-// NOLINTNEXTLINE(readability-function-size)
 Panel::Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-             Byte* buffer, uint8_t number_of_modules)
-    : wired_{data_in_pin, chip_select_pin, clock_pin, buffer,
-             number_of_modules} {}
+             span<Byte> buffer)
+    : wired_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
 Result<Byte> Panel::GetColumn(int16_t column) {
   if (column >= 0 && column < GetNumberOfColumns()) {
@@ -74,11 +71,9 @@ void Panel::SetColumn(uint8_t module, uint8_t column, Byte value) {
   }
 }
 
-// The row is taken by reference rather than as a pointer: GetRow(module, 0)
-// would otherwise be ambiguous, as a literal 0 is a null pointer as well.
-Status Panel::GetRow(int16_t row, Byte* values, uint8_t number_of_values) {
+Status Panel::GetRow(int16_t row, span<Byte> values) {
   if (row >= 0 && row < kRowNumberOfModule &&
-      number_of_values >= GetNumberOfModules()) {
+      values.size() >= GetNumberOfModules()) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; module < modules; module++) {
       values[module] = GetRow(module, static_cast<uint8_t>(row)).GetValue();
@@ -95,12 +90,11 @@ Result<Byte> Panel::GetRow(uint8_t module, uint8_t row) {
   return Error::kOutOfRange;
 }
 
-void Panel::SetRow(int16_t row, Byte const* values, uint8_t number_of_values) {
+void Panel::SetRow(int16_t row, span<Byte const> values) {
   if (row >= 0 && row < kRowNumberOfModule) {
-    uint8_t const modules{GetNumberOfModules() < number_of_values
-                              ? GetNumberOfModules()
-                              : number_of_values};
-    for (uint8_t module{0}; module < modules; module++) {
+    uint8_t const modules{GetNumberOfModules()};
+    for (uint8_t module{0}; module < modules && module < values.size();
+         module++) {
       SetRow(module, static_cast<uint8_t>(row), values[module]);
     }
   }
@@ -228,18 +222,16 @@ void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
   }
 }
 
-// Right of the panel nothing is drawn, and left of its right edge x plus a
-// column cannot overflow.
-// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
-// NOLINTNEXTLINE(readability-function-size)
-void Panel::DrawBitmap(int16_t x, int16_t y, uint8_t const* bitmap,
-                       uint8_t width, uint8_t height) {
-  if (x >= GetNumberOfColumns()) {
-    return;
-  }
-  for (uint8_t column{0}; column < width; column++) {
-    DrawColumn(static_cast<int16_t>(x + column), y, height,
-               Byte{pgm_read_byte(bitmap + column)});
+// Right of the panel nothing is drawn: the loop ends at its right edge, so
+// that the column on the panel, x plus a column of the bitmap, cannot overflow.
+void Panel::DrawBitmap(int16_t x, int16_t y, uint8_t height,
+                       span<uint8_t const> bitmap) {
+  int16_t left{x};
+
+  for (size_t column{0}; column < bitmap.size() && left < GetNumberOfColumns();
+       column++) {
+    DrawColumn(left, y, height, Byte{pgm_read_byte(&bitmap[column])});
+    left++;
   }
 }
 

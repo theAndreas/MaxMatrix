@@ -18,6 +18,7 @@
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "Utility/Byte.h"
+#include "Utility/span.h"
 #include "Wired.h"
 
 namespace max_matrix {
@@ -123,17 +124,16 @@ class Panel {
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
-   *                    has to live as long as the panel.
-   * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `kMaxNumberOfModules`.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`; it has to live as long as
+   *                    the panel.
    */
   Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        Byte* buffer, uint8_t number_of_modules);
+        span<Byte> buffer);
 
   /*! \brief Returns the modules of the chain. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
-    return wired_.GetChain().GetNumberOfModules();
+    return wired_.GetNumberOfModules();
   }
 
   /*! \brief Returns the columns of the panel, eight per module. */
@@ -181,12 +181,10 @@ class Panel {
    * \param[in] row The row, from 0 at the top.
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
-   * \param[in] number_of_values The bytes `values` has room for.
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row, Byte* values,
-                                    uint8_t number_of_values);
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row, span<Byte> values);
 
   /*!
    * \brief Returns a row of a module.
@@ -242,9 +240,8 @@ class Panel {
    * \param[in] row The row, from 0 at the top.
    * \param[in] values The row, bit 7 of each byte the leftmost column of its
    *                   module.
-   * \param[in] number_of_values The bytes in `values`.
    */
-  void SetRow(int16_t row, Byte const* values, uint8_t number_of_values);
+  void SetRow(int16_t row, span<Byte const> values);
 
   /*!
    * \brief Sets a row of a module.
@@ -336,14 +333,16 @@ class Panel {
    * a 0 bit turns its dot off. Rows below `height` are left as they are, and
    * what lies off the panel is left out.
    *
+   * The height goes before the bitmap, so that a width after it, as the
+   * columns were once given, does not compile: the bitmap brings its width.
+   *
    * \param[in] x The column of the left edge; it may lie off the panel.
    * \param[in] y The row of the top edge; it may lie off the panel.
-   * \param[in] bitmap The columns, `width` bytes in `PROGMEM`.
-   * \param[in] width The columns of the picture.
    * \param[in] height The rows of the picture, 1 to 8.
+   * \param[in] bitmap The columns, in `PROGMEM`; as many as it holds.
    */
-  void DrawBitmap(int16_t x, int16_t y, uint8_t const* bitmap, uint8_t width,
-                  uint8_t height = kRowNumberOfModule);
+  void DrawBitmap(int16_t x, int16_t y, uint8_t height,
+                  span<uint8_t const> bitmap);
 
   /*!
    * \brief Draws one column of a picture, `height` rows from `y` on.

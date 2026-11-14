@@ -17,6 +17,7 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Utility/array.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 
@@ -45,11 +46,25 @@ struct Sprite {
 /*! \brief A char of a font, as it lies in flash: where its columns are, and how
  * many. */
 struct Glyph {
-  uint8_t const*
-      columns; /*!< Its columns in flash, leftmost first, bit 0 the top row. */
-  uint8_t width;  /*!< The columns it takes, 1 to 255. */
+  /*! Its columns in flash, leftmost first, bit 0 the top row; 1 to 255. */
+  span<uint8_t const> columns;
   uint8_t height; /*!< The rows it takes, the height of its font, 1 to 8. */
 };
+
+namespace internal {
+
+/*!
+ * \brief Returns whether a text has ended at `position`: at its terminating
+ *        null character, or at the end of its span, whichever comes first.
+ *
+ * \param[in] text The text.
+ * \param[in] position The position, from 0.
+ */
+constexpr bool IsEndOfText(span<char const> text, size_t position) {
+  return position >= text.size() || text[position] == kNullCharacter;
+}
+
+}  // namespace internal
 
 /*! \brief A char of a text, as Font::DecodeChar() reads it. */
 struct DecodedChar {
@@ -82,9 +97,9 @@ extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
  * lets a font go past 255, in two, high byte first.
  *
  * The format holds no length of its own, so a font is checked against the
- * length of its array: every char from the first to the last has to fit into
- * it, and the last has to end it. A font that CheckFont() took cannot lead
- * GetGlyph() past its end.
+ * length of its array, which the span it is handed brings: every char from the
+ * first to the last has to fit into it, and the last has to end it. A font
+ * that CheckFont() took cannot lead GetGlyph() past its end.
  *
  * \code{.cpp}
  * uint8_t const kDigits[] PROGMEM = {
@@ -105,19 +120,19 @@ extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
 class Font {
  public:
   /*!
-   * \brief Returns whether `font` is a font of `size` bytes.
+   * \brief Returns whether `font` is a font that fills its bytes exactly.
    *
    * A font in RAM fails as well, almost always, as it is read from flash: the
    * bytes found there at its address would have to add up to its length
    * exactly.
    *
    * \param[in] font The font, in flash.
-   * \param[in] size The length of its array in bytes.
-   * \return Error::kOk, or Error::kNotAFont if `font` is null, does not start
-   *         with `'F'`, version 1 or 2, a first char no later than the last and
-   *         a height of 1 to 8, or its chars do not fill exactly `size` bytes.
+   * \return Error::kOk, or Error::kNotAFont if `font` is too short for its
+   *         header, does not start with `'F'`, version 1 or 2, a first char no
+   *         later than the last and a height of 1 to 8, or its chars do not
+   *         fill it exactly.
    */
-  MAXMATRIX_NODISCARD static Status CheckFont(uint8_t const* font, size_t size);
+  MAXMATRIX_NODISCARD static Status CheckFont(span<uint8_t const> font);
 
   /*!
    * \brief Finds the glyph of a char in a font.
@@ -126,7 +141,7 @@ class Font {
    * \param[in] c The char, latin-1, as DecodeChar() gives it.
    * \return The glyph, or Error::kUnknownChar if the font has no char for it.
    */
-  MAXMATRIX_NODISCARD static Result<Glyph> GetGlyph(uint8_t const* font,
+  MAXMATRIX_NODISCARD static Result<Glyph> GetGlyph(span<uint8_t const> font,
                                                     char c);
 
   /*!
@@ -135,11 +150,11 @@ class Font {
    * A UTF-8 sequence of a latin-1 char, such as an umlaut, becomes that one
    * latin-1 char; every other byte comes back as it is.
    *
-   * \param[in] text The text at the char to decode; not at its terminating null
-   *                 character.
+   * \param[in] text The text from the char to decode on; not at its end, as
+   *                 internal::IsEndOfText() tells it.
    * \return The char, and the number of bytes it took in `text`.
    */
-  static DecodedChar DecodeChar(char const* text);
+  static DecodedChar DecodeChar(span<char const> text);
 };
 
 }  // namespace max_matrix

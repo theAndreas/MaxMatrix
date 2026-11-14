@@ -17,6 +17,7 @@
 #include "Matrix/Panel.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 namespace internal {
@@ -47,23 +48,25 @@ class Text {
   static constexpr uint16_t kShiftStart{1};
 
   /*
-   * The font every char is drawn in, NULL for kDefaultFont: only a
+   * The font every char is drawn in, empty for kDefaultFont: only a
    * function that draws a char names the default font then, and a sketch that
    * draws none does not link its 614 bytes, as Animation and Sprites did with
    * the default font set here. And the char that shifts in, which lies in the
    * font.
    */
-  uint8_t const* font_{nullptr};
+  span<uint8_t const> font_;
   Glyph glyph_{};
   /* 16 bits, as a char and its space take up to 255 + 255 columns */
   uint16_t sprite_shift_counter_{kShiftIdle};
   uint8_t space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
-  char const* string_{nullptr};
-  /* the start of a text that starts over after its last char, NULL for one that
-   * stops there */
-  char const* repeat_from_{nullptr};
+  /* the text that shifts in, the position of its next char, and whether it
+   * starts over after its last char */
+  span<char const> text_;
+  size_t position_{0};
+  bool repeat_{false};
 
   void ReadNextChar();
+  static span<uint8_t const> DefaultFont();
 
  public:
   /*! \brief Makes a text with nothing to shift. */
@@ -75,8 +78,8 @@ class Text {
   }
 
   /*! \brief Returns the font every char is drawn in. */
-  MAXMATRIX_NODISCARD uint8_t const* GetFont() const {
-    return font_ != nullptr ? font_ : kDefaultFont;
+  MAXMATRIX_NODISCARD span<uint8_t const> GetFont() const {
+    return font_.size() != 0 ? font_ : DefaultFont();
   }
 
   /*!
@@ -85,11 +88,10 @@ class Text {
    * A char that shifts in already goes on in the font it started in.
    *
    * \param[in] font The font, in flash, in the format Font describes.
-   * \param[in] size The length of its array in bytes.
    * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
    *         it; the font then stays as it was.
    */
-  MAXMATRIX_NODISCARD Status SetFont(uint8_t const* font, size_t size);
+  MAXMATRIX_NODISCARD Status SetFont(span<uint8_t const> font);
 
   /*!
    * \brief Draws a char with its top left corner at `x`, `y`.
@@ -120,26 +122,29 @@ class Text {
    * \brief Draws a text from the left edge, as far as it fits.
    *
    * \param[in,out] panel The panel to draw on.
-   * \param[in] text The text, UTF-8 or latin-1.
-   * \return Error::kOk; Error::kNoText if `text` is null; or
+   * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
+   *                 character or the end of the span.
+   * \return Error::kOk; Error::kNoText if `text` is an empty span; or
    *         Error::kUnknownChar if the font lacks a char of the text, with the
    *         chars before it drawn.
    */
-  MAXMATRIX_NODISCARD Status SetText(Panel& panel, char const* text) const;
+  MAXMATRIX_NODISCARD Status SetText(Panel& panel, span<char const> text) const;
 
   /*!
    * \brief Starts shifting a text in from the right, until its last char stands
    *        at the right edge, or over and over.
    *
-   * \param[in] text The text, UTF-8 or latin-1. It is kept as a pointer, so it
-   *                 has to live until the text stands, or as long as it starts
-   *                 over.
+   * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
+   *                 character or the end of the span. It is kept as a span, so
+   *                 it has to live until the text stands, or as long as it
+   *                 starts over.
    * \param[in] repeat True to start over with the first char after the last,
    *                   without end.
-   * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
-   *         then.
+   * \return Error::kOk, or Error::kNoText if `text` is an empty span; nothing
+   *         starts then.
    */
-  MAXMATRIX_NODISCARD Status SetTextWithShift(char const* text, bool repeat);
+  MAXMATRIX_NODISCARD Status SetTextWithShift(span<char const> text,
+                                              bool repeat);
 
   /*!
    * \brief Sets the empty columns between two chars of a text.

@@ -44,7 +44,7 @@ void DrawShape() {
     }
   } else {
     for (int16_t x{0}; x < matrix.GetNumberOfColumns(); x += 8) {
-      matrix.DrawBitmap(x, 1, kHeart, sizeof(kHeart));
+      matrix.DrawBitmap(x, 1, kHeart);
     }
   }
 }

@@ -22,13 +22,10 @@ constexpr Byte kAllColumnsChanged{0xFF};
 
 }  // namespace
 
-// FN-3: the three pins, the buffer and its length, as a sketch hands them
-// NOLINTNEXTLINE(readability-function-size)
 Wired::Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-             Byte* buffer, uint8_t number_of_modules)
-    : chain_{data_in_pin, chip_select_pin, clock_pin, number_of_modules},
-      matrix_buffer_{buffer} {
-  memset(matrix_buffer_, 0, GetNumberOfColumns());
+             span<Byte> buffer)
+    : chain_{data_in_pin, chip_select_pin, clock_pin}, matrix_buffer_{buffer} {
+  memset(matrix_buffer_.data(), 0, matrix_buffer_.size());
 }
 
 void Wired::StoreBit(uint8_t column, uint8_t bit, bool value) {
@@ -43,18 +40,17 @@ void Wired::StoreBit(uint8_t column, uint8_t bit, bool value) {
 }
 
 void Wired::Clear() {
-  memset(matrix_buffer_, 0, GetNumberOfColumns());
+  memset(matrix_buffer_.data(), 0, matrix_buffer_.size());
   changed_columns_ = kAllColumnsChanged;
 }
 
-// The values of a column lie a module's columns apart in the buffer, and go out
-// from there rather than through an array of one per module, which would need
-// its length at compile time.
+// The values of a column go out straight from the buffer rather than through an
+// array of one per module, which would need its length at compile time.
 void Wired::Send() {
   for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
     if (ReadBit(changed_columns_, column)) {
-      chain_.WriteRegisterEach(max7219::kDigit0Address + column,
-                               matrix_buffer_ + column, kColumnNumberOfModule);
+      chain_.WriteRegisterEach(max7219::kDigit0Address + column, matrix_buffer_,
+                               column);
     }
   }
   changed_columns_ = Byte{};

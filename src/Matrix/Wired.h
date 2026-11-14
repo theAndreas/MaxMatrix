@@ -18,6 +18,7 @@
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "Utility/Byte.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 namespace internal {
@@ -33,9 +34,9 @@ namespace internal {
 class Wired {
  private:
   Chain chain_;
-  // The sketch's, BufferSize() of the chain's modules long;
-  // MatrixOf brings one.
-  Byte* matrix_buffer_;
+  // The sketch's, BufferSize() of the chain's modules long, which says how
+  // many modules the chain has; MatrixOf brings one.
+  span<Byte> matrix_buffer_;
   /*
    * A frame carries one register of every module, so the same column of all
    * modules goes out in one frame. The buffer therefore keeps which columns of
@@ -51,13 +52,12 @@ class Wired {
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
-   *                    has to live as long as the matrix.
-   * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `kMaxNumberOfModules`.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`; it has to live as long as
+   *                    the matrix.
    */
   Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        Byte* buffer, uint8_t number_of_modules);
+        span<Byte> buffer);
 
   /*! \brief Returns the chain the matrix sends to. */
   Chain& GetChain() { return chain_; }
@@ -67,8 +67,14 @@ class Wired {
 
   /*! \brief Returns the columns of the chain, eight per module. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfColumns() const {
-    return static_cast<uint8_t>(chain_.GetNumberOfModules() *
-                                kColumnNumberOfModule);
+    return static_cast<uint8_t>(matrix_buffer_.size());
+  }
+
+  /*! \brief Returns the modules in the chain, one per eight bytes of buffer. */
+  MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
+    // From the columns, a byte, rather than the size of the buffer, which the
+    // Uno would shift as 16 bits.
+    return static_cast<uint8_t>(GetNumberOfColumns() / kColumnNumberOfModule);
   }
 
   /*!

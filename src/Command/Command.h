@@ -19,6 +19,7 @@
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Utility/array.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 
@@ -82,19 +83,27 @@ class Command {
   uint8_t line_length_{0};
   bool line_too_long_{false};
 
-  MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix, char* text,
+  /*
+   * The commands find their parts by their position in line_, a byte, as the
+   * static_assert below holds the line to: walked by a span instead, as T-20
+   * would have it for a text of unknown length, SerialControl was larger. The
+   * line always ends with a null character, which Feed() puts there, so a
+   * position needs no check against its size.
+   */
+  static constexpr uint16_t kMaxLineLength{0xFF};
+  static_assert(MAXMATRIX_COMMAND_LINE_LENGTH <= kMaxLineLength,
+                "a position in the line has to fit into a byte");
+  MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix,
                                                    Print& answer);
-  MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix,
-                                              char const* value);
-  MAXMATRIX_NODISCARD static Status ExecuteText(Matrix& matrix,
-                                                char const* value);
-  MAXMATRIX_NODISCARD static Status ExecuteDot(Matrix& matrix, char* value);
-  MAXMATRIX_NODISCARD static Status ExecuteSetting(Matrix& matrix,
-                                                   char const* name,
-                                                   char const* value);
+  MAXMATRIX_NODISCARD uint8_t Find(uint8_t from, char c) const;
+  MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteText(Matrix& matrix, uint8_t value) const;
+  MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteSetting(Matrix& matrix,
+                                            uint8_t value) const;
   static void AnswerPicture(Matrix& matrix, Print& answer);
-  MAXMATRIX_NODISCARD static Result<uint16_t> ConvertToNumber(char const* text,
-                                                              uint16_t maximum);
+  MAXMATRIX_NODISCARD Result<uint16_t> ConvertToNumber(uint8_t text,
+                                                       uint16_t maximum) const;
   static char ConvertToHexDigit(uint8_t value);
 
  public:

@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | open | |
 
@@ -985,6 +985,39 @@ A first look found, besides those two:
   orientation swaps, the buffer of `MatrixOf` and the table of error texts are arrays, the
   table made with `make_array()`. The pair stays uninitialized, against T-13: cleared first, it
   made every example 10 to 12 bytes larger. Every example is the same size as before.
+
+  As built, the third, decided on 2026-11-14 before the arrays of a sketch, so that what took a
+  pointer and a length gets its final form once: `max_matrix::span`, and every font, bitmap,
+  row, buffer and text the library takes is one. `SetText("Hi")` and an array still compile;
+  a text known by a pointer goes with its length, `{text, strlen(text)}`, and ends at its null
+  character or at the end of the span, so that a buffer without one is not read past its end.
+  `Matrix` takes its buffer as a span whose length gives the modules, so the constructors have
+  four parameters; `Chain` keeps no count of its own. `DrawBitmap(x, y, height, bitmap)` puts
+  the height before the bitmap, as an old call with a width after it would compile and draw
+  the width as the height. `Command` walks its own line by byte positions, as it always ends
+  with a null character: by spans, SerialControl was 232 bytes larger.
+
+  Measured on the Uno against the second step, in all three variants alike but `Messages` with
+  `MAXMATRIX_DEV_ERROR_DETECT`, 138 bytes:
+
+  | Example | Flash | RAM |
+  |---|---|---|
+  | Shapes | +24 | +7 |
+  | Sprites | +48 | +7 |
+  | Animation | +56 | +7 |
+  | Band, Messages | +60 | +7, +15 |
+  | Basics | +104 | +7 |
+  | ScrollText | +146 | +7 |
+  | Shutdown | +220 | +7 |
+  | SerialControl | +334 | +7 |
+
+  A span is 4 bytes on the Uno where a pointer is 2: the font, the glyph and the text that
+  shifts in, and the buffer, 7 bytes of RAM, which the constructor of a global `Matrix` zeroes
+  one store each; a text checks its end and its null character; sizes are 16 bits. Taken on
+  2026-11-14, against keeping C strings for texts.
+  avr-gcc 7.3 crashed on `Text.h` alone, as the check of self-contained headers compiles it
+  with `-Os`, `-Wnonnull` or `-Wrestrict` and `-fsyntax-only`, where the span of the default
+  font was made inline; it is made in `Text.cpp` now. A real compile never crashed.
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;

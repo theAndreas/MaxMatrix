@@ -24,6 +24,15 @@ constexpr uint8_t kVersion2{2};
 constexpr uint8_t kHeaderLength1{5};
 constexpr uint8_t kHeaderLength2{7};
 
+/* where the header holds what: version 1 gives each code in a byte, version 2
+ * in two */
+constexpr size_t kVersionPosition{1};
+constexpr size_t kFirstPosition{2};
+constexpr size_t kLastPosition1{3};
+constexpr size_t kHeightPosition1{4};
+constexpr size_t kLastPosition2{4};
+constexpr size_t kHeightPosition2{6};
+
 /* the bits of a two byte UTF-8 sequence: the lead byte carries the two high
  * bits of the char, the continuation byte, 10xxxxxx, the six low ones */
 constexpr uint8_t kUtf8LeadBits{0x03U};
@@ -34,9 +43,15 @@ constexpr uint8_t kUtf8ContinuationWidth{6U};
 
 // Reads a number of two bytes from flash, the high byte first, as the header
 // of a font of version 2 holds it.
-uint16_t ReadNumber(uint8_t const* address) {
-  uint16_t const high{static_cast<uint16_t>(pgm_read_byte(address) << 8U)};
-  return static_cast<uint16_t>(high | pgm_read_byte(address + 1));
+uint16_t ReadNumber(span<uint8_t const> font, size_t position) {
+  uint16_t const high{
+      static_cast<uint16_t>(pgm_read_byte(&font[position]) << 8U)};
+  return static_cast<uint16_t>(high | pgm_read_byte(&font[position + 1]));
+}
+
+// Reads the byte of the font at `position` from flash.
+uint8_t ReadByte(span<uint8_t const> font, size_t position) {
+  return pgm_read_byte(&font[position]);
 }
 
 }  // namespace
@@ -176,31 +191,29 @@ uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM{
 };
 
 /*
- * The chars are walked by their offset into the array rather than by a pointer,
- * as a pointer more than one past the end of the array would be undefined
- * behaviour already, compared or not.
+ * The chars are walked by their offset into the span, which is checked against
+ * its size before each read.
  */
-Status Font::CheckFont(uint8_t const* font, size_t size) {
-  if (font == nullptr || size < kHeaderLength1 ||
-      pgm_read_byte(font) != kFileIndicator) {
+Status Font::CheckFont(span<uint8_t const> font) {
+  if (font.size() < kHeaderLength1 || ReadByte(font, 0) != kFileIndicator) {
     return Error::kNotAFont;
   }
 
-  uint8_t const version{pgm_read_byte(font + 1)};
+  uint8_t const version{ReadByte(font, kVersionPosition)};
   uint16_t first{0};
   uint16_t last{0};
   uint8_t height{0};
   size_t offset{0};
 
   if (version == kVersion1) {
-    first = pgm_read_byte(font + 2);
-    last = pgm_read_byte(font + 3);
-    height = pgm_read_byte(font + 4);
+    first = ReadByte(font, kFirstPosition);
+    last = ReadByte(font, kLastPosition1);
+    height = ReadByte(font, kHeightPosition1);
     offset = kHeaderLength1;
-  } else if (version == kVersion2 && size >= kHeaderLength2) {
-    first = ReadNumber(font + 2);
-    last = ReadNumber(font + 4);
-    height = pgm_read_byte(font + 6);
+  } else if (version == kVersion2 && font.size() >= kHeaderLength2) {
+    first = ReadNumber(font, kFirstPosition);
+    last = ReadNumber(font, kLastPosition2);
+    height = ReadByte(font, kHeightPosition2);
     offset = kHeaderLength2;
   } else {
     return Error::kNotAFont;
@@ -211,15 +224,15 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
   for (uint16_t code{first};; code++) {
-    if (offset >= size) {
+    if (offset >= font.size()) {
       return Error::kNotAFont;
     }
-    offset += pgm_read_byte(font + offset) + 1U;
+    offset += ReadByte(font, offset) + 1U;
     if (code == last) {
       break;
     }
   }
-  return offset == size ? Error::kOk : Error::kNotAFont;
+  return offset == font.size() ? Error::kOk : Error::kNotAFont;
 }
 
 /*
@@ -227,41 +240,43 @@ Status Font::CheckFont(uint8_t const* font, size_t size) {
  * many columns on. The header is read again on every call rather than kept:
  * five bytes from flash cost less than the RAM to keep them.
  */
-Result<Glyph> Font::GetGlyph(uint8_t const* font, char c) {
-  bool const version_1{pgm_read_byte(font + 1) == kVersion1};
+Result<Glyph> Font::GetGlyph(span<uint8_t const> font, char c) {
+  bool const version_1{ReadByte(font, kVersionPosition) == kVersion1};
   uint16_t const code{static_cast<uint8_t>(c)};
   uint16_t first{0};
   uint16_t last{0};
-  Glyph glyph{};
+  uint8_t height{0};
+  size_t offset{0};
 
   if (version_1) {
-    first = pgm_read_byte(font + 2);
-    last = pgm_read_byte(font + 3);
-    glyph.height = pgm_read_byte(font + 4);
-    font += kHeaderLength1;
+    first = ReadByte(font, kFirstPosition);
+    last = ReadByte(font, kLastPosition1);
+    height = ReadByte(font, kHeightPosition1);
+    offset = kHeaderLength1;
   } else {
-    first = ReadNumber(font + 2);
-    last = ReadNumber(font + 4);
-    glyph.height = pgm_read_byte(font + 6);
-    font += kHeaderLength2;
+    first = ReadNumber(font, kFirstPosition);
+    last = ReadNumber(font, kLastPosition2);
+    height = ReadByte(font, kHeightPosition2);
+    offset = kHeaderLength2;
   }
   if (code < first || code > last) {
     return Error::kUnknownChar;
   }
   for (uint16_t skipped{first}; skipped < code; skipped++) {
-    font += pgm_read_byte(font) + 1;
+    offset += ReadByte(font, offset) + 1U;
   }
-  glyph.width = pgm_read_byte(font);
-  glyph.columns = font + 1;
-  if (glyph.width == 0) {
+  uint8_t const width{ReadByte(font, offset)};
+  if (width == 0) {
     return Error::kUnknownChar;
   }
-  return glyph;
+  return Glyph{font.subspan(offset + 1).first(width), height};
 }
 
-DecodedChar Font::DecodeChar(char const* text) {
+DecodedChar Font::DecodeChar(span<char const> text) {
   uint8_t const lead_byte{static_cast<uint8_t>(text[0])};
-  uint8_t const next_byte{static_cast<uint8_t>(text[1])};
+  uint8_t const next_byte{internal::IsEndOfText(text, 1)
+                              ? uint8_t{0}
+                              : static_cast<uint8_t>(text[1])};
 
   /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
   bool const is_latin_1_lead{0xC2 == lead_byte || 0xC3 == lead_byte};

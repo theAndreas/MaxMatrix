@@ -123,3 +123,22 @@ TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
                      bitRead(sprite.columns[static_cast<size_t>(column)], row);
             }));
 }
+
+/* a text ends at the end of its span when no null character comes first, so
+ * that a buffer without one is not read past its end: the first two chars of
+ * "Hi!!" are drawn and shifted as "Hi" */
+TEST_F(MaxMatrixTest, TextEndsAtTheEndOfItsSpanWithoutANullCharacter) {
+  char const longer[] = "Hi!!";
+  max_matrix::span<char const> const unterminated{longer, 2};
+
+  ASSERT_EQ(matrix_.SetText("Hi").GetError(), Error::kOk);
+  std::vector<std::string> const expected{ShownPicture(matrix_)};
+  matrix_.Clear();
+  ASSERT_EQ(matrix_.SetText(unterminated).GetError(), Error::kOk);
+  EXPECT_EQ(ShownPicture(matrix_), expected);
+
+  int32_t const frames{ShiftWholeText("Hi")};
+  uint16_t const calls{shift_calls_};
+  EXPECT_EQ(ShiftWholeText(unterminated), frames);
+  EXPECT_EQ(shift_calls_, calls);
+}

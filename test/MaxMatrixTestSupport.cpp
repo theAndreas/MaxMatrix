@@ -55,18 +55,18 @@ void max_matrix::ReportError(__FlashStringHelper const* api, Error error) {
 }
 #endif
 
-std::vector<uint8_t> Bytes(uint8_t const* data, size_t size) {
-  // T-20: the library's buffer is a pointer and a length
-  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  return std::vector<uint8_t>(data, data + size);
+std::vector<uint8_t> Bytes(max_matrix::span<uint8_t const> data) {
+  std::vector<uint8_t> bytes;
+  for (size_t index{0}; index < data.size(); index++) {
+    bytes.push_back(data[index]);
+  }
+  return bytes;
 }
 
-std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size) {
+std::vector<uint8_t> Bytes(max_matrix::span<max_matrix::Byte const> data) {
   std::vector<uint8_t> bytes;
-  // T-20: the library's buffer is a pointer and a length
-  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  for (max_matrix::Byte const* end{data + size}; data != end; data++) {
-    bytes.push_back(max_matrix::ToInteger(*data));
+  for (size_t index{0}; index < data.size(); index++) {
+    bytes.push_back(max_matrix::ToInteger(data[index]));
   }
   return bytes;
 }
