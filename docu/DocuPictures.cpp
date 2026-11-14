@@ -30,6 +30,7 @@
 #include "Arduino.h"
 #include "DocuSvg.h"
 #include "MaxMatrix.h"
+#include "Utility/Bit.h"
 
 namespace {
 
@@ -164,7 +165,7 @@ uint8_t CountLit(uint8_t chip, uint8_t digit, DocuLed* led) {
   uint8_t lit{0};
 
   for (uint8_t bit{0}; bit < kBitsPerDigit; bit++) {
-    if (bitRead(segments, bit)) {
+    if (max_matrix::Bit<uint8_t>::ReadBit(segments, bit)) {
       *led = DocuLed{chip, digit, bit};
       lit++;
     }

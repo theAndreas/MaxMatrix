@@ -89,15 +89,15 @@ class Bit {
   }
 
   /*!
-   * \brief Returns `value` with the bit at `position` set to `bit`.
+   * \brief Returns `value` with the bit at `position` set or cleared.
    *
    * \param[in] value The integer to change.
    * \param[in] position The position of the bit.
-   * \param[in] bit True to set the bit, false to clear it.
+   * \param[in] set True to set the bit, false to clear it.
    * \return The changed integer.
    */
-  static constexpr Integer WriteBit(Integer value, uint8_t position, bool bit) {
-    return bit ? Combine(value, ToMask(position))
+  static constexpr Integer WriteBit(Integer value, uint8_t position, bool set) {
+    return set ? Combine(value, ToMask(position))
                : ReadBitGroup(value, Invert(ToMask(position)));
   }
 

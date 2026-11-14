@@ -160,7 +160,7 @@ constexpr bool ReadBit(Byte value, uint8_t bit) {
  * \param[in] set True to set the bit, false to clear it.
  */
 constexpr Byte WriteBit(Byte value, uint8_t bit, bool set) {
-  return set ? (value | (Byte{1} << bit)) : (value & ~(Byte{1} << bit));
+  return Byte{Bit<uint8_t>::WriteBit(value.ToInteger(), bit, set)};
 }
 
 }  // namespace max_matrix
