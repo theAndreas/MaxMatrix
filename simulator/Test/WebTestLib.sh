@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared by WebTest.sh and ControlTest.sh: a simulator started with --web, and the half of a browser that talks to it.
 # curl speaks no WebSocket, so the WebSocket runs over bash's /dev/tcp on file descriptor 3.
 #
@@ -15,7 +16,7 @@ fail() {
 startSimulator() {
     "$1" "${@:4}" --web --port "$2" --for "$3" > /dev/null &
     SimulatorProcess=$!
-    for Try in $(seq 50); do
+    for _ in {1..50}; do
         curl -s -o /dev/null "http://localhost:$2/" && return 0
         sleep 0.1
     done
@@ -42,7 +43,7 @@ send() {
     for ((i = 0; i < ${#Text}; i++)); do
         Frame+=$(printf '\\x%02x' $(($(printf '%d' "'${Text:i:1}") ^ Mask[i % 4])))
     done
-    printf "$Frame" >&3
+    printf '%b' "$Frame" >&3
 }
 
 # receive - what arrives within half a second; the frame headers are binary and may hold a zero byte, which bash cannot

@@ -28,6 +28,7 @@ expect() {
 
 # The simulator says on stdout that the port is open before setup() runs; waiting for that line rather than trying to
 # connect, as a connection that is only a try would be taken for the client and keep the port for a while.
+# shellcheck disable=SC2312  # its status is not lost: wait takes it below
 exec 4< <(exec "$1" "${@:3}" --tcp "$Port" --for 3)
 SimulatorProcess=$!
 IFS= read -r -t 5 Opened <&4 || true
