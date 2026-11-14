@@ -16,8 +16,11 @@
 #include <utility>
 #include <vector>
 
+#include "Utility/Bit.h"
+
 namespace {
 
+using max_matrix::Bit;
 using Pair = std::pair<uint8_t, uint8_t>;
 
 /* one frame: every pair shifted in, address first, then the rising edge of chip
@@ -71,7 +74,7 @@ TEST(Max7219Test, FrameOneBitShortIsLatchedOneBitOff) {
   uint16_t const pair{0x0222};
 
   for (uint8_t bit{15}; bit >= 1; bit--) {
-    chain.ShiftBit((pair & (1u << bit)) != 0u);
+    chain.ShiftBit(Bit<uint16_t>::ReadBit(pair, bit));
   }
   chain.Latch();
   EXPECT_EQ(chain.chips[0].digit[0], 0x11);
@@ -148,7 +151,7 @@ TEST(Max7219Test, CodeBDecodesOnlyTheSelectedDigits) {
   SendFrame(chain, {{0x09, 0x01}});
   SendFrame(chain, {{0x01, 0x85}});
   SendFrame(chain, {{0x02, 0x85}});
-  EXPECT_EQ(chain.chips[0].Segments(0), 0x80u | 0x5Bu);  // DP and '5'
+  EXPECT_EQ(chain.chips[0].Segments(0), 0xDBu);  // DP, 0x80, and '5', 0x5B
   EXPECT_EQ(chain.chips[0].Segments(1), 0x85);
 }
 
@@ -162,7 +165,7 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
 Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                  uint8_t digit, uint8_t segment) {
   Max7219Chain chain{ChainInNormalOperation(number_of_chips)};
-  chain.chips[chip].digit[digit] = static_cast<uint8_t>(1u << segment);
+  chain.chips[chip].digit[digit] = Bit<uint8_t>::ToMask(segment);
   return chain;
 }
 

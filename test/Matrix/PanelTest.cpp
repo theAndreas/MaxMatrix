@@ -13,7 +13,9 @@
 #include <vector>
 
 #include "MaxMatrixTestSupport.h"
+#include "Utility/Bit.h"
 
+using max_matrix::Bit;
 using max_matrix::Byte;
 using max_matrix::Error;
 using max_matrix::Font;
@@ -50,7 +52,8 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
   PanelRow in;
   PanelRow out;
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    in[module] = Byte{static_cast<uint8_t>(0xA5u ^ (module * 0x3Cu))};
+    in[module] = Byte{
+        Bit<uint8_t>::ToggleBits(0xA5u, static_cast<uint8_t>(module * 0x3Cu))};
   }
 
   for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
@@ -134,7 +137,8 @@ TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
 TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   PanelRow row;
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    row[module] = Byte{static_cast<uint8_t>(0x81u ^ (module * 0x16u))};
+    row[module] = Byte{
+        Bit<uint8_t>::ToggleBits(0x81u, static_cast<uint8_t>(module * 0x16u))};
   }
 
   matrix_.SetRow(2, row);
@@ -155,7 +159,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
     Result<Byte> const value{matrix_.GetRow(0, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(value.GetValue().ToInteger(),
-              bitRead(0xA3, y) ? 1u << (7u - 5u) : 0u)
+              bitRead(0xA3, y) ? Bit<uint8_t>::ToMask(7u - 5u) : 0u)
         << "Row " << static_cast<uint16_t>(y);
   }
 }
@@ -290,7 +294,7 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
       SCOPED_TRACE(::testing::Message()
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
-      bool const expected{(((column * 3u) + row) & 1u) != 0u};
+      bool const expected{Bit<uint32_t>::ReadBit((column * 3u) + row, 0)};
       matrix_.SetDot(column, row, expected);
       Result<bool> const value{matrix_.GetDot(column, row)};
       EXPECT_EQ(value.GetError(), Error::kOk);

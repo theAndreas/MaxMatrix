@@ -112,6 +112,7 @@ set(MaxMatrixTestSources
     test/Matrix/WiredTest.cpp
     test/Max7219/ChainTest.cpp
     test/Text/TextTest.cpp
+    test/Utility/BitTest.cpp
     test/Utility/ByteTest.cpp
     test/Utility/arrayTest.cpp
     test/Utility/reference_wrapperTest.cpp

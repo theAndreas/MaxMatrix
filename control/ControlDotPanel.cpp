@@ -21,6 +21,7 @@
 
 #include "ControlCommand.h"
 #include "MaxMatrixConfig.h"
+#include "Utility/Bit.h"
 
 namespace {
 
@@ -182,13 +183,14 @@ void ControlDotPanel::PaintDot(uint8_t column, uint8_t row) {
   if (IsLit(column, row) == paint_lit_) {
     return;
   }
-  columns_[column] ^= static_cast<uint8_t>(1u << row);
+  columns_[column] = max_matrix::Bit<uint8_t>::ToggleBits(
+      columns_[column], max_matrix::Bit<uint8_t>::ToMask(row));
   Refresh();
   on_switch_(column, row, paint_lit_);
 }
 
 bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
-  return (columns_[column] & (1u << row)) != 0u;
+  return max_matrix::Bit<uint8_t>::ReadBit(columns_[column], row);
 }
 
 /*

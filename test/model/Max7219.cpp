@@ -7,6 +7,25 @@
 
 #include <array>
 
+#include "Utility/Bit.h"
+
+namespace {
+
+using Bits = max_matrix::Bit<uint8_t>;
+
+/* the fields of the registers, as the datasheet gives them */
+constexpr uint8_t kAddressBits{0x0Fu};
+constexpr uint8_t kIntensityBits{0x0Fu};
+constexpr uint8_t kScanLimitBits{0x07u};
+constexpr uint8_t kSwitchBit{0x01u};
+constexpr uint8_t kDecimalPoint{0x80u};
+constexpr uint8_t kCodeBDigit{0x0Fu};
+/* the first bit on the wire, and the one that falls out of a register */
+constexpr uint8_t kTopBit{0x80u};
+constexpr uint8_t kTopPosition{7u};
+
+}  // namespace
+
 std::array<Max7219Wiring, 8> const kMax7219Wirings{{
     {"DR0CR0RR0", false, false, false},
     {"DR0CR0RR1", false, false, true},
@@ -39,19 +58,19 @@ void Max7219::Reset() {
  * the register; 0x0D and 0x0E are no register at all and change nothing, like
  * the no-op */
 void Max7219::Latch(uint8_t address, uint8_t data) {
-  address &= 0x0Fu;
+  address = Bits::ReadBitGroup(address, kAddressBits);
   if (address >= 0x01 && address <= 0x08) {
     digit[address - 1] = data;
   } else if (address == 0x09) {
     decode_mode = data;
   } else if (address == 0x0A) {
-    intensity = data & 0x0Fu;
+    intensity = Bits::ReadBitGroup(data, kIntensityBits);
   } else if (address == 0x0B) {
-    scan_limit = data & 0x07u;
+    scan_limit = Bits::ReadBitGroup(data, kScanLimitBits);
   } else if (address == 0x0C) {
-    shutdown = data & 0x01u;
+    shutdown = Bits::ReadBitGroup(data, kSwitchBit);
   } else if (address == 0x0F) {
-    display_test = data & 0x01u;
+    display_test = Bits::ReadBitGroup(data, kSwitchBit);
   }
 }
 
@@ -72,8 +91,10 @@ uint8_t Max7219::Segments(uint8_t digit_index) const {
   if ((shutdown == 0u) || digit_index > scan_limit) {
     return 0x00;
   }
-  if ((decode_mode & (1u << digit_index)) != 0u) {
-    return (digit[digit_index] & 0x80u) | kCodeB[digit[digit_index] & 0x0Fu];
+  if (Bits::ReadBit(decode_mode, digit_index)) {
+    uint8_t const point{Bits::ReadBitGroup(digit[digit_index], kDecimalPoint)};
+    uint8_t const code{Bits::ReadBitGroup(digit[digit_index], kCodeBDigit)};
+    return Bits::Combine(point, kCodeB[code]);
   }
   return digit[digit_index];
 }
@@ -85,8 +106,8 @@ void Max7219Chain::Reset(uint8_t number_of_chips) {
 
 /* a byte as the wire carries it, most significant bit first */
 void Max7219Chain::Shift(uint8_t value) {
-  for (uint8_t mask{0x80u}; mask != 0u; mask >>= 1u) {
-    ShiftBit((value & mask) != 0u);
+  for (uint8_t mask{kTopBit}; mask != 0u; mask = Bits::ShiftDown(mask, 1u)) {
+    ShiftBit(Bits::ReadBitGroup(value, mask) != 0u);
   }
 }
 
@@ -96,17 +117,17 @@ void Max7219Chain::Shift(uint8_t value) {
  * the first pair sent in the chip at the far end. Bit by bit rather than byte
  * by byte, so that a frame that is not a whole number of bytes, which bit
  * banging can send, latches what the hardware would. */
-void Max7219Chain::ShiftBit(bool value) {
+void Max7219Chain::ShiftBit(bool bit) {
   if (shift_register_.empty()) {
     return;
   }
   for (size_t i{shift_register_.size() - 1}; i > 0; i--) {
-    uint8_t const shifted{static_cast<uint8_t>(shift_register_[i] << 1u)};
-    uint8_t const carry{static_cast<uint8_t>(shift_register_[i - 1] >> 7u)};
-    shift_register_[i] = static_cast<uint8_t>(shifted | carry);
+    uint8_t const shifted{Bits::ShiftUp(shift_register_[i], 1u)};
+    bool const carry{Bits::ReadBit(shift_register_[i - 1], kTopPosition)};
+    shift_register_[i] = Bits::WriteBit(shifted, 0, carry);
   }
-  uint8_t const shifted{static_cast<uint8_t>(shift_register_[0] << 1u)};
-  shift_register_[0] = static_cast<uint8_t>(shifted | (value ? 1u : 0u));
+  uint8_t const shifted{Bits::ShiftUp(shift_register_[0], 1u)};
+  shift_register_[0] = Bits::WriteBit(shifted, 0, bit);
 }
 
 /* every chip latches whatever its register holds on the rising edge of chip
@@ -144,7 +165,7 @@ bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
   if (wiring.reversed_columns) {
     segment = Max7219::kNumberOfDigits - 1 - segment;
   }
-  return (chip.Segments(digit) & (1u << segment)) != 0u;
+  return Bits::ReadBit(chip.Segments(digit), segment);
 }
 
 /* the chip that drives the LEDs in column X of the panel, by the same placement

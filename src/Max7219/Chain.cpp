@@ -16,6 +16,7 @@
 #if (MAXMATRIX_USE_SPI == STD_ON)
 #include "SPI.h"
 #endif
+#include "Utility/Bit.h"
 
 namespace max_matrix {
 namespace internal {
@@ -164,14 +165,15 @@ void Chain::ShiftOut(uint8_t value) {
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (uint8_t bit{kFirstBit}; bit != 0u; bit >>= 1u) {
-    if ((value & bit) != 0) {
-      *data_in_register |= data_in_mask_;
+  for (uint8_t bit{kFirstBit}; bit != 0u;
+       bit = Bit<uint8_t>::ShiftDown(bit, 1u)) {
+    if (Bit<uint8_t>::ReadBitGroup(value, bit) != 0u) {
+      Bit<uint8_t>::SetBits(*data_in_register, data_in_mask_);
     } else {
-      *data_in_register &= static_cast<uint8_t>(~data_in_mask_);
+      Bit<uint8_t>::ClearBits(*data_in_register, data_in_mask_);
     }
-    *clock_register |= clock_mask_;
-    *clock_register &= static_cast<uint8_t>(~clock_mask_);
+    Bit<uint8_t>::SetBits(*clock_register, clock_mask_);
+    Bit<uint8_t>::ClearBits(*clock_register, clock_mask_);
   }
   SREG = status_register;
 }
@@ -188,9 +190,9 @@ void Chain::WritePin(uint8_t port, uint8_t mask, bool high) {
 
   cli();
   if (high) {
-    *port_register |= mask;
+    Bit<uint8_t>::SetBits(*port_register, mask);
   } else {
-    *port_register &= static_cast<uint8_t>(~mask);
+    Bit<uint8_t>::ClearBits(*port_register, mask);
   }
   SREG = status_register;
 }

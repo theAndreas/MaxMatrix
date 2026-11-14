@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "ControlSerialPort.h"
+#include "Utility/Bit.h"
 
 namespace {
 
@@ -173,8 +174,16 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   if (!IsBaudRate(baud_rate)) {
     return false;
   }
+  /* read and write, not as the terminal that controls this process, and
+   * without waiting for the modem lines */
+  constexpr int kOpenFlags{O_RDWR | O_NOCTTY | O_NONBLOCK};
+  /* the modem lines ignored, and receiving on */
+  constexpr tcflag_t kLocalReceive{CLOCAL | CREAD};
+  /* two stop bits and the hardware handshake, both off for SerialControl */
+  constexpr tcflag_t kTwoStopsHandshake{CSTOPB | CRTSCTS};
+
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's open()
-  descriptor_ = open(name.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+  descriptor_ = open(name.c_str(), kOpenFlags);
   if (descriptor_ < 0) {
     return false;
   }
@@ -183,8 +192,8 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   bool opened{ioctl(descriptor_, TIOCEXCL) == 0 &&
               tcgetattr(descriptor_, &settings) == 0};
   cfmakeraw(&settings);
-  settings.c_cflag |= CLOCAL | CREAD;
-  settings.c_cflag &= ~(CSTOPB | CRTSCTS);
+  max_matrix::Bit<tcflag_t>::SetBits(settings.c_cflag, kLocalReceive);
+  max_matrix::Bit<tcflag_t>::ClearBits(settings.c_cflag, kTwoStopsHandshake);
   settings.c_cc[VMIN] = 1;
   settings.c_cc[VTIME] = 0;
   // glibc's cfsetspeed() takes a rate as its number as well as its B constant,

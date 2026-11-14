@@ -45,7 +45,6 @@ class SimulatorWebSocket {
   static Sha1State ProcessSha1Block(std::string const& padded, size_t offset,
                                     Sha1State state);
   static uint32_t MixSha1(uint8_t round, uint32_t b, uint32_t c, uint32_t d);
-  static uint32_t RotateLeft(uint32_t value, uint8_t bits);
 
  public:
   /*!

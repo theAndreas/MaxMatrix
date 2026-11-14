@@ -11,6 +11,7 @@
 
 #include "Panel.h"
 
+#include "Utility/Bit.h"
 #include "Utility/array.h"
 
 namespace max_matrix {
@@ -454,14 +455,17 @@ Panel::BufferDot Panel::ConvertDotToBuffer(uint8_t column, uint8_t row) const {
   uint8_t const column_from_right{static_cast<uint8_t>(
       kColumnNumberOfModule - 1 - (column % kColumnNumberOfModule))};
   uint8_t const type{static_cast<uint8_t>(module_type_)};
-  bool const digits_as_rows{(type & internal::kModuleTypeDigitsAsRows) != 0};
+  bool const digits_as_rows{Bit<uint8_t>::ReadBitGroup(
+                                type, internal::kModuleTypeDigitsAsRows) != 0u};
   uint8_t digit{digits_as_rows ? row : column_from_right};
   uint8_t segment{digits_as_rows ? column_from_right : row};
 
-  if ((type & internal::kModuleTypeReversedRows) != 0) {
+  if (Bit<uint8_t>::ReadBitGroup(type, internal::kModuleTypeReversedRows) !=
+      0u) {
     digit = kColumnNumberOfModule - 1 - digit;
   }
-  if ((type & internal::kModuleTypeReversedColumns) != 0) {
+  if (Bit<uint8_t>::ReadBitGroup(type, internal::kModuleTypeReversedColumns) !=
+      0u) {
     segment = kRowNumberOfModule - 1 - segment;
   }
   return {static_cast<uint8_t>((module * kColumnNumberOfModule) + digit),

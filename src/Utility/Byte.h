@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "MaxMatrixAttributes.h"
+#include "Utility/Bit.h"
 
 namespace max_matrix {
 
@@ -146,12 +147,8 @@ class Byte {
  * \param[in] value The byte.
  * \param[in] bit The bit, 0 to 7.
  */
-// The value shifted down to the bit rather than a mask shifted up to it: 26
-// bytes less in Basics on the Uno. Shifted as an unsigned int, as a uint8_t
-// would be promoted to an int, which has a sign.
 constexpr bool ReadBit(Byte value, uint8_t bit) {
-  using ShiftType = decltype(uint8_t{} | 0u);
-  return ((static_cast<ShiftType>(value.ToInteger()) >> bit) & 1u) != 0u;
+  return Bit<uint8_t>::ReadBit(value.ToInteger(), bit);
 }
 
 /*!

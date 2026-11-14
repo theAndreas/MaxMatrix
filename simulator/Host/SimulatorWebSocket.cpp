@@ -17,7 +17,14 @@
 #include <array>
 #include <string>
 
+#include "Utility/Bit.h"
+
 namespace {
+
+using ByteBits = max_matrix::Bit<uint8_t>;
+using WordBits = max_matrix::Bit<uint32_t>;
+using SizeBits = max_matrix::Bit<size_t>;
+using LongBits = max_matrix::Bit<uint64_t>;
 
 /* handshake, RFC 6455 section 1.3: the server hashes the client's key with this
  * fixed string */
@@ -47,7 +54,6 @@ constexpr uint8_t kSha1WordsPerBlock{16u};
 constexpr uint8_t kSha1BytesPerWord{4u};
 constexpr uint8_t kSha1PadBit{0x80u};
 constexpr uint8_t kSha1LengthBytes{8u};
-constexpr uint8_t kWordBits{32u};
 /* 80 rounds in four stages of 20; the message schedule takes the words 3, 8,
  * 14 and 16 back; a round turns its words by 5 and 30 bits */
 constexpr uint8_t kSha1Rounds{80u};
@@ -65,9 +71,9 @@ constexpr uint32_t kBase64Mask{0x3Fu};
 // lie at `mask_at` of `frame`, RFC 6455 section 5.3.
 void Unmask(std::string const& frame, size_t mask_at, std::string* payload) {
   for (size_t i{0}; i < payload->size(); i++) {
-    (*payload)[i] = static_cast<char>(
-        static_cast<uint8_t>((*payload)[i]) ^
-        static_cast<uint8_t>(frame[mask_at + (i % kMaskLength)]));
+    (*payload)[i] = static_cast<char>(ByteBits::ToggleBits(
+        static_cast<uint8_t>((*payload)[i]),
+        static_cast<uint8_t>(frame[mask_at + (i % kMaskLength)])));
   }
 }
 
@@ -102,8 +108,10 @@ std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {
     frame += static_cast<char>(payload.size());
   } else {
     frame += static_cast<char>(kLength16Bit);
-    frame += static_cast<char>((payload.size() >> kBitsPerByte) & kByteMask);
-    frame += static_cast<char>(payload.size() & kByteMask);
+    frame += static_cast<char>(
+        SizeBits::ReadBitGroup(payload.size(), kByteMask, kBitsPerByte));
+    frame +=
+        static_cast<char>(SizeBits::ReadBitGroup(payload.size(), kByteMask));
   }
   return frame + payload;
 }
@@ -116,10 +124,10 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
     return false;
   }
 
+  uint8_t const second_byte{static_cast<uint8_t>(frame[1])};
   size_t const mask_length{
-      ((static_cast<uint8_t>(frame[1]) & kMaskFlag) != 0) ? kMaskLength : 0};
-  size_t length{
-      static_cast<size_t>(static_cast<uint8_t>(frame[1]) & kLengthMask)};
+      ByteBits::ReadBitGroup(second_byte, kMaskFlag) != 0u ? kMaskLength : 0};
+  size_t length{ByteBits::ReadBitGroup(second_byte, kLengthMask)};
   size_t offset{kHeaderLength};
 
   if (length == kLength64Bit) {
@@ -132,9 +140,9 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
     if (frame.size() < kHeaderLength16Bit) {
       return false;
     }
-    length =
-        (static_cast<size_t>(static_cast<uint8_t>(frame[2])) << kBitsPerByte) |
-        static_cast<uint8_t>(frame[3]);
+    length = SizeBits::Combine(
+        SizeBits::ShiftUp(static_cast<uint8_t>(frame[2]), kBitsPerByte),
+        static_cast<uint8_t>(frame[3]));
     offset = kHeaderLength16Bit;
   }
   if (frame.size() < offset + mask_length + length) {
@@ -145,7 +153,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
   if (mask_length > 0) {
     Unmask(frame, offset, payload);
   }
-  *opcode = static_cast<uint8_t>(frame[0]) & kOpcodeMask;
+  *opcode = ByteBits::ReadBitGroup(static_cast<uint8_t>(frame[0]), kOpcodeMask);
   buffer->erase(0, offset + mask_length + length);
   return true;
 }
@@ -174,8 +182,9 @@ SimulatorSha1Digest SimulatorWebSocket::CalculateSha1(
     for (uint8_t part{0}; part < kSha1BytesPerWord; part++) {
       auto const bytes_after{
           static_cast<uint8_t>(kSha1BytesPerWord - 1u - part)};
+      auto const shift{static_cast<uint8_t>(kBitsPerByte * bytes_after)};
       digest[(word * size_t{kSha1BytesPerWord}) + part] = static_cast<uint8_t>(
-          state[word] >> (uint32_t{kBitsPerByte} * bytes_after));
+          WordBits::ReadBitGroup(state[word], kByteMask, shift));
     }
   }
   return digest;
@@ -188,19 +197,27 @@ std::string SimulatorWebSocket::ConvertToBase64(std::string const& bytes) {
 
   for (size_t offset{0}; offset < bytes.size(); offset += 3) {
     size_t const remaining{bytes.size() - offset};
-    uint32_t group{GetByte(bytes, offset) << (2u * kBitsPerByte)};
+    uint32_t group{
+        WordBits::ShiftUp(GetByte(bytes, offset), 2u * kBitsPerByte)};
 
     if (remaining > 1) {
-      group |= GetByte(bytes, offset + 1) << kBitsPerByte;
+      group = WordBits::Combine(
+          group, WordBits::ShiftUp(GetByte(bytes, offset + 1), kBitsPerByte));
     }
     if (remaining > 2) {
-      group |= GetByte(bytes, offset + 2);
+      group = WordBits::Combine(group, GetByte(bytes, offset + 2));
     }
-    encoded += kAlphabet[(group >> (3u * kBase64Bits)) & kBase64Mask];
-    encoded += kAlphabet[(group >> (2u * kBase64Bits)) & kBase64Mask];
     encoded +=
-        remaining > 1 ? kAlphabet[(group >> kBase64Bits) & kBase64Mask] : '=';
-    encoded += remaining > 2 ? kAlphabet[group & kBase64Mask] : '=';
+        kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask, 3u * kBase64Bits)];
+    encoded +=
+        kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask, 2u * kBase64Bits)];
+    encoded +=
+        remaining > 1
+            ? kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask, kBase64Bits)]
+            : '=';
+    encoded += remaining > 2
+                   ? kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask)]
+                   : '=';
   }
   return encoded;
 }
@@ -253,7 +270,8 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
   for (uint8_t i{1}; i <= kSha1LengthBytes; i++) {
     auto const shift{
         static_cast<uint8_t>(kBitsPerByte * (kSha1LengthBytes - i))};
-    padded.push_back(static_cast<char>((bits >> shift) & kByteMask));
+    padded.push_back(
+        static_cast<char>(LongBits::ReadBitGroup(bits, kByteMask, shift)));
   }
   return padded;
 }
@@ -275,20 +293,22 @@ SimulatorWebSocket::Sha1State SimulatorWebSocket::ProcessSha1Block(
   for (uint8_t i{0}; i < kSha1WordsPerBlock; i++) {
     for (uint8_t part{0}; part < kSha1BytesPerWord; part++) {
       size_t const at{offset + (size_t{kSha1BytesPerWord} * i) + part};
-      word[i] = (word[i] << kBitsPerByte) | GetByte(padded, at);
+      word[i] = WordBits::Combine(WordBits::ShiftUp(word[i], kBitsPerByte),
+                                  GetByte(padded, at));
     }
   }
   for (uint8_t i{kSha1WordsPerBlock}; i < kSha1Rounds; i++) {
-    uint32_t const mixed{word[i - 3] ^ word[i - kSha1TapB] ^
-                         word[i - kSha1TapC] ^ word[i - kSha1WordsPerBlock]};
-    word[i] = RotateLeft(mixed, 1);
+    uint32_t const near{WordBits::ToggleBits(word[i - 3], word[i - kSha1TapB])};
+    uint32_t const far{WordBits::ToggleBits(word[i - kSha1TapC],
+                                            word[i - kSha1WordsPerBlock])};
+    word[i] = WordBits::RotateLeft(WordBits::ToggleBits(near, far), 1);
   }
   for (uint8_t round{0}; round < kSha1Rounds; round++) {
-    uint32_t const next{RotateLeft(a, kSha1TurnA) + MixSha1(round, b, c, d) +
-                        e + word[round]};
+    uint32_t const next{WordBits::RotateLeft(a, kSha1TurnA) +
+                        MixSha1(round, b, c, d) + e + word[round]};
     e = d;
     d = c;
-    c = RotateLeft(b, kSha1TurnB);
+    c = WordBits::RotateLeft(b, kSha1TurnB);
     b = a;
     a = next;
   }
@@ -310,18 +330,17 @@ uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c,
   static constexpr std::array<uint32_t, 4> kRoundConstants{
       {0x5A827999u, 0x6ED9EBA1u, 0x8F1BBCDCu, 0xCA62C1D6u}};
   uint8_t const stage{static_cast<uint8_t>(round / kSha1RoundsPerStage)};
-  uint32_t mixed{b ^ c ^ d};
+  uint32_t mixed{WordBits::ToggleBits(WordBits::ToggleBits(b, c), d)};
 
   if (stage == 0) {
-    mixed = (b & c) | (~b & d);
+    /* Choose: c where b is set, d where it is not */
+    mixed = WordBits::Combine(WordBits::ReadBitGroup(c, b),
+                              WordBits::ReadBitGroup(d, WordBits::Invert(b)));
   } else if (stage == 2) {
-    mixed = (b & c) | (b & d) | (c & d);
+    /* Majority: what at least two of b, c and d have set */
+    uint32_t const b_and_c{WordBits::ReadBitGroup(b, c)};
+    uint32_t const either{WordBits::ReadBitGroup(d, WordBits::Combine(b, c))};
+    mixed = WordBits::Combine(b_and_c, either);
   }
   return mixed + kRoundConstants[stage];
-}
-
-// Returns `value` rotated to the left by `bits`, 1 to 31: the bits shifted out
-// on the left come back in on the right.
-uint32_t SimulatorWebSocket::RotateLeft(uint32_t value, uint8_t bits) {
-  return (value << bits) | (value >> (uint32_t{kWordBits} - bits));
 }

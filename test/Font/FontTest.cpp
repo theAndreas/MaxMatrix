@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "MaxMatrixTestSupport.h"
+#include "Utility/Bit.h"
 
+using max_matrix::Bit;
 using max_matrix::DecodedChar;
 using max_matrix::Error;
 using max_matrix::Font;
@@ -205,7 +207,8 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(), 1u << column)
+    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(),
+              Bit<uint8_t>::ToMask(column))
         << "standing, column " << static_cast<uint16_t>(column);
   }
 
@@ -219,7 +222,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
     EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column)
                   .GetValue()
                   .ToInteger(),
-              1u << column)
+              Bit<uint8_t>::ToMask(column))
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

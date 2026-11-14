@@ -22,6 +22,7 @@
 
 #include "Arduino.h"
 #include "MaxMatrixAttributes.h"
+#include "Utility/Bit.h"
 
 namespace {
 
@@ -115,7 +116,8 @@ void SimulatorAvr::ConnectPins() {
 void SimulatorAvr::ConnectUart() {
   uint32_t flags{0};
   avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags);
-  flags &= ~static_cast<uint32_t>(AVR_UART_FLAG_STDIO);
+  max_matrix::Bit<uint32_t>::ClearBits(
+      flags, static_cast<uint32_t>(AVR_UART_FLAG_STDIO));
   avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags);
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUTPUT),
@@ -187,9 +189,10 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
     return;
   }
   mock::chain.ShiftBit(simulator->data_in_);
-  uint8_t const shifted{static_cast<uint8_t>(simulator->bits_ << 1u)};
+  uint8_t const shifted{
+      max_matrix::Bit<uint8_t>::ShiftUp(simulator->bits_, 1u)};
   simulator->bits_ =
-      static_cast<uint8_t>(shifted | (simulator->data_in_ ? 1u : 0u));
+      max_matrix::Bit<uint8_t>::WriteBit(shifted, 0, simulator->data_in_);
   if (++simulator->bit_count_ == kBitsPerByte) {
     simulator->TakeByte(simulator->bits_);
     simulator->bit_count_ = 0;
