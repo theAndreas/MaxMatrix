@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | open | |
 
@@ -980,6 +980,11 @@ A first look found, besides those two:
   template's `add_compile_fail_tests()` expects a `static_assert`, which a value out of range
   cannot give, as it is a function's argument, so `CMakeLists.txt` runs `test/compile_fail/`
   itself.
+
+  As built, the second: the line and the text of `Command`, the pair that changing the
+  orientation swaps, the buffer of `MatrixOf` and the table of error texts are arrays, the
+  table made with `make_array()`. The pair stays uninitialized, against T-13: cleared first, it
+  made every example 10 to 12 bytes larger. Every example is the same size as before.
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;
