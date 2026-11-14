@@ -99,12 +99,22 @@ constexpr bool IsNegative(Value value) {
 }
 
 /*!
- * \brief Converts a value of make_array() into an element.
+ * \brief Declared only: in a `decltype`, a value of type `T`, where nothing is
+ *        evaluated, as `std::declval()`, which avr-gcc lacks.
+ */
+template <typename T>
+T&& DeclVal();
+
+/*!
+ * \brief Converts a value of make_array() that would narrow, a number, into an
+ *        element.
  *
  * \tparam T The type of the elements.
  * \tparam Value The type of the value, as written.
+ * \tparam Braced `T`, if a `T` is made of a `Value` in braces, which refuse
+ *                narrowing; then the specialization below applies.
  */
-template <typename T, typename Value>
+template <typename T, typename Value, typename Braced = T>
 struct ArrayElement {
   /*!
    * \brief Returns whether `value` is the same as an element as it was.
@@ -127,15 +137,19 @@ struct ArrayElement {
   }
 };
 
-/*! \brief A value of make_array() that is of the type of the elements. */
-template <typename T>
-struct ArrayElement<T, T> {
+/*!
+ * \brief A value of make_array() that becomes an element without narrowing: one
+ *        of the type, a smaller number, or a `char*` for a `char const*`, which
+ *        the range check could not cast back.
+ */
+template <typename T, typename Value>
+struct ArrayElement<T, Value, decltype(T{DeclVal<Value>()})> {
   /*!
-   * \brief Returns `value` as it is.
+   * \brief Returns `value` as an element.
    *
    * \param[in] value The value.
    */
-  static constexpr T Of(T const& value) { return value; }
+  static constexpr T Of(Value const& value) { return value; }
 };
 
 }  // namespace internal
@@ -160,7 +174,8 @@ struct ArrayElement<T, T> {
  *       refuses.
  *
  * \tparam T The type of the elements.
- * \param[in] values The elements, each a `T` or a number that fits one.
+ * \param[in] values The elements, each what becomes a `T` without narrowing, as
+ *                   a `char*` for a `char const*`, or a number that fits one.
  *
  * \stddiff `std::experimental::make_array<T>()` refuses a number of another
  *          type even where it fits, so that every value of a font would have to
