@@ -398,6 +398,11 @@ so that a buffer without one is not read past its end. `Command` alone walks its
 byte positions, as that line always ends with a null character and a span cost SerialControl
 flash (OIL 41).
 
+Every other table is a `max_matrix::array`, a font, a bitmap or a row of a sketch and the
+library's own, made by `make_array<T>()` where its values are known when compiling, so that
+nobody counts them: `constexpr auto kHeart PROGMEM{max_matrix::make_array<uint8_t>(0x0C, ...)}`.
+T-20 leaves the C array to a text in quotes alone, and no folder turns its checks off.
+
 #### Constants and configuration
 
 Constants are `constexpr` in the namespace, grouped under a comment; one that only a `.cpp`

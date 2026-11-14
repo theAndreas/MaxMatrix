@@ -61,11 +61,10 @@ uint8_t ReadByte(span<uint8_t const> font, size_t position) {
  * ASCII chars at their codes, the chars beyond it at their latin-1 codes, and a
  * width of 0 for every code between them that has no char. As a table of 7
  * bytes per char it took 721 bytes. The header gives its length, so that
- * SetFont() can check it as any other font; a byte too few would be padded with
- * a 0, which the test DefaultFontHasAsciiAndNothingBetween finds, as the chars
- * then no longer end the array.
+ * SetFont() can check it as any other font. make_array() counts the bytes, and
+ * an array of another count than kDefaultFontSize does not compile.
  */
-uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM{
+array<uint8_t, kDefaultFontSize> const kDefaultFont PROGMEM{make_array<uint8_t>(
     // A glyph a line, with its char beside it: laid out by hand, not by
     // clang-format.
     // clang-format off
@@ -186,9 +185,8 @@ uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM{
     0,
     4, B00111000, B01000110, B01000110, B00111000,  // 246 o umlaut
     0, 0, 0, 0, 0,  // 247 to 251, none
-    4, B00111100, B01000010, B01000010, B01111100,  // 252 u umlaut
-    // clang-format on
-};
+    4, B00111100, B01000010, B01000010, B01111100)};  // 252 u umlaut
+// clang-format on
 
 /*
  * The chars are walked by their offset into the span, which is checked against

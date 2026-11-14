@@ -82,7 +82,7 @@ struct DecodedChar {
  */
 // Declared here, the constant data in the .cpp: no static initializer to run.
 // NOLINTNEXTLINE(bugprone-dynamic-static-initializers)
-extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
+extern array<uint8_t, kDefaultFontSize> const kDefaultFont PROGMEM;
 
 /*!
  * \brief The format of a font, and the way from a char of a string to its
@@ -102,11 +102,10 @@ extern uint8_t const kDefaultFont[kDefaultFontSize] PROGMEM;
  * that CheckFont() took cannot lead GetGlyph() past its end.
  *
  * \code{.cpp}
- * uint8_t const kDigits[] PROGMEM = {
+ * constexpr auto kDigits PROGMEM{max_matrix::make_array<uint8_t>(
  *     'F', 1, '0', '1', 7, // version 1, the chars 0 to 1, 7 rows high
  *     3, B00111110, B01000001, B00111110, // 0
- *     2, B01000010, B01111111,            // 1
- * };
+ *     2, B01000010, B01111111)};          // 1
  * \endcode
  *
  * A char is found by walking from the first char to it, as MD_MAX72XX does: in

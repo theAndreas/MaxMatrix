@@ -109,7 +109,7 @@ class Matrix {
    * elsewhere. The length of the buffer says how many modules the chain has.
    *
    * \code{.cpp}
-   * max_matrix::Byte buffer[max_matrix::BufferSize(4)];
+   * max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(4)> buffer;
    * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer);
    * \endcode
    *
@@ -203,7 +203,7 @@ class Matrix {
    * \brief Gives a row of the matrix, one byte per module.
    *
    * \code{.cpp}
-   * max_matrix::Byte row[4];
+   * max_matrix::array<max_matrix::Byte, 4> row;
    * matrix.GetRow(0, row);
    * \endcode
    *
@@ -502,13 +502,14 @@ class Matrix {
   /*!
    * \brief Sets the font every char is drawn in from now on.
    *
-   * A font of MD_MAX72XX serves as it is, in its array in flash; Font
-   * describes the format. Chars drawn already stay as they are, and a char that
-   * shifts in goes on in the font it started in. kDefaultFont is the
-   * font MaxMatrix starts with.
+   * A font of MD_MAX72XX serves with its bytes as they are, in make_array()
+   * rather than its C array; Font describes the format. Chars drawn already
+   * stay as they are, and a char that shifts in goes on in the font it started
+   * in. kDefaultFont is the font MaxMatrix starts with.
    *
    * \code{.cpp}
-   * uint8_t const kBigFont[] PROGMEM = {'F', 1, ...};
+   * constexpr auto kBigFont PROGMEM{
+   *     max_matrix::make_array<uint8_t>('F', 1, ...)};
    *
    * matrix.SetFont(kBigFont);
    * \endcode
