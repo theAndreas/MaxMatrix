@@ -50,6 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
+| 41 | The template's rules that review checks | 36 | open | |
 
 ### 1 Build with CMake
 
@@ -920,6 +921,42 @@ N3922, as `MaxMatrixError.cpp` compiles for the board. v0.6.0 also rewrote a tex
 this update, the template leaves such a text alone since v0.6.1. The fix-its were taken with the
 board's flags, where an `int` has 16 bits; one in `Shapes` narrowed on the host, which only the
 simulator's build showed.
+
+### 41 The template's rules that review checks
+
+34 to 40 made the code pass every rule of the template that a tool checks. The rules that
+`docs/` marks "Review", 53 of CodingStyle.md, 25 of Testing.md, 84 of Misra.md and 7 of
+`targets/avr.md`, were never gone through one by one: they held as far as each pull request's
+author and reviewer saw them.
+
+Decided on 2026-11-14: where the project's notes in `AGENTS.md` say otherwise, the template's
+rule wins, and the notes change with the code:
+
+- **T-17, no `byte`.** A byte that is a number, as a coordinate, a count or an intensity, is a
+  `uint8_t`; one that is raw data, as a column of the buffer or a row of a glyph, a type that is
+  no number, by M-3. `std::byte` is C++17 and avr-gcc brings no standard library, and MaxMatrix
+  depends on neither the ETL nor Utl (28), so which type that is, and what it costs a sketch that
+  passes a column as a literal today, is decided before the code changes.
+- **F-10, ASCII only.** A non-ASCII char in a string is written as its bytes in escapes; an escape
+  takes every hex digit after it, so a string goes on in a literal of its own:
+  `"\xC3\x96" "fen"`. In a comment the char is named, as `A umlaut`.
+
+A first look found, besides those two:
+
+- T-17: `byte` in 248 lines of `src/`; and T-20: `Sprite` is a C array.
+- F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
+  `simulator/Test/TcpTest.sh`.
+- FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;
+  why no check reported it is to be found out as well.
+- F-5: `misc-include-cleaner` is still off, with some 540 places, waiting for the pull request
+  36 named for it.
+- S-5: the reasons in `.clang-tidy` for `bugprone-easily-swappable-parameters` and
+  `bugprone-too-small-loop-variable` name `MaxMatrixChain` and `MAXMATRIX_NUMBER_OF_COLUMNS`,
+  which are gone.
+
+The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
+functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
+rule or chapter, with what it finds fixed, F-10 first, as it changes no code.
 
 ## Decisions
 
