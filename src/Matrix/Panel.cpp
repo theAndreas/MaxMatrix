@@ -408,9 +408,9 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
     matrix_orientation_ = old_matrix_orientation;
     module_type_ = old_module_type;
     for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
-      pair[column] = ToInteger(GetLine(left_column + column, 0, true));
+      pair[column] = GetLine(left_column + column, 0, true).ToInteger();
       pair[kColumnNumberOfModule + column] =
-          ToInteger(GetLine(right_column + column, 0, true));
+          GetLine(right_column + column, 0, true).ToInteger();
     }
     matrix_orientation_ = matrix_orientation;
     module_type_ = module_type;

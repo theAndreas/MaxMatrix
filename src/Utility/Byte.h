@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+#include "MaxMatrixAttributes.h"
+
 namespace max_matrix {
 
 /*!
@@ -55,14 +57,10 @@ class Byte {
    */
   constexpr explicit Byte(uint8_t value) : value_{value} {}
 
-  /*!
-   * \brief Returns the bits as a number.
-   *
-   * \param[in] value The byte.
-   */
-  // C-12: std::byte's to_integer() is a free function as well, so that a
-  // switch to std::byte changes only its name.
-  friend constexpr uint8_t ToInteger(Byte value) { return value.value_; }
+  /*! \brief Returns the bits as a number. */
+  // A member, where std::byte's to_integer() is a free function: one that
+  // reads the private bits would be a friend, which C-12 rules out.
+  MAXMATRIX_NODISCARD constexpr uint8_t ToInteger() const { return value_; }
 
  private:
   /*
@@ -75,10 +73,6 @@ class Byte {
   uint8_t value_;
 };
 
-// A friend defined in its class is found only by its argument; declared here
-// as well, so that max_matrix::ToInteger() finds it.
-constexpr uint8_t ToInteger(Byte value);
-
 /*!
  * \brief Returns whether two bytes have the same bits.
  *
@@ -86,7 +80,7 @@ constexpr uint8_t ToInteger(Byte value);
  * \param[in] right The other.
  */
 constexpr bool operator==(Byte left, Byte right) {
-  return ToInteger(left) == ToInteger(right);
+  return left.ToInteger() == right.ToInteger();
 }
 
 /*!
@@ -104,7 +98,7 @@ constexpr bool operator!=(Byte left, Byte right) { return !(left == right); }
  * \param[in] right The other.
  */
 constexpr Byte operator&(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(ToInteger(left) & ToInteger(right))};
+  return Byte{static_cast<uint8_t>(left.ToInteger() & right.ToInteger())};
 }
 
 /*!
@@ -114,7 +108,7 @@ constexpr Byte operator&(Byte left, Byte right) {
  * \param[in] right The other.
  */
 constexpr Byte operator|(Byte left, Byte right) {
-  return Byte{static_cast<uint8_t>(ToInteger(left) | ToInteger(right))};
+  return Byte{static_cast<uint8_t>(left.ToInteger() | right.ToInteger())};
 }
 
 /*!
@@ -123,7 +117,7 @@ constexpr Byte operator|(Byte left, Byte right) {
  * \param[in] value The byte.
  */
 constexpr Byte operator~(Byte value) {
-  return Byte{static_cast<uint8_t>(~ToInteger(value))};
+  return Byte{static_cast<uint8_t>(~value.ToInteger())};
 }
 
 /*!
@@ -133,7 +127,7 @@ constexpr Byte operator~(Byte value) {
  * \param[in] shift The places, less than 8.
  */
 constexpr Byte operator<<(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(ToInteger(value) << shift)};
+  return Byte{static_cast<uint8_t>(value.ToInteger() << shift)};
 }
 
 /*!
@@ -144,7 +138,7 @@ constexpr Byte operator<<(Byte value, uint8_t shift) {
  * \param[in] shift The places, less than 8.
  */
 constexpr Byte operator>>(Byte value, uint8_t shift) {
-  return Byte{static_cast<uint8_t>(ToInteger(value) >> shift)};
+  return Byte{static_cast<uint8_t>(value.ToInteger() >> shift)};
 }
 
 /*!
@@ -158,7 +152,7 @@ constexpr Byte operator>>(Byte value, uint8_t shift) {
 // would be promoted to an int, which has a sign.
 constexpr bool ReadBit(Byte value, uint8_t bit) {
   using ShiftType = decltype(uint8_t{} | 0u);
-  return ((static_cast<ShiftType>(ToInteger(value)) >> bit) & 1u) != 0u;
+  return ((static_cast<ShiftType>(value.ToInteger()) >> bit) & 1u) != 0u;
 }
 
 /*!

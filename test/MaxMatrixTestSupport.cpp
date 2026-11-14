@@ -66,7 +66,7 @@ std::vector<uint8_t> Bytes(max_matrix::span<uint8_t const> data) {
 std::vector<uint8_t> Bytes(max_matrix::span<max_matrix::Byte const> data) {
   std::vector<uint8_t> bytes;
   for (size_t index{0}; index < data.size(); index++) {
-    bytes.push_back(max_matrix::ToInteger(data[index]));
+    bytes.push_back(data[index].ToInteger());
   }
   return bytes;
 }

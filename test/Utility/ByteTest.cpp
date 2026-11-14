@@ -12,24 +12,18 @@ namespace max_matrix {
 namespace {
 
 TEST(ByteTest, HoldsTheValueItIsMadeOf) {
-  static_assert(ToInteger(Byte{0xA5}) == 0xA5, "made when compiling");
+  static_assert(Byte{0xA5}.ToInteger() == 0xA5, "made when compiling");
 
-  EXPECT_EQ(ToInteger(Byte{0x00}), 0x00);
-  EXPECT_EQ(ToInteger(Byte{0xFF}), 0xFF);
-}
-
-/* Bug: ToInteger() was a friend defined in the class only, which a call
- * qualified with the namespace, as a sketch writes it, did not find */
-TEST(ByteTest, GivesItsValueToACallQualifiedWithTheNamespace) {
-  EXPECT_EQ(max_matrix::ToInteger(Byte{0x5A}), 0x5A);
+  EXPECT_EQ(Byte{0x00}.ToInteger(), 0x00);
+  EXPECT_EQ(Byte{0xFF}.ToInteger(), 0xFF);
 }
 
 TEST(ByteTest, IsZeroWhenMadeWithoutAValue) {
-  static_assert(ToInteger(Byte{}) == 0, "made when compiling");
+  static_assert(Byte{}.ToInteger() == 0, "made when compiling");
 
   Byte const value{};
 
-  EXPECT_EQ(ToInteger(value), 0);
+  EXPECT_EQ(value.ToInteger(), 0);
 }
 
 TEST(ByteTest, ComparesByItsBits) {

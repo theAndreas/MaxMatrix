@@ -154,7 +154,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
   for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     Result<Byte> const value{matrix_.GetRow(0, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
-    EXPECT_EQ(ToInteger(value.GetValue()),
+    EXPECT_EQ(value.GetValue().ToInteger(),
               bitRead(0xA3, y) ? 1u << (7u - 5u) : 0u)
         << "Row " << static_cast<uint16_t>(y);
   }
@@ -250,10 +250,10 @@ TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
   out.reserve(band.size());
 
   for (uint8_t const column : band) {
-    out.push_back(ToInteger(matrix_.ShiftLeft(Byte{column})));
+    out.push_back(matrix_.ShiftLeft(Byte{column}).ToInteger());
   }
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
-    EXPECT_EQ(ToInteger(matrix_.GetColumn(column).GetValue()),
+    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(),
               band[band.size() - kNumberOfColumns + column])
         << "column " << static_cast<uint16_t>(column);
   }

@@ -85,7 +85,7 @@ void Chain::WriteRegisterEach(uint8_t register_address, span<Byte const> buffer,
 
   StartTransmission();
   for (uint8_t index{column}; index < columns; index += kColumnNumberOfModule) {
-    Transfer(register_address, ToInteger(buffer[index]));
+    Transfer(register_address, buffer[index].ToInteger());
   }
   StopTransmission();
 }
