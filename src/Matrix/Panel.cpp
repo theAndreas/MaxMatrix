@@ -11,6 +11,8 @@
 
 #include "Panel.h"
 
+#include "Utility/array.h"
+
 namespace max_matrix {
 namespace internal {
 
@@ -405,8 +407,11 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
      * T-17: the columns are kept as numbers, not as Byte: avr-gcc 7.3 walks an
      * array of a class by a 16-bit index rather than a pointer, 80 bytes of
      * flash more for this function on the Uno. The array does not leave it.
+     * T-13: not initialized, as the loop below fills every element before one
+     * is read; cleared first, it made every example 10 to 12 bytes larger.
      */
-    uint8_t pair[2 * kColumnNumberOfModule];
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
+    array<uint8_t, 2 * kColumnNumberOfModule> pair;
 
     matrix_orientation_ = old_matrix_orientation;
     module_type_ = old_module_type;

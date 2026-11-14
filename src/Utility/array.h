@@ -30,8 +30,8 @@ namespace max_matrix {
  * \tparam T The type of the elements.
  * \tparam N The number of elements, at least 1.
  *
- * \stddiff Only size() and the index operator: nothing in the library needs
- *          more yet. No array of no elements.
+ * \stddiff Only size(), the index operator and data(): nothing in the library
+ *          needs more yet. No array of no elements.
  */
 /*
  * MaxMatrix's own, by CodingStyle.md M-3: avr-gcc brings no <array>, and
@@ -68,6 +68,12 @@ struct array {
   constexpr T const& operator[](size_type index) const {
     return elements[index];
   }
+
+  /*! \brief Returns the address of the first element, as a C array gives it. */
+  MAXMATRIX_NODISCARD T* data() { return elements; }
+
+  /*! \copydoc data() */
+  MAXMATRIX_NODISCARD constexpr T const* data() const { return elements; }
 };
 
 namespace internal {

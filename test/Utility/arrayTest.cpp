@@ -31,6 +31,15 @@ TEST(ArrayTest, WritesAnElementByIndex) {
   EXPECT_EQ(rows[1], 0x42);
 }
 
+/* the address of the elements, for a function that takes a C string */
+TEST(ArrayTest, GivesTheAddressOfItsElements) {
+  array<char, 3> text{{'H', 'i', '\0'}};
+  array<char, 3> const& readable{text};
+
+  EXPECT_STREQ(text.data(), "Hi");
+  EXPECT_EQ(readable.data(), text.data());
+}
+
 /* the size of a font, which a sketch would otherwise have to count */
 TEST(ArrayTest, MakeArrayTakesTheSizeFromTheValues) {
   constexpr auto kFont{make_array<uint8_t>('F', 1, 32, 255)};

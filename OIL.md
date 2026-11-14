@@ -980,6 +980,11 @@ A first look found, besides those two:
   template's `add_compile_fail_tests()` expects a `static_assert`, which a value out of range
   cannot give, as it is a function's argument, so `CMakeLists.txt` runs `test/compile_fail/`
   itself.
+
+  As built, the second: the line and the text of `Command`, the pair that changing the
+  orientation swaps, the buffer of `MatrixOf` and the table of error texts are arrays, the
+  table made with `make_array()`. The pair stays uninitialized, against T-13: cleared first, it
+  made every example 10 to 12 bytes larger. Every example is the same size as before.
 - F-10: umlauts in `Font/Font.h`, `Font/Font.cpp`, the example `Messages`, `FontTest.cpp` and
   `simulator/Test/TcpTest.sh`.
 - FN-15: `Batch` holds its `Matrix` by reference, where the rule asks for a `reference_wrapper`;

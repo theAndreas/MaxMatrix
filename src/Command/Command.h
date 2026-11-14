@@ -18,6 +18,7 @@
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
+#include "Utility/array.h"
 
 namespace max_matrix {
 
@@ -76,8 +77,8 @@ class Command {
    * As internal::Text is, the class is handed the matrix by every call rather
    * than keeping a reference to it.
    */
-  char line_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
-  char shift_text_[MAXMATRIX_COMMAND_LINE_LENGTH + 1];
+  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> line_;
+  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> shift_text_;
   uint8_t line_length_{0};
   bool line_too_long_{false};
 

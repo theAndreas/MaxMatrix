@@ -76,7 +76,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   }
   Result<CommandState> result{Error::kLineTooLong};
   if (!too_long) {
-    result = Execute(matrix, line_, answer);
+    result = Execute(matrix, line_.data(), answer);
   }
   if (!result.IsOk()) {
     answer.print(F("error: "));
@@ -137,8 +137,8 @@ Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
   }
   // strcpy() into a buffer that the static_assert above holds large enough.
   // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
-  strcpy(shift_text_, value);  // NOLINT(runtime/printf)
-  return matrix.SetTextWithShift(shift_text_);
+  strcpy(shift_text_.data(), value);  // NOLINT(runtime/printf)
+  return matrix.SetTextWithShift(shift_text_.data());
 }
 
 // text=TEXT clears the matrix first and sends clear and text as one picture; an

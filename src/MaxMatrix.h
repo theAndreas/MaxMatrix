@@ -28,6 +28,7 @@
 #include "MaxMatrixStandardTypes.h"
 #include "Text/Text.h"
 #include "Utility/Byte.h"
+#include "Utility/array.h"
 #include "Utility/reference_wrapper.h"
 
 namespace max_matrix {
@@ -712,7 +713,7 @@ template <uint8_t NumberOfModules>
 class Buffer {
  protected:
   /*! \brief One byte per column. */
-  Byte buffer_[BufferSize(NumberOfModules)];
+  array<Byte, BufferSize(NumberOfModules)> buffer_;
 };
 
 }  // namespace internal
@@ -751,7 +752,7 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
    */
   MatrixOf(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
       : internal::Buffer<NumberOfModules>{},
-        Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_,
+        Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_.data(),
                NumberOfModules} {}
 };
 
