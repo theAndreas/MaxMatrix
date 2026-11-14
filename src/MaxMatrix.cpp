@@ -13,17 +13,14 @@
 
 namespace max_matrix {
 
-// FN-3: the three pins, the buffer and its length, as a sketch hands them
-// NOLINTNEXTLINE(readability-function-size)
 Matrix::Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-               Byte* buffer, uint8_t number_of_modules)
-    : panel_{data_in_pin, chip_select_pin, clock_pin, buffer,
-             number_of_modules} {}
+               span<Byte> buffer)
+    : panel_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
 void Matrix::Init() {
   state_ = State::kInit;
 
-  panel_.GetWired().GetChain().Init();
+  panel_.GetWired().GetChain().Init(panel_.GetNumberOfModules());
 
   /* initialize registers, turn all LEDs off */
   panel_.GetWired().Clear();
@@ -88,7 +85,7 @@ Status Matrix::SetCharWithShift(char c) {
   return status;
 }
 
-Status Matrix::SetTextWithShift(char const* text, bool repeat) {
+Status Matrix::SetTextWithShift(span<char const> text, bool repeat) {
   Status status{MAXMATRIX_REPORT_ERROR("SetTextWithShift",
                                        text_.SetTextWithShift(text, repeat))};
 

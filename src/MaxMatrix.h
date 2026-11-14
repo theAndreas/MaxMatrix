@@ -30,6 +30,7 @@
 #include "Utility/Byte.h"
 #include "Utility/array.h"
 #include "Utility/reference_wrapper.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 
@@ -44,13 +45,6 @@ enum class State : uint8_t {
   /*! A char of Matrix::SetCharWithShift() is being shifted in. */
   kCharShift
 };
-
-namespace internal {
-
-/* the most bytes of a row Panel takes, as it counts them in a byte */
-constexpr size_t kMaxRowBytes{0xFF};
-
-}  // namespace internal
 
 /*!
  * \brief The matrix a sketch draws on: a chain of 8x8 modules, in the
@@ -112,24 +106,22 @@ class Matrix {
    * Nothing is sent until Init(). MatrixOf brings the buffer itself and
    * checks the number of modules when the sketch is compiled; this is for a
    * chain whose length is known only at run time, or a buffer that lies
-   * elsewhere.
+   * elsewhere. The length of the buffer says how many modules the chain has.
    *
    * \code{.cpp}
    * max_matrix::Byte buffer[max_matrix::BufferSize(4)];
-   * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer,
-   * 4);
+   * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer);
    * \endcode
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[out] buffer The buffer, `BufferSize(number_of_modules)` bytes, which
-   *                    has to live as long as the matrix.
-   * \param[in] number_of_modules The modules in the chain, 1 to
-   *                              `kMaxNumberOfModules`.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`; it has to live as long as
+   *                    the matrix.
    */
   Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-         Byte* buffer, uint8_t number_of_modules);
+         span<Byte> buffer);
 
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
@@ -215,21 +207,14 @@ class Matrix {
    * matrix.GetRow(0, row);
    * \endcode
    *
-   * \tparam NumberOfValues The bytes of `values`, which the array says itself.
    * \param[in] row The row, from 0 at the top.
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has fewer bytes than there are modules.
    */
-  template <size_t NumberOfValues>
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row,
-                                    Byte (&values)[NumberOfValues]) {
-    return MAXMATRIX_REPORT_ERROR(
-        "GetRow", panel_.GetRow(row, values,
-                                NumberOfValues > internal::kMaxRowBytes
-                                    ? internal::kMaxRowBytes
-                                    : NumberOfValues));
+  MAXMATRIX_NODISCARD Status GetRow(int16_t row, span<Byte> values) {
+    return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(row, values));
   }
 
   /*! \copydoc internal::Panel::GetRow(uint8_t, uint8_t) */
@@ -243,7 +228,9 @@ class Matrix {
   }
 
   /*! \copydoc internal::Text::GetFont() */
-  MAXMATRIX_NODISCARD uint8_t const* GetFont() const { return text_.GetFont(); }
+  MAXMATRIX_NODISCARD span<uint8_t const> GetFont() const {
+    return text_.GetFont();
+  }
 
   /*!
    * \brief Sets the pin DIN of the chain is connected to.
@@ -350,17 +337,12 @@ class Matrix {
    * A row off the panel is left out, as for SetDot(), and so are the modules
    * beyond the bytes given, or the bytes beyond the modules.
    *
-   * \tparam NumberOfValues The bytes of `values`, which the array says itself.
    * \param[in] row The row, from 0 at the top.
    * \param[in] values The row, bit 7 of each byte the leftmost column of its
    *                   module.
    */
-  template <size_t NumberOfValues>
-  void SetRow(int16_t row, Byte const (&values)[NumberOfValues]) {
-    panel_.SetRow(row, values,
-                  NumberOfValues > internal::kMaxRowBytes
-                      ? internal::kMaxRowBytes
-                      : NumberOfValues);
+  void SetRow(int16_t row, span<Byte const> values) {
+    panel_.SetRow(row, values);
     UpdateIfAuto();
   }
 
@@ -406,12 +388,32 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, uint8_t const*,
-   * uint8_t, uint8_t) */
-  void DrawBitmap(  // NOLINT(readability-function-size)
-      int16_t x, int16_t y, uint8_t const* bitmap, uint8_t width,
-      uint8_t height = kRowNumberOfModule) {
-    panel_.DrawBitmap(x, y, bitmap, width, height);
+  /*!
+   * \brief Draws a picture from flash, 8 rows high, with its top left corner at
+   *        `x`, `y`.
+   *
+   * The picture is a column per byte, bit 0 the top row, as a glyph of a font:
+   * a 0 bit turns its dot off. What lies off the matrix is left out.
+   *
+   * \code{.cpp}
+   * constexpr auto kHeart PROGMEM{
+   *     max_matrix::make_array<uint8_t>(0x0C, 0x1E, 0x3C, 0x1E, 0x0C)};
+   * matrix.DrawBitmap(3, 0, kHeart);
+   * \endcode
+   *
+   * \param[in] x The column of the left edge; it may lie off the matrix.
+   * \param[in] y The row of the top edge; it may lie off the matrix.
+   * \param[in] bitmap The columns, in `PROGMEM`; as many as it holds.
+   */
+  void DrawBitmap(int16_t x, int16_t y, span<uint8_t const> bitmap) {
+    DrawBitmap(x, y, kRowNumberOfModule, bitmap);
+  }
+
+  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, uint8_t,
+   * span<uint8_t const>) */
+  void DrawBitmap(int16_t x, int16_t y, uint8_t height,
+                  span<uint8_t const> bitmap) {
+    panel_.DrawBitmap(x, y, height, bitmap);
     UpdateIfAuto();
   }
 
@@ -447,12 +449,16 @@ class Matrix {
   /*!
    * \brief Draws a text from the left edge, as far as it fits.
    *
-   * \param[in] text The text, UTF-8 or latin-1.
-   * \return Error::kOk; Error::kNoText if `text` is null; or
+   * A text in quotes or a char array passes as it is; a text known only by a
+   * pointer is passed with its length, `{text, strlen(text)}`.
+   *
+   * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
+   *                 character or the end of the span, whichever comes first.
+   * \return Error::kOk; Error::kNoText if `text` is an empty span; or
    *         Error::kUnknownChar if a char of the text is not in the font, with
    *         the chars before it drawn.
    */
-  Status SetText(char const* text) {
+  Status SetText(span<char const> text) {
     return UpdateIfAuto(
         MAXMATRIX_REPORT_ERROR("SetText", text_.SetText(panel_, text)));
   }
@@ -466,13 +472,14 @@ class Matrix {
    * right after its last, so a few spaces at its end keep the two apart; it
    * shifts until StopShift() or the next shift starts.
    *
-   * \param[in] text The text, UTF-8 or latin-1. It has to live until the text
-   *                 stands, or as long as it repeats.
+   * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
+   *                 character or the end of the span, as for SetText(). It has
+   *                 to live until the text stands, or as long as it repeats.
    * \param[in] repeat True to start over after the last char, without end.
-   * \return Error::kOk, or Error::kNoText if `text` is null; nothing starts
-   *         then.
+   * \return Error::kOk, or Error::kNoText if `text` is an empty span; nothing
+   *         starts then.
    */
-  Status SetTextWithShift(char const* text, bool repeat = false);
+  Status SetTextWithShift(span<char const> text, bool repeat = false);
 
   /*!
    * \brief Stops a shifting text or char where it is.
@@ -506,34 +513,19 @@ class Matrix {
    * matrix.SetFont(kBigFont);
    * \endcode
    *
-   * The length of the font is that of its array, so that the whole font is
-   * checked once, here, and no char can be read past its end; a pointer does
-   * not compile. A font in RAM, without `PROGMEM`, fails as well, almost
-   * always, as the Uno reads it from flash.
+   * The length of the font is that of its array, which the span takes from
+   * it, so that the whole font is checked once, here, and no char can be read
+   * past its end. A font known only by its address, as one of a table of
+   * fonts, is passed with its length, `{font, size}`. A font in RAM, without
+   * `PROGMEM`, fails as well, almost always, as the Uno reads it from flash.
    *
-   * \tparam Size The bytes of `font`, which the array says itself.
    * \param[in] font The font, in flash; it has to live as long as it is set, as
    *                 a `PROGMEM` array does.
    * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
    *         it; the font then stays as it was.
    */
-  template <size_t Size>
-  Status SetFont(uint8_t const (&font)[Size]) {
-    return SetFont(font, Size);
-  }
-
-  /*!
-   * \brief Sets the font every char is drawn in from now on, for a font known
-   *        by its address only, such as one of a table of fonts.
-   *
-   * \param[in] font The font, in flash; it has to live as long as it is set, as
-   *                 a `PROGMEM` array does.
-   * \param[in] size The length of its array in bytes, `sizeof` of the array.
-   * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
-   *         it; the font then stays as it was.
-   */
-  Status SetFont(uint8_t const* font, size_t size) {
-    return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font, size));
+  Status SetFont(span<uint8_t const> font) {
+    return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font));
   }
 
   /*!
@@ -607,8 +599,8 @@ class Matrix {
    * \param[in] register_value The value for every module.
    */
   void RegisterWrite(uint8_t register_address, uint8_t register_value) {
-    panel_.GetWired().GetChain().WriteRegisterAll(register_address,
-                                                  register_value);
+    panel_.GetWired().GetChain().WriteRegisterAll(
+        register_address, register_value, panel_.GetNumberOfModules());
   }
 
   /*! \copydoc internal::Panel::ShiftLeft(ShiftFill) */
@@ -752,8 +744,7 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
    */
   MatrixOf(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
       : internal::Buffer<NumberOfModules>{},
-        Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_.data(),
-               NumberOfModules} {}
+        Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_} {}
 };
 
 }  // namespace max_matrix

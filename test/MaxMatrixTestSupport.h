@@ -98,11 +98,11 @@ extern std::vector<Report> reports;
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only
  * says that something differs */
-std::vector<uint8_t> Bytes(uint8_t const* data, size_t size);
+std::vector<uint8_t> Bytes(max_matrix::span<uint8_t const> data);
 
 /* the bits of each byte, as numbers, so that a test compares the buffer with
  * the display or with numbers it writes down */
-std::vector<uint8_t> Bytes(max_matrix::Byte const* data, size_t size);
+std::vector<uint8_t> Bytes(max_matrix::span<max_matrix::Byte const> data);
 
 /* the library sends the pair of module 0 first, so it ends up in the chip at
  * the far end of the chain */
@@ -131,8 +131,7 @@ class MaxMatrixTest : public ::testing::Test {
    * buffer that drifts from the display makes them lie; and every bit went out
    * within a frame, with the interrupts off, which are on again afterwards */
   void TearDown() override {
-    EXPECT_EQ(Display(),
-              Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns))
+    EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_))
         << "display differs from matrix_buffer_";
     EXPECT_EQ(mock::errors, 0) << "a transfer outside a frame, or a port "
                                   "written with the interrupts on";
@@ -144,7 +143,7 @@ class MaxMatrixTest : public ::testing::Test {
   uint16_t shift_calls_{0};
 
   /* returns the number of frames the shift sent to the chain */
-  int32_t ShiftWholeText(char const* text) {
+  int32_t ShiftWholeText(max_matrix::span<char const> text) {
     matrix_.Clear();
     int32_t const frames_before{mock::frames};
     matrix_.SetTextWithShift(text);

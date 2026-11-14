@@ -16,6 +16,7 @@ using max_matrix::Font;
 using max_matrix::Glyph;
 using max_matrix::kDefaultFont;
 using max_matrix::Result;
+using max_matrix::span;
 using max_matrix::State;
 
 /* fonts in the format of MD_MAX72XX for the tests of SetFont(): the digits 0
@@ -47,37 +48,37 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC3\x84\xC3\xB6\xC3\xBC!").GetError(),
             Error::kOk);
-  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
+  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC4\xF6\xFC!").GetError(), Error::kOk);
-  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
+  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
   EXPECT_EQ(utf8, latin1);
 
-  char shift_utf8[] =
+  char const shift_utf8[] =
       "Gr\xC3\xBC\xC3\x9F"
       "e \xC3\x84";
-  char shift_latin1[] =
+  char const shift_latin1[] =
       "Gr\xFC\xDF"
       "e \xC4";
   ShiftWholeText(shift_utf8);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
-  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
+  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
   ShiftWholeText(shift_latin1);
-  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns);
+  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
   EXPECT_EQ(utf8, latin1);
 }
 
 /* the chars beyond ASCII lie at their latin-1 codes in the default font, each
  * its own */
 TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
-  std::array<char const*, 8> const chars{{"\xC3\x84", "\xC3\x96", "\xC3\x9C",
-                                          "\xC3\xA4", "\xC3\xB6", "\xC3\xBC",
-                                          "\xC3\x9F", "\xC2\xB0"}};
+  std::array<span<char const>, 8> const chars{
+      {"\xC3\x84", "\xC3\x96", "\xC3\x9C", "\xC3\xA4", "\xC3\xB6", "\xC3\xBC",
+       "\xC3\x9F", "\xC2\xB0"}};
   std::array<uint8_t, 8> const codes{
       {0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF, 0xB0}};
 
   for (uint8_t i{0}; i < 8; i++) {
-    SCOPED_TRACE(chars[i]);
+    SCOPED_TRACE(chars[i].data());
     DecodedChar const decoded{Font::DecodeChar(chars[i])};
     EXPECT_EQ(decoded.length, 2);
     EXPECT_EQ(static_cast<uint8_t>(decoded.c), codes[i]);
@@ -87,17 +88,17 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
   /* the sprite of the U umlaut used to be a copy of the O */
   Glyph const ue{Font::GetGlyph(kDefaultFont, '\xDC').GetValue()};
   Glyph const o{Font::GetGlyph(kDefaultFont, 'O').GetValue()};
-  EXPECT_NE(Bytes(ue.columns, ue.width), Bytes(o.columns, o.width));
+  EXPECT_NE(Bytes(ue.columns), Bytes(o.columns));
 }
 
 /* Bug: the font had no sharp s and no degree sign, so SetText() failed on
  * them and a shifting text lost them without a word */
 TEST_F(MaxMatrixTest, EszettAndDegreeAreDrawn) {
-  std::array<char const*, 4> const texts{
+  std::array<span<char const>, 4> const texts{
       {"\xC3\x9F", "\xC2\xB0", "\xDF", "\xB0"}};
 
-  for (char const* text : texts) {
-    SCOPED_TRACE(text);
+  for (span<char const> const text : texts) {
+    SCOPED_TRACE(text.data());
     matrix_.Clear();
     EXPECT_EQ(matrix_.SetText(text).GetError(), Error::kOk);
     std::vector<uint8_t> const shown = Display();
@@ -111,7 +112,7 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString) {
   EXPECT_EQ(Font::DecodeChar("A").c, 'A');
   EXPECT_EQ(Font::DecodeChar("\xC3").length, 1);
 
-  char truncated[] = "a\xC3";
+  char const truncated[] = "a\xC3";
   ShiftWholeText(truncated);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
 }
@@ -125,18 +126,18 @@ TEST_F(MaxMatrixTest, DecodeStopsAtEndOfString) {
 TEST_F(MaxMatrixTest, UnknownChars) {
   EXPECT_EQ(matrix_.SetText("a\x01").GetError(), Error::kUnknownChar);
 
-  char known[] = "ab";
+  char const known[] = "ab";
   int32_t const frames{ShiftWholeText(known)};
   uint16_t const calls{shift_calls_};
 
-  char in_the_middle[] =
+  char const in_the_middle[] =
       "a\x01\x02"
       "b";
   EXPECT_EQ(ShiftWholeText(in_the_middle), frames);
   EXPECT_EQ(shift_calls_, calls);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
 
-  char at_the_end[] = "ab\x01";
+  char const at_the_end[] = "ab\x01";
   EXPECT_EQ(ShiftWholeText(at_the_end), frames);
   EXPECT_EQ(shift_calls_, calls);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
@@ -145,8 +146,8 @@ TEST_F(MaxMatrixTest, UnknownChars) {
  * ASCII char from the space to the tilde, no char between the tilde and the
  * degree sign, and 8 rows high */
 TEST_F(MaxMatrixTest, DefaultFontHasAsciiAndNothingBetween) {
-  EXPECT_EQ(matrix_.GetFont(), kDefaultFont);
-  EXPECT_TRUE(Font::CheckFont(kDefaultFont, sizeof(kDefaultFont)).IsOk());
+  EXPECT_EQ(matrix_.GetFont().data(), kDefaultFont);
+  EXPECT_TRUE(Font::CheckFont(kDefaultFont).IsOk());
   for (uint16_t code{32}; code <= 126; code++) {
     Result<Glyph> const glyph{
         Font::GetGlyph(kDefaultFont, static_cast<char>(code))};
@@ -172,7 +173,7 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
       {0x42, 0x7F, 0x00, 0x3E, 0x41, 0x3E, 0x00}};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
-  EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
     EXPECT_EQ(
@@ -253,10 +254,10 @@ TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   for (auto const& font : fonts) {
-    EXPECT_EQ(matrix_.SetFont(font.font, font.size).GetError(),
+    EXPECT_EQ(matrix_.SetFont({font.font, font.size}).GetError(),
               Error::kNotAFont)
         << static_cast<void const*>(font.font);
-    EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+    EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
   }
 }
 
@@ -287,15 +288,15 @@ TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
   EXPECT_EQ(matrix_.SetFont(kWidthBeyondTheEnd).GetError(), Error::kNotAFont);
   EXPECT_EQ(matrix_.SetFont(kShortHeader).GetError(), Error::kNotAFont);
   EXPECT_EQ(matrix_.SetFont(kShortHeaderVersion2).GetError(), Error::kNotAFont);
-  EXPECT_EQ(matrix_.SetFont(kDigitFont, sizeof(kDigitFont) - 1).GetError(),
+  EXPECT_EQ(matrix_.SetFont({kDigitFont, sizeof(kDigitFont) - 1}).GetError(),
             Error::kNotAFont);
-  EXPECT_EQ(matrix_.GetFont(), kDigitFont);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFont);
 
   /* the same chars, filling the array, are taken, by the array and by its
    * address and length */
   EXPECT_EQ(matrix_.SetFont(kOneChar).GetError(), Error::kOk);
-  EXPECT_EQ(matrix_.SetFont(kDigitFontVersion2, sizeof(kDigitFontVersion2))
+  EXPECT_EQ(matrix_.SetFont({kDigitFontVersion2, sizeof(kDigitFontVersion2)})
                 .GetError(),
             Error::kOk);
-  EXPECT_EQ(matrix_.GetFont(), kDigitFontVersion2);
+  EXPECT_EQ(matrix_.GetFont().data(), kDigitFontVersion2);
 }

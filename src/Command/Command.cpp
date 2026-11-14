@@ -76,7 +76,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   }
   Result<CommandState> result{Error::kLineTooLong};
   if (!too_long) {
-    result = Execute(matrix, line_.data(), answer);
+    result = Execute(matrix, answer);
   }
   if (!result.IsOk()) {
     answer.print(F("error: "));
@@ -89,30 +89,30 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
 
 // Splits the line at its first '=' into name and value, overwriting the '='
 // with the end of the name, and passes it on by name.
-Result<CommandState> Command::Execute(Matrix& matrix, char* text,
-                                      Print& answer) {
-  char* value{strchr(text, kValueSeparator)};
+Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
+  uint8_t const separator{Find(0, kValueSeparator)};
   Status status{Error::kOk};
 
-  if (value == nullptr) {
-    if (0 == strcmp_P(text, PSTR("picture"))) {
+  if (line_[separator] == internal::kNullCharacter) {
+    if (0 == strcmp_P(line_.data(), PSTR("picture"))) {
       AnswerPicture(matrix, answer);
       return CommandState::kAnswered;
     }
-    if (0 != strcmp_P(text, PSTR("clear"))) {
+    if (0 != strcmp_P(line_.data(), PSTR("clear"))) {
       return Error::kUnknownCommand;
     }
     matrix.Clear();
   } else {
-    *value++ = internal::kNullCharacter;
-    if (0 == strcmp_P(text, PSTR("text"))) {
+    line_[separator] = internal::kNullCharacter;
+    auto const value{static_cast<uint8_t>(separator + 1)};
+    if (0 == strcmp_P(line_.data(), PSTR("text"))) {
       status = ExecuteText(matrix, value);
-    } else if (0 == strcmp_P(text, PSTR("textShift"))) {
+    } else if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
       status = ExecuteTextShift(matrix, value);
-    } else if (0 == strcmp_P(text, PSTR("setDot"))) {
+    } else if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
       status = ExecuteDot(matrix, value);
     } else {
-      status = ExecuteSetting(matrix, text, value);
+      status = ExecuteSetting(matrix, value);
     }
   }
   if (!status.IsOk()) {
@@ -121,9 +121,21 @@ Result<CommandState> Command::Execute(Matrix& matrix, char* text,
   return CommandState::kDone;
 }
 
+// Returns the position of the first `c` in the line from `from` on, or that of
+// the line's null character if there is none. The line always ends with one,
+// as Feed() puts it there.
+uint8_t Command::Find(uint8_t from, char c) const {
+  uint8_t position{from};
+
+  while (line_[position] != internal::kNullCharacter && line_[position] != c) {
+    position++;
+  }
+  return position;
+}
+
 // textShift=TEXT copies the text out of the line buffer first: the shift reads
 // it for as long as it runs, and the next line would overwrite it there.
-Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
+Status Command::ExecuteTextShift(Matrix& matrix, uint8_t value) {
   /*
    * The text is part of Line, so it fits into shift_text_ as long as that is no
    * shorter; strlcpy() would check the same at run time, for 30 bytes of flash
@@ -132,22 +144,22 @@ Status Command::ExecuteTextShift(Matrix& matrix, char const* value) {
   static_assert(sizeof(shift_text_) >= sizeof(line_),
                 "ShiftText has to hold any text of a line");
 
-  if (*value == internal::kNullCharacter) {
+  if (line_[value] == internal::kNullCharacter) {
     return Error::kNoText;
   }
   // strcpy() into a buffer that the static_assert above holds large enough.
   // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
-  strcpy(shift_text_.data(), value);  // NOLINT(runtime/printf)
-  return matrix.SetTextWithShift(shift_text_.data());
+  strcpy(shift_text_.data(), &line_[value]);  // NOLINT(runtime/printf)
+  return matrix.SetTextWithShift(shift_text_);
 }
 
 // text=TEXT clears the matrix first and sends clear and text as one picture; an
 // empty text only clears it.
-Status Command::ExecuteText(Matrix& matrix, char const* value) {
+Status Command::ExecuteText(Matrix& matrix, uint8_t value) const {
   Batch const batch{matrix};
 
   matrix.Clear();
-  return matrix.SetText(value);
+  return matrix.SetText(span<char const>{line_}.subspan(value));
 }
 
 /*
@@ -156,18 +168,19 @@ Status Command::ExecuteText(Matrix& matrix, char const* value) {
  * the panel here, because SetDot() leaves a dot off the panel out without a
  * word, and whoever typed the line should learn that it did nothing.
  */
-Status Command::ExecuteDot(Matrix& matrix, char* value) {
-  char* row_text{strchr(value, kListSeparator)};
-  char* lit_text{row_text == nullptr ? nullptr
-                                     : strchr(row_text + 1, kListSeparator)};
-
-  if (lit_text == nullptr) {
+Status Command::ExecuteDot(Matrix& matrix, uint8_t value) {
+  uint8_t const row_separator{Find(value, kListSeparator)};
+  if (line_[row_separator] == internal::kNullCharacter) {
     return Error::kNotANumber;
   }
-  *row_text = internal::kNullCharacter;
-  row_text++;
-  *lit_text = internal::kNullCharacter;
-  lit_text++;
+  auto const row_text{static_cast<uint8_t>(row_separator + 1)};
+  uint8_t const lit_separator{Find(row_text, kListSeparator)};
+  if (line_[lit_separator] == internal::kNullCharacter) {
+    return Error::kNotANumber;
+  }
+  line_[row_separator] = internal::kNullCharacter;
+  line_[lit_separator] = internal::kNullCharacter;
+  auto const lit_text{static_cast<uint8_t>(lit_separator + 1)};
   Result<uint16_t> const column{
       ConvertToNumber(value, matrix.GetNumberOfColumns() - 1)};
   Result<uint16_t> const row{ConvertToNumber(row_text, kRowNumberOfModule - 1)};
@@ -188,8 +201,9 @@ Status Command::ExecuteDot(Matrix& matrix, char* value) {
 
 // The commands that set a number: intensity=0..15, speed=MILLISECONDS and
 // space=COLUMNS.
-Status Command::ExecuteSetting(Matrix& matrix, char const* name,
-                               char const* value) {
+Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
+  char const* const name{line_.data()};
+
   if (0 == strcmp_P(name, PSTR("intensity"))) {
     Result<uint16_t> const number{
         ConvertToNumber(value, max7219::kIntensityMaxValue)};
@@ -242,18 +256,21 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
  * digits cannot overflow into a small number, but reads on to the end all the
  * same, so that "999x" is no number rather than too large.
  */
-Result<uint16_t> Command::ConvertToNumber(char const* text, uint16_t maximum) {
+Result<uint16_t> Command::ConvertToNumber(uint8_t text,
+                                          uint16_t maximum) const {
   uint32_t value{0};
 
-  if (*text == internal::kNullCharacter) {
+  if (line_[text] == internal::kNullCharacter) {
     return Error::kNotANumber;
   }
-  for (; *text != internal::kNullCharacter; text++) {
-    if (*text < '0' || *text > '9') {
+  for (uint8_t position{text}; line_[position] != internal::kNullCharacter;
+       position++) {
+    char const digit{line_[position]};
+    if (digit < '0' || digit > '9') {
       return Error::kNotANumber;
     }
     if (value <= maximum) {
-      value = (value * kDecimalBase) + static_cast<uint32_t>(*text - '0');
+      value = (value * kDecimalBase) + static_cast<uint32_t>(digit - '0');
     }
   }
   if (value > maximum) {

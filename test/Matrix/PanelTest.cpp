@@ -9,6 +9,7 @@
 #include <cmath>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include "MaxMatrixTestSupport.h"
@@ -23,6 +24,7 @@ using max_matrix::MatrixOrientation;
 using max_matrix::ModuleType;
 using max_matrix::Result;
 using max_matrix::ShiftFill;
+using max_matrix::span;
 using max_matrix::State;
 
 namespace {
@@ -55,7 +57,7 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
     matrix_.SetRow(row, in);
     EXPECT_EQ(matrix_.GetRow(row, out).GetError(), Error::kOk);
-    EXPECT_EQ(Bytes(out, sizeof(out)), Bytes(in, sizeof(in)));
+    EXPECT_EQ(Bytes(out), Bytes(in));
   }
 }
 
@@ -68,8 +70,7 @@ TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
   for (uint16_t step{0}; step < 1000 && matrix_.GetState() != State::kReady;
        step++) {
     matrix_.ShiftTask();
-    ASSERT_EQ(Display(),
-              Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns))
+    ASSERT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_))
         << "after step " << step;
   }
 }
@@ -97,8 +98,7 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
       {"DrawLine", [](Matrix& m) { m.DrawLine(0, 7, 31, 0, true); }},
       {"FillRect", [](Matrix& m) { m.FillRect(-1, -1, 34, 10, true); }},
       {"DrawCircle", [](Matrix& m) { m.DrawCircle(15, 3, 9, true); }},
-      {"DrawBitmap",
-       [](Matrix& m) { m.DrawBitmap(3, 1, kBitmap, sizeof(kBitmap)); }},
+      {"DrawBitmap", [](Matrix& m) { m.DrawBitmap(3, 1, kBitmap); }},
   }};
   char const text[] = "Hi \xC4!";
 
@@ -418,9 +418,9 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
 TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
   Result<Glyph> const glyph{Font::GetGlyph(kDefaultFont, 'A')};
   ASSERT_EQ(glyph.GetError(), Error::kOk);
-  int16_t const width{glyph.GetValue().width};
+  auto const width{static_cast<int16_t>(glyph.GetValue().columns.size())};
   int16_t const height{glyph.GetValue().height};
-  uint8_t const* const columns{glyph.GetValue().columns};
+  span<uint8_t const> const columns{glyph.GetValue().columns};
   struct Place {
     int16_t x, y;
   };
@@ -432,17 +432,15 @@ TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
   for (auto const& place : places) {
     matrix_.Clear();
     ASSERT_EQ(matrix_.SetChar(place.x, place.y, 'A').GetError(), Error::kOk);
-    EXPECT_EQ(
-        ShownPicture(matrix_),
-        Picture([columns, &place, width, height](int16_t x, int16_t y) {
-          int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
-          int16_t const sprite_y{static_cast<int16_t>(y - place.y)};
-          return sprite_x >= 0 && sprite_x < width && sprite_y >= 0 &&
-                 sprite_y < height &&
-                 // T-20: a glyph's columns are a pointer into the font
-                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                 bitRead(columns[sprite_x], sprite_y);
-        }))
+    EXPECT_EQ(ShownPicture(matrix_),
+              Picture([columns, &place, width, height](int16_t x, int16_t y) {
+                int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
+                int16_t const sprite_y{static_cast<int16_t>(y - place.y)};
+                return sprite_x >= 0 && sprite_x < width && sprite_y >= 0 &&
+                       sprite_y < height &&
+                       bitRead(columns[static_cast<size_t>(sprite_x)],
+                               sprite_y);
+              }))
         << "X " << place.x << ", Y " << place.y;
   }
 }
@@ -651,21 +649,21 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
            row >= 0 && row < 8 && bitRead(kBitmap[column], row);
   }};
 
-  matrix_.DrawBitmap(3, 0, kBitmap, sizeof(kBitmap));
+  matrix_.DrawBitmap(3, 0, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return bitmap_dot(x - 3, y);
             }));
 
   matrix_.Clear();
-  matrix_.DrawBitmap(-2, 3, kBitmap, sizeof(kBitmap));
-  matrix_.DrawBitmap(29, -1, kBitmap, sizeof(kBitmap));
+  matrix_.DrawBitmap(-2, 3, kBitmap);
+  matrix_.DrawBitmap(29, -1, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return bitmap_dot(x + 2, y - 3) || bitmap_dot(x - 29, y + 1);
             }))
       << "partly off the panel";
 
   matrix_.FillRect(0, 0, 32, 8, true);
-  matrix_.DrawBitmap(10, 2, kBitmap, sizeof(kBitmap), 3);
+  matrix_.DrawBitmap(10, 2, 3, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return x < 10 || x >= 15 || y < 2 || y >= 5 ||
                      bitmap_dot(x - 10, y - 2);
@@ -673,13 +671,30 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
       << "three rows high, over a lit panel";
 
   matrix_.Clear();
-  matrix_.DrawBitmap(32767, 0, kBitmap, sizeof(kBitmap));
-  matrix_.DrawBitmap(-32768, 0, kBitmap, sizeof(kBitmap));
-  matrix_.DrawBitmap(0, 32767, kBitmap, sizeof(kBitmap), 8);
-  matrix_.DrawBitmap(0, -32768, kBitmap, sizeof(kBitmap), 8);
+  matrix_.DrawBitmap(32767, 0, kBitmap);
+  matrix_.DrawBitmap(-32768, 0, kBitmap);
+  matrix_.DrawBitmap(0, 32767, 8, kBitmap);
+  matrix_.DrawBitmap(0, -32768, 8, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }))
       << "far off the panel";
+}
+
+/* whether DrawBitmap() takes a bitmap and then a number, as its width once
+ * came after the bitmap */
+template <typename Matrix, typename = void>
+struct TakesAWidthAfterTheBitmap : std::false_type {};
+template <typename Matrix>
+struct TakesAWidthAfterTheBitmap<
+    Matrix, std::void_t<decltype(std::declval<Matrix&>().DrawBitmap(
+                0, 0, kBitmap, sizeof(kBitmap)))>> : std::true_type {};
+
+/* Bug, of the width taken from the bitmap: DrawBitmap(x, y, bitmap, width), as
+ * it was called before, compiled with the height last and drew the width as
+ * the height; the height goes before the bitmap, so that it does not compile */
+TEST_F(MaxMatrixTest, DrawBitmapTakesNoWidthAfterTheBitmap) {
+  static_assert(!TakesAWidthAfterTheBitmap<Matrix>::value,
+                "a width after the bitmap would be read as its height");
 }
 
 /* a bitmap less than a module high at the top row leaves the rows below it,
@@ -687,7 +702,7 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
 TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
   matrix_.FillRect(0, 0, 32, 8, true);
 
-  matrix_.DrawBitmap(10, 0, kBitmap, sizeof(kBitmap), 3);
+  matrix_.DrawBitmap(10, 0, 3, kBitmap);
 
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x < 10 || x >= 15 || y >= 3 || bitRead(kBitmap[x - 10], y);

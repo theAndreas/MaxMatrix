@@ -26,8 +26,11 @@ char const kUmlauts[] =
 char const kFast[] = "fast...    ";
 char const kSlow[] = "and slow    ";
 
+/* T-13: made as a whole, {kHello, 50}; a default for its interval would make it
+ * no aggregate in C++11, as a sketch is compiled */
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
 struct Message {
-  char const* text;
+  max_matrix::span<char const> text;
   uint16_t shift_interval_ms;
 };
 

@@ -29,14 +29,12 @@ constexpr uint8_t kFirstBit{0x80};
 }  // namespace
 #endif
 
-Chain::Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-             uint8_t number_of_modules)
+Chain::Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
     : data_in_pin_{data_in_pin},
       chip_select_pin_{chip_select_pin},
-      clock_pin_{clock_pin},
-      number_of_modules_{number_of_modules} {}
+      clock_pin_{clock_pin} {}
 
-void Chain::Init() {
+void Chain::Init(uint8_t number_of_modules) {
   pinMode(chip_select_pin_, OUTPUT);
   chip_select_port_ = digitalPinToPort(chip_select_pin_);
   chip_select_mask_ = digitalPinToBitMask(chip_select_pin_);
@@ -57,31 +55,37 @@ void Chain::Init() {
 #endif
 
   WriteRegisterAll(max7219::kScanLimitAddress,
-                   max7219::kScanLimitDisplayDigit0To7);  // display all digits
-  WriteRegisterAll(
-      max7219::kDecodeModeAddress,
-      max7219::kDecodeModeNoDecode);  // using an led matrix (not digits)
-  WriteRegisterAll(
-      max7219::kShutdownAddress,
-      max7219::kShutdownModeNormalOperation);  // normal operation mode
+                   max7219::kScanLimitDisplayDigit0To7,  // display all digits
+                   number_of_modules);
+  WriteRegisterAll(max7219::kDecodeModeAddress,
+                   max7219::kDecodeModeNoDecode,  // an LED matrix, not digits
+                   number_of_modules);
+  WriteRegisterAll(max7219::kShutdownAddress,
+                   max7219::kShutdownModeNormalOperation,  // normal operation
+                   number_of_modules);
   WriteRegisterAll(max7219::kDisplayTestAddress,
-                   max7219::kDisplayTestNormalOperation);  // no display test
+                   max7219::kDisplayTestNormalOperation,  // no display test
+                   number_of_modules);
 }
 
-void Chain::WriteRegisterAll(uint8_t register_address, uint8_t register_value) {
+void Chain::WriteRegisterAll(uint8_t register_address, uint8_t register_value,
+                             uint8_t number_of_modules) {
   StartTransmission();
-  for (uint8_t module{0}; module < number_of_modules_; module++) {
+  for (uint8_t module{0}; module < number_of_modules; module++) {
     Transfer(register_address, register_value);
   }
   StopTransmission();
 }
 
-void Chain::WriteRegisterEach(uint8_t register_address,
-                              Byte const* register_values, uint8_t stride) {
+void Chain::WriteRegisterEach(uint8_t register_address, span<Byte const> buffer,
+                              uint8_t column) {
+  // A byte, as the buffer of at most kMaxNumberOfModules modules is: the index
+  // then steps on in 8 bits, where the Uno would compute a size_t in 16.
+  auto const columns{static_cast<uint8_t>(buffer.size())};
+
   StartTransmission();
-  for (uint8_t module{0}; module < number_of_modules_;
-       module++, register_values += stride) {
-    Transfer(register_address, ToInteger(*register_values));
+  for (uint8_t index{column}; index < columns; index += kColumnNumberOfModule) {
+    Transfer(register_address, ToInteger(buffer[index]));
   }
   StopTransmission();
 }

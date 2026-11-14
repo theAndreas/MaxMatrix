@@ -37,8 +37,8 @@ class MaxMatrixChainLengthTest
       number_of_modules_ * max_matrix::kColumnNumberOfModule)};
   std::vector<Byte> buffer_ =
       std::vector<Byte>(max_matrix::BufferSize(number_of_modules_), Byte{0xAA});
-  Matrix matrix_{kDataInPin, kChipSelectPin, kClockPin, buffer_.data(),
-                 number_of_modules_};
+  Matrix matrix_{kDataInPin, kChipSelectPin, kClockPin,
+                 max_matrix::span<Byte>{buffer_.data(), buffer_.size()}};
 
   void SetUp() override {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, number_of_modules_);
@@ -52,7 +52,7 @@ class MaxMatrixChainLengthTest
   /* as in MaxMatrixTest: the LEDs show the buffer, and every bit went out
    * within a frame */
   void TearDown() override {
-    EXPECT_EQ(Display(), Bytes(buffer_.data(), buffer_.size()))
+    EXPECT_EQ(Display(), Bytes({buffer_.data(), buffer_.size()}))
         << "display differs from the buffer";
     EXPECT_EQ(mock::errors, 0);
   }
@@ -80,7 +80,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MaxMatrixChainLengthTest, EmptiesItsBufferAndFramesEveryModule) {
   EXPECT_EQ(matrix_.GetNumberOfModules(), number_of_modules_);
   EXPECT_EQ(matrix_.GetNumberOfColumns(), number_of_columns_);
-  EXPECT_EQ(Bytes(buffer_.data(), buffer_.size()),
+  EXPECT_EQ(Bytes({buffer_.data(), buffer_.size()}),
             std::vector<uint8_t>(number_of_columns_, 0x00));
   EXPECT_EQ(mock::last_frame.size(), 2U * number_of_modules_);
 }

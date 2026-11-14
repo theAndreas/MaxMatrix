@@ -16,6 +16,7 @@
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "Utility/Byte.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 
@@ -116,7 +117,6 @@ class Chain {
   uint8_t data_in_pin_;
   uint8_t chip_select_pin_;
   uint8_t clock_pin_;
-  uint8_t number_of_modules_;
   /*
    * The port and the bit of each pin, looked up once in Init(): digitalWrite()
    * looks both up in tables in flash on every call, which made a byte bit
@@ -156,16 +156,8 @@ class Chain {
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
-   * \param[in] number_of_modules The MAX7219s in the chain, 1 to
-   *                              `kMaxNumberOfModules`.
    */
-  Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        uint8_t number_of_modules);
-
-  /*! \brief Returns the MAX7219s in the chain. */
-  MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
-    return number_of_modules_;
-  }
+  Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin);
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetDataInPin() const { return data_in_pin_; }
@@ -208,8 +200,10 @@ class Chain {
    * \brief Sets the pins up, and every MAX7219 to drive an 8x8 matrix.
    *
    * All eight digits, no decoding, normal operation, no display test.
+   *
+   * \param[in] number_of_modules The MAX7219s in the chain.
    */
-  void Init();
+  void Init(uint8_t number_of_modules);
 
   /*!
    * \brief Writes the same register of every MAX7219, with the same value.
@@ -219,23 +213,26 @@ class Chain {
    * \param[in] register_address The address of the register, one of
    *                             `MAX7219_REG_..._ADDRESS`.
    * \param[in] register_value The value.
+   * \param[in] number_of_modules The MAX7219s in the chain.
    */
-  void WriteRegisterAll(uint8_t register_address, uint8_t register_value);
+  void WriteRegisterAll(uint8_t register_address, uint8_t register_value,
+                        uint8_t number_of_modules);
 
   /*!
-   * \brief Writes the same register of every MAX7219, each with its own value.
+   * \brief Writes the same register of every MAX7219, each with its own value:
+   *        one column of every module, straight from the matrix buffer.
    *
-   * One frame, with the same address and one value per module.
+   * One frame, with the same address and one value per module. The values of
+   * a column lie a module's columns apart in the buffer.
    *
    * \param[in] register_address The address of the register, one of
    *                             `MAX7219_REG_..._ADDRESS`.
-   * \param[in] register_values One value per module, module 0 first.
-   * \param[in] stride The bytes from one module's value to the next: 1 for an
-   *                   array of values, or the columns of a module to take one
-   *                   column of every module straight from the matrix buffer.
+   * \param[in] buffer The matrix buffer, `BufferSize()` of the modules in the
+   *                   chain, module 0 first.
+   * \param[in] column The column of a module to write, 0 to 7.
    */
-  void WriteRegisterEach(uint8_t register_address, Byte const* register_values,
-                         uint8_t stride);
+  void WriteRegisterEach(uint8_t register_address, span<Byte const> buffer,
+                         uint8_t column);
 };
 
 }  // namespace internal

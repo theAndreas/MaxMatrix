@@ -33,14 +33,13 @@ Error FeedText(Matrix& matrix, std::string const& text) {
 }
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
   std::vector<uint8_t> const before{
-      Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns)};
+      Bytes(matrix_.panel_.wired_.matrix_buffer_)};
   int32_t const frames_before{mock::frames};
 
   EXPECT_EQ(matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
                 .GetError(),
             Error::kOutOfRange);
-  EXPECT_EQ(Bytes(matrix_.panel_.wired_.matrix_buffer_, kNumberOfColumns),
-            before);
+  EXPECT_EQ(Bytes(matrix_.panel_.wired_.matrix_buffer_), before);
   EXPECT_EQ(mock::frames, frames_before);
 }
 
@@ -119,28 +118,26 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"SetText unknown char",
        [](Matrix& m) { return m.SetText("\x01").GetError(); },
        Error::kUnknownChar, "SetText"},
-      {"SetText NULL", [](Matrix& m) { return m.SetText(nullptr).GetError(); },
+      {"SetText empty span", [](Matrix& m) { return m.SetText({}).GetError(); },
        Error::kNoText, "SetText"},
       {"SetCharWithShift",
        [](Matrix& m) { return m.SetCharWithShift('\x01').GetError(); },
        Error::kUnknownChar, "SetCharWithShift"},
-      {"SetTextWithShift NULL",
-       [](Matrix& m) { return m.SetTextWithShift(nullptr).GetError(); },
+      {"SetTextWithShift empty span",
+       [](Matrix& m) { return m.SetTextWithShift({}).GetError(); },
        Error::kNoText, "SetTextWithShift"},
-      {"SetTextWithShift NULL repeating",
-       [](Matrix& m) { return m.SetTextWithShift(nullptr, true).GetError(); },
+      {"SetTextWithShift empty span repeating",
+       [](Matrix& m) { return m.SetTextWithShift({}, true).GetError(); },
        Error::kNoText, "SetTextWithShift"},
-      {"number empty",
-       [](Matrix&) { return Command::ConvertToNumber("", 255).GetError(); },
+      {"number empty", [](Matrix& m) { return FeedText(m, "space=\n"); },
        Error::kNotANumber, nullptr},
       {"number with a letter",
-       [](Matrix&) { return Command::ConvertToNumber("12a", 255).GetError(); },
-       Error::kNotANumber, nullptr},
-      {"number too large",
-       [](Matrix&) { return Command::ConvertToNumber("256", 255).GetError(); },
+       [](Matrix& m) { return FeedText(m, "space=12a\n"); }, Error::kNotANumber,
+       nullptr},
+      {"number too large", [](Matrix& m) { return FeedText(m, "space=256\n"); },
        Error::kOutOfRange, nullptr},
       {"number too large, then a letter",
-       [](Matrix&) { return Command::ConvertToNumber("999x", 255).GetError(); },
+       [](Matrix& m) { return FeedText(m, "space=999x\n"); },
        Error::kNotANumber, nullptr},
       {"unknown command", [](Matrix& m) { return FeedText(m, "blink\n"); },
        Error::kUnknownCommand, nullptr},

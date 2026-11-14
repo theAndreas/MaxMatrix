@@ -17,8 +17,18 @@ namespace internal {
 
 Text::Text() = default;
 
-Status Text::SetFont(uint8_t const* font, size_t size) {
-  Status const status{Font::CheckFont(font, size)};
+/*
+ * In the .cpp rather than inline in the header: avr-gcc 7.3 crashes on the
+ * header alone, as tools/self_contained_headers.py compiles it, with -Os,
+ * -Wnonnull and -fsyntax-only, when the span of the default font is made
+ * inline there.
+ */
+span<uint8_t const> Text::DefaultFont() {
+  return span<uint8_t const>{kDefaultFont};
+}
+
+Status Text::SetFont(span<uint8_t const> font) {
+  Status const status{Font::CheckFont(font)};
 
   if (status.IsOk()) {
     font_ = font;
@@ -46,23 +56,25 @@ Status Text::SetCharWithShift(char c) {
   return found.GetError();
 }
 
-Status Text::SetText(Panel& panel, char const* text) const {
+Status Text::SetText(Panel& panel, span<char const> text) const {
   int16_t char_column{0};
+  size_t position{0};
 
-  if (text == nullptr) {
+  if (text.size() == 0) {
     return Error::kNoText;
   }
-  while (*text != internal::kNullCharacter) {
-    DecodedChar const decoded{Font::DecodeChar(text)};
-    text += decoded.length;
+  while (!IsEndOfText(text, position)) {
+    DecodedChar const decoded{Font::DecodeChar(text.subspan(position))};
+    position += decoded.length;
     Result<Glyph> const found{Font::GetGlyph(GetFont(), decoded.c)};
     if (!found.IsOk()) {
       return found.GetError();
     }
     Glyph const glyph{found.GetValue()};
     SetGlyph(panel, char_column, 0, glyph);
+    auto const width{static_cast<int16_t>(glyph.columns.size())};
     char_column =
-        static_cast<int16_t>(char_column + glyph.width + space_between_chars_);
+        static_cast<int16_t>(char_column + width + space_between_chars_);
     if (char_column > panel.GetNumberOfColumns()) {
       break;
     }
@@ -70,13 +82,14 @@ Status Text::SetText(Panel& panel, char const* text) const {
   return Error::kOk;
 }
 
-Status Text::SetTextWithShift(char const* text, bool repeat) {
-  if (text == nullptr) {
+Status Text::SetTextWithShift(span<char const> text, bool repeat) {
+  if (text.size() == 0) {
     return Error::kNoText;
   }
   sprite_shift_counter_ = kShiftIdle;
-  string_ = text;
-  repeat_from_ = repeat ? text : nullptr;
+  text_ = text;
+  position_ = 0;
+  repeat_ = repeat;
   return Error::kOk;
 }
 
@@ -94,7 +107,7 @@ void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const& sprite) {
 }
 
 void Text::SetGlyph(Panel& panel, int16_t x, int16_t y, Glyph const& glyph) {
-  panel.DrawBitmap(x, y, glyph.columns, glyph.width, glyph.height);
+  panel.DrawBitmap(x, y, glyph.height, glyph.columns);
 }
 
 void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
@@ -109,13 +122,14 @@ bool Text::CharShiftTask(Panel& panel) {
   sprite_shift_counter_++;
 
   /* if sprite is completed set only spaces */
-  if (sprite_shift_counter_ <= glyph_.width) {
+  if (sprite_shift_counter_ <= glyph_.columns.size()) {
     SetGlyph(panel,
              static_cast<int16_t>(panel.GetNumberOfColumns() -
                                   sprite_shift_counter_),
              0, glyph_);
   } else if (sprite_shift_counter_ ==
-             static_cast<uint16_t>(glyph_.width + space_between_chars_ + 1)) {
+             static_cast<uint16_t>(glyph_.columns.size() +
+                                   space_between_chars_ + 1)) {
     /* if sprite and spaces are completed task has finished */
     sprite_shift_counter_ = kShiftIdle;
     return false;
@@ -133,18 +147,18 @@ bool Text::CharShiftTask(Panel& panel) {
  * the end of any other text nothing starts.
  */
 void Text::ReadNextChar() {
-  char const* start_over_at{repeat_from_};
+  bool may_start_over{repeat_};
 
   while (sprite_shift_counter_ == kShiftIdle) {
-    if (*string_ == internal::kNullCharacter) {
-      if (start_over_at == nullptr) {
+    if (IsEndOfText(text_, position_)) {
+      if (!may_start_over) {
         return;
       }
-      string_ = start_over_at;
-      start_over_at = nullptr;
+      position_ = 0;
+      may_start_over = false;
     } else {
-      DecodedChar const decoded{Font::DecodeChar(string_)};
-      string_ += decoded.length;
+      DecodedChar const decoded{Font::DecodeChar(text_.subspan(position_))};
+      position_ += decoded.length;
       // A char the font lacks leaves the counter idle, and the loop reads on.
       Discard(SetCharWithShift(decoded.c));
     }
