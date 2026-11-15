@@ -5,10 +5,32 @@
 
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclFriend.h"
+#include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Type.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 
 namespace house {
+
+namespace {
+
+// Whether `friend_decl` names a type parameter of the class template it lies
+// in: a CRTP base befriends its derived class so, the one class that may make
+// it, as bugprone-crtp-constructor-accessibility asks. A parameter of an
+// enclosing template is another class's and does not count.
+bool IsOwnTypeParameter(clang::FriendDecl const& friend_decl) {
+  clang::TypeSourceInfo const* const written{friend_decl.getFriendType()};
+  if (written == nullptr) {
+    return false;
+  }
+  auto const* const parameter{
+      written->getType()->getAs<clang::TemplateTypeParmType>()};
+  return parameter != nullptr && parameter->getDecl() != nullptr &&
+         parameter->getDecl()->getDeclContext() ==
+             friend_decl.getDeclContext();
+}
+
+}  // namespace
 
 void NoFriendCheck::registerMatchers(clang::ast_matchers::MatchFinder* finder) {
   using clang::ast_matchers::cxxRecordDecl;
@@ -34,6 +56,9 @@ void NoFriendCheck::check(
         function->isThisDeclarationADefinition()) {
       return;
     }
+  }
+  if (IsOwnTypeParameter(*friend_decl)) {
+    return;
   }
   diag(friend_decl->getFriendLoc(),
        "friend declaration; reach the class through its public functions, a "

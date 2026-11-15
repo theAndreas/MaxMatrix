@@ -9,7 +9,7 @@
 #   CHECK_WARNINGS     the warnings, for target_compile_options(); errors only where
 #                      CMAKE_COMPILE_WARNING_AS_ERROR is on, as the ci- presets set it
 #   CHECK_INSTRUMENT   --coverage, or the sanitizers, for the compile and the link options
-#   add_compile_fail_tests(DIRECTORY dir STANDARD std INCLUDES dir...)
+#   add_compile_fail_tests(DIRECTORY dir STANDARDS std... INCLUDES dir...)
 #   add_compile_warn_tests(DIRECTORY dir STANDARDS std... INCLUDES dir...)
 #   add_fuzzers(DIRECTORY dir LIBRARY target)
 
@@ -59,10 +59,17 @@ endif()
 # evaluation, as one does that a value which does not fit calls; no static_assert can test a
 # function's argument. A stop that went missing, or another error, fails it, so the line names
 # what only the intended stop says. The compiler is called directly, with -fsyntax-only and in
-# STANDARD, as avr-gcc builds a sketch: no target, so that tests run in parallel never build in
-# the same tree at once.
+# each of STANDARDS, as avr-gcc builds a sketch and as the tests are built: a check may differ
+# between them, as one that leans on a rule of C++17. No target, so that tests run in parallel
+# never build in the same tree at once.
 function(add_compile_fail_tests)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "" "DIRECTORY;STANDARD" "INCLUDES")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "DIRECTORY" "STANDARDS;INCLUDES")
+  # STANDARD, of one standard, was its keyword up to v0.10.1, and CMakeLists.txt is the
+  # project's, which an update leaves as it is: such a call would make no test at all.
+  if(arg_UNPARSED_ARGUMENTS OR NOT arg_STANDARDS)
+    message(FATAL_ERROR "add_compile_fail_tests() takes STANDARDS std..., as "
+                        "add_compile_warn_tests() does, not: ${arg_UNPARSED_ARGUMENTS}")
+  endif()
   set(includes)
   foreach(dir IN LISTS arg_INCLUDES)
     list(APPEND includes -I${dir})
@@ -75,17 +82,19 @@ function(add_compile_fail_tests)
     if(expected STREQUAL "")
       message(FATAL_ERROR "${case} names no message: a line \"// Expected: \".")
     endif()
-    add_test(NAME compile_fail/${name}
-             COMMAND ${CMAKE_CXX_COMPILER} -std=${arg_STANDARD} -fsyntax-only
-                     ${includes} ${case})
-    # GCC says "error: static assertion failed: <message>", Clang "error: static assertion
-    # failed due to requirement '...': <message>", both on one line. Of a function that is not
-    # constexpr, GCC names it in the error, Clang in a note below. Not in the lines of source
-    # both print, which start with a number: they show the case's own text.
-    set_tests_properties(
-      compile_fail/${name}
-      PROPERTIES PASS_REGULAR_EXPRESSION
-                 "(error|note): [^\n]*${expected}")
+    foreach(standard IN LISTS arg_STANDARDS)
+      add_test(NAME compile_fail/${name}/${standard}
+               COMMAND ${CMAKE_CXX_COMPILER} -std=${standard} -fsyntax-only
+                       ${includes} ${case})
+      # GCC says "error: static assertion failed: <message>", Clang "error: static assertion
+      # failed due to requirement '...': <message>", both on one line. Of a function that is
+      # not constexpr, GCC names it in the error, Clang in a note below. Not in the lines of
+      # source both print, which start with a number: they show the case's own text.
+      set_tests_properties(
+        compile_fail/${name}/${standard}
+        PROPERTIES PASS_REGULAR_EXPRESSION
+                   "(error|note): [^\n]*${expected}")
+    endforeach()
   endforeach()
 endfunction()
 
