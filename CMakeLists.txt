@@ -187,8 +187,8 @@ add_compile_warn_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_warn STANDAR
                        INCLUDES ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/test/mock ${PROJECT_SOURCE_DIR}/test/model)
 # What must not compile, test/compile_fail/: make_array() given a value that does not fit, which stops the constant
 # evaluation with a call of ValueOutOfRange(), which each case's "// Expected:" line names. In gnu++11, as a sketch is
-# built; the template's function takes one standard.
-add_compile_fail_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_fail STANDARD gnu++11
+# built, and in C++17, as the tests are.
+add_compile_fail_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_fail STANDARDS gnu++11 c++17
                        INCLUDES ${PROJECT_SOURCE_DIR}/src)
 
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
