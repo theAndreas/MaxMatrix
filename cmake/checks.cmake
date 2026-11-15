@@ -17,6 +17,21 @@ option(MAXMATRIX_COVERAGE "Build with --coverage, for gcovr" OFF)
 option(MAXMATRIX_SANITIZE "Build with AddressSanitizer and UBSan" OFF)
 option(MAXMATRIX_FUZZ "Build the fuzzers of test/fuzz/, with libFuzzer, ASan and UBSan" OFF)
 
+# ccache where it is installed, as in the dev container, so that a build that compiles what an
+# earlier one compiled, in another clone, worktree or build folder, takes it from the cache. Paths
+# below the source folder are hashed relative to it (base_dir), and written so into the debug
+# information and __FILE__ (-ffile-prefix-map): with -g, ccache otherwise hashes the absolute
+# folder, and no other worktree ever hits. A debugger finds the sources from the project's root.
+# Not under --coverage, whose notes need the absolute paths for gcovr; ccache hits there only in
+# the same folder. A launcher set by the caller wins.
+find_program(CHECK_CCACHE ccache)
+if(CHECK_CCACHE AND NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CHECK_CCACHE} base_dir=${CMAKE_SOURCE_DIR})
+  if(NOT MAXMATRIX_COVERAGE)
+    add_compile_options(-ffile-prefix-map=${CMAKE_SOURCE_DIR}/=)
+  endif()
+endif()
+
 # -Wconversion and -Wsign-conversion above all: an int has 16 bits on the AVR, and a
 # conversion that is harmless on the host can lose a value there. Braced initialization finds
 # a narrowing only where a variable is initialized, not in the arithmetic after it. -Wshadow,
@@ -50,6 +65,10 @@ if(MAXMATRIX_FUZZ)
   endif()
   list(APPEND CHECK_INSTRUMENT -fsanitize=fuzzer-no-link,address,undefined
        -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  # What the preset fuzz builds: the fuzzers of add_fuzzers() and nothing else, as the other
+  # presets build and run the tests. Here rather than in add_fuzzers(), so that a project that
+  # calls it nowhere builds nothing instead of failing on a target it lacks.
+  add_custom_target(max_matrix_fuzzers)
 endif()
 
 # What must not compile: each .cpp file in DIRECTORY uses the library wrongly, and its test
@@ -133,7 +152,8 @@ endfunction()
 # The fuzzers: each <Name>Fuzz.cpp or <name>_fuzz.cpp of DIRECTORY defines LLVMFuzzerTestOneInput()
 # and becomes the program <Name> in fuzz/ of the build, linked with LIBRARY and libFuzzer, under
 # ASan and UBSan, so that what a fuzzer finds is a crash, a read out of bounds or undefined
-# behaviour. Only with MAXMATRIX_FUZZ on; tools/fuzz.sh runs them.
+# behaviour. Only with MAXMATRIX_FUZZ on, each a dependency of max_matrix_fuzzers;
+# tools/fuzz.sh runs them.
 function(add_fuzzers)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "DIRECTORY;LIBRARY" "")
   if(NOT MAXMATRIX_FUZZ)
@@ -143,6 +163,7 @@ function(add_fuzzers)
   foreach(source IN LISTS fuzzers)
     get_filename_component(name ${source} NAME_WE)
     add_executable(${name} ${source})
+    add_dependencies(max_matrix_fuzzers ${name})
     target_compile_features(${name} PRIVATE cxx_std_17)
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})
     target_compile_options(${name} PRIVATE ${CHECK_WARNINGS} ${CHECK_INSTRUMENT})

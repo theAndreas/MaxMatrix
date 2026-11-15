@@ -51,7 +51,7 @@
     {
       "name": "fuzz",
       "displayName": "Fuzzers",
-      "description": "The fuzzers of test/fuzz/ by clang, which brings libFuzzer, under ASan and UBSan; optimized, as a fuzzer is worth the inputs it gets through, with debug information for what it finds. tools/fuzz.sh runs them.",
+      "description": "The fuzzers of test/fuzz/ by clang, which brings libFuzzer, under ASan and UBSan; optimized, as a fuzzer is worth the inputs it gets through, with debug information for what it finds. Only they are built, not the tests; tools/fuzz.sh runs them.",
       "inherits": "base",
       "binaryDir": "${sourceDir}/build/fuzz",
       "cacheVariables": {
@@ -86,12 +86,12 @@
     { "name": "clang", "configurePreset": "clang" },
     { "name": "sanitize", "configurePreset": "sanitize" },
     { "name": "coverage", "configurePreset": "coverage" },
-    { "name": "fuzz", "configurePreset": "fuzz" },
+    { "name": "fuzz", "configurePreset": "fuzz", "targets": ["max_matrix_fuzzers"] },
     { "name": "ci-default", "configurePreset": "ci-default" },
     { "name": "ci-clang", "configurePreset": "ci-clang" },
     { "name": "ci-sanitize", "configurePreset": "ci-sanitize" },
     { "name": "ci-coverage", "configurePreset": "ci-coverage" },
-    { "name": "ci-fuzz", "configurePreset": "ci-fuzz" }
+    { "name": "ci-fuzz", "configurePreset": "ci-fuzz", "targets": ["max_matrix_fuzzers"] }
   ],
   "testPresets": [
     {
