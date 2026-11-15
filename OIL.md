@@ -1122,7 +1122,8 @@ with avr-gcc 7.3, every example in all three variants: the same size as before, 
 2 bytes smaller. The UTF-8 of a char is put together in one expression with the lead byte not
 masked first; masked first, every example that draws a text took 2 bytes more. The cases of
 `test/compile_fail/` run through `add_compile_fail_tests()` of the template, in gnu++11 alone,
-as the function takes one standard; the loop of its own ran them in C++17 as well.
+as the function takes one standard; the loop of its own ran them in C++17 as well. With the
+template at v0.11.0, whose function takes several standards, they run in C++17 again.
 
 ## Decisions
 

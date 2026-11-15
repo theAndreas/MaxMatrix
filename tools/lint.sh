@@ -54,7 +54,8 @@ main() {
       "${sources[@]}" || failed=1
     tools/lib/doc_indent.py --check "${sources[@]}" || failed=1
   fi
-  "${UV_RUN[@]}" cpplint --quiet "${sources[@]}" || failed=1
+  # Through tools/lib/cpplint_house.py, which lets a NOLINT of a check of our own, house-*, pass.
+  "${UV_RUN[@]}" python tools/lib/cpplint_house.py --quiet "${sources[@]}" || failed=1
   "${UV_RUN[@]}" shellcheck -x "${scripts[@]}" || failed=1
   "${UV_RUN[@]}" actionlint || failed=1
   "${UV_RUN[@]}" ruff check --quiet || failed=1

@@ -139,9 +139,12 @@ main() {
   # --exclude-throw-branches: on the host a call that may throw has a branch
   # to its exception, which no test takes; a sketch is built without
   # exceptions, so on the AVR there is no such branch to reach.
+  # --merge-mode-functions=separate, as in report(): the counts of the variants meet here
+  # already, and a function under an #if of a variant lies on another line in each.
   local tracefile="${COVERAGE_DIR}/coverage.json"
   uv run --frozen gcovr --root "${ROOT_DIR}" --filter 'src/' \
     --exclude-throw-branches \
+    --merge-mode-functions=separate \
     --json "${tracefile}" "${COVERAGE_DIR}" "${suites[@]}"
   local metric
   : > "${COVERAGE_DIR}/coverage.txt"
