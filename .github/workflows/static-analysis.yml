@@ -106,7 +106,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # clang with libFuzzer and the sanitizers, which it only recommends, and GoogleTest, as the
-      # preset fuzz builds the tests too.
+      # configuration of the preset fuzz finds it for the tests, which it does not build.
       - name: Install the toolchain
         uses: ./.github/actions/apt-install
         with:

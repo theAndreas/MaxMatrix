@@ -25,7 +25,7 @@ this profile where a target decides; the ids here start with `AVR-`.
 |---|---|---|
 | AVR-1 | Constant text and tables lie in flash, as `PROGMEM`, and are read with `pgm_read_*`; a text handed to `Print` is `F("...")`. Flash and RAM are two address spaces: a pointer into flash read as if into RAM reads wrong data, and only SelfCheck shows it. | Review, `make self-check` |
 | AVR-2 | A critical section is `ATOMIC_BLOCK(ATOMIC_RESTORESTATE)` from `<util/atomic.h>`, which restores the interrupt flag as it was. The AVR reads 8 bits in one access: a shared `uint16_t` or wider is read in one (H-6). | Review |
-| AVR-3 | Registers and bits by the names of `<avr/io.h>`: `TIMSK1 \|= _BV(TOIE1)` (H-4). | Review |
+| AVR-3 | Registers and bits by the names of `<avr/io.h>`: `Bit<uint8_t>::SetBits(TIMSK1, _BV(TOIE1))` (H-4, H-9). | Review |
 | AVR-4 | Time from the core's `millis()` and `micros()`, handed to the library as its clock (H-2, H-3); `millis()` overflows after 49 days, `micros()` after 71 minutes. | Review, a test across the overflow |
 | AVR-5 | An interrupt routine is `ISR(vector)` of `<avr/interrupt.h>`; it does not call `Serial`, `delay()` or `millis()`-based waits (H-5). | Review |
 | AVR-6 | `delay()` and `delayMicroseconds()` only for the wait a datasheet asks (H-1). | Review |

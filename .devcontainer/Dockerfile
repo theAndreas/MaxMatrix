@@ -9,7 +9,8 @@
 ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/cpp:ubuntu26.04
 FROM ${BASE_IMAGE}
 
-# CMake, Ninja and GoogleTest build and run the tests on the host, clang a second time beside
+# CMake, Ninja and GoogleTest build and run the tests on the host, ccache keeps what they compiled
+# for the next build, in any worktree (cmake/checks.cmake), clang a second time beside
 # the base image's g++ (make clang), and with its runtime libraries, libFuzzer and the
 # sanitizers, which clang only recommends, the fuzzers (make fuzz); simavr runs
 # examples/SelfCheck as the board would (tools/self_check.sh); jq writes the compilation database
@@ -19,7 +20,7 @@ FROM ${BASE_IMAGE}
 # none of them has a bug that forces a newer release.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        cmake ninja-build libgtest-dev clang libclang-rt-dev simavr jq doxygen cppcheck && \
+        cmake ninja-build ccache libgtest-dev clang libclang-rt-dev simavr jq doxygen cppcheck && \
     rm -rf /var/lib/apt/lists/*
 
 # arduino-cli compiles the library and its examples with the real Arduino AVR core, which

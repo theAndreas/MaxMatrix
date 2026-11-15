@@ -35,6 +35,11 @@
 #
 # The checks of our own, house-*, are a module of clang-tidy's that tools/lib/tidy_module.sh builds
 # from tools/lib/tidy_module/ and clang-tidy loads; the database alone does not need it.
+#
+# clang-tidy is called through tools/lib/tidy_cache.py, which skips a file that passed before on
+# the same input, preprocessed, with the same configuration and checks: a second run without a
+# change takes seconds, and one after a change reads only the files it reaches. A finding is
+# never kept, and shows on every run.
 
 set -euo pipefail
 
@@ -71,7 +76,8 @@ run_tidy() {
       else $entries end' \
     "${dir}/compile_commands.json" --args "$@" > "${selected}/compile_commands.json" ||
     return 1
-  local args=(-p "${selected}" -j "$(nproc)" -quiet -hide-progress)
+  local args=(-p "${selected}" -j "$(nproc)" -quiet -hide-progress
+    -clang-tidy-binary "${ROOT_DIR}/tools/lib/tidy_cache.py")
   if [[ -n "${MODULE}" ]]; then
     args+=("-load=${MODULE}")
   fi
