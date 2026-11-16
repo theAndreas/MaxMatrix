@@ -4,6 +4,7 @@
 #include "Max7219.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <array>
 

@@ -6,6 +6,8 @@
 #include "ControlCommand.h"
 
 #include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>

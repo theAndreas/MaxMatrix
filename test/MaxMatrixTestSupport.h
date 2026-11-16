@@ -32,7 +32,7 @@
 // What it redefines is a keyword, not a name of ours.
 // NOLINTNEXTLINE(readability-identifier-naming)
 #define private public
-#include "MaxMatrix.h"
+#include "MaxMatrix.h"  // IWYU pragma: export
 #undef private
 
 static uint8_t const kDataInPin{11};

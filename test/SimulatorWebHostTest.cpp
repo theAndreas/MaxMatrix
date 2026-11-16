@@ -9,9 +9,9 @@
  * lock with simulator/web. */
 #include "Host/SimulatorWebHost.h"
 
-#include <arpa/inet.h>
 #include <gtest/gtest.h>
 #include <netinet/in.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
 

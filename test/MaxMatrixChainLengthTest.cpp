@@ -3,11 +3,15 @@
 
 /* Chains of other lengths than the examples'. */
 
+#include <gtest/gtest.h>
+#include <stdint.h>
+
 #include <array>
 #include <string>
 #include <tuple>
 #include <vector>
 
+#include "Arduino.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixTestSupport.h"
 
