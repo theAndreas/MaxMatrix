@@ -37,6 +37,7 @@ readonly BUILD_DIR="${ROOT_DIR}/build"
   SIMAVR_FREQUENCY=16000000
   DATABASE_EXAMPLE="Basics"
   SELF_CHECK_EXAMPLE="SelfCheck"
+  EXAMPLES=()
   VARIANTS=(default)
   TIDY_VARIANTS=(default)
   DOCS_INTERNAL_API=""
@@ -86,7 +87,8 @@ source "${ROOT_DIR}/tools/project.sh"
 # tools/project.sh sets for them is each target's starting point. Kept as declarations, with -g,
 # so that select_target() restores them as globals although it is a function.
 readonly TARGET_SETTINGS=(BUILD_SYSTEM CMAKE_TOOLCHAIN CMAKE_DEFINES PIO_DIR PIO_ENV FQBN
-  ARDUINO_CORE ARDUINO_BOARD_URLS SIMAVR_MCU SIMAVR_FREQUENCY DATABASE_EXAMPLE SELF_CHECK_EXAMPLE)
+  ARDUINO_CORE ARDUINO_BOARD_URLS SIMAVR_MCU SIMAVR_FREQUENCY DATABASE_EXAMPLE SELF_CHECK_EXAMPLE
+  EXAMPLES)
 PROJECT_SETTINGS="$(declare -p "${TARGET_SETTINGS[@]}" | sed 's/^declare /declare -g /')"
 readonly PROJECT_SETTINGS
 
@@ -221,6 +223,36 @@ list_files() {
   fi
   # shellcheck disable=SC2034  # a nameref: what it fills is the caller's array
   mapfile -t list_files_into <<< "${listed}"
+}
+
+# Fills the array named first with those of the files given that the selected target compiles:
+# every file outside examples/, and in examples/ those of the folders list_examples() prints.
+# Arguments:
+#   array: the name of the array to fill
+#   then the files, as paths from the root
+target_files() {
+  local -n target_files_into="$1"
+  shift
+  target_files_into=()
+  local -A compiled_examples=()
+  local listed
+  local example
+  if [[ -d "${ROOT_DIR}/examples" ]]; then
+    listed="$(list_examples)" || return 1
+    while IFS= read -r example; do
+      compiled_examples["${example}"]=1
+    done <<< "${listed}"
+  fi
+  local file
+  for file in "$@"; do
+    if [[ "${file}" == examples/*/* ]]; then
+      example="${file#examples/}"
+      if [[ -z "${compiled_examples[${example%%/*}]:-}" ]]; then
+        continue
+      fi
+    fi
+    target_files_into+=("${file}")
+  done
 }
 
 # Fills the array named first with the folders of HOST_CODE, each without the / at its end. Fails

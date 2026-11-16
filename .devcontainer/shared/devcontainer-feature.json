@@ -38,11 +38,16 @@
             }
         }
     },
-    // uv's cache is a volume of its own, another file system than the workspace's .venv, so it
-    // copies rather than failing to link and saying so on every sync.
+    // uv's cache is a volume of its own, another file system than the project's environment, so
+    // it copies rather than failing to link and saying so on every sync.
     "containerEnv": {
         "GH_HOST": "github.com",
         "UV_LINK_MODE": "copy",
+        // The environment of the Python tools in .venv-devcontainer, not in .venv: the workspace
+        // is the host's folder, and a .venv that uv made on the host names the host's paths in
+        // its scripts, which the container does not have; uv takes it as current and the tools
+        // fail to start. Relative, so that each worktree has its own.
+        "UV_PROJECT_ENVIRONMENT": ".venv-devcontainer",
         // Claude Code keeps .claude.json beside ~/.claude rather than in it; this puts both
         // into the volume below, so that a rebuild keeps the login and the settings.
         "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",

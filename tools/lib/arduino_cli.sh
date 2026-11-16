@@ -9,8 +9,21 @@
 # every function works on the target select_target() selected, through its FQBN, ARDUINO_CORE,
 # ARDUINO_BOARD_URLS and DATABASE_EXAMPLE. This file comes from the template.
 
-# Prints the name of every example, one per line.
+# Prints the name of every example the selected target compiles, one per line: those EXAMPLES
+# names, else every folder of examples/. Fails on a name that is no folder there, as a misspelt
+# one would be compiled by no target, without a word.
 list_examples() {
+  local example
+  if ((${#EXAMPLES[@]} > 0)); then
+    for example in "${EXAMPLES[@]}"; do
+      if [[ ! -d "${ROOT_DIR}/examples/${example}" ]]; then
+        err "Target ${TARGET}: EXAMPLES names ${example}, which is no folder of examples/."
+        return 1
+      fi
+      echo "${example}"
+    done
+    return 0
+  fi
   local dir
   for dir in "${ROOT_DIR}"/examples/*/; do
     basename "${dir}"
@@ -81,11 +94,11 @@ arduino_cli_log() {
 #   example: optional, the name of a folder in examples/
 arduino_cli_build() {
   local variant="$1"
-  local examples=("${2:-}")
-  if [[ -z "${examples[0]}" ]]; then
+  local to_build=("${2:-}")
+  if [[ -z "${to_build[0]}" ]]; then
     local listed
     listed="$(list_examples)"
-    mapfile -t examples <<< "${listed}"
+    mapfile -t to_build <<< "${listed}"
   fi
   local label
   label="$(target_label "${variant}")"
@@ -94,7 +107,7 @@ arduino_cli_build() {
   local log
   local output
   local warnings
-  for example in "${examples[@]}"; do
+  for example in "${to_build[@]}"; do
     log="$(arduino_cli_log "${variant}" "${example}")"
     mkdir -p "${log%/*}"
     rm -f "${log}"
@@ -144,8 +157,8 @@ arduino_cli_sizes() {
   echo "${flash} ${ram}"
 }
 
-# Writes the database of a variant for the sources of src/ and examples/ with the flags of
-# arduino_flags(), and prints its folder: the same database serves clang-tidy and the headers,
+# Writes the database of a variant for the sources of src/ and of the examples the target compiles
+# with the flags of arduino_flags(), and prints its folder: the same database serves clang-tidy and the headers,
 # as arduino_flags() already turned it into one that clang reads.
 # Arguments:
 #   variant: one of TIDY_VARIANTS
@@ -153,8 +166,10 @@ arduino_cli_sizes() {
 arduino_cli_database() {
   local variant="$1"
   local dir="$2"
+  local files
+  list_files files '\.(cpp|ino)$' 'src/*' 'examples/*'
   local sources
-  list_files sources '\.(cpp|ino)$' 'src/*' 'examples/*'
+  target_files sources "${files[@]}"
   local flags
   flags="$(arduino_flags "${variant}" "${BUILD_DIR}/tidy/arduino/${TARGET}/${variant}")"
   write_database "${dir}" "${flags}" "${sources[@]}"
