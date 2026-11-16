@@ -4,10 +4,14 @@
 /* Errors: every way a call can fail, that it changes nothing, and what the
  * report and the texts say. */
 
+#include <gtest/gtest.h>
+#include <stdint.h>
+
 #include <array>
 #include <string>
 #include <vector>
 
+#include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Command;

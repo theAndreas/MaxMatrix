@@ -4,14 +4,21 @@
 /* What the tests share, defined once: see MaxMatrixTestSupport.h. */
 #include "MaxMatrixTestSupport.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <ostream>
+#include <string>
+#include <vector>
+
+#include "Arduino.h"
+#include "Max7219.h"
+
 using max_matrix::CommandState;
 using max_matrix::Error;
 using max_matrix::Matrix;
 using max_matrix::ModuleType;
 using max_matrix::Result;
-
-#include <string>
-#include <vector>
 
 namespace max_matrix {
 

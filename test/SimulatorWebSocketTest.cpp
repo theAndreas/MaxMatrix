@@ -11,9 +11,12 @@
 #include "Host/SimulatorWebSocket.h"
 
 #include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <array>
 #include <iomanip>
+#include <ios>
 #include <sstream>
 #include <string>
 

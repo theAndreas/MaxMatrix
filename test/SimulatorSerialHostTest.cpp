@@ -9,11 +9,13 @@
  * come back. On a port of its own, so that it needs no lock with the others. */
 #include "Host/SimulatorSerialHost.h"
 
-#include <arpa/inet.h>
 #include <gtest/gtest.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <array>

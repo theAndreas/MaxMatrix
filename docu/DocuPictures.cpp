@@ -17,6 +17,7 @@
  * fails when the library changes and the pictures were not written again.
  */
 
+#include <stdint.h>
 #include <string.h>
 
 #include <array>
@@ -29,6 +30,7 @@
 
 #include "Arduino.h"
 #include "DocuSvg.h"
+#include "Max7219.h"
 #include "MaxMatrix.h"
 #include "Utility/Bit.h"
 

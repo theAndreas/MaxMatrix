@@ -12,18 +12,25 @@
 #include "ControlWindow.h"
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <wx/aboutdlg.h>
-#include <wx/button.h>
-#include <wx/checkbox.h>
-#include <wx/combobox.h>
+#include <wx/button.h>    // IWYU pragma: keep
+#include <wx/checkbox.h>  // IWYU pragma: keep
+#include <wx/combobox.h>  // IWYU pragma: keep
+#include <wx/event.h>
+#include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/settings.h>
 #include <wx/sizer.h>
 #include <wx/slider.h>
 #include <wx/spinctrl.h>
-#include <wx/statbox.h>
+#include <wx/statbox.h>  // IWYU pragma: keep
 #include <wx/stattext.h>
+#include <wx/strconv.h>
+#include <wx/stringimpl.h>
 #include <wx/textctrl.h>
+#include <wx/timer.h>
+#include <wx/types.h>
 
 #include <array>
 #include <chrono>
@@ -32,6 +39,7 @@
 
 #include "ControlCommand.h"
 #include "ControlDotPanel.h"
+#include "ControlLink.h"
 #include "MaxMatrixConfig.h"
 
 namespace {

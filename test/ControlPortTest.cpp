@@ -4,10 +4,14 @@
 /* Tests of the control program's ports: the serial port against a pseudo
  * terminal, which stands in for a board_'s port as the kernel gives it to a
  * program, and the TCP port against the simulator's serial host on loopback. */
-#include <fcntl.h>
+#include "ControlPort.h"
+
 #include <gtest/gtest.h>
 #include <poll.h>
 #include <pty.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <array>

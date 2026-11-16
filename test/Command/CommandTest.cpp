@@ -3,6 +3,10 @@
 
 /* The lines a control page or program sends, carried out on a matrix. */
 
+#include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <array>
 #include <string>
 #include <vector>

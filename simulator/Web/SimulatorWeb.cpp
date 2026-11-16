@@ -12,11 +12,18 @@
 
 #include "SimulatorWeb.h"
 
-#include <array>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <iomanip>
+#include <ios>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "Arduino.h"
+#include "MaxMatrixConfig.h"
+#include "SimulatorPanel.h"
 
 namespace {
 

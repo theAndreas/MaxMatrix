@@ -6,11 +6,13 @@
 #include "ControlLink.h"
 
 #include <gtest/gtest.h>
+#include <stddef.h>
 
 #include <string>
 #include <vector>
 
 #include "ControlCommand.h"
+#include "ControlPort.h"
 #include "MaxMatrixAttributes.h"
 
 namespace {

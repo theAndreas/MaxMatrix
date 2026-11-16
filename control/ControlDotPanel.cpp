@@ -13,11 +13,17 @@
 #include "ControlDotPanel.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <wx/dcbuffer.h>
+#include <wx/event.h>
+#include <wx/gdicmn.h>
+#include <wx/types.h>
 
 #include <algorithm>
+#include <functional>
 #include <utility>
+#include <vector>
 
 #include "ControlCommand.h"
 #include "MaxMatrixConfig.h"

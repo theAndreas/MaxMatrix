@@ -6,7 +6,9 @@
  * define the report themselves to record it. */
 
 #include <gtest/gtest.h>
+#include <stdint.h>
 
+#include "Arduino.h"
 #include "MaxMatrix.h"
 
 using max_matrix::Error;

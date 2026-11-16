@@ -13,6 +13,7 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 /* a text must stay valid while it is shifted, so none of them is a local
  * variable; the blanks at the end let it leave the matrix before the next one

@@ -3,9 +3,14 @@
 
 /* Text that shifts in: to its end, over again, and held. */
 
+#include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 
+#include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Error;

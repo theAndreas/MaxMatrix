@@ -4,6 +4,11 @@
 /* The panel as the viewer sees it: every matrix orientation and module type,
  * dots, rows, columns and shifts, and the shapes drawn on it. */
 
+#include <avr/pgmspace.h>
+#include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -12,6 +17,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "Arduino.h"
+#include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 #include "Utility/Bit.h"
 

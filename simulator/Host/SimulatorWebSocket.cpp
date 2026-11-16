@@ -13,6 +13,8 @@
 #include "SimulatorWebSocket.h"
 
 #include <ctype.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <array>
 #include <string>

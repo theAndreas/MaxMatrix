@@ -8,10 +8,13 @@
  * they cannot see is a value on the command line that is quietly wrong, or a
  * line of the terminal that shows the chips in the wrong order. */
 #include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>
 
+#include "Arduino.h"
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"

@@ -491,6 +491,14 @@ does the same from `simulator/` (`"Host/SimulatorSerialHost.h"`), in its own fil
 tests. A header includes what it uses itself, rather than relying on a header included before
 it.
 
+Every file includes what it uses (F-5, `misc-include-cleaner`), the C library's headers as
+`<stdint.h>`, as avr-gcc has no `<cstdint>`. `MaxMatrix.h` exports the headers whose names a
+sketch uses, with `// IWYU pragma: export`, so that a sketch includes it alone and, of avr-libc,
+what it uses itself, as `<avr/pgmspace.h>`; a new public header is exported there as well.
+`MaxMatrixTestSupport.h` exports `MaxMatrix.h` to the tests, which must see the library after
+`#define private public`: a test that included `"Font/Font.h"` itself would have it sorted
+before the define, and lose its private members.
+
 #### Comments
 
 Comments say *why*, not what — the reasoning that is not recoverable from the code, such as
@@ -561,7 +569,8 @@ MD_MAX72XX gives those names; the README's table says the same and changes with 
 The mock has a `Serial` that reads `mock::serial_input` and appends what the sketch prints to
 `mock::serial_output`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()`,
 `strcmp_P()` and `pgm_read_ptr()` take strings in RAM there, as the host has no separate flash, but
-`F()` keeps the type `__FlashStringHelper const*` of the core.
+`F()` keeps the type `__FlashStringHelper const*` of the core. What avr-libc declares lies in
+`test/mock/avr/`, as on the board, so that a file includes the same header for both.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `mock::SetMillis()`
 instead, until the next `mock::Reset()`; `delay()` then moves it on without waiting. The library

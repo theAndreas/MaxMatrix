@@ -22,6 +22,9 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
+#include <stddef.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <array>
 #include <string>

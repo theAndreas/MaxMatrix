@@ -12,6 +12,9 @@
 
 #include "DocuSvg.h"
 
+#include <stdint.h>
+
+#include <sstream>
 #include <string>
 
 namespace {

@@ -4,6 +4,12 @@
 /* Fonts: the chars beyond ASCII and how a text reaches them, the default
  * font, and a font of a sketch's own. */
 
+#include <avr/pgmspace.h>
+#include <binary.h>
+#include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <array>
 #include <vector>

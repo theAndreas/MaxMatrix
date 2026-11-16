@@ -11,11 +11,14 @@
 
 #include "SimulatorOptions.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "SimulatorPanel.h"
 
 SimulatorOptions::SimulatorOptions()
     : wiring_name_(kSimulatorPanelDefaultWiring) {}

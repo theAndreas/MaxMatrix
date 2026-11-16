@@ -15,9 +15,11 @@
 #ifndef MAXMATRIX_TEST_MOCK_ARDUINO_H_
 #define MAXMATRIX_TEST_MOCK_ARDUINO_H_
 
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <string>
 #include <vector>
@@ -25,38 +27,16 @@
 #include "Max7219.h"
 #include "binary.h"
 
-/* The names of the Arduino core and avr-libc, which the library calls by them.
- */
+/* The names of the Arduino core, which the library calls by them; those of
+ * avr-libc are in avr/, which the core includes as this does. */
 // NOLINTBEGIN(readability-identifier-naming)
 typedef uint8_t byte;
 
-#define PROGMEM
-#define memcpy_P memcpy
-#define PSTR(text) (text)
-#define strcmp_P strcmp
 /* F() has the type it has in the Arduino core, so that a function returning a
  * text in flash builds as on the board */
 class __FlashStringHelper;  // NOLINT(bugprone-reserved-identifier): the core's
                             // name
 #define F(text) (reinterpret_cast<__FlashStringHelper const*>(PSTR(text)))
-/* pgm_read_byte() reads the byte at address, as avr-libc reads it from flash,
- * taking the address as it is given, as pgm_read_ptr() does */
-template <typename AddressType>
-inline uint8_t pgm_read_byte(AddressType const* address) {
-  return *reinterpret_cast<uint8_t const*>(address);
-}
-/* pgm_read_ptr() reads the bytes of the pointer at address, as avr-libc reads
- * them from flash, and takes the address as it is given, as avr-libc's macro
- * does. A macro that cast the stored pointer to void* made the library's cast
- * back to its own type one through void, and a parameter of const void* a
- * conversion of the address: clang-tidy reports both in the library, though
- * neither is there on the board. */
-template <typename AddressType>
-inline void* pgm_read_ptr(AddressType const* address) {
-  void* value;
-  memcpy(&value, address, sizeof(value));
-  return value;
-}
 
 #define HIGH 1
 #define LOW 0
@@ -149,11 +129,6 @@ uint8_t digitalPinToPort(uint8_t pin);
 uint8_t digitalPinToBitMask(uint8_t pin);
 mock::PortRegister* portOutputRegister(uint8_t port);
 
-/* the status register and cli(), which the library holds the interrupts off
- * with while it writes a port: cli() clears the I bit, 0x80, which the library
- * puts back by restoring SREG */
-extern uint8_t SREG;
-inline void cli() { SREG &= 0x7FU; }
 // NOLINTEND(readability-identifier-naming)
 
 namespace mock {

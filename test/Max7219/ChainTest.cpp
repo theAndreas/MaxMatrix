@@ -3,6 +3,9 @@
 
 /* The transfer to the chain: every bit within a frame. */
 
+#include <gtest/gtest.h>
+
+#include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::ModuleType;

@@ -3,8 +3,14 @@
 
 /* The buffer as wired: which columns go out, and when nothing has to. */
 
+#include <gtest/gtest.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <vector>
 
+#include "Arduino.h"
+#include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 
 /* a changed column of a module goes out in one frame with the same column of

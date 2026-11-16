@@ -4,8 +4,13 @@
 /* The facade: what Init() sets, sending at once or in a batch, the pace of a
  * shifting text, and the settings of the MAX7219. */
 
+#include <gtest/gtest.h>
+#include <stdint.h>
+
 #include <vector>
 
+#include "Arduino.h"
+#include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Batch;

@@ -13,6 +13,15 @@
  */
 
 #include "Chain.h"
+
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdint.h>
+
+#include "MaxMatrixConfig.h"
+#include "MaxMatrixStandardTypes.h"
+#include "Utility/Byte.h"
+#include "Utility/span.h"
 #if (MAXMATRIX_USE_SPI == STD_ON)
 #include "SPI.h"
 #endif
