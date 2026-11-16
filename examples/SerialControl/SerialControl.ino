@@ -26,6 +26,7 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 uint8_t const kDataInPin{11};
 uint8_t const kChipSelectPin{10};

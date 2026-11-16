@@ -14,6 +14,7 @@
  * is max_matrix::MatrixOf<8>.
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 uint8_t const kDataInPin{11};
 uint8_t const kChipSelectPin{10};

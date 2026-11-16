@@ -11,6 +11,7 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 /* a chain of four modules, with the buffer for them; one of eight is
  * max_matrix::MatrixOf<8> */

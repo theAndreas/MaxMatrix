@@ -12,6 +12,8 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <avr/pgmspace.h>
+#include <stdint.h>
 
 uint32_t const kShowMs{1000};
 uint8_t const kNumberOfShapes{4};

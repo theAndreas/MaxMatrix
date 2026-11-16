@@ -12,6 +12,7 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 uint32_t const kStepIntervalMs{40};
 

@@ -15,6 +15,7 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <stdint.h>
 
 uint16_t const kStepDelayMs{100};
 int16_t const kSpriteY{2};
