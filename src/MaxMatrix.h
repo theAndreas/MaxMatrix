@@ -18,19 +18,21 @@
 #define MAXMATRIX_SRC_MAXMATRIX_H_
 
 #include "Arduino.h"
-#include "Command/Command.h"
-#include "Font/Font.h"
-#include "Matrix/Panel.h"
-#include "Max7219/Chain.h"
 #include "MaxMatrixAttributes.h"
-#include "MaxMatrixConfig.h"
-#include "MaxMatrixError.h"
-#include "MaxMatrixStandardTypes.h"
 #include "Text/Text.h"
-#include "Utility/Byte.h"
-#include "Utility/array.h"
 #include "Utility/reference_wrapper.h"
-#include "Utility/span.h"
+
+// What a sketch names, it has through this header alone.
+#include "Command/Command.h"         // IWYU pragma: export
+#include "Font/Font.h"               // IWYU pragma: export
+#include "Matrix/Panel.h"            // IWYU pragma: export
+#include "Max7219/Chain.h"           // IWYU pragma: export
+#include "MaxMatrixConfig.h"         // IWYU pragma: export
+#include "MaxMatrixError.h"          // IWYU pragma: export
+#include "MaxMatrixStandardTypes.h"  // IWYU pragma: export
+#include "Utility/Byte.h"            // IWYU pragma: export
+#include "Utility/array.h"           // IWYU pragma: export
+#include "Utility/span.h"            // IWYU pragma: export
 
 namespace max_matrix {
 
