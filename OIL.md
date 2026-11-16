@@ -1036,7 +1036,26 @@ A first look found, besides those two:
   the rule, assignability, where the rule says never. That is the template's to take up, in
   the rule's text or its "Checked by". `Batch` was the only such member in the repository.
 - F-5: `misc-include-cleaner` is still off, with some 540 places, waiting for the pull request
-  36 named for it.
+  36 named for it. As built, it is on, and every file includes what it uses: some 175 includes
+  in 59 files, and 7 that nothing used are gone. The C library's headers are written as
+  `<stdint.h>` and `<stddef.h>`, as the template and Utl write them, since avr-gcc has no
+  `<cstdint>`. `MaxMatrix.h` exports the headers whose names a sketch uses, with
+  `// IWYU pragma: export`, so that a sketch includes it alone and, of avr-libc, what it uses
+  itself: `<stdint.h>`, and `<avr/pgmspace.h>` where it keeps a table in flash.
+  `MaxMatrixTestSupport.h` exports `MaxMatrix.h` to the tests, which must see the library after
+  `#define private public`. The mock has avr-libc's `avr/pgmspace.h`, `avr/io.h` and
+  `avr/interrupt.h`, as the core has them, so that a file of the library includes the same
+  header on the host and the board.
+
+  Where include-cleaner takes for a name's provider a header that a public one includes,
+  `IgnoreHeaders` leaves it out, as the template does for `avr/io*.h`, decided on 2026-11-16
+  against a NOLINT on each of some 20 lines: `avr/common.h`, where `SREG` is, which the
+  template's pattern misses as well and is the template's to take up; glibc's `bits/` and
+  `sys/poll.h`, Linux's `asm-generic/`, and the GTK port of wxWidgets. Six includes that the
+  check takes for unused stay, with `// IWYU pragma: keep`: four of wxWidgets that only include
+  the port's header, `<sys/time.h>` for `timeval`, and `MaxMatrixConfig.h` in
+  `MaxMatrixErrorReport.cpp`, whose switch the variant with `MAXMATRIX_DEV_ERROR_DETECT` sets
+  with `-D`. Every example is the same size in every variant.
 - S-5: the reasons in `.clang-tidy` for `bugprone-easily-swappable-parameters` and
   `bugprone-too-small-loop-variable` name `MaxMatrixChain` and `MAXMATRIX_NUMBER_OF_COLUMNS`,
   which are gone. As built, every check the project turns off was run again with clang-tidy 23.
