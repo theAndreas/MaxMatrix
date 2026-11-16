@@ -11,8 +11,16 @@
 
 #include "Panel.h"
 
+#include <avr/pgmspace.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "MaxMatrixConfig.h"
+#include "MaxMatrixError.h"
 #include "Utility/Bit.h"
+#include "Utility/Byte.h"
 #include "Utility/array.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 namespace internal {

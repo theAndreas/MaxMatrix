@@ -11,6 +11,8 @@
 
 #include "MaxMatrix.h"
 
+#include <stdint.h>
+
 namespace max_matrix {
 
 Matrix::Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,

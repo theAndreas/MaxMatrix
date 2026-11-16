@@ -12,6 +12,14 @@
 
 #include "Wired.h"
 
+#include <stdint.h>
+#include <string.h>
+
+#include "Max7219/Chain.h"
+#include "MaxMatrixConfig.h"
+#include "Utility/Byte.h"
+#include "Utility/span.h"
+
 namespace max_matrix {
 namespace internal {
 

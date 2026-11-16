@@ -15,11 +15,15 @@
  * calls PrintError().
  */
 
+// MAXMATRIX_DEV_ERROR_DETECT, unless the build sets it with -D.
+#include "MaxMatrixConfig.h"  // IWYU pragma: keep
+#include "MaxMatrixStandardTypes.h"
+
+#if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 #include "MaxMatrixError.h"
 
 namespace max_matrix {
 
-#if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 __attribute__((weak)) void ReportError(__FlashStringHelper const* api,
                                        Error error) {
   PrintError(api, error);
@@ -34,6 +38,6 @@ void PrintError(__FlashStringHelper const* api, Error error) {
   Serial.print(F(": "));
   Serial.println(Status(error).GetErrorText());
 }
-#endif
 
 }  // namespace max_matrix
+#endif

@@ -10,7 +10,15 @@
 
 #include "Text.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "Font/Font.h"
+#include "Matrix/Panel.h"
+#include "MaxMatrixAttributes.h"
+#include "MaxMatrixError.h"
 #include "Utility/Byte.h"
+#include "Utility/span.h"
 
 namespace max_matrix {
 namespace internal {
