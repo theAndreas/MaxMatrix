@@ -21,7 +21,7 @@ through.
 | `self_contained_headers.py` | `make headers`: every header compiled on its own |
 | `docs.sh` | `make docs`: Doxygen, failing on a gap |
 | `arduino_lint.sh` | `make arduino-lint` |
-| `common.sh` | What the shell scripts share: the paths, the defaults of `project.sh`, the targets, `select_target()` and the `target_` functions each build system answers. A script of the project's own sources it as well |
+| `common.sh` | What the shell scripts share: the paths, the defaults of `project.sh`, the targets, `select_target()`, the `target_` functions each build system answers, and `download`, which tries a download three times. A script of the project's own sources it as well |
 | `project.sh` | The project's: the targets, each with its board and core, the variants and the hooks |
 | `project.mk` | The project's: its own targets of the `Makefile` |
 | `lib/` | What the scripts above call, a target of none: `arduino_cli.sh`, `cmake.sh` and `platformio.sh`, the build systems of those names, for the scripts that build a target, and `clang_database.py`, which rewrites the database of a CMake or a PlatformIO build for clang-tidy; `doc_indent.py` and `cpplint_house.py`, cpplint with the NOLINT of a check of our own, for `lint.sh`, `tidy_module.sh` and the clang-tidy module in `tidy_module/` for `tidy.sh`, and `tidy_cache.py`, through which it calls clang-tidy and which skips a file that passed before on the same input |

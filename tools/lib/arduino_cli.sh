@@ -37,8 +37,8 @@ arduino_cli_setup() {
   if [[ -n "${ARDUINO_BOARD_URLS}" ]]; then
     urls=(--additional-urls "${ARDUINO_BOARD_URLS}")
   fi
-  arduino-cli core update-index "${urls[@]}"
-  arduino-cli core install "${ARDUINO_CORE[@]}" "${urls[@]}"
+  download arduino-cli core update-index "${urls[@]}"
+  download arduino-cli core install "${ARDUINO_CORE[@]}" "${urls[@]}"
 }
 
 # Prints the bin directory of the avr-gcc that arduino-cli uses for FQBN.

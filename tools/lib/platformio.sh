@@ -32,7 +32,7 @@ platformio_setup() {
     err "Target ${TARGET}: PIO_DIR=${PIO_DIR} holds no platformio.ini."
     return 1
   fi
-  "${PIO[@]}" pkg install --silent -d "${ROOT_DIR}/${PIO_DIR}" -e "${PIO_ENV}"
+  download "${PIO[@]}" pkg install --silent -d "${ROOT_DIR}/${PIO_DIR}" -e "${PIO_ENV}"
 }
 
 # Prints the build folder of a variant.
