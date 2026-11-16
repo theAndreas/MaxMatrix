@@ -197,6 +197,7 @@ main() {
   local found
   local own
   local source
+  local target_sources
   local databases=()
   for target in "${TARGETS[@]}"; do
     select_target "${target}"
@@ -218,15 +219,18 @@ main() {
           mapfile -t own <<< "${found}"
         fi
       fi
-      for source in "${own[@]}"; do
+      # The examples of the target alone: one of another, which stops the compiler for any board
+      # but its own, is no entry of this database.
+      target_files target_sources "${sources[@]}"
+      for source in "${own[@]}" "${target_sources[@]}"; do
         compiled["${source}"]=1
       done
       echo "clang-tidy, ${label}:"
-      run_tidy "${dir}" '' "${sources[@]}" "${own[@]}" "${headers[@]}" || failed=1
+      run_tidy "${dir}" '' "${target_sources[@]}" "${own[@]}" "${headers[@]}" || failed=1
     done
   done
   if ((!database_only)); then
-    for source in "${platform_sources[@]}"; do
+    for source in "${platform_sources[@]}" "${sources[@]}"; do
       if [[ -z "${compiled[${source}]:-}" ]]; then
         err "${source} is compiled by no target of tools/project.sh, so clang-tidy never reads it."
         failed=1

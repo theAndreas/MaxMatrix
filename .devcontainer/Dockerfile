@@ -86,9 +86,10 @@ RUN ARCH="$(dpkg --print-architecture)" && \
     rm /tmp/gh.deb
 
 # uv makes the environment of the Python tools from pyproject.toml and uv.lock, in the
-# workspace's .venv, on the first `uv run` or with `uv sync --frozen` when the container is
-# created: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff and copier,
-# at the versions CI checks with. This ARG is the one place uv's version is written:
+# workspace's .venv-devcontainer (UV_PROJECT_ENVIRONMENT in shared/devcontainer-feature.json),
+# on the first `uv run` or with `uv sync --frozen` when the container is created: clang-format,
+# clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff and copier, at the versions CI checks
+# with. This ARG is the one place uv's version is written:
 # .github/actions/uv-sync reads it for CI. Pinned with its published checksum, as the tools
 # above.
 ARG UV_VERSION=0.12.0

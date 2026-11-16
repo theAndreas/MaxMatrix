@@ -17,7 +17,7 @@ another container is lost with that container.
 | `simavr` | `examples/SelfCheck` as the board runs it: `tools/self_check.sh` |
 | `g++`, `gdb` (from the base image) | the tests on the host, and what `tools/project.sh` prepares |
 | `cmake`, `ninja`, GoogleTest | the tests on the host: `cmake --workflow --preset default` |
-| `uv` | the Python tools that `uv.lock` pins, in `.venv`: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff, copier |
+| `uv` | the Python tools that `uv.lock` pins, in `.venv-devcontainer`: clang-format, clang-tidy, cpplint, gcovr, shellcheck, actionlint, ruff, copier |
 | `clang` | the tests a second time, by another compiler: `make clang` |
 | `clangd` | IntelliSense, see below |
 | LLVM's headers, in `/opt/llvm-23/include` | the checks of our own, `house-*`, a module that `tools/lib/tidy_module.sh` builds and `tools/tidy.sh` loads |
@@ -60,6 +60,12 @@ or `tools/tidy.sh --database-only` again. clangd inserts no includes: a sketch i
 clangd does not load the module of the checks of our own, `house-*`: those findings come from
 `make tidy` alone. The module's own sources in `tools/lib/tidy_module/` are read against LLVM's
 headers, without the checks of `.clang-tidy`, which are the library's rules and not LLVM's.
+
+uv makes the Python tools' environment in `.venv-devcontainer`, which `UV_PROJECT_ENVIRONMENT` in
+`shared/devcontainer-feature.json` names, not in `.venv`: the workspace is the host's folder, and a
+`.venv` that uv made on the host names the host's paths in its scripts. uv takes such an
+environment as current, and the tools fail to start (`Failed to spawn: clang-tidy`). A `.venv` in
+the workspace is the host's, which the container leaves alone.
 
 clangd comes from PyPI at 22.1.1, the newest there, one behind the clang-tidy 23 of CI, which stays
 the measure. The package wraps the binary in a Python script whose interpreter would lie in root's

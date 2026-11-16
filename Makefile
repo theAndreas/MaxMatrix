@@ -120,8 +120,8 @@ docs: ## The reference from the Doxygen blocks, failing on a gap
 	tools/docs.sh
 
 # What git has, tracked or new, copied into build/arduino-lint/<name>: the Library Manager sees
-# the repository, not the working tree with its build/ and .venv, whose links arduino-lint would
-# report.
+# the repository, not the working tree with its build/ and uv's environments, whose links
+# arduino-lint would report.
 arduino-lint: ## The rules of the Arduino Library Manager
 	tools/arduino_lint.sh
 

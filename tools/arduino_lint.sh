@@ -5,10 +5,10 @@
 #
 # Checks the library against the rules of the Arduino Library Manager, as arduino-lint does in
 # CI. Not the working tree: the Library Manager sees the repository, and the working tree has
-# build/ and .venv beside it, whose links arduino-lint reports as a library's. So what git has,
-# tracked or new and not ignored, is copied into a folder of the library's name in build/, and
-# that is checked. CI runs it as a developer does, through `make arduino-lint`, with arduino-lint
-# installed by the action arduino-lint-setup at the dev container's version.
+# build/ and uv's environments beside it, whose links arduino-lint reports as a library's. So
+# what git has, tracked or new and not ignored, is copied into a folder of the library's name in
+# build/, and that is checked. CI runs it as a developer does, through `make arduino-lint`, with
+# arduino-lint installed by the action arduino-lint-setup at the dev container's version.
 
 set -euo pipefail
 
