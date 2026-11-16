@@ -16,8 +16,14 @@
 #include <avr_ioport.h>
 #include <avr_spi.h>
 #include <avr_uart.h>
+#include <sim_avr.h>
+#include <sim_avr_types.h>
+#include <sim_elf.h>
+#include <sim_io.h>
+#include <sim_irq.h>
 #include <sim_time.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "Arduino.h"

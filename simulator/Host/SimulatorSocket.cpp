@@ -9,12 +9,15 @@
 
 #include "SimulatorSocket.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/socket.h>
-#include <sys/time.h>
+#include <sys/time.h>  // IWYU pragma: keep: timeval, which glibc declares in bits/
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <string>

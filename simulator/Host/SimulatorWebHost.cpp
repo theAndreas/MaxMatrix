@@ -13,9 +13,13 @@
 #include "SimulatorWebHost.h"
 
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include <array>
 #include <fstream>
 #include <sstream>
 #include <string>

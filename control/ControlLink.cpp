@@ -9,11 +9,15 @@
 
 #include "ControlLink.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "ControlCommand.h"
+#include "ControlPort.h"
 
 ControlLink::ControlLink(ControlPort& port) : port_{port} {}
 

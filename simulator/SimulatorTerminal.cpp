@@ -10,10 +10,15 @@
 
 #include "SimulatorTerminal.h"
 
+#include <stdint.h>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include "Arduino.h"
+#include "SimulatorPanel.h"
 
 namespace {
 

@@ -21,6 +21,8 @@
  * of an example that moves.
  */
 
+#include <stdint.h>
+
 #include <chrono>
 #include <iostream>
 #include <thread>

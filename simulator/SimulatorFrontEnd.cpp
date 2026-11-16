@@ -9,10 +9,14 @@
 
 #include "SimulatorFrontEnd.h"
 
+#include <stdint.h>
+
 #include <iostream>
 #include <string>
 
 #include "Arduino.h"
+#include "SimulatorOptions.h"
+#include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
 
 SimulatorFrontEnd::SimulatorFrontEnd() = default;

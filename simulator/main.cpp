@@ -30,7 +30,7 @@
  * prints, it gets back.
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <chrono>

@@ -13,7 +13,6 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #else
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -21,6 +20,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
+#include <stddef.h>
+#include <stdint.h>
+
 #include <array>
 #include <string>
 

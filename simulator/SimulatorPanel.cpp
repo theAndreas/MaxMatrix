@@ -12,8 +12,14 @@
 
 #include "SimulatorPanel.h"
 
+#include <stdint.h>
+
 #include <array>
 #include <string>
+
+#include "Arduino.h"
+#include "Max7219.h"
+#include "MaxMatrixConfig.h"
 
 /* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1
  * from kMax7219Wirings */
