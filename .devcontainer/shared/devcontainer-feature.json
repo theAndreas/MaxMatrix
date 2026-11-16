@@ -76,6 +76,11 @@
             "type": "volume"
         },
         {
+            "source": "max_matrix-ccache",
+            "target": "/home/vscode/.cache/ccache",
+            "type": "volume"
+        },
+        {
             "source": "max_matrix-codex",
             "target": "/home/vscode/.codex",
             "type": "volume"

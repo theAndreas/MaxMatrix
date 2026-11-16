@@ -132,15 +132,17 @@ COPY llvm-headers.sh /tmp/llvm-headers.sh
 RUN /tmp/llvm-headers.sh "${LLVM_MAJOR}" "/opt/llvm-${LLVM_MAJOR}/include" && \
     rm /tmp/llvm-headers.sh
 
-# The Arduino data directory and uv's cache are named volumes: the AVR core and its
+# The Arduino data directory, uv's cache and ccache's are named volumes: the AVR core and its
 # toolchain, and the checkers from PyPI, are downloaded on first use, and the volumes are
-# what keep a rebuild from fetching them again. An empty named volume takes its ownership
+# what keep a rebuild from fetching them again; ccache's keeps what the host builds compiled,
+# which a rebuild would otherwise throw away. An empty named volume takes its ownership
 # from the path it covers, so the path has to exist and belong to the remote user first,
 # or nothing can write into it. `install -d` gives only the last component to the owner and
 # creates missing parents as root, so ~/.cache is named on its own: a base image without it
 # would otherwise leave it to root, and arduino-cli could not put its build cache there.
 RUN install -d -o vscode -g vscode -m 0755 /home/vscode/.arduino15 && \
-    install -d -o vscode -g vscode -m 0755 /home/vscode/.cache /home/vscode/.cache/uv
+    install -d -o vscode -g vscode -m 0755 /home/vscode/.cache /home/vscode/.cache/uv \
+      /home/vscode/.cache/ccache
 
 # The same arrangement for the logins a rebuild would otherwise throw away: Codex and Claude
 # Code, whose extensions the shared feature installs, and gh, which every push and every pull request

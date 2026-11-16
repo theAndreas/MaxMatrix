@@ -1050,7 +1050,7 @@ A first look found, besides those two:
   Where include-cleaner takes for a name's provider a header that a public one includes,
   `IgnoreHeaders` leaves it out, as the template does for `avr/io*.h`, decided on 2026-11-16
   against a NOLINT on each of some 20 lines: `avr/common.h`, where `SREG` is, which the
-  template's pattern misses as well and is the template's to take up; glibc's `bits/` and
+  template's pattern missed as well and has since v0.12.1; glibc's `bits/` and
   `sys/poll.h`, Linux's `asm-generic/`, and the GTK port of wxWidgets. Six includes that the
   check takes for unused stay, with `// IWYU pragma: keep`: four of wxWidgets that only include
   the port's header, `<sys/time.h>` for `timeval`, and `MaxMatrixConfig.h` in

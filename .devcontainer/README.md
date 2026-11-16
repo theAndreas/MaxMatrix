@@ -75,7 +75,8 @@ home; `/usr/local/bin/clangd` links to the binary itself.
 
 The Arduino core and its toolchain, and the checkers uv fetches, are not part of the image. They live
 in the named volumes `max_matrix-arduino15` and `max_matrix-uv-cache`, so that a rebuild does not download them
-again. Three more carry a login across a rebuild: `max_matrix-codex` at `/home/vscode/.codex`,
+again. What ccache compiled for the host builds lives in `max_matrix-ccache` at `/home/vscode/.cache/ccache`, so
+that the first build after a rebuild takes it from there rather than compiling everything again. Three more carry a login across a rebuild: `max_matrix-codex` at `/home/vscode/.codex`,
 `max_matrix-claude` at `/home/vscode/.claude` (with `CLAUDE_CONFIG_DIR` pointing there, so that
 Claude Code's `.claude.json` lands in it too) and `max_matrix-gh` at `/home/vscode/.config/gh`, all at
 mode 0700, as `gh` refuses a config directory others can enter. Those three hold credentials: do not share, export or remove one unless the login should go.

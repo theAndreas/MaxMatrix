@@ -103,6 +103,27 @@ err() {
   echo "$*" >&2
 }
 
+# Runs a command that downloads, and again where it fails: a server resets a connection at times,
+# and arduino-cli gives up at once, which failed the dev container's postCreateCommand and
+# everything after it. Three tries, 10 and 20 seconds apart; the third's failure is returned.
+# Arguments:
+#   the command and its arguments
+download() {
+  local pause=10
+  local try
+  local status
+  for try in 1 2 3; do
+    status=0
+    "$@" || status=$?
+    if ((status == 0 || try == 3)); then
+      return "${status}"
+    fi
+    err "Failed with ${status}: $*. Again in ${pause} s (try ${try} of 3)."
+    sleep "${pause}"
+    pause=$((pause * 2))
+  done
+}
+
 # Makes the target named the one the tools work on: TARGET is its name, and the settings of
 # TARGET_SETTINGS are those of tools/project.sh with what target_settings() sets for it. Fails on
 # a target TARGETS does not name or whose name is no folder's, and on a build system the template
