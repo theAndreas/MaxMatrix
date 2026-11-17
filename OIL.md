@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1206,6 +1206,18 @@ column and row of `ControlDotPanel`, which `ControlCommandTest` and the order of
 `simulator/web` pins for the page and a 404, the page's now as well. `SimulatorWeb::ConvertToHex(value,
 digits)` is left too: `SimulatorTest` pins the call that escapes a char, the frame log of the page
 only the eye.
+
+As reviewed for the chapter Types on 2026-11-17, its review parts T-1, T-8, T-13, T-14, T-18, T-19
+and T-23, T-17 being done above. As built for the library: a char is stored and the length counted
+in two statements (T-14); `internal::Panel::ChangeMapping()` walks its pairs of modules by one
+counter rather than two in one declaration (T-13, T-14); the header of a font is read by one
+function into a struct, where `CheckFont()` and `GetGlyph()` each assigned four variables declared
+ahead, which also takes a copy the chapter Functions missed (T-13, FN-13); `Command` passes a
+command with a value on in a function of its own, where its status was declared ahead (T-13); a
+condition of three parts in `CheckFont()` and a sum in that of `CharShiftTask()` are named steps
+(T-18); and the `auto` of a port register says why the type cannot be written (T-8). On the Uno,
+in every variant, every example 8 bytes of flash smaller, Shutdown 12 and SerialControl 22; the
+same RAM.
 
 ### 42 A newer avr-gcc as a cross-check
 

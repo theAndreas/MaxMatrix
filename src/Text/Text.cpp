@@ -133,14 +133,16 @@ bool Text::CharShiftTask(Panel& panel) {
   panel.ShiftLeft(Byte{});
   sprite_shift_counter_++;
 
+  /* the step after the char and the spaces behind it have come in */
+  auto const done{
+      static_cast<uint16_t>(glyph_.columns.size() + space_between_chars_ + 1)};
+
   /* if sprite is completed set only spaces */
   if (sprite_shift_counter_ <= glyph_.columns.size()) {
     X const left{static_cast<int16_t>(panel.GetNumberOfColumns() -
                                       sprite_shift_counter_)};
     SetGlyph(panel, Point{left, Y{0}}, glyph_);
-  } else if (sprite_shift_counter_ ==
-             static_cast<uint16_t>(glyph_.columns.size() +
-                                   space_between_chars_ + 1)) {
+  } else if (sprite_shift_counter_ == done) {
     /* if sprite and spaces are completed task has finished */
     sprite_shift_counter_ = kShiftIdle;
     return false;

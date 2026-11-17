@@ -418,8 +418,12 @@ void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
   MatrixOrientation const old_matrix_orientation{matrix_orientation_};
   ModuleType const old_module_type{module_type_};
 
-  for (int16_t left{0}, right{static_cast<int16_t>(GetNumberOfModules() - 1)};
-       left <= right; left++, right--) {
+  uint8_t const modules{GetNumberOfModules()};
+  // a module in the middle of an odd chain pairs with itself
+  auto const pairs{static_cast<uint8_t>((modules + 1) / 2)};
+
+  for (uint8_t left{0}; left < pairs; left++) {
+    auto const right{static_cast<uint8_t>(modules - 1 - left)};
     uint8_t const left_column{
         static_cast<uint8_t>(left * kColumnNumberOfModule)};
     uint8_t const right_column{
