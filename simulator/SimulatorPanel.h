@@ -22,7 +22,10 @@
 #include "MaxMatrixConfig.h"
 
 /* SimulatorPanel Parameter */
-constexpr char kSimulatorPanelDefaultWiring[] = "FC16";
+// M-4: defined once, as its address is taken. T-20: a text, which the check
+// takes as one only where it is defined with its quotes.
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
+extern char const kSimulatorPanelDefaultWiring[];
 /* about 30 pictures a second; neither a terminal nor a page keeps up with every
  * frame */
 constexpr uint32_t kSimulatorPanelRedrawInterval{33u};

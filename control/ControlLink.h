@@ -21,7 +21,10 @@
 
 /* ControlLink Parameter */
 /* what SerialControl says at the end of setup() */
-constexpr char kControlLinkReady[] = "ready";
+// M-4: defined once, as its address is taken. T-20: a text, which the check
+// takes as one only where it is defined with its quotes.
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
+extern char const kControlLinkReady[];
 /* the longest line kept whole; a sketch that never ends a line is shown in
  * pieces of this length */
 constexpr size_t kControlLinkMaxLineLength{256u};

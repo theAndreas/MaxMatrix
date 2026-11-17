@@ -77,6 +77,9 @@ enum class State : uint8_t {
  * `loop()` and takes a step only when the shift interval has passed since the
  * last one, so that no sketch has to time it.
  *
+ * A Matrix takes 43 bytes of RAM on the Uno with bit banging and 39 with SPI,
+ * besides its buffer of eight bytes per module: a MatrixOf<4> takes 75 and 71.
+ *
  * \note With `MAXMATRIX_DEV_ERROR_DETECT` at `STD_ON`, every function here that
  *       fails reports its name and the error to ReportError().
  */

@@ -19,6 +19,8 @@
 #include "ControlCommand.h"
 #include "ControlPort.h"
 
+char const kControlLinkReady[] = "ready";
+
 ControlLink::ControlLink(ControlPort& port) : port_{port} {}
 
 void ControlLink::Begin(bool wait_for_ready) {
