@@ -31,43 +31,6 @@ namespace internal {
  * which Matrix::ShiftTask() makes.
  */
 class Text {
- private:
-  /*
-   * Every function that draws is given the panel rather than the class keeping
-   * a reference to it. A reference costs two bytes of RAM, and avr-gcc no
-   * longer sees through it that the panel is the one inside the global
-   * Matrix of the sketch: ScrollText was 86 bytes of flash larger with it.
-   */
-
-  /*
-   * The columns of a char shifted in so far, its space included: kShiftIdle
-   * while no char is shifting, and kShiftStart when one begins. A count rather
-   * than a state, so the two values are constants, not an enum.
-   */
-  static constexpr uint16_t kShiftIdle{0};
-  static constexpr uint16_t kShiftStart{1};
-
-  /*
-   * The font every char is drawn in, empty for kDefaultFont: only a
-   * function that draws a char names the default font then, and a sketch that
-   * draws none does not link its 614 bytes, as Animation and Sprites did with
-   * the default font set here. And the char that shifts in, which lies in the
-   * font.
-   */
-  span<uint8_t const> font_;
-  Glyph glyph_{};
-  /* 16 bits, as a char and its space take up to 255 + 255 columns */
-  uint16_t sprite_shift_counter_{kShiftIdle};
-  uint8_t space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
-  /* the text that shifts in, the position of its next char, and whether it
-   * starts over after its last char */
-  span<char const> text_;
-  size_t position_{0};
-  bool repeat_{false};
-
-  void ReadNextChar();
-  static span<uint8_t const> DefaultFont();
-
  public:
   /*! \brief Makes a text with nothing to shift. */
   Text();
@@ -194,6 +157,43 @@ class Text {
    * \return True while the text is still shifting.
    */
   bool StringShiftTask(Panel& panel);
+
+ private:
+  /*
+   * Every function that draws is given the panel rather than the class keeping
+   * a reference to it. A reference costs two bytes of RAM, and avr-gcc no
+   * longer sees through it that the panel is the one inside the global
+   * Matrix of the sketch: ScrollText was 86 bytes of flash larger with it.
+   */
+
+  /*
+   * The columns of a char shifted in so far, its space included: kShiftIdle
+   * while no char is shifting, and kShiftStart when one begins. A count rather
+   * than a state, so the two values are constants, not an enum.
+   */
+  static constexpr uint16_t kShiftIdle{0};
+  static constexpr uint16_t kShiftStart{1};
+
+  void ReadNextChar();
+  static span<uint8_t const> DefaultFont();
+
+  /*
+   * The font every char is drawn in, empty for kDefaultFont: only a
+   * function that draws a char names the default font then, and a sketch that
+   * draws none does not link its 614 bytes, as Animation and Sprites did with
+   * the default font set here. And the char that shifts in, which lies in the
+   * font.
+   */
+  span<uint8_t const> font_;
+  Glyph glyph_{};
+  /* 16 bits, as a char and its space take up to 255 + 255 columns */
+  uint16_t sprite_shift_counter_{kShiftIdle};
+  uint8_t space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
+  /* the text that shifts in, the position of its next char, and whether it
+   * starts over after its last char */
+  span<char const> text_;
+  size_t position_{0};
+  bool repeat_{false};
 };
 
 }  // namespace internal

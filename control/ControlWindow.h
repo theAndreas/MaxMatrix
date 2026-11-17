@@ -48,34 +48,15 @@ class ControlDotPanel;
  * that the two agree.
  *
  * It holds no logic a test would need: the lines are ControlCommand's, the
- * connections ControlLink's, so the window itself is checked by hand.
+ * connections ControlLink's, so the window itself is checked by hand. Derived
+ * from wxFrame, as wxWidgets makes a window of its own (C-8).
  */
 class ControlWindow : public wxFrame {
+ public:
+  /*! \brief Makes the window, with nothing connected. */
+  ControlWindow();
+
  private:
-  ControlSerialPort serial_port_;
-  ControlTcpPort tcp_port_;
-  ControlLink board_link_;
-  ControlLink simulator_link_;
-  wxTimer timer_;
-  std::string last_setting_;
-
-  wxWindow* controls_;
-  wxTextCtrl* text_{};
-  wxStaticText* bytes_left_{};
-  wxButton* send_{};
-  wxCheckBox* shift_{};
-  wxSpinCtrl* space_{};
-  wxSlider* intensity_{};
-  wxSlider* speed_{};
-  ControlDotPanel* dots_{};
-  wxComboBox* serial_port_name_{};
-  wxButton* board_button_{};
-  wxStaticText* board_status_{};
-  wxSpinCtrl* tcp_port_number_{};
-  wxButton* simulator_button_{};
-  wxStaticText* simulator_status_{};
-  wxTextCtrl* log_{};
-
   void MakeMenu();
   MAXMATRIX_NODISCARD wxWindow* MakeMatrix(wxWindow* parent);
   MAXMATRIX_NODISCARD wxWindow* MakeText(wxWindow* parent);
@@ -106,9 +87,29 @@ class ControlWindow : public wxFrame {
   void Log(wxString const& text);
   MAXMATRIX_NODISCARD static wxString ConvertToText(std::string const& line);
 
- public:
-  /*! \brief Makes the window, with nothing connected. */
-  ControlWindow();
+  ControlSerialPort serial_port_;
+  ControlTcpPort tcp_port_;
+  ControlLink board_link_;
+  ControlLink simulator_link_;
+  wxTimer timer_;
+  std::string last_setting_;
+
+  wxWindow* controls_;
+  wxTextCtrl* text_{};
+  wxStaticText* bytes_left_{};
+  wxButton* send_{};
+  wxCheckBox* shift_{};
+  wxSpinCtrl* space_{};
+  wxSlider* intensity_{};
+  wxSlider* speed_{};
+  ControlDotPanel* dots_{};
+  wxComboBox* serial_port_name_{};
+  wxButton* board_button_{};
+  wxStaticText* board_status_{};
+  wxSpinCtrl* tcp_port_number_{};
+  wxButton* simulator_button_{};
+  wxStaticText* simulator_status_{};
+  wxTextCtrl* log_{};
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLWINDOW_H_

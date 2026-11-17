@@ -33,40 +33,6 @@ constexpr uint32_t kSimulatorOptionsMaxRunFor{UINT32_MAX}; /* milliseconds */
  * sketch is built into refuses it.
  */
 class SimulatorOptions {
- private:
-  std::string wiring_name_;
-  bool upside_down_{false};
-  bool web_{false};
-  uint16_t port_{kSimulatorOptionsDefaultPort};
-  uint16_t tcp_port_{0};
-  uint32_t run_for_{0};
-  char const* expect_file_{nullptr};
-  char const* elf_file_{nullptr};
-  std::string serial_input_;
-
-  /* a number read from the command line, and whether it is one the option
-   * takes */
-  template <typename Number>
-  struct Converted {
-    bool valid;
-    Number value;
-  };
-
-  bool ParseOption(std::vector<char const*> const& arguments, size_t& index);
-  bool ParseValue(std::string const& option, char const* value);
-  MAXMATRIX_NODISCARD static Converted<uint16_t> ConvertToPort(
-      char const* text);
-  MAXMATRIX_NODISCARD static Converted<uint32_t> ConvertToRunFor(
-      char const* text);
-  // Keeps `converted` in `option` if it is valid, and says whether it is.
-  template <typename Number>
-  static bool Keep(Converted<Number> converted, Number& option) {
-    if (converted.valid) {
-      option = converted.value;
-    }
-    return converted.valid;
-  }
-
  public:
   /*!
    * \brief Makes the options a simulator has without any on its command line.
@@ -134,6 +100,40 @@ class SimulatorOptions {
    * \param[in] program The program's name, `argv[0]`.
    */
   static void PrintUsage(char const* program);
+
+ private:
+  /* a number read from the command line, and whether it is one the option
+   * takes */
+  template <typename Number>
+  struct Converted {
+    bool valid;
+    Number value;
+  };
+
+  bool ParseOption(std::vector<char const*> const& arguments, size_t& index);
+  bool ParseValue(std::string const& option, char const* value);
+  MAXMATRIX_NODISCARD static Converted<uint16_t> ConvertToPort(
+      char const* text);
+  MAXMATRIX_NODISCARD static Converted<uint32_t> ConvertToRunFor(
+      char const* text);
+  // Keeps `converted` in `option` if it is valid, and says whether it is.
+  template <typename Number>
+  static bool Keep(Converted<Number> converted, Number& option) {
+    if (converted.valid) {
+      option = converted.value;
+    }
+    return converted.valid;
+  }
+
+  std::string wiring_name_;
+  bool upside_down_{false};
+  bool web_{false};
+  uint16_t port_{kSimulatorOptionsDefaultPort};
+  uint16_t tcp_port_{0};
+  uint32_t run_for_{0};
+  char const* expect_file_{nullptr};
+  char const* elf_file_{nullptr};
+  std::string serial_input_;
 };
 
 #endif  // MAXMATRIX_SIMULATOR_SIMULATOROPTIONS_H_

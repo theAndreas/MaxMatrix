@@ -44,6 +44,17 @@ SimulatorWebHost::SimulatorWebHost() : listener_{kSimulatorSocketNone} {
   }
 }
 
+SimulatorWebHost::~SimulatorWebHost() {
+  for (int const client : clients_) {
+    if (client != kSimulatorSocketNone) {
+      SimulatorSocket::Close(client);
+    }
+  }
+  if (listener_ != kSimulatorSocketNone) {
+    SimulatorSocket::Close(listener_);
+  }
+}
+
 bool SimulatorWebHost::Begin(uint16_t port, char const* page_path) {
   page_path_ = page_path;
   listener_ = SimulatorSocket::OpenListener(port);

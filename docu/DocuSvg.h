@@ -50,12 +50,6 @@ struct DocuFont {
 
 /*! \brief A picture as SVG text, for the pictures in docu/. */
 class DocuSvg {
- private:
-  uint16_t width_;
-  uint16_t height_;
-  int32_t top_;
-  std::ostringstream body_;
-
  public:
   /*!
    * \brief Makes an empty picture with a white background.
@@ -109,6 +103,12 @@ class DocuSvg {
    */
   void AddArrow(DocuPoint from, int32_t to_x, int32_t thickness,
                 char const* colour);
+
+ private:
+  uint16_t width_;
+  uint16_t height_;
+  int32_t top_;
+  std::ostringstream body_;
 };
 
 #endif  // MAXMATRIX_DOCU_DOCUSVG_H_

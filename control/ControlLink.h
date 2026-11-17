@@ -57,26 +57,6 @@ struct ControlLinkLines {
  * passed on as a line.
  */
 class ControlLink {
- private:
-  std::reference_wrapper<ControlPort> port_;
-  bool ready_{false};
-  /* what has arrived after the last line feed */
-  std::string received_;
-  std::vector<uint8_t> picture_;
-  /*
-   * Whether an answer to picture is due, and since when; picture_asked_at_
-   * holds a time only once the picture has been asked for since Begin(), so
-   * that the first time it is at once. SerialControl answers in order, so an
-   * answer to a picture asked for before a command shows the matrix before it,
-   * and is dropped as stale.
-   */
-  bool picture_asked_{false};
-  bool picture_stale_{false};
-  bool picture_timed_{false};
-  uint32_t picture_asked_at_{0};
-
-  MAXMATRIX_NODISCARD bool Take(std::string const& line);
-
  public:
   /*!
    * \brief Makes a link over `port`, which is not ready until Begin().
@@ -139,6 +119,26 @@ class ControlLink {
    * \return The lines that have arrived, and whether the port is still open.
    */
   MAXMATRIX_NODISCARD ControlLinkLines Task();
+
+ private:
+  MAXMATRIX_NODISCARD bool Take(std::string const& line);
+
+  std::reference_wrapper<ControlPort> port_;
+  bool ready_{false};
+  /* what has arrived after the last line feed */
+  std::string received_;
+  std::vector<uint8_t> picture_;
+  /*
+   * Whether an answer to picture is due, and since when; picture_asked_at_
+   * holds a time only once the picture has been asked for since Begin(), so
+   * that the first time it is at once. SerialControl answers in order, so an
+   * answer to a picture asked for before a command shows the matrix before it,
+   * and is dropped as stale.
+   */
+  bool picture_asked_{false};
+  bool picture_stale_{false};
+  bool picture_timed_{false};
+  uint32_t picture_asked_at_{0};
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLLINK_H_

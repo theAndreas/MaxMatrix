@@ -31,26 +31,6 @@ constexpr size_t kSimulatorWebFrameLogLength{16u};
  * Every function that needs the panel is handed it.
  */
 class SimulatorWeb {
- private:
-  // Every function that needs the panel is handed it, as
-  // max_matrix::internal::Text is, rather than the class keeping a reference:
-  // the panel belongs to the simulator, and the terminal is handed it too.
-
-  SimulatorWebHost host_;
-  /* the frames since the page was last sent the panel, as hex pairs, one string
-   * per frame */
-  std::vector<std::string> frame_log_;
-  int32_t logged_frames_{0};
-  /* what the sketch printed since the page was last sent the panel */
-  std::string serial_output_;
-
-  void LogFrame();
-  static void Command(SimulatorPanel& panel, std::string const& message);
-  MAXMATRIX_NODISCARD std::string GetMessage(SimulatorPanel const& panel) const;
-  MAXMATRIX_NODISCARD std::string GetLog() const;
-  MAXMATRIX_NODISCARD static std::string GetIntensities(
-      SimulatorPanel const& panel);
-
  public:
   /*! \brief Makes a web view that has logged no frame yet. */
   SimulatorWeb();
@@ -94,6 +74,26 @@ class SimulatorWeb {
    */
   MAXMATRIX_NODISCARD static std::string ConvertToJsonString(
       std::string const& text);
+
+ private:
+  void LogFrame();
+  static void Command(SimulatorPanel& panel, std::string const& message);
+  MAXMATRIX_NODISCARD std::string GetMessage(SimulatorPanel const& panel) const;
+  MAXMATRIX_NODISCARD std::string GetLog() const;
+  MAXMATRIX_NODISCARD static std::string GetIntensities(
+      SimulatorPanel const& panel);
+
+  // Every function that needs the panel is handed it, as
+  // max_matrix::internal::Text is, rather than the class keeping a reference:
+  // the panel belongs to the simulator, and the terminal is handed it too.
+
+  SimulatorWebHost host_;
+  /* the frames since the page was last sent the panel, as hex pairs, one string
+   * per frame */
+  std::vector<std::string> frame_log_;
+  int32_t logged_frames_{0};
+  /* what the sketch printed since the page was last sent the panel */
+  std::string serial_output_;
 };
 
 #endif  // MAXMATRIX_SIMULATOR_WEB_SIMULATORWEB_H_

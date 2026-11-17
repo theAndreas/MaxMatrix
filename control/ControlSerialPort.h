@@ -30,15 +30,6 @@
  * say `ready`.
  */
 class ControlSerialPort final : public ControlPort {
- private:
-#ifdef _WIN32
-  void* handle_;
-#else
-  int descriptor_{-1};
-
-  MAXMATRIX_NODISCARD bool Configure(uint32_t baud_rate);
-#endif
-
  public:
   /*! \brief Makes a port that is closed until Open(). */
   ControlSerialPort();
@@ -49,6 +40,9 @@ class ControlSerialPort final : public ControlPort {
   // A copy would close the port of the original a second time.
   ControlSerialPort(ControlSerialPort const&) = delete;
   ControlSerialPort& operator=(ControlSerialPort const&) = delete;
+  // Nor a move, which nothing needs.
+  ControlSerialPort(ControlSerialPort&&) = delete;
+  ControlSerialPort& operator=(ControlSerialPort&&) = delete;
 
   /*!
    * \brief Opens the port `name` at `baud_rate`.
@@ -78,6 +72,15 @@ class ControlSerialPort final : public ControlPort {
   bool Write(std::string const& data) override;
   bool Read(std::string& data) override;
   void Close() override;
+
+ private:
+#ifdef _WIN32
+  void* handle_;
+#else
+  int descriptor_{-1};
+
+  MAXMATRIX_NODISCARD bool Configure(uint32_t baud_rate);
+#endif
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLSERIALPORT_H_

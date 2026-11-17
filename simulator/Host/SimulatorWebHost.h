@@ -33,28 +33,18 @@ constexpr uint8_t kSimulatorWebHostMaxClients{4u};
  * sketch.
  */
 class SimulatorWebHost {
- private:
-  int listener_;
-  std::array<int, kSimulatorWebHostMaxClients> clients_{};
-  std::array<std::string, kSimulatorWebHostMaxClients> pending_;
-  char const* page_path_{nullptr};
-
-  void AcceptClients();
-  MAXMATRIX_NODISCARD std::vector<std::string> ReadClient(uint8_t slot);
-  MAXMATRIX_NODISCARD bool AnswerRequest(int socket,
-                                         std::string const& request);
-  void SendPage(int socket);
-  MAXMATRIX_NODISCARD uint8_t FindFreeSlot() const;
-  void DropClient(uint8_t slot);
-  MAXMATRIX_NODISCARD static std::string ReadRequest(int socket);
-  MAXMATRIX_NODISCARD static SimulatorFoundText GetPath(
-      std::string const& request);
-  static void SendResponse(int socket, char const* status,
-                           char const* content_type, std::string const& body);
-
  public:
   /*! \brief Makes a host that listens nowhere until Begin(). */
   SimulatorWebHost();
+
+  /*! \brief Closes every WebSocket and the port. */
+  ~SimulatorWebHost();
+
+  // A copy would close the sockets of the original a second time.
+  SimulatorWebHost(SimulatorWebHost const&) = delete;
+  SimulatorWebHost& operator=(SimulatorWebHost const&) = delete;
+  SimulatorWebHost(SimulatorWebHost&&) = delete;
+  SimulatorWebHost& operator=(SimulatorWebHost&&) = delete;
 
   /*!
    * \brief Opens the port on localhost and starts listening.
@@ -88,6 +78,25 @@ class SimulatorWebHost {
    * \param[in] text The message.
    */
   void Broadcast(std::string const& text);
+
+ private:
+  void AcceptClients();
+  MAXMATRIX_NODISCARD std::vector<std::string> ReadClient(uint8_t slot);
+  MAXMATRIX_NODISCARD bool AnswerRequest(int socket,
+                                         std::string const& request);
+  void SendPage(int socket);
+  MAXMATRIX_NODISCARD uint8_t FindFreeSlot() const;
+  void DropClient(uint8_t slot);
+  MAXMATRIX_NODISCARD static std::string ReadRequest(int socket);
+  MAXMATRIX_NODISCARD static SimulatorFoundText GetPath(
+      std::string const& request);
+  static void SendResponse(int socket, char const* status,
+                           char const* content_type, std::string const& body);
+
+  int listener_;
+  std::array<int, kSimulatorWebHostMaxClients> clients_{};
+  std::array<std::string, kSimulatorWebHostMaxClients> pending_;
+  char const* page_path_{nullptr};
 };
 
 #endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBHOST_H_

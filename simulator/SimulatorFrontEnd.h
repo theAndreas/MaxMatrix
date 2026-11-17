@@ -27,12 +27,6 @@
  * page as well, and with `--tcp` to the control program.
  */
 class SimulatorFrontEnd {
- private:
-  SimulatorWeb web_;
-  SimulatorSerialHost serial_host_;
-  bool web_on_{false};
-  bool terminal_on_{false};
-
  public:
   /*! \brief Makes a front end that shows nothing until Begin(). */
   SimulatorFrontEnd();
@@ -62,6 +56,12 @@ class SimulatorFrontEnd {
    * \param[in] now The time of the sketch, in milliseconds.
    */
   void Follow(SimulatorPanel& panel, uint32_t now);
+
+ private:
+  SimulatorWeb web_;
+  SimulatorSerialHost serial_host_;
+  bool web_on_{false};
+  bool terminal_on_{false};
 };
 
 #endif  // MAXMATRIX_SIMULATOR_SIMULATORFRONTEND_H_

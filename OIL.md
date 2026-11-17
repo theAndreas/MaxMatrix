@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1232,6 +1232,19 @@ range-`for` names its element's type (T-8), and the counter of lit LEDs in `Docu
 as `lround()` did, which takes its `double` (H-7). Left for the compiler that is not in the dev
 container: the Windows half of the serial port declares some variables ahead, which only got
 their initializers here.
+
+As reviewed for the chapter Classes on 2026-11-17, its review parts C-2, C-3, C-6, C-8, C-11 and
+C-13, in the library and the host code. Every class but those of `src/Utility/` began with its
+private members; all are in the order of C-2 now, public, protected, private, and in each types
+and constants, constructors, functions, data members, the text moved and not changed. A class
+that declares a special member declares all six (C-3): the moves are deleted where the copies
+were, and `Matrix` and `Batch` delete their default constructor; `SimulatorWebHost`, which held
+sockets without a destructor and so kept its port taken until the program ended, closes them
+now, which a test checks. The virtual functions of `ControlPort` give a reason C-6 takes, the
+cost that does not count on a PC and one class for both kinds of port, not a test's; `MatrixOf`
+and the control program's windows say why they derive (C-8). Nothing to change for C-11, as no
+member is `mutable`, nor for C-13, as the operators are the bitwise ones of `Byte` and the
+comparisons of `Status` and `Result`.
 
 ### 42 A newer avr-gcc as a cross-check
 

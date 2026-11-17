@@ -81,27 +81,6 @@ enum class State : uint8_t {
  *       fails reports its name and the error to ReportError().
  */
 class Matrix {
- private:
-  internal::Panel panel_;
-  internal::Text text_;
-  State state_{State::kNone};
-  bool auto_update_{true};
-  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
-  uint32_t last_shift_{0};
-
-  // Sends what changed, if auto update is on; every public function that draws
-  // ends with it.
-  void UpdateIfAuto() {
-    if (auto_update_) {
-      Update();
-    }
-  }
-  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
-    UpdateIfAuto();
-    return status;
-  }
-  void StartShift(State shift_state);
-
  public:
   /*!
    * \brief Makes a matrix on the chain at these pins, in the buffer given, and
@@ -132,11 +111,20 @@ class Matrix {
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
 
+  /*! \brief No matrix without its pins and its buffer. */
+  Matrix() = delete;
+
   /*! \brief Not copyable: the copy would draw into the same buffer. */
   Matrix(Matrix const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
   Matrix& operator=(Matrix const&) = delete;
+
+  /*! \brief Not movable: a Batch or a Command may hold on to the matrix. */
+  Matrix(Matrix&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  Matrix& operator=(Matrix&&) = delete;
 
   /*! \brief Returns the modules of the chain. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
@@ -643,6 +631,27 @@ class Matrix {
     panel_.ShiftDown(fill);
     UpdateIfAuto();
   }
+
+ private:
+  // Sends what changed, if auto update is on; every public function that draws
+  // ends with it.
+  void UpdateIfAuto() {
+    if (auto_update_) {
+      Update();
+    }
+  }
+  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
+    UpdateIfAuto();
+    return status;
+  }
+  void StartShift(State shift_state);
+
+  internal::Panel panel_;
+  internal::Text text_;
+  State state_{State::kNone};
+  bool auto_update_{true};
+  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
+  uint32_t last_shift_{0};
 };
 
 /*!
@@ -668,10 +677,6 @@ class Matrix {
  * that is what Matrix::SetAutoUpdate() and Matrix::Update() are for.
  */
 class Batch {
- private:
-  internal::reference_wrapper<Matrix> matrix_;
-  bool previous_auto_update_;
-
  public:
   /*!
    * \brief Turns auto update of `matrix` off until the end of the block.
@@ -687,11 +692,24 @@ class Batch {
    * on. */
   ~Batch() { matrix_.get().SetAutoUpdate(previous_auto_update_); }
 
+  /*! \brief No batch without the matrix it holds back. */
+  Batch() = delete;
+
   /*! \brief Not copyable: a copy would put auto update back twice. */
   Batch(Batch const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
   Batch& operator=(Batch const&) = delete;
+
+  /*! \brief Not movable: the moved one would put auto update back as well. */
+  Batch(Batch&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  Batch& operator=(Batch&&) = delete;
+
+ private:
+  internal::reference_wrapper<Matrix> matrix_;
+  bool previous_auto_update_;
 };
 
 namespace internal {
@@ -716,7 +734,9 @@ class Buffer {
 // misc-multiple-inheritance, suppressed below: the buffer is a base of its own,
 // so that it is made before the Matrix it is handed to (internal::Buffer); it
 // is private and has no virtual function, so that nothing but the constructor
-// reaches it.
+// reaches it. C-8, as both bases are reused by deriving: the buffer for that
+// order, and Matrix, as a MatrixOf is the matrix a sketch hands wherever one is
+// taken, Command::Feed() and Batch among them, without its length.
 /*!
  * \brief A Matrix with the buffer for a chain of `NumberOfModules` modules.
  *

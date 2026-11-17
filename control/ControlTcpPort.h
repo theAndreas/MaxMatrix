@@ -26,11 +26,6 @@
  * as an end that is gone.
  */
 class ControlTcpPort final : public ControlPort {
- private:
-  // A POSIX descriptor or a Winsock SOCKET, which is an unsigned integer as
-  // wide as a pointer; -1 for none, which is what INVALID_SOCKET is as well.
-  intptr_t socket_;
-
  public:
   /*! \brief Makes a port that is closed until Open(). */
   ControlTcpPort();
@@ -41,6 +36,9 @@ class ControlTcpPort final : public ControlPort {
   // A copy would close the socket of the original a second time.
   ControlTcpPort(ControlTcpPort const&) = delete;
   ControlTcpPort& operator=(ControlTcpPort const&) = delete;
+  // Nor a move, which nothing needs.
+  ControlTcpPort(ControlTcpPort&&) = delete;
+  ControlTcpPort& operator=(ControlTcpPort&&) = delete;
 
   /*!
    * \brief Connects to the simulator on localhost.
@@ -56,6 +54,11 @@ class ControlTcpPort final : public ControlPort {
   bool Write(std::string const& data) override;
   bool Read(std::string& data) override;
   void Close() override;
+
+ private:
+  // A POSIX descriptor or a Winsock SOCKET, which is an unsigned integer as
+  // wide as a pointer; -1 for none, which is what INVALID_SOCKET is as well.
+  intptr_t socket_;
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLTCPPORT_H_

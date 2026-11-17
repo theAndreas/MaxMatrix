@@ -60,3 +60,15 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing) {
   close(idle);
   EXPECT_LT(elapsed.count(), 1000) << "milliseconds in Task()";
 }
+
+/* Bug: the host closed none of its sockets when it was destroyed, so that its
+ * port stayed taken until the program ended, and a second host on it failed */
+TEST(SimulatorWebHostTest, FreesItsPortWhenDestroyed) {
+  {
+    SimulatorWebHost first;
+    ASSERT_TRUE(first.Begin(kPort, "/dev/null"));
+  }
+  SimulatorWebHost second;
+
+  EXPECT_TRUE(second.Begin(kPort, "/dev/null"));
+}
