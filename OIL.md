@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1218,6 +1218,20 @@ condition of three parts in `CheckFont()` and a sum in that of `CharShiftTask()`
 (T-18); and the `auto` of a port register says why the type cannot be written (T-8). On the Uno,
 in every variant, every example 8 bytes of flash smaller, Shutdown 12 and SerialControl 22; the
 same RAM.
+
+As built for the host code: no assignment or second side effect stands in a condition any more
+(T-14): the hosts accept in a loop that declares what it accepted, `ControlLink::Task()` finds
+each line end in a statement of its own, and the setup of a listener, of a serial port and of a
+WebSocket client is a named step per call; `SimulatorAvr` counts a bit before it compares. A
+variable stands where it is first needed (T-13), the length field of a WebSocket frame and the
+length of its payload are two, and a chunk is made only after the guard that may return. A
+condition or sum of several parts is named steps (T-18): where a frame's payload starts and ends,
+a port's text and range, how long a picture is waited for, a module's pitch in the pictures. A
+range-`for` names its element's type (T-8), and the counter of lit LEDs in `DocuPictures` is a
+`uint16_t`, as all 256 would wrap a byte (T-1). The control program's stroke rounds with integers
+as `lround()` did, which takes its `double` (H-7). Left for the compiler that is not in the dev
+container: the Windows half of the serial port declares some variables ahead, which only got
+their initializers here.
 
 ### 42 A newer avr-gcc as a cross-check
 

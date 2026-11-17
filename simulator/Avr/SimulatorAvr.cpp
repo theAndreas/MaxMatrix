@@ -202,7 +202,8 @@ void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
       max_matrix::Bit<uint8_t>::ShiftUp(simulator->bits_, 1u)};
   simulator->bits_ =
       max_matrix::Bit<uint8_t>::WriteBit(shifted, 0, simulator->data_in_);
-  if (++simulator->bit_count_ == kBitsPerByte) {
+  simulator->bit_count_++;
+  if (simulator->bit_count_ == kBitsPerByte) {
     simulator->TakeByte(simulator->bits_);
     simulator->bit_count_ = 0;
   }

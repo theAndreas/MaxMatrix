@@ -88,6 +88,15 @@ constexpr int32_t kLevelSlider{static_cast<int32_t>(
 constexpr int32_t kLogText{static_cast<int32_t>(
     static_cast<uint32_t>(wxTE_MULTILINE) | wxTE_READONLY)};
 
+// The time in milliseconds of a clock that does not jump, as
+// ControlLink::AskForPicture() takes it; it wraps after 49 days, which the link
+// takes in its stride, as it only subtracts.
+uint32_t GetMilliseconds() {
+  auto const since_start{std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch())};
+  return static_cast<uint32_t>(since_start.count());
+}
+
 }  // namespace
 
 /* ControlWindow colours of a connection's state */
@@ -404,18 +413,13 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
  * shows for its picture; only that one, as the other would answer for nothing.
  */
 void ControlWindow::OnTimer(wxTimerEvent& /* event */) {
-  uint32_t const now{static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::steady_clock::now().time_since_epoch())
-          .count())};
-
   Follow(board_link_, "board");
   Follow(simulator_link_, "simulator");
   ControlLink* const shown{GetShownLink()};
   if (shown == nullptr) {
     return;
   }
-  shown->AskForPicture(now);
+  shown->AskForPicture(GetMilliseconds());
   dots_->SetPicture(shown->GetPicture());
 }
 
@@ -540,8 +544,6 @@ ControlLink* ControlWindow::GetShownLink() {
  * only for a text that shifts.
  */
 void ControlWindow::ShowState() {
-  bool const any_ready{board_link_.IsReady() || simulator_link_.IsReady()};
-
   /*
    * Enable() and SetForegroundColour() say whether they changed anything, here
    * and in ShowBytesLeft(), which the window does not need: it shows the state
@@ -570,6 +572,7 @@ void ControlWindow::ShowState() {
       simulator_link_.IsReady()
           ? CONTROL_WINDOW_READY
           : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)));
+  bool const any_ready{board_link_.IsReady() || simulator_link_.IsReady()};
   max_matrix::Discard(controls_->Enable(any_ready));
   ShowBytesLeft();
   max_matrix::Discard(speed_->Enable(any_ready && shift_->GetValue()));
