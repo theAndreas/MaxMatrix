@@ -1233,6 +1233,19 @@ as `lround()` did, which takes its `double` (H-7). Left for the compiler that is
 container: the Windows half of the serial port declares some variables ahead, which only got
 their initializers here.
 
+As reviewed for the chapter Classes on 2026-11-17, its review parts C-2, C-3, C-6, C-8, C-11 and
+C-13, in the library and the host code. Every class but those of `src/Utility/` began with its
+private members; all are in the order of C-2 now, public, protected, private, and in each types
+and constants, constructors, functions, data members, the text moved and not changed. A class
+that declares a special member declares all six (C-3): the moves are deleted where the copies
+were, and `Matrix` and `Batch` delete their default constructor; `SimulatorWebHost`, which held
+sockets without a destructor and so kept its port taken until the program ended, closes them
+now, which a test checks. The virtual functions of `ControlPort` give a reason C-6 takes, the
+cost that does not count on a PC and one class for both kinds of port, not a test's; `MatrixOf`
+and the control program's windows say why they derive (C-8). Nothing to change for C-11, as no
+member is `mutable`, nor for C-13, as the operators are the bitwise ones of `Byte` and the
+comparisons of `Status` and `Result`.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
