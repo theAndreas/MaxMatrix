@@ -62,13 +62,14 @@ void ControlLink::AskForPicture(uint32_t now) {
   picture_asked_at_ = now;
 }
 
-bool ControlLink::Task(std::vector<std::string>* lines) {
+ControlLinkLines ControlLink::Task() {
   size_t end{0};
+  ControlLinkLines read{false, std::vector<std::string>{}};
 
   if (!port_.get().IsOpen()) {
-    return false;
+    return read;
   }
-  bool const open{port_.get().Read(&received_)};
+  read.open = port_.get().Read(received_);
 
   while (((end = received_.find('\n')) != std::string::npos) ||
          (received_.size() >= kControlLinkMaxLineLength)) {
@@ -79,30 +80,32 @@ bool ControlLink::Task(std::vector<std::string>* lines) {
     if (!line.empty() && (line.back() == '\r')) {
       line.pop_back();
     }
-    Take(std::move(line), lines);
+    if (Take(line)) {
+      read.lines.push_back(std::move(line));
+    }
   }
-  return open;
+  return read;
 }
 
 /*
- * Takes one line from SerialControl. A board that says ready has started again,
- * by its reset button say, and answers no picture asked for before; it is asked
- * again at the next interval. An answer to picture is never passed on, even one
- * that cannot be decoded, as it would fill the log twenty times a second.
+ * Takes one line from SerialControl, and returns whether it is one to pass on.
+ * A board that says ready has started again, by its reset button say, and
+ * answers no picture asked for before; it is asked again at the next interval.
+ * An answer to picture is never passed on, even one that cannot be decoded, as
+ * it would fill the log twenty times a second.
  */
-void ControlLink::Take(std::string line, std::vector<std::string>* lines) {
-  std::vector<uint8_t> picture;
-
+bool ControlLink::Take(std::string const& line) {
   if (line == kControlLinkReady) {
     ready_ = true;
     picture_asked_ = false;
   }
-  if (!ControlCommand::DecodePicture(line, &picture)) {
-    lines->push_back(std::move(line));
-    return;
+  ControlPicture picture{ControlCommand::DecodePicture(line)};
+  if (!picture.answers_picture) {
+    return true;
   }
   if (picture_asked_ && !picture_stale_) {
-    picture_ = std::move(picture);
+    picture_ = std::move(picture.columns);
   }
   picture_asked_ = false;
+  return false;
 }

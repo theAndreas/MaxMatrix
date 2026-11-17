@@ -73,7 +73,7 @@ std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
   for (int16_t i{0}; (i < 100) && received.empty(); i++) {
-    host.Task(&received);
+    received += host.Task();
     usleep(10000);
   }
   return received;
@@ -105,10 +105,10 @@ TEST(SimulatorSerialHostTest, ClosesASecondClient) {
   ASSERT_TRUE(host.Begin(kPort));
   int const first{Connect()};
   ASSERT_GE(first, 0);
-  host.Task(&received);
+  received += host.Task();
   int const second{Connect()};
   ASSERT_GE(second, 0);
-  host.Task(&received);
+  received += host.Task();
 
   EXPECT_TRUE(IsClosedByHost(second));
   host.Send("ok\r\n");
@@ -126,9 +126,9 @@ TEST(SimulatorSerialHostTest, TakesTheNextClientOnceTheFirstHasGone) {
   ASSERT_TRUE(host.Begin(kPort));
   int const first{Connect()};
   ASSERT_GE(first, 0);
-  host.Task(&received);
+  received += host.Task();
   close(first);
-  host.Task(&received);
+  received += host.Task();
 
   int const next{Connect()};
   ASSERT_GE(next, 0);

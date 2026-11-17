@@ -498,7 +498,10 @@ on the Uno.
 Host code whose failures no sketch sees, the simulator and `DocuPictures`, returns `bool`, `true`
 for success: each of its functions fails for one reason, which its `\return` names beside `false`.
 `Error` has no words for a port that is taken, and `std::optional` is C++17, while the
-simulator is built as `gnu++11` with the library.
+simulator is built as `gnu++11` with the library. A function that finds or reads something
+returns it, and whether it found it, in a small struct of its own, as `SimulatorFoundText` or
+`ControlPicture`, never through a pointer (FN-8); a buffer that grows over many calls, as what a
+port has read, is a reference, as is an object a function draws on (FN-15).
 
 #### Layout of a source file
 

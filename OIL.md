@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1170,6 +1170,15 @@ makes each line from its fields in one place, the front end says a port is taken
 `Begin()` of the hosts, one shared call and a check; the accept loops, whose bodies differ; and
 the seven `avr_irq_register_notify()` of `SimulatorAvr`, one call of simavr each, which a function
 of two numbers side by side, the port and the bit, would only make swappable.
+
+As built for FN-8 and FN-15 in the host code: no function writes its result through a pointer.
+What one finds or reads it returns, with whether it did in a small struct of its own where both
+are needed, as the WebSocket's frames and key, the web host's path, the command line's numbers,
+the control program's picture, lines and LED under the mouse, and the LEDs `DocuPictures` looks
+up; what the hosts receive they return, and the caller appends. A buffer that grows over many
+calls, as what a port has read, the index into the command line and the labels and picture
+`DocuPictures` draws on are references. `SimulatorRun::SetUp()` keeps its two references, as it
+sets up the objects the tick reaches through a plain function pointer.
 
 ### 42 A newer avr-gcc as a cross-check
 

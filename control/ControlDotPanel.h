@@ -33,9 +33,10 @@
  */
 class ControlDotPanel : public wxPanel {
  private:
-  /* an LED by its column and row, as GetDotAt() finds it: named members rather
-   * than two pointers to bytes, which a call could swap (FN-16) */
+  /* the LED under a point, as GetDotAt() finds it, if there is one: named
+   * members, which a call cannot swap (FN-16) */
   struct Dot {
+    bool found;
     uint8_t column;
     uint8_t row;
   };
@@ -58,7 +59,7 @@ class ControlDotPanel : public wxPanel {
   void OnCaptureLost(wxMouseCaptureLostEvent& event);
   void PaintDot(uint8_t column, uint8_t row);
   MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
-  bool GetDotAt(wxPoint const& point, Dot* dot) const;
+  MAXMATRIX_NODISCARD Dot GetDotAt(wxPoint const& point) const;
 
  public:
   /*!

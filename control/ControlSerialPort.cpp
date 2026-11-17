@@ -140,7 +140,7 @@ bool ControlSerialPort::Write(std::string const& data) {
   return true;
 }
 
-bool ControlSerialPort::Read(std::string* data) {
+bool ControlSerialPort::Read(std::string& data) {
   std::array<char, kControlStreamChunkLength> chunk;
   DWORD const size = static_cast<DWORD>(chunk.size());
   DWORD length = size;
@@ -151,7 +151,7 @@ bool ControlSerialPort::Read(std::string* data) {
       Close();
       return false;
     }
-    data->append(chunk.data(), length);
+    data.append(chunk.data(), length);
   }
   return true;
 }
@@ -261,13 +261,13 @@ bool ControlSerialPort::Write(std::string const& data) {
   return sent;
 }
 
-bool ControlSerialPort::Read(std::string* data) {
+bool ControlSerialPort::Read(std::string& data) {
   if (!IsOpen()) {
     return false;
   }
   int const descriptor{descriptor_};
   bool const open{ControlStream::ReceiveAvailable(
-      *data,
+      data,
       [descriptor](char* bytes, size_t length) {
         return read(descriptor, bytes, length);
       },

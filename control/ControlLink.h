@@ -32,6 +32,15 @@ constexpr uint32_t kControlLinkPictureIntervalMs{50u};
  * asked for again */
 constexpr uint32_t kControlLinkPictureTimeoutMs{1000u};
 
+/*! \brief What ControlLink::Task() read. */
+struct ControlLinkLines {
+  /*! Whether the port is still open, or closed now or gone at its other end. */
+  bool open;
+  /*! Every whole line that has arrived, without its line end, but an answer to
+   * `picture`, which ControlLink::GetPicture() returns. */
+  std::vector<std::string> lines;
+};
+
 /*!
  * \brief The lines between the control program and one SerialControl, on a
  *        board or in the simulator.
@@ -66,7 +75,7 @@ class ControlLink {
   bool picture_timed_{false};
   uint32_t picture_asked_at_{0};
 
-  void Take(std::string line, std::vector<std::string>* lines);
+  bool Take(std::string const& line);
 
  public:
   /*!
@@ -127,13 +136,9 @@ class ControlLink {
    *
    * Call it often, from a timer: it never waits.
    *
-   * \param[out] lines Every whole line that has arrived is appended, without
-   *                   its line end, but an answer to `picture`, which
-   *                   GetPicture() returns.
-   * \return True while the port is open, or false once it is closed or its
-   *         other end is gone.
+   * \return The lines that have arrived, and whether the port is still open.
    */
-  bool Task(std::vector<std::string>* lines);
+  MAXMATRIX_NODISCARD ControlLinkLines Task();
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLLINK_H_

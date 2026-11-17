@@ -56,13 +56,10 @@ bool SimulatorWeb::Begin(uint16_t port, char const* page_path) {
 }
 
 void SimulatorWeb::Task(SimulatorPanel& panel, std::string const& printed) {
-  std::vector<std::string> messages;
-
   if (mock::frames != logged_frames_) {
     LogFrame();
   }
-  host_.Task(&messages);
-  for (std::string const& message : messages) {
+  for (std::string const& message : host_.Task()) {
     Command(panel, message);
   }
   serial_output_ += printed;

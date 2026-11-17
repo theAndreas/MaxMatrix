@@ -141,13 +141,13 @@ bool ControlTcpPort::Write(std::string const& data) {
   return sent;
 }
 
-bool ControlTcpPort::Read(std::string* data) {
+bool ControlTcpPort::Read(std::string& data) {
   if (!IsOpen()) {
     return false;
   }
   Socket const connection{ToSocket(socket_)};
   bool const open{ControlStream::ReceiveAvailable(
-      *data,
+      data,
       [connection](char* bytes, size_t length) {
         return recv(connection, bytes, ToLength(length), 0);
       },

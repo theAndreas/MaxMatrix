@@ -35,7 +35,6 @@
 #include <array>
 #include <chrono>
 #include <string>
-#include <vector>
 
 #include "ControlCommand.h"
 #include "ControlDotPanel.h"
@@ -491,15 +490,14 @@ void ControlWindow::SendSettings(ControlLink& link, char const* name) {
  * settings.
  */
 void ControlWindow::Follow(ControlLink& link, char const* name) {
-  std::vector<std::string> lines;
-
   if (!link.IsOpen()) {
     return;
   }
   bool const was_ready{link.IsReady()};
-  bool const open{link.Task(&lines)};
+  ControlLinkLines const read{link.Task()};
+  bool const open{read.open};
 
-  for (std::string const& line : lines) {
+  for (std::string const& line : read.lines) {
     Log(wxString(name) + ": " + ConvertToText(line) + "\n");
     if (line == kControlLinkReady) {
       SendSettings(link, name);

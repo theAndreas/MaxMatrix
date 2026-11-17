@@ -53,29 +53,29 @@ std::string ControlCommand::MakePicture() { return "picture"; }
 
 // Two hex digits per column, upper case as SerialControl prints them; lower
 // case is taken as well.
-bool ControlCommand::DecodePicture(std::string const& line,
-                                   std::vector<uint8_t>* columns) {
+ControlPicture ControlCommand::DecodePicture(std::string const& line) {
   static std::string const kName = "picture=";
+  ControlPicture picture{false, std::vector<uint8_t>{}};
 
   if (line.compare(0, kName.size(), kName) != 0) {
-    return false;
+    return picture;
   }
-  columns->clear();
+  picture.answers_picture = true;
   if (line.size() !=
       (kName.size() + (2u * static_cast<size_t>(kControlNumberOfColumns)))) {
-    return true;
+    return picture;
   }
   for (size_t i{kName.size()}; i < line.size(); i += 2) {
     std::array<char, 3> const digits{{line[i], line[i + 1], '\0'}};
     if ((isxdigit(static_cast<unsigned char>(digits[0])) == 0) ||
         (isxdigit(static_cast<unsigned char>(digits[1])) == 0)) {
-      columns->clear();
-      return true;
+      picture.columns.clear();
+      return picture;
     }
-    columns->push_back(
+    picture.columns.push_back(
         static_cast<uint8_t>(strtoul(digits.data(), nullptr, kHexBase)));
   }
-  return true;
+  return picture;
 }
 
 int32_t ControlCommand::GetBytesLeft(std::string const& line) {

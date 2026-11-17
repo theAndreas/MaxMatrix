@@ -50,17 +50,21 @@ bool SimulatorWebHost::Begin(uint16_t port, char const* page_path) {
   return listener_ != kSimulatorSocketNone;
 }
 
-void SimulatorWebHost::Task(std::vector<std::string>* messages) {
+std::vector<std::string> SimulatorWebHost::Task() {
+  std::vector<std::string> messages;
+
   if (listener_ == kSimulatorSocketNone) {
-    return;
+    return messages;
   }
 
   AcceptClients();
   for (uint8_t slot{0}; slot < kSimulatorWebHostMaxClients; slot++) {
     if (clients_[slot] != kSimulatorSocketNone) {
-      ReadClient(slot, messages);
+      std::vector<std::string> const read = ReadClient(slot);
+      messages.insert(messages.end(), read.begin(), read.end());
     }
   }
+  return messages;
 }
 
 void SimulatorWebHost::Broadcast(std::string const& text) {
@@ -94,34 +98,36 @@ void SimulatorWebHost::AcceptClients() {
 }
 
 /*
- * Reads what the WebSocket in `slot` has sent and appends every complete text
- * message to `messages`. The bytes are collected until a frame is complete; a
- * closed connection or a close frame drops the client.
+ * Reads what the WebSocket in `slot` has sent and returns every complete text
+ * message. The bytes are collected until a frame is complete; a closed
+ * connection or a close frame drops the client.
  */
-void SimulatorWebHost::ReadClient(uint8_t slot,
-                                  std::vector<std::string>* messages) {
+std::vector<std::string> SimulatorWebHost::ReadClient(uint8_t slot) {
   std::array<char, kFrameChunkLength> chunk{};
   ssize_t const received{recv(clients_[slot], chunk.data(), chunk.size(), 0)};
-  uint8_t opcode{0};
-  std::string payload;
+  std::vector<std::string> messages;
 
   if (SimulatorSocket::IsGone(received)) {
     DropClient(slot);
-    return;
+    return messages;
   }
   if (received > 0) {
     pending_[slot].append(chunk.data(), static_cast<size_t>(received));
   }
 
-  while (SimulatorWebSocket::DecodeFrame(&pending_[slot], &opcode, &payload)) {
-    if (opcode == kSimulatorWebSocketOpcodeClose) {
+  SimulatorWebSocketFrame frame{
+      SimulatorWebSocket::DecodeFrame(pending_[slot])};
+  while (frame.complete) {
+    if (frame.opcode == kSimulatorWebSocketOpcodeClose) {
       DropClient(slot);
-      return;
+      return messages;
     }
-    if (opcode == kSimulatorWebSocketOpcodeText) {
-      messages->push_back(payload);
+    if (frame.opcode == kSimulatorWebSocketOpcodeText) {
+      messages.push_back(frame.payload);
     }
+    frame = SimulatorWebSocket::DecodeFrame(pending_[slot]);
   }
+  return messages;
 }
 
 /*
@@ -131,18 +137,18 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
  * does, and false once the connection is done.
  */
 bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
-  std::string path;
-  std::string answer;
+  SimulatorFoundText const path{GetPath(request)};
 
-  if (!GetPath(request, &path)) {
+  if (!path.found) {
     return false;
   }
 
-  if (path == kWebSocketPath) {
-    return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) &&
-           SimulatorSocket::SendAll(socket, answer);
+  if (path.text == kWebSocketPath) {
+    SimulatorFoundText const answer{
+        SimulatorWebSocket::GetHandshakeAnswer(request)};
+    return answer.found && SimulatorSocket::SendAll(socket, answer.text);
   }
-  if ((path == "/") || (path == "/index.html")) {
+  if ((path.text == "/") || (path.text == "/index.html")) {
     SendPage(socket);
   } else {
     SendResponse(socket, "404 Not Found", "text/plain",
@@ -214,18 +220,16 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
 }
 
 // Finds the path in `request`, what stands between the first two spaces of the
-// request line, and gives it in `path`. Returns false if the request line has
-// no path.
-bool SimulatorWebHost::GetPath(std::string const& request, std::string* path) {
+// request line, or none if the request line has no path.
+SimulatorFoundText SimulatorWebHost::GetPath(std::string const& request) {
   size_t const start{request.find(' ')};
   size_t const end{(start == std::string::npos) ? std::string::npos
                                                 : request.find(' ', start + 1)};
 
   if (end == std::string::npos) {
-    return false;
+    return SimulatorFoundText{false, std::string{}};
   }
-  *path = request.substr(start + 1, end - start - 1);
-  return true;
+  return SimulatorFoundText{true, request.substr(start + 1, end - start - 1)};
 }
 
 /*

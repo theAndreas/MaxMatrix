@@ -74,7 +74,7 @@ class ControlSerialPort final : public ControlPort {
 
   MAXMATRIX_NODISCARD bool IsOpen() const override;
   bool Write(std::string const& data) override;
-  bool Read(std::string* data) override;
+  bool Read(std::string& data) override;
   void Close() override;
 };
 

@@ -69,14 +69,25 @@ constexpr uint8_t kSha1TurnB{30u};
 constexpr uint8_t kBase64Bits{6u};
 constexpr uint32_t kBase64Mask{0x3Fu};
 
-// Turns the bytes of `payload` back with the four of the client's mask, which
-// lie at `mask_at` of `frame`, RFC 6455 section 5.3.
-void Unmask(std::string const& frame, size_t mask_at, std::string* payload) {
-  for (size_t i{0}; i < payload->size(); i++) {
-    (*payload)[i] = static_cast<char>(ByteBits::ToggleBits(
-        static_cast<uint8_t>((*payload)[i]),
+// Returns the bytes of `payload` turned back with the four of the client's
+// mask, which lie at `mask_at` of `frame`, RFC 6455 section 5.3.
+std::string Unmask(std::string const& frame, size_t mask_at,
+                   std::string payload) {
+  for (size_t i{0}; i < payload.size(); i++) {
+    payload[i] = static_cast<char>(ByteBits::ToggleBits(
+        static_cast<uint8_t>(payload[i]),
         static_cast<uint8_t>(frame[mask_at + (i % kMaskLength)])));
   }
+  return payload;
+}
+
+// What DecodeFrame() and GetKey() return when there is nothing to take.
+SimulatorWebSocketFrame NoFrame() {
+  return SimulatorWebSocketFrame{false, 0, std::string{}};
+}
+
+SimulatorFoundText NotFound() {
+  return SimulatorFoundText{false, std::string{}};
 }
 
 // Returns the byte at `index` of `bytes` as a number, as a char may be
@@ -87,19 +98,19 @@ uint32_t GetByte(std::string const& bytes, size_t index) {
 
 }  // namespace
 
-bool SimulatorWebSocket::GetHandshakeAnswer(std::string const& request,
-                                            std::string* answer) {
-  std::string key;
+SimulatorFoundText SimulatorWebSocket::GetHandshakeAnswer(
+    std::string const& request) {
+  SimulatorFoundText const key{GetKey(request)};
 
-  if (GetKey(request, &key)) {
-    *answer =
-        "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: "
-        "Upgrade\r\n"
-        "Sec-WebSocket-Accept: " +
-        ConvertKeyToAcceptKey(key) + "\r\n\r\n";
-    return true;
+  if (!key.found) {
+    return NotFound();
   }
-  return false;
+  return SimulatorFoundText{
+      true,
+      "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: "
+      "Upgrade\r\n"
+      "Sec-WebSocket-Accept: " +
+          ConvertKeyToAcceptKey(key.text) + "\r\n\r\n"};
 }
 
 std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {
@@ -118,12 +129,11 @@ std::string SimulatorWebSocket::EncodeFrame(std::string const& payload) {
   return frame + payload;
 }
 
-bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
-                                     std::string* payload) {
-  std::string const& frame{*buffer};
+SimulatorWebSocketFrame SimulatorWebSocket::DecodeFrame(std::string& buffer) {
+  std::string const& frame{buffer};
 
   if (frame.size() < kHeaderLength) {
-    return false;
+    return NoFrame();
   }
 
   uint8_t const second_byte{static_cast<uint8_t>(frame[1])};
@@ -135,12 +145,12 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
   if (length == kLength64Bit) {
     /* no command is this long; dropping what arrived is better than trying to
      * read it */
-    buffer->clear();
-    return false;
+    buffer.clear();
+    return NoFrame();
   }
   if (length == kLength16Bit) {
     if (frame.size() < kHeaderLength16Bit) {
-      return false;
+      return NoFrame();
     }
     length = SizeBits::Combine(
         SizeBits::ShiftUp(static_cast<uint8_t>(frame[2]), kBitsPerByte),
@@ -148,16 +158,15 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
     offset = kHeaderLength16Bit;
   }
   if (frame.size() < (offset + mask_length + length)) {
-    return false;
+    return NoFrame();
   }
 
-  payload->assign(frame, offset + mask_length, length);
-  if (mask_length > 0) {
-    Unmask(frame, offset, payload);
-  }
-  *opcode = ByteBits::ReadBitGroup(static_cast<uint8_t>(frame[0]), kOpcodeMask);
-  buffer->erase(0, offset + mask_length + length);
-  return true;
+  std::string const sent = frame.substr(offset + mask_length, length);
+  SimulatorWebSocketFrame const decoded{
+      true, ByteBits::ReadBitGroup(static_cast<uint8_t>(frame[0]), kOpcodeMask),
+      (mask_length > 0) ? Unmask(frame, offset, sent) : sent};
+  buffer.erase(0, offset + mask_length + length);
+  return decoded;
 }
 
 // The accept key is the base64 of the SHA-1 of the key and the fixed GUID of
@@ -226,12 +235,12 @@ std::string SimulatorWebSocket::ConvertToBase64(std::string const& bytes) {
 
 /*
  * Finds the browser's key in `request`, the whole HTTP request with its
- * headers, and gives the value of Sec-WebSocket-Key in `key`. Returns false if
- * the request has no such header. It searches a lowered copy of the request, as
+ * headers: the value of Sec-WebSocket-Key, or none if the request has no such
+ * header. It searches a lowered copy of the request, as
  * header names are case-insensitive, and takes the value from the request
  * itself.
  */
-bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
+SimulatorFoundText SimulatorWebSocket::GetKey(std::string const& request) {
   std::string lowered(request);
 
   for (char& c : lowered) {
@@ -239,7 +248,7 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   }
   size_t const found{lowered.find(kKeyHeader)};
   if (found == std::string::npos) {
-    return false;
+    return NotFound();
   }
 
   size_t start{found + sizeof(kKeyHeader) - 1};
@@ -248,11 +257,9 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   }
   size_t const end{request.find("\r\n", start)};
   if (end == std::string::npos) {
-    return false;
+    return NotFound();
   }
-
-  *key = request.substr(start, end - start);
-  return true;
+  return SimulatorFoundText{true, request.substr(start, end - start)};
 }
 
 /*

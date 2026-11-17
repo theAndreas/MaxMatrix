@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include "MaxMatrixAttributes.h"
+
 /*!
  * \brief The sketch's `Serial` as a TCP port on loopback, for the control
  *        program.
@@ -61,11 +63,10 @@ class SimulatorSerialHost {
    * Until Begin() has opened the port, it does nothing. A client that has
    * closed its end is dropped, and the next one may connect.
    *
-   * \param[in,out] received Every byte the client has sent since the last call
-   *                         is appended, as a board's `Serial` would receive
-   *                         it.
+   * \return Every byte the client has sent since the last call, as a board's
+   *         `Serial` would receive it.
    */
-  void Task(std::string* received);
+  MAXMATRIX_NODISCARD std::string Task();
 
   /*!
    * \brief Sends the client what the sketch has printed.
