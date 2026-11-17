@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1245,6 +1245,17 @@ cost that does not count on a PC and one class for both kinds of port, not a tes
 and the control program's windows say why they derive (C-8). Nothing to change for C-11, as no
 member is `mutable`, nor for C-13, as the operators are the bitwise ones of `Byte` and the
 comparisons of `Status` and `Result`.
+
+As reviewed for the chapters Memory and Time, hardware and interrupts on 2026-11-17, their review
+parts M-2, M-3, M-4, M-6 and H-1 to H-8. The library holds them: it does not block, takes its
+pins as parameters, names its registers, has no interrupt routine, leaves the bitwise operators
+to `Bit`, has neither exceptions nor RTTI, and what it writes itself lies in `Utility/` with its
+tests. Changed: `--for` of the simulator reads its seconds with integers, where `strtod()` went
+through the last `double` of the repository (H-7), which tests at the edges pin; the three texts
+whose address the host code takes, the default wiring, SerialControl's `ready` and the AVR's
+name, are declared `extern` in their header and defined once (M-4); and the block of `Matrix`
+says what RAM it takes on the Uno, 43 bytes with bit banging and 39 with SPI, besides its buffer
+(M-6).
 
 ### 42 A newer avr-gcc as a cross-check
 

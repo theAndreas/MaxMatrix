@@ -76,6 +76,28 @@ TEST(SimulatorTest, RunForIsTakenInMilliseconds) {
   EXPECT_EQ(options.GetRunFor(), 1500u);
 }
 
+/* the seconds as far as a millisecond, a fraction past it dropped, up to the
+ * most milliseconds a uint32_t holds; as atof() read them, which went for the
+ * double the coding style forbids (H-7) */
+TEST(SimulatorTest, RunForTakesTheMillisecondsOfAFraction) {
+  SimulatorOptions options;
+
+  ASSERT_TRUE(Parse(options, {"--for", "0.001"}));
+  EXPECT_EQ(options.GetRunFor(), 1u);
+  ASSERT_TRUE(Parse(options, {"--for", ".5"}));
+  EXPECT_EQ(options.GetRunFor(), 500u);
+  ASSERT_TRUE(Parse(options, {"--for", "2."}));
+  EXPECT_EQ(options.GetRunFor(), 2000u);
+  ASSERT_TRUE(Parse(options, {"--for", "1.2349"}));
+  EXPECT_EQ(options.GetRunFor(), 1234u);
+  ASSERT_TRUE(Parse(options, {"--for", "4294967.295"}));
+  EXPECT_EQ(options.GetRunFor(), 4294967295u);
+  EXPECT_FALSE(Parse(options, {"--for", "4294967.296"}));
+  EXPECT_FALSE(Parse(options, {"--for", "0.0009"}));
+  EXPECT_FALSE(Parse(options, {"--for", "."}));
+  EXPECT_FALSE(Parse(options, {"--for", "1.2.3"}));
+}
+
 /* Bug: atof() took --for 2x as two seconds, and turned -1 and 1e10 into a value
  * a cast to uint32_t is undefined for. */
 TEST(SimulatorTest, RunForThatIsNoDurationIsRefused) {

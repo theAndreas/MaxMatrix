@@ -21,6 +21,8 @@
 #include "Max7219.h"
 #include "MaxMatrixConfig.h"
 
+char const kSimulatorPanelDefaultWiring[] = "FC16";
+
 /* the four wirings MD_MAX72XX has names for, beside DR0CR0RR0 ... DR1CR1RR1
  * from kMax7219Wirings */
 namespace {

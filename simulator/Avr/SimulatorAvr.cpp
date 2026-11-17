@@ -29,6 +29,8 @@
 #include "MaxMatrixAttributes.h"
 #include "Utility/Bit.h"
 
+char const kSimulatorAvrMcu[] = "atmega328p";
+
 namespace {
 
 /* the Uno's pins 10, 11 and 13 are PB2, PB3 and PB5 */

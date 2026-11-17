@@ -23,7 +23,10 @@
 #include "MaxMatrixAttributes.h"
 
 /* SimulatorAvr Parameter */
-constexpr char kSimulatorAvrMcu[] = "atmega328p";
+// M-4: defined once, as its address is taken. T-20: a text, which the check
+// takes as one only where it is defined with its quotes.
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
+extern char const kSimulatorAvrMcu[];
 constexpr uint32_t kSimulatorAvrFrequency{16000000u};
 constexpr uint32_t kSimulatorAvrCyclesPerMillisecond{kSimulatorAvrFrequency /
                                                      1000u};

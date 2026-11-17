@@ -11,14 +11,35 @@
 
 #include "SimulatorOptions.h"
 
+#include <ctype.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "SimulatorPanel.h"
+
+namespace {
+
+/* the milliseconds of a second, and the digits of a fraction that say them */
+constexpr uint64_t kMillisecondsPerSecond{1000u};
+constexpr size_t kMillisecondDigits{3u};
+/* the digits of the most whole seconds whose milliseconds a uint32_t holds,
+ * 4294967, so that a longer number is refused before it is read */
+constexpr size_t kMaxSecondDigits{7u};
+
+// Whether `text` is decimal digits and nothing else; an empty one is.
+bool IsDigits(std::string const& text) {
+  return std::all_of(text.begin(), text.end(), [](char c) {
+    return isdigit(static_cast<unsigned char>(c)) != 0;
+  });
+}
+
+}  // namespace
 
 SimulatorOptions::SimulatorOptions()
     : wiring_name_(kSimulatorPanelDefaultWiring) {}
@@ -124,25 +145,36 @@ SimulatorOptions::Converted<uint16_t> SimulatorOptions::ConvertToPort(
 }
 
 /*
- * Converts the value of --for, the seconds as a decimal number, fractions
- * included, and nothing else, into milliseconds. They are not valid if the
- * value is no number, or not a single millisecond, or more than the
- * milliseconds fit.
+ * Converts the value of --for, the seconds as decimal digits with a fraction
+ * after a point, `1.5` or `.5`, into milliseconds; digits of the fraction past
+ * the third are dropped. They are not valid if the value is anything else, or
+ * not a single millisecond, or more than the milliseconds fit.
  *
  * atof(), as before, took "2x" as two seconds, and a negative or a huge number
- * reached a cast to uint32_t that is undefined for it.
+ * reached a cast to uint32_t that is undefined for it; strtod() after it took
+ * those apart, but went through a double (H-7).
  */
 SimulatorOptions::Converted<uint32_t> SimulatorOptions::ConvertToRunFor(
     char const* text) {
-  char* end{nullptr};
-  double const milliseconds{strtod(text, &end) * 1000};
+  std::string const value{text};
+  size_t const point{value.find('.')};
+  bool const has_point{point != std::string::npos};
+  std::string const whole{value.substr(0, point)};
+  std::string const fraction{has_point ? value.substr(point + 1)
+                                       : std::string{}};
+  bool const digits_only{IsDigits(whole) && IsDigits(fraction)};
+  bool const has_digit{!whole.empty() || !fraction.empty()};
 
-  /* asked as whether it lies in the range, so that NaN, which compares false
-   * with everything, is refused as well */
-  bool const in_range{(milliseconds >= 1) &&
-                      (milliseconds <= kSimulatorOptionsMaxRunFor)};
-  if ((end == text) || (*end != '\0') || !in_range) {
+  if (!digits_only || !has_digit || (whole.size() > kMaxSecondDigits)) {
     return Converted<uint32_t>{false, 0};
   }
-  return Converted<uint32_t>{true, static_cast<uint32_t>(milliseconds)};
+  uint64_t const seconds{whole.empty() ? 0u
+                                       : strtoull(whole.c_str(), nullptr, 10)};
+  std::string const thousandths{
+      (fraction + "000").substr(0, kMillisecondDigits)};
+  uint64_t const milliseconds{(seconds * kMillisecondsPerSecond) +
+                              strtoull(thousandths.c_str(), nullptr, 10)};
+  bool const in_range{(milliseconds >= 1) &&
+                      (milliseconds <= kSimulatorOptionsMaxRunFor)};
+  return Converted<uint32_t>{in_range, static_cast<uint32_t>(milliseconds)};
 }
