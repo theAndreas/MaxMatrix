@@ -98,7 +98,7 @@ void SimulatorPanel::SetDrawn(uint32_t now) {
 // Finds a wiring by its name: among the names MD_MAX72XX has first, then among
 // DR0CR0RR0 ... DR1CR1RR1. Returns nullptr if no wiring has this name.
 Max7219Wiring const* SimulatorPanel::FindWiring(std::string const& name) {
-  for (auto const& named : kNamedWirings) {
+  for (NamedWiring const& named : kNamedWirings) {
     if (name == named.name) {
       return named.wiring;
     }

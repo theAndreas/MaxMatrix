@@ -95,11 +95,9 @@ ControlTcpPort::~ControlTcpPort() { Close(); }
  * only then switched to return at once, so that Read() never waits.
  */
 bool ControlTcpPort::Open(uint16_t port) {
-  sockaddr_in address{};
-
   Close();
 #ifdef _WIN32
-  WSADATA winsock;
+  WSADATA winsock{};
   if (WSAStartup(MAKEWORD(2, 2), &winsock) != 0) return false;
 #endif
   socket_ = static_cast<intptr_t>(socket(AF_INET, SOCK_STREAM, 0));
@@ -110,6 +108,7 @@ bool ControlTcpPort::Open(uint16_t port) {
 #endif
     return false;
   }
+  sockaddr_in address{};
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

@@ -90,6 +90,14 @@ SimulatorFoundText NotFound() {
   return SimulatorFoundText{false, std::string{}};
 }
 
+// Returns the length of 16 bits that follows the first two bytes of `frame`,
+// the high byte first.
+size_t ReadLength16(std::string const& frame) {
+  return SizeBits::Combine(
+      SizeBits::ShiftUp(static_cast<uint8_t>(frame[2]), kBitsPerByte),
+      static_cast<uint8_t>(frame[3]));
+}
+
 // Returns the byte at `index` of `bytes` as a number, as a char may be
 // negative.
 uint32_t GetByte(std::string const& bytes, size_t index) {
@@ -139,33 +147,33 @@ SimulatorWebSocketFrame SimulatorWebSocket::DecodeFrame(std::string& buffer) {
   uint8_t const second_byte{static_cast<uint8_t>(frame[1])};
   size_t const mask_length{
       (ByteBits::ReadBitGroup(second_byte, kMaskFlag) != 0u) ? kMaskLength : 0};
-  size_t length{ByteBits::ReadBitGroup(second_byte, kLengthMask)};
-  size_t offset{kHeaderLength};
+  size_t const length_field{ByteBits::ReadBitGroup(second_byte, kLengthMask)};
 
-  if (length == kLength64Bit) {
+  if (length_field == kLength64Bit) {
     /* no command is this long; dropping what arrived is better than trying to
      * read it */
     buffer.clear();
     return NoFrame();
   }
-  if (length == kLength16Bit) {
-    if (frame.size() < kHeaderLength16Bit) {
-      return NoFrame();
-    }
-    length = SizeBits::Combine(
-        SizeBits::ShiftUp(static_cast<uint8_t>(frame[2]), kBitsPerByte),
-        static_cast<uint8_t>(frame[3]));
-    offset = kHeaderLength16Bit;
+  /* a length of 126 says that the length follows in two bytes */
+  bool const length_follows{length_field == kLength16Bit};
+  if (length_follows && (frame.size() < kHeaderLength16Bit)) {
+    return NoFrame();
   }
-  if (frame.size() < (offset + mask_length + length)) {
+  size_t const payload_length{length_follows ? ReadLength16(frame)
+                                             : length_field};
+  size_t const mask_at{length_follows ? kHeaderLength16Bit : kHeaderLength};
+  size_t const payload_at{mask_at + mask_length};
+  size_t const frame_end{payload_at + payload_length};
+  if (frame.size() < frame_end) {
     return NoFrame();
   }
 
-  std::string const sent = frame.substr(offset + mask_length, length);
+  std::string const sent = frame.substr(payload_at, payload_length);
   SimulatorWebSocketFrame const decoded{
       true, ByteBits::ReadBitGroup(static_cast<uint8_t>(frame[0]), kOpcodeMask),
-      (mask_length > 0) ? Unmask(frame, offset, sent) : sent};
-  buffer.erase(0, offset + mask_length + length);
+      (mask_length > 0) ? Unmask(frame, mask_at, sent) : sent};
+  buffer.erase(0, frame_end);
   return decoded;
 }
 

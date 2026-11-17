@@ -12,7 +12,6 @@
 
 #include "ControlDotPanel.h"
 
-#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <wx/dcbuffer.h>
@@ -37,6 +36,23 @@ constexpr int kCell{18};
 constexpr int kLed{14};
 constexpr int kModuleGap{8};
 constexpr int kMargin{6};
+
+/* where a stroke is between two LEDs: `step` of `steps` */
+struct StrokeStep {
+  int16_t step;
+  int16_t steps;
+};
+
+// Returns how far a stroke has come by `at` on its way by `delta`, in LEDs,
+// rounded to the nearest, a half away from its start, as lround() rounded it
+// before the double went (H-7).
+int16_t GetStrokeOffset(int16_t delta, StrokeStep at) {
+  int32_t const travelled{static_cast<int32_t>(delta) * at.step};
+  int32_t const half{at.steps / 2};
+  int32_t const rounded{(travelled >= 0) ? ((travelled + half) / at.steps)
+                                         : -((half - travelled) / at.steps)};
+  return static_cast<int16_t>(rounded);
+}
 
 }  // namespace
 
@@ -90,6 +106,7 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
   wxCoord const led{FromDIP(kLed)};
   wxCoord const gap{FromDIP(kModuleGap)};
   wxCoord const margin{FromDIP(kMargin)};
+  wxCoord const inset{(cell - led) / 2};
 
   dc.SetBackground(wxBrush(CONTROL_DOT_PANEL_BOARD));
   dc.Clear();
@@ -97,10 +114,9 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
   for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
     for (uint8_t column{0}; column < kControlNumberOfColumns; column++) {
       bool const lit{IsLit(column, row)};
-      wxCoord const x{margin + (column * cell) +
-                      ((column / max_matrix::kColumnNumberOfModule) * gap) +
-                      ((cell - led) / 2)};
-      wxCoord const y{margin + (row * cell) + ((cell - led) / 2)};
+      wxCoord const gaps{(column / max_matrix::kColumnNumberOfModule) * gap};
+      wxCoord const x{margin + (column * cell) + gaps + inset};
+      wxCoord const y{margin + (row * cell) + inset};
       if (!IsEnabled()) {
         dc.SetBrush(wxBrush(CONTROL_DOT_PANEL_DISABLED));
       } else {
@@ -160,12 +176,12 @@ void ControlDotPanel::OnMotion(wxMouseEvent& event) {
     int16_t const steps{
         static_cast<int16_t>(std::max(abs(delta_column), abs(delta_row)))};
     for (int16_t step{1}; step < steps; step++) {
-      PaintDot(static_cast<uint8_t>(
-                   last_column_ +
-                   lround(static_cast<double>(delta_column) * step / steps)),
-               static_cast<uint8_t>(
-                   last_row_ +
-                   lround(static_cast<double>(delta_row) * step / steps)));
+      StrokeStep const at{step, steps};
+      auto const column_on_the_way{static_cast<uint8_t>(
+          last_column_ + GetStrokeOffset(delta_column, at))};
+      auto const row_on_the_way{
+          static_cast<uint8_t>(last_row_ + GetStrokeOffset(delta_row, at))};
+      PaintDot(column_on_the_way, row_on_the_way);
     }
   }
   PaintDot(column, row);

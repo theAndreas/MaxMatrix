@@ -47,9 +47,10 @@ class ControlStream {
 
     while (sent < data.size()) {
       auto const written{send_some(&data[sent], data.size() - sent)};
+      bool const full{(written < 0) && would_block()};
       if (written > 0) {
         sent += static_cast<size_t>(written);
-      } else if ((written >= 0) || !would_block() || !wait_writable()) {
+      } else if (!full || !wait_writable()) {
         return false;
       }
     }

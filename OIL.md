@@ -1219,6 +1219,20 @@ condition of three parts in `CheckFont()` and a sum in that of `CharShiftTask()`
 in every variant, every example 8 bytes of flash smaller, Shutdown 12 and SerialControl 22; the
 same RAM.
 
+As built for the host code: no assignment or second side effect stands in a condition any more
+(T-14): the hosts accept in a loop that declares what it accepted, `ControlLink::Task()` finds
+each line end in a statement of its own, and the setup of a listener, of a serial port and of a
+WebSocket client is a named step per call; `SimulatorAvr` counts a bit before it compares. A
+variable stands where it is first needed (T-13), the length field of a WebSocket frame and the
+length of its payload are two, and a chunk is made only after the guard that may return. A
+condition or sum of several parts is named steps (T-18): where a frame's payload starts and ends,
+a port's text and range, how long a picture is waited for, a module's pitch in the pictures. A
+range-`for` names its element's type (T-8), and the counter of lit LEDs in `DocuPictures` is a
+`uint16_t`, as all 256 would wrap a byte (T-1). The control program's stroke rounds with integers
+as `lround()` did, which takes its `double` (H-7). Left for the compiler that is not in the dev
+container: the Windows half of the serial port declares some variables ahead, which only got
+their initializers here.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

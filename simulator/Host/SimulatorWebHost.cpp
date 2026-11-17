@@ -81,15 +81,18 @@ void SimulatorWebHost::Broadcast(std::string const& text) {
 // Answers every new connection: keeps one that became a WebSocket, as long as
 // there is a free slot for it, and closes every other one.
 void SimulatorWebHost::AcceptClients() {
-  int accepted{0};
-
-  while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
+  for (;;) {
+    int const accepted{accept(listener_, nullptr, nullptr)};
+    if (accepted < 0) {
+      break;
+    }
     std::string const request = ReadRequest(accepted);
     uint8_t const slot{FindFreeSlot()};
+    bool const answered{(slot < kSimulatorWebHostMaxClients) &&
+                        AnswerRequest(accepted, request)};
+    bool const kept{answered && SimulatorSocket::SetNonBlocking(accepted)};
 
-    if ((slot < kSimulatorWebHostMaxClients) &&
-        AnswerRequest(accepted, request) &&
-        SimulatorSocket::SetNonBlocking(accepted)) {
+    if (kept) {
       clients_[slot] = accepted;
     } else {
       SimulatorSocket::Close(accepted);
@@ -205,13 +208,13 @@ void SimulatorWebHost::DropClient(uint8_t slot) {
  */
 std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
-  std::array<char, kRequestChunkLength> chunk{};
 
   // Without the timeout a silent client would stop the sketch, so its request
   // is not read; it gets no answer, and its connection is closed.
   if (!SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeout)) {
     return request;
   }
+  std::array<char, kRequestChunkLength> chunk{};
   while (request.find("\r\n\r\n") == std::string::npos) {
     ssize_t const received{recv(socket, chunk.data(), chunk.size(), 0)};
     if (received <= 0) {

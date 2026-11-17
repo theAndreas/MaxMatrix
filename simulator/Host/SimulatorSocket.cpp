@@ -38,8 +38,6 @@ bool WouldBlock() { return (errno == EAGAIN) || (errno == EWOULDBLOCK); }
 
 int SimulatorSocket::OpenListener(uint16_t port) {
   int const listening{socket(AF_INET, SOCK_STREAM, 0)};
-  int const reuse{1};
-  sockaddr_in address{};
 
   if (listening < 0) {
     return kSimulatorSocketNone;
@@ -48,17 +46,21 @@ int SimulatorSocket::OpenListener(uint16_t port) {
   // So that a restart does not wait out the last connection's TIME_WAIT;
   // without it the port is taken a minute longer, which bind() below then
   // reports.
+  int const reuse{1};
   max_matrix::Discard(
       setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)));
+  sockaddr_in address{};
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
   // the sockets API takes every address as a sockaddr
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-  if ((bind(listening, reinterpret_cast<sockaddr*>(&address),
-            sizeof(address)) != 0) ||
-      (listen(listening, kBacklog) != 0) || !SetNonBlocking(listening)) {
+  bool const bound{bind(listening, reinterpret_cast<sockaddr*>(&address),
+                        sizeof(address)) == 0};
+  bool const listens{bound && (listen(listening, kBacklog) == 0)};
+  bool const ready{listens && SetNonBlocking(listening)};
+  if (!ready) {
     Close(listening);
     return kSimulatorSocketNone;
   }

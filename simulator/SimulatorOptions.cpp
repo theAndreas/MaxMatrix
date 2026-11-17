@@ -117,9 +117,10 @@ SimulatorOptions::Converted<uint16_t> SimulatorOptions::ConvertToPort(
 
   /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
    * check then refuses */
-  bool const valid{(end != text) && (*end == '\0') && (value != 0) &&
-                   (value <= kSimulatorOptionsMaxPort)};
-  return Converted<uint16_t>{valid, static_cast<uint16_t>(value)};
+  bool const whole_text{(end != text) && (*end == '\0')};
+  bool const in_range{(value != 0) && (value <= kSimulatorOptionsMaxPort)};
+  return Converted<uint16_t>{whole_text && in_range,
+                             static_cast<uint16_t>(value)};
 }
 
 /*

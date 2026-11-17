@@ -142,7 +142,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string& data) {
-  std::array<char, kControlStreamChunkLength> chunk;
+  std::array<char, kControlStreamChunkLength> chunk{};
   DWORD const size = static_cast<DWORD>(chunk.size());
   DWORD length = size;
 
@@ -218,8 +218,8 @@ bool ControlSerialPort::Configure(uint32_t baud_rate) {
   termios settings{};
 
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
-  bool const taken{(ioctl(descriptor_, TIOCEXCL) == 0) &&
-                   (tcgetattr(descriptor_, &settings) == 0)};
+  bool const taken{ioctl(descriptor_, TIOCEXCL) == 0};
+  bool const read{taken && (tcgetattr(descriptor_, &settings) == 0)};
   cfmakeraw(&settings);
   max_matrix::Bit<tcflag_t>::SetBits(settings.c_cflag, kLocalReceive);
   max_matrix::Bit<tcflag_t>::ClearBits(settings.c_cflag, kTwoStopsHandshake);
@@ -227,8 +227,8 @@ bool ControlSerialPort::Configure(uint32_t baud_rate) {
   settings.c_cc[VTIME] = 0;
   // glibc's cfsetspeed() takes a rate as its number as well as its B constant,
   // so no table maps one to the other.
-  return taken && (cfsetspeed(&settings, baud_rate) == 0) &&
-         (tcsetattr(descriptor_, TCSANOW, &settings) == 0);
+  bool const rate_set{read && (cfsetspeed(&settings, baud_rate) == 0)};
+  return rate_set && (tcsetattr(descriptor_, TCSANOW, &settings) == 0);
 }
 
 std::vector<std::string> ControlSerialPort::List() {

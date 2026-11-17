@@ -42,6 +42,9 @@ constexpr int32_t kCell{28};
 constexpr int32_t kPanelHeight{max_matrix::kRowNumberOfModule * kCell};
 constexpr int32_t kLed{22};
 constexpr int32_t kModuleGap{28};
+/* from the left edge of one module to that of the next */
+constexpr int32_t kModulePitch{(max_matrix::kColumnNumberOfModule * kCell) +
+                               kModuleGap};
 constexpr int32_t kLeft{60};
 constexpr int32_t kTop{86};
 constexpr int32_t kRight{120};
@@ -170,7 +173,8 @@ using PerDot = std::array<std::array<Type, max_matrix::kRowNumberOfModule>,
                           kNumberOfColumns>;
 
 /* each picture's file name and its SVG text */
-using Pictures = std::vector<std::pair<std::string, std::string>>;
+using Picture = std::pair<std::string, std::string>;
+using Pictures = std::vector<Picture>;
 
 /*! \brief The LED of every dot, if each lit exactly one. */
 struct FoundLeds {
@@ -208,7 +212,7 @@ LitLeds CountLit(uint8_t chip, uint8_t digit) {
  */
 FoundLed FindLed() {
   FoundLed found{false, DocuLed{0, 0, 0}};
-  uint8_t lit{0};
+  uint16_t lit{0};
 
   for (size_t chip{0}; chip < mock::chain.chips.size(); chip++) {
     for (uint8_t digit{0}; digit < Max7219::kNumberOfDigits; digit++) {
@@ -216,7 +220,7 @@ FoundLed FindLed() {
       if (of_digit.count > 0) {
         found.led = of_digit.last;
       }
-      lit = static_cast<uint8_t>(lit + of_digit.count);
+      lit = static_cast<uint16_t>(lit + of_digit.count);
     }
   }
   found.found = (lit == 1);
@@ -288,7 +292,7 @@ bool IsUpright(Max7219Wiring const& wiring) {
  * \return The name, as the README uses it, or nullptr for a wiring without one.
  */
 char const* FindModuleName(Max7219Wiring const& wiring) {
-  for (auto const& named : kModuleNames) {
+  for (ModuleName const& named : kModuleNames) {
     if ((named.wiring->digits_as_rows == wiring.digits_as_rows) &&
         (named.wiring->reversed_columns == wiring.reversed_columns) &&
         (named.wiring->reversed_rows == wiring.reversed_rows)) {
@@ -333,9 +337,7 @@ std::string GetModules() {
  * \return The pixels from the left.
  */
 constexpr int32_t GetCellX(uint8_t x) {
-  return kLeft +
-         ((x / max_matrix::kColumnNumberOfModule) *
-          ((max_matrix::kColumnNumberOfModule * kCell) + kModuleGap)) +
+  return kLeft + ((x / max_matrix::kColumnNumberOfModule) * kModulePitch) +
          ((x % max_matrix::kColumnNumberOfModule) * kCell);
 }
 
@@ -686,7 +688,7 @@ Pictures DrawPictures() {
 uint8_t CountUndrawn(Pictures const& pictures) {
   uint8_t undrawn{0};
 
-  for (auto const& picture : pictures) {
+  for (Picture const& picture : pictures) {
     if (picture.second.empty()) {
       std::cerr << picture.first << ": a dot did not light exactly one LED\n";
       undrawn++;
@@ -705,9 +707,14 @@ uint8_t CountUndrawn(Pictures const& pictures) {
 uint8_t WritePictures(Pictures const& pictures, std::string const& folder) {
   uint8_t failed{0};
 
-  for (auto const& picture : pictures) {
+  for (Picture const& picture : pictures) {
     std::string const path = folder + "/" + picture.first;
-    if (!picture.second.empty() && !(std::ofstream{path} << picture.second)) {
+    if (picture.second.empty()) {
+      continue;
+    }
+    std::ofstream file{path};
+    file << picture.second;
+    if (!file) {
       std::cerr << path << " cannot be written\n";
       failed++;
     }
@@ -725,7 +732,7 @@ uint8_t WritePictures(Pictures const& pictures, std::string const& folder) {
 uint8_t CheckPictures(Pictures const& pictures, std::string const& folder) {
   uint8_t failed{0};
 
-  for (auto const& picture : pictures) {
+  for (Picture const& picture : pictures) {
     std::string const path = folder + "/" + picture.first;
     SimulatorFileText const file{SimulatorFile::Read(path.c_str())};
     if (!picture.second.empty() &&
@@ -757,8 +764,10 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   std::vector<std::string> const arguments(argv, argv + argc);
 
-  if ((arguments.size() != 3) ||
-      ((arguments[1] != "--write") && (arguments[1] != "--check"))) {
+  bool const mode_and_folder{arguments.size() == 3};
+  bool const known_mode{mode_and_folder && ((arguments[1] == "--write") ||
+                                            (arguments[1] == "--check"))};
+  if (!known_mode) {
     std::cerr << "usage: " << arguments[0] << " --write|--check FOLDER\n";
     return 2;
   }

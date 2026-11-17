@@ -44,12 +44,12 @@ bool SimulatorSerialHost::Begin(uint16_t port) {
 }
 
 std::string SimulatorSerialHost::Task() {
-  std::array<char, kChunkLength> chunk{};
   std::string received;
 
   if (listener_ == kSimulatorSocketNone) {
     return received;
   }
+  std::array<char, kChunkLength> chunk{};
 
   // The client first, so that one which has gone frees the port for the next in
   // the same call.
@@ -69,8 +69,9 @@ std::string SimulatorSerialHost::Task() {
 }
 
 void SimulatorSerialHost::Send(std::string const& text) {
-  if ((client_ != kSimulatorSocketNone) && !text.empty() &&
-      !SimulatorSocket::SendAll(client_, text)) {
+  bool const to_send{(client_ != kSimulatorSocketNone) && !text.empty()};
+
+  if (to_send && !SimulatorSocket::SendAll(client_, text)) {
     DropClient();
   }
 }
@@ -81,9 +82,11 @@ void SimulatorSerialHost::Send(std::string const& text) {
  * is taken rather than waiting for an answer that never comes.
  */
 void SimulatorSerialHost::AcceptClient() {
-  int accepted{0};
-
-  while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
+  for (;;) {
+    int const accepted{accept(listener_, nullptr, nullptr)};
+    if (accepted < 0) {
+      break;
+    }
     if ((client_ == kSimulatorSocketNone) &&
         SimulatorSocket::SetNonBlocking(accepted)) {
       client_ = accepted;

@@ -43,14 +43,13 @@ bool ControlLink::Send(std::string const& line) {
 // The time is compared as a difference, so that a clock that runs past 2^32 ms
 // keeps working.
 void ControlLink::AskForPicture(uint32_t now) {
-  uint32_t const waited{now - picture_asked_at_};
-
   if (!IsReady()) {
     return;
   }
-  if (picture_timed_ &&
-      (waited < (picture_asked_ ? kControlLinkPictureTimeoutMs
-                                : kControlLinkPictureIntervalMs))) {
+  uint32_t const waited{now - picture_asked_at_};
+  uint32_t const wait_for{picture_asked_ ? kControlLinkPictureTimeoutMs
+                                         : kControlLinkPictureIntervalMs};
+  if (picture_timed_ && (waited < wait_for)) {
     return;
   }
   if (!port_.get().Write(ControlCommand::MakePicture() + "\n")) {
@@ -63,7 +62,6 @@ void ControlLink::AskForPicture(uint32_t now) {
 }
 
 ControlLinkLines ControlLink::Task() {
-  size_t end{0};
   ControlLinkLines read{false, std::vector<std::string>{}};
 
   if (!port_.get().IsOpen()) {
@@ -71,12 +69,15 @@ ControlLinkLines ControlLink::Task() {
   }
   read.open = port_.get().Read(received_);
 
-  while (((end = received_.find('\n')) != std::string::npos) ||
-         (received_.size() >= kControlLinkMaxLineLength)) {
-    size_t const length{(end != std::string::npos) ? end
-                                                   : kControlLinkMaxLineLength};
+  for (;;) {
+    size_t const end{received_.find('\n')};
+    bool const has_end{end != std::string::npos};
+    if (!has_end && (received_.size() < kControlLinkMaxLineLength)) {
+      break;
+    }
+    size_t const length{has_end ? end : kControlLinkMaxLineLength};
     std::string line = received_.substr(0, length);
-    received_.erase(0, (end != std::string::npos) ? (end + 1) : length);
+    received_.erase(0, has_end ? (end + 1) : length);
     if (!line.empty() && (line.back() == '\r')) {
       line.pop_back();
     }
