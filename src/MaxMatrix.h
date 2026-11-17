@@ -199,8 +199,8 @@ class Matrix {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
   }
 
-  /*! \copydoc internal::Panel::GetColumn(uint8_t, uint8_t) */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(uint8_t module, uint8_t column) {
+  /*! \copydoc internal::Panel::GetColumn(Module, uint8_t) */
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module, uint8_t column) {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -223,8 +223,8 @@ class Matrix {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(row, values));
   }
 
-  /*! \copydoc internal::Panel::GetRow(uint8_t, uint8_t) */
-  MAXMATRIX_NODISCARD Result<Byte> GetRow(uint8_t module, uint8_t row) {
+  /*! \copydoc internal::Panel::GetRow(Module, uint8_t) */
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row) {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
@@ -331,8 +331,8 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetColumn(uint8_t, uint8_t, Byte) */
-  void SetColumn(uint8_t module, uint8_t column, Byte value) {
+  /*! \copydoc internal::Panel::SetColumn(Module, uint8_t, Byte) */
+  void SetColumn(Module module, uint8_t column, Byte value) {
     panel_.SetColumn(module, column, value);
     UpdateIfAuto();
   }
@@ -352,8 +352,8 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetRow(uint8_t, uint8_t, Byte) */
-  void SetRow(uint8_t module, uint8_t row, Byte value) {
+  /*! \copydoc internal::Panel::SetRow(Module, uint8_t, Byte) */
+  void SetRow(Module module, uint8_t row, Byte value) {
     panel_.SetRow(module, row, value);
     UpdateIfAuto();
   }

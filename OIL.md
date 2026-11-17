@@ -1094,6 +1094,12 @@ A first look found, besides those two:
   that numbers and swapped pins do not compile. Every example is the same size in every
   variant.
 
+  As built, the third: a module beside its column or row is a `Module`, with an `explicit`
+  constructor, in `GetColumn()`, `SetColumn()`, `GetRow()` and `SetRow()` of one module,
+  `SetRow(Module{2}, 3, value)`; `test/compile_fail/` checks that a number or a column in its
+  place does not compile. Every example is the same size in every variant. It also tells these functions from those of the whole panel,
+  `GetRow(0, values)`, by type rather than by the number of arguments.
+
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
 rule or chapter, with what it finds fixed, F-10 first, as it changes no code.

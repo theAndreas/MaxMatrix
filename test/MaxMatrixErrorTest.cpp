@@ -18,6 +18,7 @@ using max_matrix::Command;
 using max_matrix::CommandState;
 using max_matrix::Error;
 using max_matrix::Matrix;
+using max_matrix::Module;
 using max_matrix::Result;
 using max_matrix::State;
 using max_matrix::Status;
@@ -70,11 +71,14 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        [](Matrix& m) { return m.GetColumn(kNumberOfColumns).GetError(); },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn no module",
-       [](Matrix& m) { return m.GetColumn(kNumberOfModules, 0).GetError(); },
+       [](Matrix& m) {
+         return m.GetColumn(Module{kNumberOfModules}, 0).GetError();
+       },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn off its module",
        [](Matrix& m) {
-         return m.GetColumn(0, max_matrix::kColumnNumberOfModule).GetError();
+         return m.GetColumn(Module{0}, max_matrix::kColumnNumberOfModule)
+             .GetError();
        },
        Error::kOutOfRange, "GetColumn"},
       {"GetRow above",
@@ -90,11 +94,13 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        },
        Error::kOutOfRange, "GetRow"},
       {"GetRow no module",
-       [](Matrix& m) { return m.GetRow(kNumberOfModules, 0).GetError(); },
+       [](Matrix& m) {
+         return m.GetRow(Module{kNumberOfModules}, 0).GetError();
+       },
        Error::kOutOfRange, "GetRow"},
       {"GetRow off its module",
        [](Matrix& m) {
-         return m.GetRow(0, max_matrix::kRowNumberOfModule).GetError();
+         return m.GetRow(Module{0}, max_matrix::kRowNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetDot left", [](Matrix& m) { return m.GetDot(-1, 0).GetError(); },

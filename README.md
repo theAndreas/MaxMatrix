@@ -127,9 +127,10 @@ takes the bitwise operators `&`, `|`, `~`, `<<` and `>>`, as `std::byte` does. T
 at once read their byte in different directions:
 
 - `SetColumn(x, value)` sets a column, **bit 0 at the top**.
-- `SetRow(module, row, value)` sets the row of one module, **bit 7 on the left**, so the byte reads as it is
-  written: `max_matrix::Byte{0b10000000}` lights the leftmost LED. `SetRow(row, values)` sets a whole row, an array
-  of one `Byte` per module, module 0 first.
+- `SetRow(max_matrix::Module{m}, row, value)` sets the row of one module, **bit 7 on the left**, so the byte reads as
+  it is written: `max_matrix::Byte{0b10000000}` lights the leftmost LED. `SetRow(row, values)` sets a whole row, an
+  array of one `Byte` per module, module 0 first. The module is a type of its own, so that it cannot be swapped
+  with the row.
 
 ## Functions
 
@@ -138,8 +139,8 @@ at once read their byte in different directions:
 | `Init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
 | `Clear()` | turns every LED off |
 | `SetDot(x, y, value)`, `GetDot(x, y)` | one LED |
-| `SetColumn(x, value)`, `SetColumn(module, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
-| `SetRow(row, values)`, `SetRow(module, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
+| `SetColumn(x, value)`, `SetColumn(Module{m}, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
+| `SetRow(row, values)`, `SetRow(Module{m}, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
 | `SetChar(x, y, c)`, `SetText(text)` | a char at x, y, or a text from the left edge |
 | `SetSprite(x, y, sprite)` | a sprite of your own, up to 5 columns wide |
 | `DrawLine(x0, y0, x1, y1, value)` | a straight line, both ends included |

@@ -58,10 +58,10 @@ Result<Byte> Panel::GetColumn(int16_t column) {
   return Error::kOutOfRange;
 }
 
-Result<Byte> Panel::GetColumn(uint8_t module, uint8_t column) {
-  if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
+Result<Byte> Panel::GetColumn(Module module, uint8_t column) {
+  if (module.number < GetNumberOfModules() && column < kColumnNumberOfModule) {
     return GetColumn(
-        static_cast<int16_t>((module * kColumnNumberOfModule) + column));
+        static_cast<int16_t>((module.number * kColumnNumberOfModule) + column));
   }
   return Error::kOutOfRange;
 }
@@ -72,12 +72,13 @@ void Panel::SetColumn(int16_t column, Byte value) {
   }
 }
 
-void Panel::SetColumn(uint8_t module, uint8_t column, Byte value) {
+void Panel::SetColumn(Module module, uint8_t column, Byte value) {
   // The column is checked against the module, not the panel, or column 8 of
   // module 0 would be drawn on module 1.
-  if (module < GetNumberOfModules() && column < kColumnNumberOfModule) {
-    SetColumn(static_cast<int16_t>((module * kColumnNumberOfModule) + column),
-              value);
+  if (module.number < GetNumberOfModules() && column < kColumnNumberOfModule) {
+    SetColumn(
+        static_cast<int16_t>((module.number * kColumnNumberOfModule) + column),
+        value);
   }
 }
 
@@ -86,16 +87,18 @@ Status Panel::GetRow(int16_t row, span<Byte> values) {
       values.size() >= GetNumberOfModules()) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; module < modules; module++) {
-      values[module] = GetRow(module, static_cast<uint8_t>(row)).GetValue();
+      values[module] =
+          GetRow(Module{module}, static_cast<uint8_t>(row)).GetValue();
     }
     return Error::kOk;
   }
   return Error::kOutOfRange;
 }
 
-Result<Byte> Panel::GetRow(uint8_t module, uint8_t row) {
-  if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
-    return ReverseByte(GetLine(module * kColumnNumberOfModule, row, false));
+Result<Byte> Panel::GetRow(Module module, uint8_t row) {
+  if (module.number < GetNumberOfModules() && row < kRowNumberOfModule) {
+    return ReverseByte(
+        GetLine(module.number * kColumnNumberOfModule, row, false));
   }
   return Error::kOutOfRange;
 }
@@ -105,14 +108,15 @@ void Panel::SetRow(int16_t row, span<Byte const> values) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; module < modules && module < values.size();
          module++) {
-      SetRow(module, static_cast<uint8_t>(row), values[module]);
+      SetRow(Module{module}, static_cast<uint8_t>(row), values[module]);
     }
   }
 }
 
-void Panel::SetRow(uint8_t module, uint8_t row, Byte value) {
-  if (module < GetNumberOfModules() && row < kRowNumberOfModule) {
-    SetLine(module * kColumnNumberOfModule, row, false, ReverseByte(value));
+void Panel::SetRow(Module module, uint8_t row, Byte value) {
+  if (module.number < GetNumberOfModules() && row < kRowNumberOfModule) {
+    SetLine(module.number * kColumnNumberOfModule, row, false,
+            ReverseByte(value));
   }
 }
 

@@ -548,7 +548,7 @@ void DrawFunctionNames(DocuSvg* svg) {
   svg->AddText(
       {row_module_left + (max_matrix::kColumnNumberOfModule * kCell / 2),
        names},
-      "SetRow(" + std::to_string(kExampleRowModule) + ", " +
+      "SetRow(Module{" + std::to_string(kExampleRowModule) + "}, " +
           std::to_string(kExampleRow) + ", value)",
       kRowFunctionText);
 }
@@ -579,7 +579,8 @@ std::string DrawCoordinates() {
     matrix.SetColumn(kExampleColumn, max_matrix::Byte{1} << bit);
     LabelLitDots(bit, &column_labels);
     matrix.Clear();
-    matrix.SetRow(kExampleRowModule, kExampleRow, max_matrix::Byte{1} << bit);
+    matrix.SetRow(max_matrix::Module{kExampleRowModule}, kExampleRow,
+                  max_matrix::Byte{1} << bit);
     LabelLitDots(bit, &row_labels);
   }
 
