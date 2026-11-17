@@ -1142,7 +1142,7 @@ flash: a `constexpr Byte` passed by value is odr-used and lay in RAM, 4 bytes in
 Measured on the Uno with avr-gcc 7.3 against `uint8_t`: every example 34 to 50 bytes of flash
 smaller, in every variant, and the same RAM; at first, with an initialized member and an array
 of `Byte` in `ChangeMapping()`, 30 to 50 bytes larger, see 42. A sketch writes
-`SetColumn(3, max_matrix::Byte{0x3C})` now.
+`SetColumn(X{3}, max_matrix::Byte{0x3C})` now, the column an `X` since #121 (FN-16).
 
 ### 42 A newer avr-gcc as a cross-check
 
