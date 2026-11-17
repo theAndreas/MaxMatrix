@@ -60,7 +60,7 @@ void Max7219::Reset() {
  * the no-op */
 void Max7219::Latch(uint8_t address, uint8_t data) {
   address = Bits::ReadBitGroup(address, kAddressBits);
-  if (address >= 0x01 && address <= 0x08) {
+  if ((address >= 0x01) && (address <= 0x08)) {
     digit[address - 1] = data;
   } else if (address == 0x09) {
     decode_mode = data;
@@ -89,7 +89,7 @@ uint8_t Max7219::Segments(uint8_t digit_index) const {
   if (display_test != 0u) {
     return 0xFF;
   }
-  if ((shutdown == 0u) || digit_index > scan_limit) {
+  if ((shutdown == 0u) || (digit_index > scan_limit)) {
     return 0x00;
   }
   if (Bits::ReadBit(decode_mode, digit_index)) {

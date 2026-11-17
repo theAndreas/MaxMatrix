@@ -23,7 +23,7 @@ SimulatorFrontEnd::SimulatorFrontEnd() = default;
 
 bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
   web_on_ = options.IsWeb();
-  terminal_on_ = !web_on_ && options.GetRunFor() == 0;
+  terminal_on_ = !web_on_ && (options.GetRunFor() == 0);
 
   if (web_on_) {
     if (!web_.Begin(options.GetPort(), SIMULATOR_PAGE)) {

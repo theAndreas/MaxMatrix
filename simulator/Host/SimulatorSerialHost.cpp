@@ -59,7 +59,7 @@ void SimulatorSerialHost::Task(std::string* received) {
     if (length > 0) {
       received->append(chunk.data(), static_cast<size_t>(length));
     } else {
-      if (length == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
+      if ((length == 0) || ((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
         DropClient();
       }
       break;
@@ -69,7 +69,7 @@ void SimulatorSerialHost::Task(std::string* received) {
 }
 
 void SimulatorSerialHost::Send(std::string const& text) {
-  if (client_ != kSimulatorSocketNone && !text.empty() &&
+  if ((client_ != kSimulatorSocketNone) && !text.empty() &&
       !SimulatorSocket::SendAll(client_, text)) {
     DropClient();
   }

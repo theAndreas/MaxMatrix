@@ -495,7 +495,7 @@ void ControlWindow::Follow(ControlLink& link, char const* name) {
   if (!open) {
     Log(wxString(name) + ": the connection has closed\n");
   }
-  if (!open || was_ready != link.IsReady()) {
+  if (!open || (was_ready != link.IsReady())) {
     ShowState();
   }
 }
@@ -565,8 +565,8 @@ void ControlWindow::ShowBytesLeft() {
         wxString::Format("%" PRId32 " bytes too long", -left));
   }
   bytes_left_->SetForegroundColour(
-      left >= 0 ? wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)
-                : CONTROL_WINDOW_TOO_LONG);
+      (left >= 0) ? wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)
+                  : CONTROL_WINDOW_TOO_LONG);
   send_->Enable(ControlCommand::Fits(line));
 }
 
@@ -580,6 +580,7 @@ void ControlWindow::Log(wxString const& text) { log_->AppendText(text); }
 wxString ControlWindow::ConvertToText(std::string const& line) {
   wxString const text{wxString::FromUTF8(line)};
 
-  return text.empty() && !line.empty() ? wxString(line.c_str(), wxConvISO8859_1)
-                                       : text;
+  return (text.empty() && !line.empty())
+             ? wxString(line.c_str(), wxConvISO8859_1)
+             : text;
 }

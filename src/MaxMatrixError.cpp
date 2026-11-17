@@ -38,7 +38,8 @@ static constexpr auto kErrorTexts PROGMEM{make_array<char const*>(
     kErrorTextNotANumber, kErrorTextUnknownCommand, kErrorTextLineTooLong,
     kErrorTextNotAFont)};
 
-static_assert(kErrorTexts.size() == static_cast<uint8_t>(Error::kNotAFont) + 1,
+static_assert(kErrorTexts.size() ==
+                  (static_cast<uint8_t>(Error::kNotAFont) + 1),
               "every error needs a text");
 
 __FlashStringHelper const* Status::GetErrorText() const {

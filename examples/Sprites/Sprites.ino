@@ -49,7 +49,7 @@ void loop() {
       max_matrix::Batch const batch{matrix};
       matrix.Clear();
       matrix.SetSprite(x, kSpriteY,
-                       x % 2 != 0 ? kInvaderLegsOut : kInvaderLegsIn);
+                       ((x % 2) != 0) ? kInvaderLegsOut : kInvaderLegsIn);
     }
     delay(kStepDelayMs);
   }

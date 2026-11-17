@@ -62,7 +62,7 @@ bool ControlCommand::DecodePicture(std::string const& line,
   }
   columns->clear();
   if (line.size() !=
-      kName.size() + (2u * static_cast<size_t>(kControlNumberOfColumns))) {
+      (kName.size() + (2u * static_cast<size_t>(kControlNumberOfColumns)))) {
     return true;
   }
   for (size_t i{kName.size()}; i < line.size(); i += 2) {
@@ -84,6 +84,6 @@ int32_t ControlCommand::GetBytesLeft(std::string const& line) {
 }
 
 bool ControlCommand::Fits(std::string const& line) {
-  return line.size() <= MAXMATRIX_COMMAND_LINE_LENGTH &&
-         line.find_first_of("\r\n") == std::string::npos;
+  return (line.size() <= MAXMATRIX_COMMAND_LINE_LENGTH) &&
+         (line.find_first_of("\r\n") == std::string::npos);
 }

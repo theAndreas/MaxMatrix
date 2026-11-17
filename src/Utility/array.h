@@ -95,7 +95,7 @@ T ValueOutOfRange();
  */
 template <typename Value>
 constexpr bool IsNegative(Value value) {
-  return value != Value{0} && !(value > Value{0});
+  return (value != Value{0}) && !(value > Value{0});
 }
 
 /*!
@@ -122,8 +122,8 @@ struct ArrayElement {
    * \param[in] value The value.
    */
   static constexpr bool Fits(Value value) {
-    return static_cast<Value>(static_cast<T>(value)) == value &&
-           IsNegative(value) == IsNegative(static_cast<T>(value));
+    return (static_cast<Value>(static_cast<T>(value)) == value) &&
+           (IsNegative(value) == IsNegative(static_cast<T>(value)));
   }
 
   /*!

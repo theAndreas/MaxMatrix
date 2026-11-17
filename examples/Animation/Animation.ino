@@ -36,7 +36,7 @@ void setup() {
 void loop() {
   /* a step only every kStepIntervalMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_step < kStepIntervalMs) {
+  if ((millis() - last_step) < kStepIntervalMs) {
     return;
   }
   last_step = millis();
@@ -46,11 +46,12 @@ void loop() {
   max_matrix::Batch const batch{matrix};
   matrix.SetDot(ball_x, ball_y, false);
   /* turn round at an edge rather than leave the matrix */
-  if (ball_x + step_x < 0 || ball_x + step_x >= matrix.GetNumberOfColumns()) {
+  if (((ball_x + step_x) < 0) ||
+      ((ball_x + step_x) >= matrix.GetNumberOfColumns())) {
     step_x = static_cast<int8_t>(-step_x);
   }
-  if (ball_y + step_y < 0 ||
-      ball_y + step_y >= max_matrix::kRowNumberOfModule) {
+  if (((ball_y + step_y) < 0) ||
+      ((ball_y + step_y) >= max_matrix::kRowNumberOfModule)) {
     step_y = static_cast<int8_t>(-step_y);
   }
   ball_x += step_x;

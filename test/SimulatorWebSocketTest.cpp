@@ -170,10 +170,10 @@ TEST(SimulatorWebSocketTest, DecodeWaitsForTheWholeFrame) {
   std::string payload;
   uint8_t opcode{0};
 
-  for (size_t i{0}; i + 1 < frame.size(); i++) {
+  for (size_t i{0}; (i + 1) < frame.size(); i++) {
     buffer += frame[i];
     ASSERT_FALSE(SimulatorWebSocket::DecodeFrame(&buffer, &opcode, &payload))
-        << "after " << i + 1 << " bytes";
+        << "after " << (i + 1) << " bytes";
     ASSERT_EQ(buffer.size(), i + 1);
   }
   buffer += frame.back();

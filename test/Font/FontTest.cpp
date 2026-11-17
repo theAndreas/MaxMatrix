@@ -220,7 +220,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
 
   matrix_.Clear();
   ASSERT_EQ(matrix_.SetCharWithShift('W').GetError(), Error::kOk);
-  for (; steps < 100 && matrix_.GetState() != State::kReady; steps++) {
+  for (; (steps < 100) && (matrix_.GetState() != State::kReady); steps++) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);

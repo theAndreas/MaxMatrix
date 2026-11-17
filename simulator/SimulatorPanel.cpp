@@ -80,9 +80,9 @@ void SimulatorPanel::SetUpsideDown(bool upside_down) {
 }
 
 bool SimulatorPanel::IsDrawDue(uint32_t now) const {
-  bool const changed{mock::frames != drawn_frames_ || draw_requested_};
+  bool const changed{(mock::frames != drawn_frames_) || draw_requested_};
 
-  return changed && now - last_draw_ >= kSimulatorPanelRedrawInterval;
+  return changed && ((now - last_draw_) >= kSimulatorPanelRedrawInterval);
 }
 
 void SimulatorPanel::SetDrawn(uint32_t now) {

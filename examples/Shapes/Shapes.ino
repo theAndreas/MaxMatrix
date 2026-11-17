@@ -64,7 +64,7 @@ void setup() {
 void loop() {
   /* the next shape only every kShowMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_shape < kShowMs) {
+  if ((millis() - last_shape) < kShowMs) {
     return;
   }
   last_shape = millis();

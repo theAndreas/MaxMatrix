@@ -67,7 +67,7 @@ void SimulatorWebHost::Broadcast(std::string const& text) {
   std::string const frame = SimulatorWebSocket::EncodeFrame(text);
 
   for (uint8_t slot{0}; slot < kSimulatorWebHostMaxClients; slot++) {
-    if (clients_[slot] != kSimulatorSocketNone &&
+    if ((clients_[slot] != kSimulatorSocketNone) &&
         !SimulatorSocket::SendAll(clients_[slot], frame)) {
       DropClient(slot);
     }
@@ -83,7 +83,7 @@ void SimulatorWebHost::AcceptClients() {
     std::string const request = ReadRequest(accepted);
     uint8_t const slot{FindFreeSlot()};
 
-    if (slot < kSimulatorWebHostMaxClients &&
+    if ((slot < kSimulatorWebHostMaxClients) &&
         AnswerRequest(accepted, request)) {
       SimulatorSocket::SetNonBlocking(accepted);
       clients_[slot] = accepted;
@@ -105,8 +105,8 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
   uint8_t opcode{0};
   std::string payload;
 
-  if (received == 0 ||
-      (received < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+  if ((received == 0) ||
+      ((received < 0) && (errno != EAGAIN) && (errno != EWOULDBLOCK))) {
     DropClient(slot);
     return;
   }
@@ -143,7 +143,7 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
     return SimulatorWebSocket::GetHandshakeAnswer(request, &answer) &&
            SimulatorSocket::SendAll(socket, answer);
   }
-  if (path == "/" || path == "/index.html") {
+  if ((path == "/") || (path == "/index.html")) {
     SendPage(socket);
   } else {
     SendResponse(socket, "404 Not Found", "text/plain",
@@ -172,8 +172,8 @@ void SimulatorWebHost::SendPage(int socket) {
 uint8_t SimulatorWebHost::FindFreeSlot() const {
   uint8_t slot{0};
 
-  while (slot < kSimulatorWebHostMaxClients &&
-         clients_[slot] != kSimulatorSocketNone) {
+  while ((slot < kSimulatorWebHostMaxClients) &&
+         (clients_[slot] != kSimulatorSocketNone)) {
     slot++;
   }
   return slot;
@@ -221,8 +221,8 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
 // no path.
 bool SimulatorWebHost::GetPath(std::string const& request, std::string* path) {
   size_t const start{request.find(' ')};
-  size_t const end{start == std::string::npos ? std::string::npos
-                                              : request.find(' ', start + 1)};
+  size_t const end{(start == std::string::npos) ? std::string::npos
+                                                : request.find(' ', start + 1)};
 
   if (end == std::string::npos) {
     return false;

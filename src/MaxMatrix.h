@@ -742,7 +742,8 @@ class Buffer {
  */
 template <uint8_t NumberOfModules>  // NOLINTNEXTLINE(misc-multiple-inheritance)
 class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
-  static_assert(NumberOfModules >= 1 && NumberOfModules <= kMaxNumberOfModules,
+  static_assert((NumberOfModules >= 1) &&
+                    (NumberOfModules <= kMaxNumberOfModules),
                 "a chain has 1 to kMaxNumberOfModules modules");
 
  public:

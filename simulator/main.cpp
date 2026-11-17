@@ -82,7 +82,7 @@ SimulatorFrontEnd front_end;
 [[noreturn]] void Finish() {
   bool const passed{
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
-      mock::errors == 0};
+      (mock::errors == 0)};
 
   exit(passed ? kExitOk : kExitFailed);
 }
@@ -98,7 +98,7 @@ void Tick() {
   uint32_t const now{millis()};
 
   front_end.Follow(panel, now);
-  if (options.GetRunFor() != 0 && now >= options.GetRunFor()) {
+  if ((options.GetRunFor() != 0) && (now >= options.GetRunFor())) {
     Finish();
   }
 }
@@ -119,7 +119,7 @@ void Tick() {
  */
 int main(int argc, char** argv) {
   /* the sketch is built in; an .elf is for SimulatorAvr */
-  if (!options.Parse(argc, argv) || options.GetElfFile() != nullptr ||
+  if (!options.Parse(argc, argv) || (options.GetElfFile() != nullptr) ||
       !panel.SetWiring(options.GetWiringName())) {
     SimulatorOptions::PrintUsage(*argv);
     return kExitUsage;

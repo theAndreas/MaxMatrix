@@ -79,7 +79,7 @@ class Text {
 
   /*! \brief Returns the font every char is drawn in. */
   MAXMATRIX_NODISCARD span<uint8_t const> GetFont() const {
-    return font_.size() != 0 ? font_ : DefaultFont();
+    return (font_.size() != 0) ? font_ : DefaultFont();
   }
 
   /*!

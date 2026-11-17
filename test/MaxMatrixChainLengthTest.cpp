@@ -71,7 +71,7 @@ class MaxMatrixChainLengthTest
 
 std::string ChainName(::testing::TestParamInfo<ChainParameter> const& info) {
   return std::to_string(std::get<0>(info.param)) + "modules_matrix" +
-         (std::get<1>(info.param) == MatrixOrientation::k180 ? "180" : "0") +
+         ((std::get<1>(info.param) == MatrixOrientation::k180) ? "180" : "0") +
          "_" + ModuleTypeName(std::get<2>(info.param));
 }
 
@@ -139,10 +139,10 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
   matrix_.ShiftDown(ShiftFill::kRotate);
   EXPECT_EQ(ShownPicture(matrix_), Pattern());
   matrix_.ShiftRight();
-  EXPECT_EQ(
-      ShownPicture(matrix_),
-      Picture([](int16_t x, int16_t y) { return x > 0 && ::Pattern(x - 1, y); },
-              columns));
+  EXPECT_EQ(ShownPicture(matrix_),
+            Picture([](int16_t x,
+                       int16_t y) { return (x > 0) && ::Pattern(x - 1, y); },
+                    columns));
   EXPECT_EQ(matrix_.ShiftLeft(Byte{0x81}), Byte{0x00})
       << "the empty column the last shift brought";
   EXPECT_EQ(matrix_.GetColumn(columns - 1).GetValue(), Byte{0x81});
@@ -167,7 +167,7 @@ TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
         << "module " << static_cast<uint16_t>(module);
   }
   EXPECT_EQ(matrix_.GetRow(2, read_one).GetError(),
-            number_of_modules_ == 1 ? Error::kOk : Error::kOutOfRange);
+            (number_of_modules_ == 1) ? Error::kOk : Error::kOutOfRange);
   matrix_.SetRow(3, one);
   EXPECT_EQ(matrix_.GetRow(Module{0}, 3).GetValue(), Byte{0xFF});
   if (number_of_modules_ > 1) {
@@ -185,7 +185,7 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
   uint16_t steps{0};
 
   ASSERT_EQ(matrix_.SetTextWithShift(text).GetError(), Error::kOk);
-  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++) {
+  for (; (steps < 1000) && (matrix_.GetState() != State::kReady); steps++) {
     matrix_.ShiftTask();
   }
   EXPECT_LT(steps, 1000);
