@@ -27,26 +27,13 @@
 #include <iostream>
 #include <thread>
 
-#include "Arduino.h"
 #include "SimulatorAvr.h"
 #include "SimulatorFrontEnd.h"
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
-#include "SimulatorTerminal.h"
+#include "SimulatorRun.h"
 
 namespace {
-
-/* the pins every example puts the chain on */
-constexpr uint8_t kDataInPin{11u};
-constexpr uint8_t kChipSelectPin{10u};
-constexpr uint8_t kClockPin{13u};
-/* the chain every example has, max_matrix::MatrixOf<4> */
-constexpr uint8_t kNumberOfModules{4u};
-
-/* exit codes, as in main.cpp */
-constexpr int kExitOk{0};
-constexpr int kExitFailed{1};
-constexpr int kExitUsage{2};
 
 // mock::tick is a plain function pointer, so what Tick() works on has to be
 // reachable without an object.
@@ -93,34 +80,28 @@ bool RunAvr() {
  *
  * \param[in] argc The number of arguments, the program's name included.
  * \param[in] argv The arguments.
- * \return `kExitOk` if the run with `--for` ended with the panel expected and
- *         no transfer error; `kExitFailed` if the .elf cannot be read, the port
- *         is taken, the AVR stopped, or the run with `--for` ended with another
- *         panel or a transfer error; or `kExitUsage` if the command line is
- *         wrong.
+ * \return `kSimulatorRunExitOk` if the run with `--for` ended with the panel
+ *         expected and no transfer error; `kSimulatorRunExitFailed` if the .elf
+ *         cannot be read, the port is taken, the AVR stopped, or the run with
+ *         `--for` ended with another panel or a transfer error; or
+ *         `kSimulatorRunExitUsage` if the command line is wrong.
  */
 int main(int argc, char** argv) {
-  if (!options.Parse(argc, argv) || (options.GetElfFile() == nullptr) ||
-      !panel.SetWiring(options.GetWiringName())) {
+  if (!SimulatorRun::SetUp(argc, argv, options, panel) ||
+      (options.GetElfFile() == nullptr)) {
     SimulatorOptions::PrintUsage(*argv);
-    return kExitUsage;
+    return kSimulatorRunExitUsage;
   }
-  panel.SetUpsideDown(options.IsUpsideDown());
-  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  mock::serial_input = options.GetSerialInput();
   if (!avr.Load(options.GetElfFile())) {
     std::cerr << options.GetElfFile() << " is no .elf for the "
               << kSimulatorAvrMcu << '\n';
-    return kExitFailed;
+    return kSimulatorRunExitFailed;
   }
   if (!front_end.Begin(options)) {
-    return kExitFailed;
+    return kSimulatorRunExitFailed;
   }
   if (!RunAvr()) {
-    return kExitFailed;
+    return kSimulatorRunExitFailed;
   }
-  bool const passed{
-      SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
-      (mock::errors == 0)};
-  return passed ? kExitOk : kExitFailed;
+  return SimulatorRun::End(options, panel);
 }

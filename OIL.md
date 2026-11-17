@@ -1160,6 +1160,17 @@ On the Uno every example 20 bytes of flash smaller with bit banging, with the re
 `MAXMATRIX_DEV_ERROR_DETECT` and without, and the same with SPI, where only chip select is
 looked up; the same RAM in every variant.
 
+As built for FN-13 in the host code: what was written out twice or more is one function each. The
+loops that send all and read what has arrived, of the serial port on Linux and the TCP port, are
+`ControlStream`'s; how a run of either simulator starts and ends is `SimulatorRun`'s, with the
+chain every example has; reading a whole file is `SimulatorFile`'s, for the page and `--expect`;
+`SimulatorSocket` tells a connection that is gone, for both hosts. The control program's window
+makes each line from its fields in one place, the front end says a port is taken in one, and
+`DocuPictures` has its pattern and the panel's height once. Left as they are: the two
+`Begin()` of the hosts, one shared call and a check; the accept loops, whose bodies differ; and
+the seven `avr_irq_register_notify()` of `SimulatorAvr`, one call of simavr each, which a function
+of two numbers side by side, the port and the bit, would only make swappable.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

@@ -38,6 +38,8 @@ namespace {
 
 /* layout, in pixels */
 constexpr int32_t kCell{28};
+/* the height of a module, and so of the panel of one row of them */
+constexpr int32_t kPanelHeight{max_matrix::kRowNumberOfModule * kCell};
 constexpr int32_t kLed{22};
 constexpr int32_t kModuleGap{28};
 constexpr int32_t kLeft{60};
@@ -213,6 +215,20 @@ bool FindLedOfDot(uint8_t x, uint8_t y, DocuLed* led) {
 }
 
 /*!
+ * \brief Returns whether a dot of the pattern IsUpright() sets is lit.
+ *
+ * The pattern has no symmetry a wrong wiring could hide behind, as that of
+ * MaxMatrixModuleTest.
+ *
+ * \param[in] x The column.
+ * \param[in] y The row.
+ * \return True for a lit dot.
+ */
+constexpr bool IsPatternDot(uint8_t x, uint8_t y) {
+  return (((x * x) + (3 * y) + (x * y)) % 3) == 0;
+}
+
+/*!
  * \brief Returns whether a module of a wiring shows the panel upright.
  *
  * It sets a pattern without symmetry dot by dot and compares it with what the
@@ -227,14 +243,13 @@ bool IsUpright(Max7219Wiring const& wiring) {
   matrix.Clear();
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      bool const lit{(((x * x) + (3 * y) + (x * y)) % 3) == 0};
-      matrix.SetDot(max_matrix::Point{max_matrix::X{x}, max_matrix::Y{y}}, lit);
+      matrix.SetDot(max_matrix::Point{max_matrix::X{x}, max_matrix::Y{y}},
+                    IsPatternDot(x, y));
     }
   }
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      if (mock::chain.IsLit(wiring, x, y) !=
-          ((((x * x) + (3 * y) + (x * y)) % 3) == 0)) {
+      if (mock::chain.IsLit(wiring, x, y) != IsPatternDot(x, y)) {
         upright = false;
       }
     }
@@ -351,14 +366,13 @@ void DrawLed(DocuSvg* svg, Dot dot, char const* colour,
  */
 void DrawModule(DocuSvg* svg, uint8_t module) {
   int32_t const module_width{max_matrix::kColumnNumberOfModule * kCell};
-  int32_t const module_height{max_matrix::kRowNumberOfModule * kCell};
   int32_t const left{GetCellX(module * max_matrix::kColumnNumberOfModule)};
-  int32_t const middle{kTop + (module_height / 2)};
+  int32_t const middle{kTop + (kPanelHeight / 2)};
   DocuLed led{};
 
   svg->AddRect({left - kFramePadding, kTop - kFramePadding},
                {static_cast<uint16_t>(module_width + (2 * kFramePadding)),
-                static_cast<uint16_t>(module_height + (2 * kFramePadding))},
+                static_cast<uint16_t>(kPanelHeight + (2 * kFramePadding))},
                {"none", kColourFrame, kFrameRadius});
   svg->AddText({left + (module_width / 2), kTop - kModuleNameAbove},
                "Module " + std::to_string(module), kNameText);
@@ -380,8 +394,7 @@ void DrawModule(DocuSvg* svg, uint8_t module) {
  * \param[in,out] svg The picture.
  */
 void DrawAxes(DocuSvg* svg) {
-  int32_t const module_height{max_matrix::kRowNumberOfModule * kCell};
-  int32_t const below{kTop + module_height + kAxisBelow};
+  int32_t const below{kTop + kPanelHeight + kAxisBelow};
 
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     svg->AddText({GetCellX(x) + (kCell / 2), below}, std::to_string(x),
@@ -393,7 +406,7 @@ void DrawAxes(DocuSvg* svg) {
         std::to_string(y), kRowAxisText);
   }
   svg->AddText(
-      {kLeft - kAxisNameLeft, kTop + (module_height / 2) + kAxisNameShift}, "Y",
+      {kLeft - kAxisNameLeft, kTop + (kPanelHeight / 2) + kAxisNameShift}, "Y",
       kNameText);
   svg->AddText({kLeft - kAxisLeft, below}, "X", kXText);
 }
@@ -539,8 +552,7 @@ void LabelLitDots(uint8_t bit, PerDot<std::string>* labels) {
  * \param[in,out] svg The picture.
  */
 void DrawFunctionNames(DocuSvg* svg) {
-  int32_t const panel_height{max_matrix::kRowNumberOfModule * kCell};
-  int32_t const names{kTop + panel_height + kNamesBelow};
+  int32_t const names{kTop + kPanelHeight + kNamesBelow};
   int32_t const row_module_left{
       GetCellX(kExampleRowModule * max_matrix::kColumnNumberOfModule)};
 
@@ -566,9 +578,8 @@ void DrawFunctionNames(DocuSvg* svg) {
  * \return The SVG text.
  */
 std::string DrawCoordinates() {
-  int32_t const panel_height{max_matrix::kRowNumberOfModule * kCell};
   DocuSvg svg{GetPictureWidth(),
-              kCoordinatesAbove + panel_height + kCoordinatesBelow,
+              kCoordinatesAbove + kPanelHeight + kCoordinatesBelow,
               kTop - kCoordinatesAbove};
   PerDot<std::string> column_labels;
   PerDot<std::string> row_labels;

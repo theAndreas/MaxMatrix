@@ -9,7 +9,6 @@
 
 #include "SimulatorSerialHost.h"
 
-#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -59,7 +58,7 @@ void SimulatorSerialHost::Task(std::string* received) {
     if (length > 0) {
       received->append(chunk.data(), static_cast<size_t>(length));
     } else {
-      if ((length == 0) || ((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+      if (SimulatorSocket::IsGone(length)) {
         DropClient();
       }
       break;

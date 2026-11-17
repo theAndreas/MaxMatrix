@@ -21,6 +21,7 @@
 #include "ControlLink.h"
 #include "ControlSerialPort.h"
 #include "ControlTcpPort.h"
+#include "MaxMatrixAttributes.h"
 
 class wxButton;    // NOLINT(readability-identifier-naming): wxWidgets' name
 class wxCheckBox;  // NOLINT(readability-identifier-naming): wxWidgets' name
@@ -94,6 +95,10 @@ class ControlWindow : public wxFrame {
   void Broadcast(std::string const& line);
   void BroadcastSetting(std::string const& line);
   void SendSettings(ControlLink& link, char const* name);
+  MAXMATRIX_NODISCARD std::string GetTextLine() const;
+  MAXMATRIX_NODISCARD std::string GetIntensityLine() const;
+  MAXMATRIX_NODISCARD std::string GetSpeedLine() const;
+  MAXMATRIX_NODISCARD std::string GetSpaceLine() const;
   void Follow(ControlLink& link, char const* name);
   ControlLink* GetShownLink();
   void ShowState();

@@ -12,12 +12,12 @@
 
 #include <stdint.h>
 
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include "Arduino.h"
+#include "Host/SimulatorFile.h"
 #include "SimulatorPanel.h"
 
 namespace {
@@ -69,28 +69,16 @@ void SimulatorTerminal::Draw(SimulatorPanel const& panel) {
 bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
                                     char const* expect_file) {
   std::string const result = panel.GetText(kResultLit, kResultDark, "\n");
-  std::string expected;
 
   std::cout << result;
   if (expect_file == nullptr) {
     return true;
   }
 
-  if (!ReadFile(expect_file, &expected) || (expected != result)) {
-    std::cerr << "differs from " << expect_file << ":\n" << expected;
+  SimulatorFileText const expected{SimulatorFile::Read(expect_file)};
+  if (!expected.complete || (expected.text != result)) {
+    std::cerr << "differs from " << expect_file << ":\n" << expected.text;
     return false;
   }
   return true;
-}
-
-// Reads the whole file at `path` into `text`. Returns false if it cannot be
-// read; `text` then holds what was read even so, so that the caller can show
-// it.
-bool SimulatorTerminal::ReadFile(char const* path, std::string* text) {
-  std::ifstream const file{path};
-  std::stringstream content;
-
-  content << file.rdbuf();
-  *text = content.str();
-  return static_cast<bool>(file);
 }

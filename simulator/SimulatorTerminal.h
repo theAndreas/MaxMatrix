@@ -23,9 +23,6 @@
  * max_matrix::Font.
  */
 class SimulatorTerminal {
- private:
-  static bool ReadFile(char const* path, std::string* text);
-
  public:
   /*!
    * \brief Returns the line above the panel.

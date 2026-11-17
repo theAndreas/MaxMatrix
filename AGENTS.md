@@ -147,6 +147,8 @@ exception goes at the end of a list, with its reason.
     serial host; it takes what the sketch printed from the mock once per tick, for all of them.
   - `SimulatorPanel` — the model's LEDs for a wiring and mounting, and whether to draw again.
   - `SimulatorTerminal` — the panel redrawn in place, or printed once at the end of `--for`.
+  - `SimulatorRun` — how a run of either simulator starts, from the command line with the chain
+    every example has, and ends, with its exit code; `main.cpp` and `mainAvr.cpp` share it.
   - `Web/` — `SimulatorWeb`, the JSON for `index.html` beside it (read at run time) and its
     commands; `serial LINE` from the page reaches the sketch's `Serial`, and what the sketch
     prints goes back in the JSON.
@@ -158,7 +160,9 @@ exception goes at the end of a list, with its reason.
     - `SimulatorSerialHost` — `--tcp PORT`: the sketch's `Serial` as a plain TCP port on
       loopback, one client at a time, for the control program, which has no WebSocket.
     - `SimulatorSocket` — what both hosts do with a socket: listen on loopback, never wait, send
-      all.
+      all, and tell a connection that is gone.
+    - `SimulatorFile` — a whole file read into a string, the page the web host serves and the
+      panel `--expect` names.
   - `Avr/` — `mainAvr.cpp` and `SimulatorAvr`, the executable `SimulatorAvr`: the same simulator
     for the `.elf` `avr-gcc` makes of an example (`--elf`). simavr runs it on an ATmega328P, its
     pins 10, 11 and 13 and its SPI output drive the model, its UART is `Serial`. It writes the
@@ -174,7 +178,9 @@ exception goes at the end of a list, with its reason.
   old Windows tool of `AndreasBur/Led-Matrix`. A CMake project of its own as well, for Windows.
   Classes start with `Control`; everything but the window is the library `Control`, tested
   without wxWidgets:
-  - `ControlPort` — one end: `ControlSerialPort` (`termios` / Win32) or `ControlTcpPort`.
+  - `ControlPort` — one end: `ControlSerialPort` (`termios` / Win32) or `ControlTcpPort`;
+    `ControlStream` holds the loops that send all and read what has arrived, which the serial port
+    on Linux and the TCP port share.
   - `ControlLink` — the lines over a port, waiting for `ready` on a board, and asking for the
     `picture` the window shows.
   - `ControlCommand` — the lines `Command` reads, whether one fits its buffer, and the
