@@ -165,8 +165,10 @@ void SimulatorAvr::ReceiveSerial() {
 }
 
 // Adds `value`, the byte on the wire, to the frame as the page shows it; a byte
-// outside a frame is an error, as in the Arduino stand-in.
-void SimulatorAvr::TakeByte(uint8_t value) const {
+// outside a frame is an error, as in the Arduino stand-in. FN-11: not const, as
+// it writes the frame the chain receives, which this object follows.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+void SimulatorAvr::TakeByte(uint8_t value) {
   if (chip_select_) {
     mock::errors++;
   } else {

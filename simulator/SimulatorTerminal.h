@@ -56,16 +56,24 @@ class SimulatorTerminal {
   static void Draw(SimulatorPanel const& panel);
 
   /*!
-   * \brief Prints the panel once at the end of a run, in ASCII, and compares it
-   *        with the expected panel if there is one.
+   * \brief Prints the panel once at the end of a run, in ASCII.
    *
    * \param[in] panel The panel to print.
+   */
+  static void PrintResult(SimulatorPanel const& panel);
+
+  /*!
+   * \brief Returns whether the panel is the one expected, and shows the
+   *        expected one on the error stream if it is not.
+   *
+   * \param[in] panel The panel, as PrintResult() prints it.
    * \param[in] expect_file The file with the expected panel, or nullptr for
    *                        none.
    * \return True if the panel is as expected or none is expected, or false if
    *         it differs from the file or the file cannot be read.
    */
-  static bool PrintResult(SimulatorPanel const& panel, char const* expect_file);
+  MAXMATRIX_NODISCARD static bool IsExpected(SimulatorPanel const& panel,
+                                             char const* expect_file);
 };
 
 #endif  // MAXMATRIX_SIMULATOR_SIMULATORTERMINAL_H_

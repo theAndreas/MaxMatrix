@@ -86,7 +86,7 @@ class DocuSvg {
    * \param[in] size The width and the height.
    * \param[in] paint Its fill, its outline and its corners.
    */
-  void AddRect(DocuPoint corner, DocuSize size, DocuPaint paint);
+  void AddRect(DocuPoint corner, DocuSize size, DocuPaint const& paint);
 
   /*!
    * \brief Adds a line of text, with its baseline at the point given.
@@ -96,7 +96,7 @@ class DocuSvg {
    * \param[in] font How it is set.
    * \pre `text` holds no `&`, `<` or `>`.
    */
-  void AddText(DocuPoint at, std::string const& text, DocuFont font);
+  void AddText(DocuPoint at, std::string const& text, DocuFont const& font);
 
   /*!
    * \brief Adds a horizontal arrow: a line from `from` to `to_x` at the height

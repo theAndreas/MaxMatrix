@@ -12,6 +12,8 @@ startSimulator "$1" "$Port" 3
 
 Page=$(curl -s "http://localhost:$Port/" || true)
 grep -q '<title>MaxMatrix Simulator</title>' <<< "$Page" || fail "the page did not arrive"
+PageHead=$(curl -s -o /dev/null -w '%{http_code} %{content_type}' "http://localhost:$Port/" || true)
+[ "$PageHead" = "200 text/html; charset=utf-8" ] || fail "the page came as $PageHead"
 Status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$Port/nothing" || true)
 [ "$Status" = 404 ] || fail "an unknown path got $Status rather than 404"
 

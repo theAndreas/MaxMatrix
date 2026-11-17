@@ -1190,6 +1190,23 @@ whether something changed, as wxWidgets' `Enable()`, goes to `Discard()` as well
 finds is `MAXMATRIX_NODISCARD` now, some thirty functions. A reference to the object itself or a
 handle to what was just added is no result, AGENTS.md says why.
 
+As built for the rest of the chapter: printing the panel at the end of a run and comparing it
+with `--expect` are two functions (FN-1), as are writing the pictures of `DocuPictures` and
+checking them, which reports a picture it cannot write now; `IsUpright()` returns at the first
+dot that differs, and the name MD_MAX72XX gives a wiring is found by a function of its own
+(FN-14); `DocuSvg` takes its paint and font by `const&`, the control program a `wxPoint` by
+value (FN-7); a few helpers of `control/` and `docu/` are `constexpr` (FN-9); the panel of the
+simulator holds its wiring by `std::reference_wrapper`, as it always has one (FN-15);
+`SimulatorAvr::TakeByte()` is not `const`, as it writes the frame (FN-11); and `DocuPictures`
+reads a file through `SimulatorFile` (FN-13). Left as they are for FN-16, as clang-tidy does not
+see them and a test fails on a swap of each: `ControlCommand::MakeDot(column, row)` and the
+column and row of `ControlDotPanel`, which `ControlCommandTest` and the order of the line pin;
+`DocuSvg::AddArrow(from, to_x, thickness)`, `CountLit(chip, digit)` and `FindLedOfDot(x, y)`, which
+`docu/pictures` pins; and `SimulatorWebHost::SendResponse(status, content_type)`, which
+`simulator/web` pins for the page and a 404, the page's now as well. `SimulatorWeb::ConvertToHex(value,
+digits)` is left too: `SimulatorTest` pins the call that escapes a char, the frame log of the page
+only the eye.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

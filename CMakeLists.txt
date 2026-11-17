@@ -196,7 +196,7 @@ add_compile_fail_tests(DIRECTORY ${PROJECT_SOURCE_DIR}/test/compile_fail STANDAR
 # The pictures in docu/ are drawn from the library and the model rather than by hand: DocuPictures writes them, and the
 # test fails when one in docu/ is no longer what the library would draw. Once, as the transfer path does not matter.
 add_executable(DocuPictures docu/DocuPictures.cpp docu/DocuSvg.cpp)
-target_link_libraries(DocuPictures PRIVATE MaxMatrix-bitbang)
+target_link_libraries(DocuPictures PRIVATE MaxMatrix-bitbang SimulatorHosts)
 add_test(NAME docu/pictures COMMAND DocuPictures --check ${PROJECT_SOURCE_DIR}/docu)
 
 # The examples as the Uno runs them: the .elf avr-gcc makes of each, with bit banging and with SPI, in simavr against the

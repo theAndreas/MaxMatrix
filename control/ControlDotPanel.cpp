@@ -205,7 +205,7 @@ bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
  * Finds the LED at `point`, in pixels of the panel; none for a point in the
  * margin or in the gap between two modules, which belongs to no LED.
  */
-ControlDotPanel::Dot ControlDotPanel::GetDotAt(wxPoint const& point) const {
+ControlDotPanel::Dot ControlDotPanel::GetDotAt(wxPoint point) const {
   Dot const none{false, 0, 0};
   wxCoord const cell{FromDIP(kCell)};
   wxCoord const module_width{(max_matrix::kColumnNumberOfModule * cell) +

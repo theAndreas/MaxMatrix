@@ -49,7 +49,7 @@ class SimulatorAvr {
   bool receive_ready_{false};
 
   void ReceiveSerial();
-  void TakeByte(uint8_t value) const;
+  void TakeByte(uint8_t value);
   /*
    * simavr reports a pin or a byte through a C function and a pointer it was
    * given, so each of those is a static function that is handed the object. The
