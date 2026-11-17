@@ -221,6 +221,26 @@ TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
             "unknown error");
 }
 
+/* a status and a result known when compiling are constants, as FN-9 asks of
+ * whatever can be constexpr; neither was */
+TEST(MaxMatrixErrorTest, StatusAndResultAreConstexpr) {
+  constexpr Status kFailed{Error::kOutOfRange};
+  constexpr Result<uint8_t> kValue{uint8_t{7}};
+  constexpr Result<uint8_t> kNone{Error::kUnknownChar};
+
+  static_assert(!kFailed.IsOk(), "a status of an error is no success");
+  static_assert(kFailed.GetError() == Error::kOutOfRange, "it keeps its error");
+  static_assert(kFailed == Error::kOutOfRange, "it compares with its error");
+  static_assert(kFailed != Error::kOk, "and with another");
+  static_assert(Status{}.IsOk(), "a status without an error is a success");
+  static_assert(kValue.IsOk(), "a result of a value is a success");
+  static_assert(kValue.GetValue() == 7, "it keeps its value");
+  static_assert(kValue.GetError() == Error::kOk, "and no error");
+  static_assert(kNone == Error::kUnknownChar, "a result of an error keeps it");
+  static_assert(kNone != Error::kOk, "and is no success");
+  static_assert(kNone.GetValue() == 0, "its value is 0");
+}
+
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 /* the default report prints what the tests record instead, so the printing is a
  * function of its own and tested here */

@@ -101,10 +101,9 @@ class Command {
   MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteSetting(Matrix& matrix,
                                             uint8_t value) const;
-  static void AnswerPicture(Matrix& matrix, Print& answer);
+  static void AnswerPicture(Matrix const& matrix, Print& answer);
   MAXMATRIX_NODISCARD Result<uint16_t> ConvertToNumber(uint8_t text,
                                                        uint16_t maximum) const;
-  static char ConvertToHexDigit(uint8_t value);
 
  public:
   /*! \brief Makes a reader at the start of an empty line. */

@@ -84,11 +84,12 @@ class Status {
    *
    * \param[in] error The error, or Error::kOk.
    */
-  Status(Error error = Error::kOk)  // NOLINT(runtime/explicit): returns Error
+  constexpr Status(  // NOLINT(runtime/explicit): returns Error
+      Error error = Error::kOk)
       : error_{error} {}
 
   /*! \brief Returns why the call failed, or Error::kOk. */
-  MAXMATRIX_NODISCARD Error GetError() const { return error_; }
+  MAXMATRIX_NODISCARD constexpr Error GetError() const { return error_; }
 
   /*!
    * \brief Returns the error in a few words, in flash, for `Serial.print()`.
@@ -103,7 +104,9 @@ class Status {
   MAXMATRIX_NODISCARD __FlashStringHelper const* GetErrorText() const;
 
   /*! \brief Returns whether the call did what it was asked. */
-  MAXMATRIX_NODISCARD bool IsOk() const { return error_ == Error::kOk; }
+  MAXMATRIX_NODISCARD constexpr bool IsOk() const {
+    return error_ == Error::kOk;
+  }
 
   /*!
    * \brief Returns whether the call failed for this reason.
@@ -111,7 +114,7 @@ class Status {
    * \param[in] status The status of the call.
    * \param[in] error The error to compare with.
    */
-  friend bool operator==(Status status, Error error) {
+  friend constexpr bool operator==(Status status, Error error) {
     return status.error_ == error;
   }
 
@@ -121,7 +124,7 @@ class Status {
    * \param[in] status The status of the call.
    * \param[in] error The error to compare with.
    */
-  friend bool operator!=(Status status, Error error) {
+  friend constexpr bool operator!=(Status status, Error error) {
     return !(status == error);
   }
 };
@@ -153,7 +156,8 @@ class Result {
    *
    * \param[in] value The value.
    */
-  Result(ValueType value)  // NOLINT(runtime/explicit): returns the value
+  constexpr Result(  // NOLINT(runtime/explicit): returns the value
+      ValueType value)
       : value_{value}, error_{Error::kOk} {}
 
   /*!
@@ -163,14 +167,14 @@ class Result {
    *
    * \param[in] error The error.
    */
-  Result(Error error)  // NOLINT(runtime/explicit): returns Error
+  constexpr Result(Error error)  // NOLINT(runtime/explicit): returns Error
       : value_{}, error_{error} {}
 
   /*! \brief Returns the value; 0, or what `ValueType()` is, after an error. */
-  MAXMATRIX_NODISCARD ValueType GetValue() const { return value_; }
+  MAXMATRIX_NODISCARD constexpr ValueType GetValue() const { return value_; }
 
   /*! \brief Returns why there is no value, or Error::kOk. */
-  MAXMATRIX_NODISCARD Error GetError() const { return error_; }
+  MAXMATRIX_NODISCARD constexpr Error GetError() const { return error_; }
 
   /*! \copydoc Status::GetErrorText() */
   MAXMATRIX_NODISCARD __FlashStringHelper const* GetErrorText() const {
@@ -178,7 +182,9 @@ class Result {
   }
 
   /*! \brief Returns whether there is a value. */
-  MAXMATRIX_NODISCARD bool IsOk() const { return error_ == Error::kOk; }
+  MAXMATRIX_NODISCARD constexpr bool IsOk() const {
+    return error_ == Error::kOk;
+  }
 
   /*!
    * \brief Returns whether there is no value for this reason.
@@ -186,7 +192,7 @@ class Result {
    * \param[in] result The result of the call.
    * \param[in] error The error to compare with.
    */
-  friend bool operator==(Result const& result, Error error) {
+  friend constexpr bool operator==(Result const& result, Error error) {
     return result.error_ == error;
   }
 
@@ -196,7 +202,7 @@ class Result {
    * \param[in] result The result of the call.
    * \param[in] error The error to compare with.
    */
-  friend bool operator!=(Result const& result, Error error) {
+  friend constexpr bool operator!=(Result const& result, Error error) {
     return !(result == error);
   }
 };

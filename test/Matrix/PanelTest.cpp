@@ -140,6 +140,22 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
         << "shift step " << step;
   }
 }
+/* what reads the picture changes nothing, so a function handed the matrix only
+ * to look at it takes it as Matrix const& (FN-11); the getters were not const
+ */
+TEST_F(MaxMatrixTest, PictureIsReadThroughAConstMatrix) {
+  PanelRow row;
+  matrix_.SetDot(Point{X{3}, Y{2}}, true);
+  Matrix const& seen{matrix_};
+
+  EXPECT_TRUE(seen.GetDot(Point{X{3}, Y{2}}).GetValue());
+  EXPECT_EQ(seen.GetColumn(X{3}).GetValue(), Byte{0x04});
+  EXPECT_EQ(seen.GetColumn(max_matrix::Module{0}, 3).GetValue(), Byte{0x04});
+  EXPECT_EQ(seen.GetRow(max_matrix::Module{0}, 2).GetValue(), Byte{0x10});
+  ASSERT_EQ(seen.GetRow(Y{2}, row).GetError(), Error::kOk);
+  EXPECT_EQ(row[0], Byte{0x10});
+}
+
 /* a column of a module is the column of the panel that many modules in */
 TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
   matrix_.SetColumn(max_matrix::Module{1}, 2, Byte{0xA3});

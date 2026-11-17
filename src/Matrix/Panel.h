@@ -178,10 +178,37 @@ class Panel {
     uint8_t bit;
   };
 
+  /*
+   * Whether a column, a row or a dot lies on the panel, or a column or row
+   * within a module. Templates, as SetFarDot() checks its sums as int32_t and
+   * the rest int16_t, which is cheaper on the Uno.
+   */
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD bool HasColumn(Coordinate column) const {
+    return (column >= 0) && (column < GetNumberOfColumns());
+  }
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD static constexpr bool HasRow(Coordinate row) {
+    return (row >= 0) && (row < kRowNumberOfModule);
+  }
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD bool HasDot(Coordinate column, Coordinate row) const {
+    return HasColumn(column) && HasRow(row);
+  }
+  MAXMATRIX_NODISCARD bool HasModuleColumn(Module module,
+                                           uint8_t column) const {
+    return (module.number < GetNumberOfModules()) &&
+           (column < kColumnNumberOfModule);
+  }
+  MAXMATRIX_NODISCARD bool HasModuleRow(Module module, uint8_t row) const {
+    return (module.number < GetNumberOfModules()) && (row < kRowNumberOfModule);
+  }
+
   static Byte ReverseByte(Byte input);
   MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(uint8_t column,
                                                    uint8_t row) const;
-  Byte GetLine(uint8_t column, uint8_t row, bool vertical);
+  MAXMATRIX_NODISCARD Byte GetLine(uint8_t column, uint8_t row,
+                                   bool vertical) const;
   void SetLine(uint8_t column, uint8_t row, bool vertical, Byte value);
   /*
    * SetDot() with its point unpacked, inline, before the call: avr-gcc 7.3
@@ -242,7 +269,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
    *         the panel.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x) const;
 
   /*!
    * \brief Returns a column of a module.
@@ -252,7 +279,8 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
    *         or the column does not exist.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module, uint8_t column);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module,
+                                             uint8_t column) const;
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -263,7 +291,7 @@ class Panel {
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values);
+  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values) const;
 
   /*!
    * \brief Returns a row of a module.
@@ -276,7 +304,7 @@ class Panel {
    * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
    *         module or the row does not exist.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row);
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row) const;
 
   /*!
    * \brief Returns whether a dot is lit.
@@ -285,7 +313,7 @@ class Panel {
    * \return Whether the dot is lit, or Error::kOutOfRange if it lies off the
    *         panel.
    */
-  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot);
+  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot) const;
 
   /*!
    * \brief Sets a column of the matrix.

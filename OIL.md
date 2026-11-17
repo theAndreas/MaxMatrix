@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1143,6 +1143,22 @@ Measured on the Uno with avr-gcc 7.3 against `uint8_t`: every example 34 to 50 b
 smaller, in every variant, and the same RAM; at first, with an initialized member and an array
 of `Byte` in `ChangeMapping()`, 30 to 50 bytes larger, see 42. A sketch writes
 `SetColumn(X{3}, max_matrix::Byte{0x3C})` now, the column an `X` since #121 (FN-16).
+
+As reviewed for the chapter Functions on 2026-11-17, in `src/`, `simulator/`, `control/` and
+`docu/`, the tests keeping their lighter style. The library had three findings, the host code
+more; decided the same day: in the host code a result is returned, several as a small struct,
+rather than written through a pointer (FN-8, FN-15), and every result dropped on purpose goes to
+`Discard()` with its reason, a system call's as well (FN-10). A pull request for the library
+first, then one per rule for the host code.
+
+As built for the library: what only reads the picture is `const`, `GetColumn()`, `GetRow()` and
+`GetDot()`, so that a sketch reads it through a `Matrix const&` (FN-11); `Status`, `Result` and
+three small helpers are `constexpr` (FN-9); the range checks of `internal::Panel`, written out
+up to three times each, are one function each, and `internal::Chain` keeps a pin's port and bit
+as one, looked up by one function, which took the last FN-16 `NOLINT` of `src/` but four (FN-13).
+On the Uno every example 20 bytes of flash smaller with bit banging, with the reports of
+`MAXMATRIX_DEV_ERROR_DETECT` and without, and the same with SPI, where only chip select is
+looked up; the same RAM in every variant.
 
 ### 42 A newer avr-gcc as a cross-check
 

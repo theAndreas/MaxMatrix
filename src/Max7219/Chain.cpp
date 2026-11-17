@@ -57,9 +57,11 @@ Status Chain::Init(uint8_t number_of_modules) {
   }
 
   pinMode(chip_select_pin_, OUTPUT);
-  chip_select_port_ = digitalPinToPort(chip_select_pin_);
-  chip_select_mask_ = digitalPinToBitMask(chip_select_pin_);
-  WritePin(chip_select_port_, chip_select_mask_, true);
+  // A local first: read back from the member, it cost 8 bytes of flash in
+  // every example with SPI.
+  PortBit const chip_select{LookUpPortBit(chip_select_pin_)};
+  chip_select_ = chip_select;
+  WritePin(chip_select, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
   // the core's SPI object; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
@@ -67,12 +69,10 @@ Status Chain::Init(uint8_t number_of_modules) {
 #else
   pinMode(data_in_pin_, OUTPUT);
   pinMode(clock_pin_, OUTPUT);
-  data_in_port_ = digitalPinToPort(data_in_pin_);
-  data_in_mask_ = digitalPinToBitMask(data_in_pin_);
-  clock_port_ = digitalPinToPort(clock_pin_);
-  clock_mask_ = digitalPinToBitMask(clock_pin_);
+  data_in_ = LookUpPortBit(data_in_pin_);
+  clock_ = LookUpPortBit(clock_pin_);
   /* clock idles low, MAX7219 samples data on the rising edge */
-  WritePin(clock_port_, clock_mask_, false);
+  WritePin(clock_, false);
 #endif
 
   WriteRegisterAll(max7219::Register::kScanLimit,
@@ -126,7 +126,7 @@ void Chain::StartTransmission() {
   SPI.beginTransaction(
       SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
 #endif
-  WritePin(chip_select_port_, chip_select_mask_, false);
+  WritePin(chip_select_, false);
 }
 
 /*
@@ -137,7 +137,7 @@ void Chain::StartTransmission() {
 // Not const: it changes the chain this object stands for, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::StopTransmission() {
-  WritePin(chip_select_port_, chip_select_mask_, true);
+  WritePin(chip_select_, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
   // the core's SPI object; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
@@ -183,9 +183,9 @@ void Chain::ShiftOut(uint8_t value) {
    * a port.
    */
   auto* const data_in_register{portOutputRegister(
-      data_in_port_)}; /* NOLINT(performance-no-int-to-ptr) */
+      data_in_.port)}; /* NOLINT(performance-no-int-to-ptr) */
   auto* const clock_register{
-      portOutputRegister(clock_port_)}; /* NOLINT(performance-no-int-to-ptr) */
+      portOutputRegister(clock_.port)}; /* NOLINT(performance-no-int-to-ptr) */
   uint8_t const status_register{
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
@@ -193,34 +193,36 @@ void Chain::ShiftOut(uint8_t value) {
   for (uint8_t bit{kFirstBit}; bit != 0u;
        bit = Bit<uint8_t>::ShiftDown(bit, 1u)) {
     if (Bit<uint8_t>::ReadBitGroup(value, bit) != 0u) {
-      Bit<uint8_t>::SetBits(*data_in_register, data_in_mask_);
+      Bit<uint8_t>::SetBits(*data_in_register, data_in_.mask);
     } else {
-      Bit<uint8_t>::ClearBits(*data_in_register, data_in_mask_);
+      Bit<uint8_t>::ClearBits(*data_in_register, data_in_.mask);
     }
-    Bit<uint8_t>::SetBits(*clock_register, clock_mask_);
-    Bit<uint8_t>::ClearBits(*clock_register, clock_mask_);
+    Bit<uint8_t>::SetBits(*clock_register, clock_.mask);
+    Bit<uint8_t>::ClearBits(*clock_register, clock_.mask);
   }
   SREG = status_register;
 }
 #endif
 
-// Sets the pin of `mask` in `port` high or low, with the interrupts held off,
-// as ShiftOut() does.
-// FN-16: private; every call passes the port and the mask Init() looked up for
-// one pin, in the two members of that pin's name
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void Chain::WritePin(uint8_t port, uint8_t mask, bool high) {
+// Looks up the port of `pin` and its bit there, as digitalWrite() does on every
+// call.
+Chain::PortBit Chain::LookUpPortBit(uint8_t pin) {
+  return PortBit{digitalPinToPort(pin), digitalPinToBitMask(pin)};
+}
+
+// Sets `pin` high or low, with the interrupts held off, as ShiftOut() does.
+void Chain::WritePin(PortBit pin, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
   auto* const port_register{
-      portOutputRegister(port)}; /* NOLINT(performance-no-int-to-ptr) */
+      portOutputRegister(pin.port)}; /* NOLINT(performance-no-int-to-ptr) */
   uint8_t const status_register{
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
   if (high) {
-    Bit<uint8_t>::SetBits(*port_register, mask);
+    Bit<uint8_t>::SetBits(*port_register, pin.mask);
   } else {
-    Bit<uint8_t>::ClearBits(*port_register, mask);
+    Bit<uint8_t>::ClearBits(*port_register, pin.mask);
   }
   SREG = status_register;
 }
