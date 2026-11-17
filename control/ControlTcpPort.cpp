@@ -23,9 +23,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <array>
 #include <string>
 
+#include "ControlStream.h"
 #include "ControlTcpPort.h"
 #include "Utility/Bit.h"
 
@@ -33,7 +33,6 @@ namespace {
 
 /* ControlTcpPort Parameter */
 constexpr intptr_t kNone{(-1)};
-constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
 #ifdef _WIN32
@@ -122,46 +121,41 @@ bool ControlTcpPort::Open(uint16_t port) {
 bool ControlTcpPort::IsOpen() const { return socket_ != kNone; }
 
 bool ControlTcpPort::Write(std::string const& data) {
-  size_t sent{0};
-
   if (!IsOpen()) {
     return false;
   }
-  while (sent < data.size()) {
-    auto const written{send(ToSocket(socket_), &data[sent],
-                            ToLength(data.size() - sent), kSendFlags)};
-    pollfd writable{ToSocket(socket_), POLLOUT, 0};
-    if (written > 0) {
-      sent += static_cast<size_t>(written);
-    } else if ((written < 0) && WouldBlock() &&
-               (Poll(&writable, kWriteTimeoutMs) > 0)) {
-      continue;
-    } else {
-      Close();
-      return false;
-    }
+  Socket const connection{ToSocket(socket_)};
+  bool const sent{ControlStream::SendAll(
+      data,
+      [connection](char const* bytes, size_t length) {
+        return send(connection, bytes, ToLength(length), kSendFlags);
+      },
+      WouldBlock,
+      [connection] {
+        pollfd writable{connection, POLLOUT, 0};
+        return Poll(&writable, kWriteTimeoutMs) > 0;
+      })};
+  if (!sent) {
+    Close();
   }
-  return true;
+  return sent;
 }
 
 bool ControlTcpPort::Read(std::string* data) {
-  std::array<char, kChunkLength> chunk{};
-
   if (!IsOpen()) {
     return false;
   }
-  for (;;) {
-    auto const length{recv(ToSocket(socket_), chunk.data(),
-                           static_cast<int>(chunk.size()), 0)};
-    if (length > 0) {
-      data->append(chunk.data(), static_cast<size_t>(length));
-    } else if ((length < 0) && WouldBlock()) {
-      return true;
-    } else {
-      Close();
-      return false;
-    }
+  Socket const connection{ToSocket(socket_)};
+  bool const open{ControlStream::ReceiveAvailable(
+      *data,
+      [connection](char* bytes, size_t length) {
+        return recv(connection, bytes, ToLength(length), 0);
+      },
+      WouldBlock)};
+  if (!open) {
+    Close();
   }
+  return open;
 }
 
 void ControlTcpPort::Close() {

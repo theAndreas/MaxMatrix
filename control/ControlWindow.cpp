@@ -311,8 +311,7 @@ wxWindow* ControlWindow::MakeConnections(wxWindow* parent) {
  * line too long".
  */
 void ControlWindow::OnSend(wxCommandEvent& /* event */) {
-  std::string const line = ControlCommand::MakeText(
-      std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
+  std::string const line = GetTextLine();
 
   if (ControlCommand::Fits(line)) {
     Broadcast(line);
@@ -334,18 +333,15 @@ void ControlWindow::OnClear(wxCommandEvent& /* event */) {
 void ControlWindow::OnShift(wxCommandEvent& /* event */) { ShowState(); }
 
 void ControlWindow::OnIntensity(wxCommandEvent& /* event */) {
-  BroadcastSetting(ControlCommand::MakeIntensity(
-      static_cast<uint8_t>(intensity_->GetValue())));
+  BroadcastSetting(GetIntensityLine());
 }
 
 void ControlWindow::OnSpeed(wxCommandEvent& /* event */) {
-  BroadcastSetting(
-      ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue())));
+  BroadcastSetting(GetSpeedLine());
 }
 
 void ControlWindow::OnSpace(wxSpinEvent& /* event */) {
-  Broadcast(
-      ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue())));
+  Broadcast(GetSpaceLine());
 }
 
 // Opens the port in the box, or closes the one that is open.
@@ -452,6 +448,26 @@ void ControlWindow::BroadcastSetting(std::string const& line) {
   Broadcast(line);
 }
 
+// The line for the text in the field, standing or shifting in as Shift says.
+std::string ControlWindow::GetTextLine() const {
+  return ControlCommand::MakeText(std::string(text_->GetValue().ToUTF8()),
+                                  shift_->GetValue());
+}
+
+// The lines for the intensity, speed and space the window shows.
+std::string ControlWindow::GetIntensityLine() const {
+  return ControlCommand::MakeIntensity(
+      static_cast<uint8_t>(intensity_->GetValue()));
+}
+
+std::string ControlWindow::GetSpeedLine() const {
+  return ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue()));
+}
+
+std::string ControlWindow::GetSpaceLine() const {
+  return ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()));
+}
+
 /*
  * Sends `link` the intensity, speed and space the window shows: its
  * SerialControl has just started with the ones it was built with, or the
@@ -459,10 +475,7 @@ void ControlWindow::BroadcastSetting(std::string const& line) {
  */
 void ControlWindow::SendSettings(ControlLink& link, char const* name) {
   std::array<std::string, 3> const lines{
-      {ControlCommand::MakeIntensity(
-           static_cast<uint8_t>(intensity_->GetValue())),
-       ControlCommand::MakeSpeed(static_cast<uint16_t>(speed_->GetValue())),
-       ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()))}};
+      {GetIntensityLine(), GetSpeedLine(), GetSpaceLine()}};
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": > " + ConvertToText(line) + "\n");
@@ -554,8 +567,7 @@ void ControlWindow::ShowState() {
  * umlaut takes two, and Shift in five more.
  */
 void ControlWindow::ShowBytesLeft() {
-  std::string const line = ControlCommand::MakeText(
-      std::string(text_->GetValue().ToUTF8()), shift_->GetValue());
+  std::string const line = GetTextLine();
   int32_t const left{ControlCommand::GetBytesLeft(line)};
 
   if (left >= 0) {

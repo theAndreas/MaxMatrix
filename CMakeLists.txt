@@ -53,7 +53,8 @@ gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
 # The simulator's hosts once as well, the web host and the serial port on TCP: they know neither the library nor the
 # sketch, and the WebSocket half is tested on its own, without a network.
 add_library(SimulatorHosts STATIC simulator/Host/SimulatorSocket.cpp simulator/Host/SimulatorWebHost.cpp
-                                  simulator/Host/SimulatorWebSocket.cpp simulator/Host/SimulatorSerialHost.cpp)
+                                  simulator/Host/SimulatorWebSocket.cpp simulator/Host/SimulatorSerialHost.cpp
+                                  simulator/Host/SimulatorFile.cpp)
 # src/ for MaxMatrixAttributes.h alone, as for the model.
 target_include_directories(SimulatorHosts PUBLIC simulator src)
 foreach(Test SimulatorWebSocketTest SimulatorWebHostTest SimulatorSerialHostTest)
@@ -67,7 +68,7 @@ endforeach()
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
 # difference to it, and its tests need no sketch.
 add_library(Simulator STATIC simulator/SimulatorOptions.cpp simulator/SimulatorPanel.cpp simulator/SimulatorTerminal.cpp
-                             simulator/Web/SimulatorWeb.cpp simulator/SimulatorFrontEnd.cpp)
+                             simulator/Web/SimulatorWeb.cpp simulator/SimulatorFrontEnd.cpp simulator/SimulatorRun.cpp)
 target_include_directories(Simulator PUBLIC src)
 target_link_libraries(Simulator PUBLIC SimulatorHosts ArduinoMock)
 # read at run time, so that a change to the page needs a reload in the browser rather than a rebuild

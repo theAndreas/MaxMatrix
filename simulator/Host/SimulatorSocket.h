@@ -14,9 +14,12 @@
 #define MAXMATRIX_SIMULATOR_HOST_SIMULATORSOCKET_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <chrono>
 #include <string>
+
+#include "MaxMatrixAttributes.h"
 
 /* SimulatorSocket Parameter */
 constexpr int kSimulatorSocketNone{(-1)};
@@ -49,6 +52,16 @@ class SimulatorSocket {
    * \param[in] socket The socket.
    */
   static void SetNonBlocking(int socket);
+
+  /*!
+   * \brief Returns whether the other end of a connection is gone, as a recv()
+   *        on it says: closed, or broken.
+   *
+   * \param[in] received What recv() returned.
+   * \return True if it returned 0 or failed for another reason than that
+   *         nothing has arrived yet.
+   */
+  MAXMATRIX_NODISCARD static bool IsGone(ssize_t received);
 
   /*!
    * \brief Lets recv() on the blocking `socket` give up after a while.

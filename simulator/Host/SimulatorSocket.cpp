@@ -30,6 +30,9 @@ namespace {
 /* SimulatorSocket Parameter */
 constexpr int kBacklog{4};
 
+// Whether the call that failed only would have had to wait.
+bool WouldBlock() { return (errno == EAGAIN) || (errno == EWOULDBLOCK); }
+
 }  // namespace
 
 int SimulatorSocket::OpenListener(uint16_t port) {
@@ -69,6 +72,10 @@ void SimulatorSocket::SetNonBlocking(int socket) {
   fcntl(socket, F_SETFL, non_blocking_flags);
 }
 
+bool SimulatorSocket::IsGone(ssize_t received) {
+  return (received == 0) || ((received < 0) && !WouldBlock());
+}
+
 // setsockopt() takes the timeout in whole seconds and the microseconds beyond.
 void SimulatorSocket::SetReceiveTimeout(int socket,
                                         std::chrono::milliseconds timeout) {
@@ -90,7 +97,7 @@ bool SimulatorSocket::SendAll(int socket, std::string const& data) {
         send(socket, &data[sent], data.size() - sent, MSG_NOSIGNAL)};
     if (written > 0) {
       sent += static_cast<size_t>(written);
-    } else if ((written < 0) && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+    } else if ((written < 0) && WouldBlock()) {
       continue;
     } else {
       return false;

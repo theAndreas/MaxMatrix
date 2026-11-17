@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1159,6 +1159,17 @@ as one, looked up by one function, which took the last FN-16 `NOLINT` of `src/` 
 On the Uno every example 20 bytes of flash smaller with bit banging, with the reports of
 `MAXMATRIX_DEV_ERROR_DETECT` and without, and the same with SPI, where only chip select is
 looked up; the same RAM in every variant.
+
+As built for FN-13 in the host code: what was written out twice or more is one function each. The
+loops that send all and read what has arrived, of the serial port on Linux and the TCP port, are
+`ControlStream`'s; how a run of either simulator starts and ends is `SimulatorRun`'s, with the
+chain every example has; reading a whole file is `SimulatorFile`'s, for the page and `--expect`;
+`SimulatorSocket` tells a connection that is gone, for both hosts. The control program's window
+makes each line from its fields in one place, the front end says a port is taken in one, and
+`DocuPictures` has its pattern and the panel's height once. Left as they are: the two
+`Begin()` of the hosts, one shared call and a check; the accept loops, whose bodies differ; and
+the seven `avr_irq_register_notify()` of `SimulatorAvr`, one call of simavr each, which a function
+of two numbers side by side, the port and the bit, would only make swappable.
 
 ### 42 A newer avr-gcc as a cross-check
 

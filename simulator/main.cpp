@@ -40,23 +40,7 @@
 #include "SimulatorFrontEnd.h"
 #include "SimulatorOptions.h"
 #include "SimulatorPanel.h"
-#include "SimulatorTerminal.h"
-
-namespace {
-
-/* the pins every example puts the chain on */
-constexpr uint8_t kDataInPin{11u};
-constexpr uint8_t kChipSelectPin{10u};
-constexpr uint8_t kClockPin{13u};
-/* the chain every example has, max_matrix::MatrixOf<4> */
-constexpr uint8_t kNumberOfModules{4u};
-
-/* exit codes */
-constexpr int kExitOk{0};
-constexpr int kExitFailed{1};
-constexpr int kExitUsage{2};
-
-}  // namespace
+#include "SimulatorRun.h"
 
 /* the sketch's, compiled into the same program */
 void setup();  // NOLINT(readability-identifier-naming): Arduino's name
@@ -79,13 +63,7 @@ SimulatorFrontEnd front_end;
  * It prints the panel and exits, from within the sketch's loop() or delay(),
  * which never return on their own.
  */
-[[noreturn]] void Finish() {
-  bool const passed{
-      SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
-      (mock::errors == 0)};
-
-  exit(passed ? kExitOk : kExitFailed);
-}
+[[noreturn]] void Finish() { exit(SimulatorRun::End(options, panel)); }
 
 /*!
  * \brief Follows the sketch.
@@ -112,24 +90,21 @@ void Tick() {
  *
  * \param[in] argc The number of arguments, the program's name included.
  * \param[in] argv The arguments.
- * \return `kExitFailed` if the port is taken, or `kExitUsage` if the command
- *         line is wrong.
+ * \return `kSimulatorRunExitFailed` if the port is taken, or
+ *         `kSimulatorRunExitUsage` if the command line is wrong.
  * \note It returns only on these errors: a run with `--for` exits from
  *       Finish(), and one without runs until Ctrl+C.
  */
 int main(int argc, char** argv) {
   /* the sketch is built in; an .elf is for SimulatorAvr */
-  if (!options.Parse(argc, argv) || (options.GetElfFile() != nullptr) ||
-      !panel.SetWiring(options.GetWiringName())) {
+  if (!SimulatorRun::SetUp(argc, argv, options, panel) ||
+      (options.GetElfFile() != nullptr)) {
     SimulatorOptions::PrintUsage(*argv);
-    return kExitUsage;
+    return kSimulatorRunExitUsage;
   }
-  panel.SetUpsideDown(options.IsUpsideDown());
-  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  mock::serial_input = options.GetSerialInput();
   mock::tick = Tick;
   if (!front_end.Begin(options)) {
-    return kExitFailed;
+    return kSimulatorRunExitFailed;
   }
 
   setup();

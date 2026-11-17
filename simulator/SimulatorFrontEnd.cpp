@@ -19,6 +19,15 @@
 #include "SimulatorPanel.h"
 #include "SimulatorTerminal.h"
 
+namespace {
+
+// Says that `port` is taken, which another simulator does most often.
+void ReportTaken(uint16_t port) {
+  std::cerr << "port " << port << " is taken, maybe by another simulator\n";
+}
+
+}  // namespace
+
 SimulatorFrontEnd::SimulatorFrontEnd() = default;
 
 bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
@@ -27,16 +36,14 @@ bool SimulatorFrontEnd::Begin(SimulatorOptions const& options) {
 
   if (web_on_) {
     if (!web_.Begin(options.GetPort(), SIMULATOR_PAGE)) {
-      std::cerr << "port " << options.GetPort()
-                << " is taken, maybe by another simulator\n";
+      ReportTaken(options.GetPort());
       return false;
     }
     std::cout << "http://localhost:" << options.GetPort() << "/\n";
   }
   if (options.GetTcpPort() != 0) {
     if (!serial_host_.Begin(options.GetTcpPort())) {
-      std::cerr << "port " << options.GetTcpPort()
-                << " is taken, maybe by another simulator\n";
+      ReportTaken(options.GetTcpPort());
       return false;
     }
     std::cout << "Serial on localhost:" << options.GetTcpPort() << '\n';

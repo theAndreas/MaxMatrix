@@ -31,12 +31,12 @@
 #include <vector>
 
 #include "ControlSerialPort.h"
+#include "ControlStream.h"
 #include "Utility/Bit.h"
 
 namespace {
 
 /* ControlSerialPort Parameter */
-constexpr size_t kChunkLength{256u};
 constexpr int kWriteTimeoutMs{1000};
 
 /* the rates of the Arduino IDE's serial monitor that termios names on every
@@ -49,6 +49,11 @@ bool IsBaudRate(uint32_t baud_rate) {
   return std::find(kBaudRates.begin(), kBaudRates.end(), baud_rate) !=
          kBaudRates.end();
 }
+
+#ifndef _WIN32
+// Whether the call that failed only would have had to wait.
+bool WouldBlock() { return errno == EAGAIN; }
+#endif
 
 }  // namespace
 
@@ -136,7 +141,7 @@ bool ControlSerialPort::Write(std::string const& data) {
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  std::array<char, kChunkLength> chunk;
+  std::array<char, kControlStreamChunkLength> chunk;
   DWORD const size = static_cast<DWORD>(chunk.size());
   DWORD length = size;
 
@@ -236,44 +241,41 @@ bool ControlSerialPort::IsOpen() const { return descriptor_ >= 0; }
 // kWriteTimeoutMs: a line is a few bytes, and a port that
 // takes none for that long has no board behind it.
 bool ControlSerialPort::Write(std::string const& data) {
-  size_t sent{0};
-
   if (!IsOpen()) {
     return false;
   }
-  while (sent < data.size()) {
-    ssize_t const written{write(descriptor_, &data[sent], data.size() - sent)};
-    pollfd writable{descriptor_, POLLOUT, 0};
-    if (written > 0) {
-      sent += static_cast<size_t>(written);
-    } else if ((written < 0) && (errno == EAGAIN) &&
-               (poll(&writable, 1, kWriteTimeoutMs) > 0)) {
-      continue;
-    } else {
-      Close();
-      return false;
-    }
+  int const descriptor{descriptor_};
+  bool const sent{ControlStream::SendAll(
+      data,
+      [descriptor](char const* bytes, size_t length) {
+        return write(descriptor, bytes, length);
+      },
+      WouldBlock,
+      [descriptor] {
+        pollfd writable{descriptor, POLLOUT, 0};
+        return poll(&writable, 1, kWriteTimeoutMs) > 0;
+      })};
+  if (!sent) {
+    Close();
   }
-  return true;
+  return sent;
 }
 
 bool ControlSerialPort::Read(std::string* data) {
-  std::array<char, kChunkLength> chunk{};
-
   if (!IsOpen()) {
     return false;
   }
-  for (;;) {
-    ssize_t const length{read(descriptor_, chunk.data(), chunk.size())};
-    if (length > 0) {
-      data->append(chunk.data(), static_cast<size_t>(length));
-    } else if ((length < 0) && (errno == EAGAIN)) {
-      return true;
-    } else {
-      Close();
-      return false;
-    }
+  int const descriptor{descriptor_};
+  bool const open{ControlStream::ReceiveAvailable(
+      *data,
+      [descriptor](char* bytes, size_t length) {
+        return read(descriptor, bytes, length);
+      },
+      WouldBlock)};
+  if (!open) {
+    Close();
   }
+  return open;
 }
 
 void ControlSerialPort::Close() {

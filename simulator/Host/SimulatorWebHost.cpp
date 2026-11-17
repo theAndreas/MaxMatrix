@@ -12,7 +12,6 @@
 
 #include "SimulatorWebHost.h"
 
-#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -21,11 +20,11 @@
 
 #include <array>
 #include <chrono>
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "SimulatorFile.h"
 #include "SimulatorSocket.h"
 #include "SimulatorWebSocket.h"
 
@@ -106,8 +105,7 @@ void SimulatorWebHost::ReadClient(uint8_t slot,
   uint8_t opcode{0};
   std::string payload;
 
-  if ((received == 0) ||
-      ((received < 0) && (errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+  if (SimulatorSocket::IsGone(received)) {
     DropClient(slot);
     return;
   }
@@ -156,12 +154,10 @@ bool SimulatorWebHost::AnswerRequest(int socket, std::string const& request) {
 // Sends the page on the connection `socket`, read from its path every time, so
 // that the browser always gets the current one.
 void SimulatorWebHost::SendPage(int socket) {
-  std::ifstream const file{page_path_};
-  std::stringstream body;
+  SimulatorFileText const page{SimulatorFile::Read(page_path_)};
 
-  body << file.rdbuf();
-  if (file) {
-    SendResponse(socket, "200 OK", "text/html; charset=utf-8", body.str());
+  if (page.complete) {
+    SendResponse(socket, "200 OK", "text/html; charset=utf-8", page.text);
   } else {
     SendResponse(socket, "500 Internal Server Error", "text/plain",
                  std::string("cannot read ") + page_path_ + "\n");
