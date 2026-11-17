@@ -44,6 +44,8 @@ class __FlashStringHelper;  // NOLINT(bugprone-reserved-identifier): the core's
 #define OUTPUT 1
 #define LSBFIRST 0
 #define MSBFIRST 1
+/* the Uno's, of the pins_arduino.h the core includes */
+#define NUM_DIGITAL_PINS 20
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 // The core's bitSet() and bitClear() are ((value) |= (1UL << (bit))) and

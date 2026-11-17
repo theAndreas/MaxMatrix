@@ -135,7 +135,7 @@ at once read their byte in different directions:
 
 | Function | What it does |
 |----------|--------------|
-| `Init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity |
+| `Init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity; fails with `kOutOfRange` on a pin the board lacks |
 | `Clear()` | turns every LED off |
 | `SetDot(x, y, value)`, `GetDot(x, y)` | one LED |
 | `SetColumn(x, value)`, `SetColumn(module, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |

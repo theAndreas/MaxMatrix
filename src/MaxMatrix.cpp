@@ -19,10 +19,13 @@ Matrix::Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
                ClockPin clock_pin, span<Byte> buffer)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
-void Matrix::Init() {
+Status Matrix::Init() {
+  Status const status{MAXMATRIX_REPORT_ERROR(
+      "Init", panel_.GetWired().GetChain().Init(panel_.GetNumberOfModules()))};
+  if (!status.IsOk()) {
+    return status;
+  }
   state_ = State::kInit;
-
-  panel_.GetWired().GetChain().Init(panel_.GetNumberOfModules());
 
   /* initialize registers, turn all LEDs off */
   panel_.GetWired().Clear();
@@ -30,6 +33,7 @@ void Matrix::Init() {
 
   SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
   state_ = State::kReady;
+  return status;
 }
 
 void Matrix::ShiftTask() {

@@ -15,6 +15,7 @@
 #include "Arduino.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
+#include "MaxMatrixError.h"
 #include "Utility/Byte.h"
 #include "Utility/span.h"
 
@@ -204,6 +205,9 @@ class Chain {
   void ShiftOut(uint8_t value);
 #endif
   static void WritePin(uint8_t port, uint8_t mask, bool high);
+  // Whether each of the three pins is one of the board's, which Init() checks
+  // before it takes them.
+  MAXMATRIX_NODISCARD bool HasBoardPins() const;
 
  public:
   /*!
@@ -259,8 +263,11 @@ class Chain {
    * All eight digits, no decoding, normal operation, no display test.
    *
    * \param[in] number_of_modules The MAX7219s in the chain.
+   * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
+   *         `NUM_DIGITAL_PINS` or above; then nothing is set up, and the chain
+   *         drives the pins of the last Init() that succeeded.
    */
-  void Init(uint8_t number_of_modules);
+  MAXMATRIX_NODISCARD Status Init(uint8_t number_of_modules);
 
   /*!
    * \brief Writes the same register of every MAX7219, with the same value.
