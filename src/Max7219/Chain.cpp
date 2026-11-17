@@ -90,6 +90,9 @@ Status Chain::Init(uint8_t number_of_modules) {
   return Error::kOk;
 }
 
+// FN-16: private; Init() alone calls it, with a named value and the chain's
+// length
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Chain::WriteRegisterAll(max7219::Register address, uint8_t value,
                              uint8_t number_of_modules) {
   StartTransmission();
@@ -203,6 +206,9 @@ void Chain::ShiftOut(uint8_t value) {
 
 // Sets the pin of `mask` in `port` high or low, with the interrupts held off,
 // as ShiftOut() does.
+// FN-16: private; every call passes the port and the mask Init() looked up for
+// one pin, in the two members of that pin's name
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Chain::WritePin(uint8_t port, uint8_t mask, bool high) {
   // The NOLINTs are those of ShiftOut(), for the same reason.
   auto* const port_register{

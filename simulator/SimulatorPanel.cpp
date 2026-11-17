@@ -43,6 +43,9 @@ SimulatorPanel::SimulatorPanel()
     : wiring_name_(kSimulatorPanelDefaultWiring),
       wiring_{FindWiring(wiring_name_)} {}
 
+// FN-16: the texts of a lit and a dark LED and of the end of a row; the tests
+// of the simulator compare what it draws with simulator/Expected/
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::string SimulatorPanel::GetText(char const* lit, char const* dark,
                                     char const* end_of_row) const {
   std::string text;

@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -33,7 +34,7 @@ namespace {
 /* SimulatorWebHost Parameter */
 constexpr size_t kRequestChunkLength{4096u};
 constexpr size_t kFrameChunkLength{2048u};
-constexpr uint32_t kRequestTimeoutMs{100u};
+constexpr std::chrono::milliseconds kRequestTimeout{100};
 constexpr char kWebSocketPath[] = "/ws";
 
 }  // namespace
@@ -204,7 +205,7 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
   std::array<char, kRequestChunkLength> chunk{};
 
-  SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeoutMs);
+  SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeout);
 
   while (request.find("\r\n\r\n") == std::string::npos) {
     ssize_t const received{recv(socket, chunk.data(), chunk.size(), 0)};

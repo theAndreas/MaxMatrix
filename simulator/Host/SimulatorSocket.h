@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 
+#include <chrono>
 #include <string>
 
 /* SimulatorSocket Parameter */
@@ -52,13 +53,14 @@ class SimulatorSocket {
   /*!
    * \brief Lets recv() on the blocking `socket` give up after a while.
    *
-   * A recv() that has waited `milliseconds` for the next bytes returns -1 with
+   * A recv() that has waited `timeout` for the next bytes returns -1 with
    * EAGAIN.
    *
    * \param[in] socket The socket.
-   * \param[in] milliseconds The longest wait.
+   * \param[in] timeout The longest wait; a duration rather than a number, so
+   *                    that it cannot take the socket's place (FN-16).
    */
-  static void SetReceiveTimeout(int socket, uint32_t milliseconds);
+  static void SetReceiveTimeout(int socket, std::chrono::milliseconds timeout);
 
   /*!
    * \brief Sends all of `data` on the connection `socket`.

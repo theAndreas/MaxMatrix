@@ -490,6 +490,9 @@ struct Axes {
 
 /* Whether the dots across the line at `along` are the line's: exactly one
  * between the ends, at most half a dot from the true line, none beyond them. */
+// FN-16: a test's helper; its one caller passes `along` and `breadth` by
+// those names
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
                   int16_t breadth) {
   bool const inside{(along >= std::min(axes.along_0, axes.along_1)) &&

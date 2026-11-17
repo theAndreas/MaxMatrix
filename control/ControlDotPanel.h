@@ -33,6 +33,13 @@
  */
 class ControlDotPanel : public wxPanel {
  private:
+  /* an LED by its column and row, as GetDotAt() finds it: named members rather
+   * than two pointers to bytes, which a call could swap (FN-16) */
+  struct Dot {
+    uint8_t column;
+    uint8_t row;
+  };
+
   /* one byte per column, bit 0 the top row, as SerialControl answers picture */
   std::vector<uint8_t> columns_;
   std::function<void(uint8_t, uint8_t, bool)> on_switch_;
@@ -51,7 +58,7 @@ class ControlDotPanel : public wxPanel {
   void OnCaptureLost(wxMouseCaptureLostEvent& event);
   void PaintDot(uint8_t column, uint8_t row);
   MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
-  bool GetDotAt(wxPoint const& point, uint8_t* column, uint8_t* row) const;
+  bool GetDotAt(wxPoint const& point, Dot* dot) const;
 
  public:
   /*!

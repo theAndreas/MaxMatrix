@@ -20,6 +20,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <string>
 
 #include "Utility/Bit.h"
@@ -28,10 +29,6 @@ namespace {
 
 /* SimulatorSocket Parameter */
 constexpr int kBacklog{4};
-
-/* a timeout in seconds and microseconds, as setsockopt() takes it */
-constexpr uint32_t kMillisecondsPerSecond{1000};
-constexpr uint32_t kMicrosecondsPerMillisecond{1000};
 
 }  // namespace
 
@@ -72,14 +69,17 @@ void SimulatorSocket::SetNonBlocking(int socket) {
   fcntl(socket, F_SETFL, non_blocking_flags);
 }
 
-void SimulatorSocket::SetReceiveTimeout(int socket, uint32_t milliseconds) {
-  timeval timeout{};
+// setsockopt() takes the timeout in whole seconds and the microseconds beyond.
+void SimulatorSocket::SetReceiveTimeout(int socket,
+                                        std::chrono::milliseconds timeout) {
+  auto const seconds{std::chrono::duration_cast<std::chrono::seconds>(timeout)};
+  auto const beyond{
+      std::chrono::duration_cast<std::chrono::microseconds>(timeout - seconds)};
+  timeval wait{};
 
-  timeout.tv_sec = static_cast<time_t>(milliseconds / kMillisecondsPerSecond);
-  auto const remainder{
-      static_cast<suseconds_t>(milliseconds % kMillisecondsPerSecond)};
-  timeout.tv_usec = remainder * kMicrosecondsPerMillisecond;
-  setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  wait.tv_sec = static_cast<time_t>(seconds.count());
+  wait.tv_usec = static_cast<suseconds_t>(beyond.count());
+  setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &wait, sizeof(wait));
 }
 
 bool SimulatorSocket::SendAll(int socket, std::string const& data) {

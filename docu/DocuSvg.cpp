@@ -26,6 +26,9 @@ constexpr int32_t kArrowHeadHalfWidth{6};
 
 }  // namespace
 
+// FN-16: the size of the picture and its top, as SVG names them;
+// docu/pictures fails on a picture that changes
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DocuSvg::DocuSvg(uint16_t width, uint16_t height, int32_t top)
     : width_{width}, height_{height}, top_{top} {
   AddRect({0, top_}, {width_, height_}, {"#ffffff", "none", 0});

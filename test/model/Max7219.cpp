@@ -146,6 +146,9 @@ void Max7219Chain::Latch() {
  * MD_MAX72XX has them, so Chips[0] at DIN is the rightmost. A board mounted
  * upside down shows every LED at the opposite place: its chain starts on the
  * left, each module turned around. */
+// FN-16: x before y, as everywhere; a swap reads another LED, which
+// MaxMatrixModuleTest reports for every wiring
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 bool Max7219Chain::IsLit(Max7219Wiring const& wiring, uint16_t x, uint8_t y,
                          bool upside_down) const {
   if (upside_down) {

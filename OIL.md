@@ -1119,6 +1119,18 @@ A first look found, besides those two:
   variant: Shapes 214 bytes of flash smaller, as `DrawRect()` adds nothing up; SerialControl
   36 larger, Basics 8, Sprites 4, Messages and ScrollText 2; the rest and every RAM the same.
 
+  As built, the last: the check is on. Of the 20 places, the four pull requests above took
+  seven, and it no longer sees the shapes. Of the 13 left, two take a type: the receive
+  timeout of the simulator's socket is a `std::chrono::milliseconds`, and the LED the control
+  program finds under the mouse a struct with a member for its column and its row, rather
+  than two pointers to bytes. Eleven keep their parameters, each with a `NOLINT` that names
+  FN-16 and why: five private functions of the library whose callers pass named values,
+  `internal::Chain::WritePin()` and `WriteRegisterAll()`, `Command::Find()` and
+  `ConvertToNumber()`, `internal::Panel::ConvertDotToBuffer()`; SHA-1's mixing of `b`, `c`
+  and `d` in RFC 3174's order; the size of `DocuSvg`, the texts of
+  `SimulatorPanel::GetText()`, the model's `IsLit(x, y)` and two helpers of the tests, whose
+  tests fail on a swap. Nothing a sketch sees changes; every example is the same size.
+
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
 rule or chapter, with what it finds fixed, F-10 first, as it changes no code.

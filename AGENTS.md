@@ -361,6 +361,12 @@ part of one; `internal::Panel::SetDot()` unpacks it inline, before the call. avr
 no constant through a part of a point, and passes a point to a function it does not inline as
 one value of four bytes: both cost the examples up to 120 bytes of flash (OIL 41).
 
+clang-tidy's `bugprone-easily-swappable-parameters` checks FN-16, though not a function that
+passes its parameters on in one call, as the facade's do, which it takes for parameters used
+together; there review checks it. Where two such parameters stay, a `NOLINT` names FN-16 and
+why: a private function whose few callers pass named values, an order a standard fixes, as
+RFC 3174's for SHA-1, or a test's helper whose test fails on a swap.
+
 #### Integer types
 
 Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `uint8_t`,

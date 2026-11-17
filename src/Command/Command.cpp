@@ -129,6 +129,9 @@ Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
 // Returns the position of the first `c` in the line from `from` on, or that of
 // the line's null character if there is none. The line always ends with one,
 // as Feed() puts it there.
+// FN-16: private; its callers pass a position in the line and a named
+// separator
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 uint8_t Command::Find(uint8_t from, char c) const {
   uint8_t position{from};
 
@@ -264,6 +267,9 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
  * digits cannot overflow into a small number, but reads on to the end all the
  * same, so that "999x" is no number rather than too large.
  */
+// FN-16: private; its callers pass a position in the line and a named
+// maximum
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 Result<uint16_t> Command::ConvertToNumber(uint8_t text,
                                           uint16_t maximum) const {
   uint32_t value{0};
