@@ -70,7 +70,8 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   }
   if (c != kLineEnd) {
     if (line_length_ < MAXMATRIX_COMMAND_LINE_LENGTH) {
-      line_[line_length_++] = c;
+      line_[line_length_] = c;
+      line_length_++;
     } else {
       line_too_long_ = true;
     }
@@ -103,34 +104,39 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
 // with the end of the name, and passes it on by name.
 Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
   uint8_t const separator{Find(0, kValueSeparator)};
-  Status status{Error::kOk};
 
-  if (line_[separator] == internal::kNullCharacter) {
-    if (0 == strcmp_P(line_.data(), PSTR("picture"))) {
-      AnswerPicture(matrix, answer);
-      return CommandState::kAnswered;
-    }
-    if (0 != strcmp_P(line_.data(), PSTR("clear"))) {
-      return Error::kUnknownCommand;
-    }
-    matrix.Clear();
-  } else {
+  if (line_[separator] != internal::kNullCharacter) {
     line_[separator] = internal::kNullCharacter;
-    auto const value{static_cast<uint8_t>(separator + 1)};
-    if (0 == strcmp_P(line_.data(), PSTR("text"))) {
-      status = ExecuteText(matrix, value);
-    } else if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
-      status = ExecuteTextShift(matrix, value);
-    } else if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
-      status = ExecuteDot(matrix, value);
-    } else {
-      status = ExecuteSetting(matrix, value);
+    Status const status{
+        ExecuteWithValue(matrix, static_cast<uint8_t>(separator + 1))};
+    if (!status.IsOk()) {
+      return status.GetError();
     }
+    return CommandState::kDone;
   }
-  if (!status.IsOk()) {
-    return status.GetError();
+  if (0 == strcmp_P(line_.data(), PSTR("picture"))) {
+    AnswerPicture(matrix, answer);
+    return CommandState::kAnswered;
   }
+  if (0 != strcmp_P(line_.data(), PSTR("clear"))) {
+    return Error::kUnknownCommand;
+  }
+  matrix.Clear();
   return CommandState::kDone;
+}
+
+// Passes a command NAME=VALUE on by its name, which ends where `value` starts.
+Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
+  if (0 == strcmp_P(line_.data(), PSTR("text"))) {
+    return ExecuteText(matrix, value);
+  }
+  if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
+    return ExecuteTextShift(matrix, value);
+  }
+  if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
+    return ExecuteDot(matrix, value);
+  }
+  return ExecuteSetting(matrix, value);
 }
 
 // Returns the position of the first `c` in the line from `from` on, or that of

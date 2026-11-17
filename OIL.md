@@ -1207,6 +1207,18 @@ column and row of `ControlDotPanel`, which `ControlCommandTest` and the order of
 digits)` is left too: `SimulatorTest` pins the call that escapes a char, the frame log of the page
 only the eye.
 
+As reviewed for the chapter Types on 2026-11-17, its review parts T-1, T-8, T-13, T-14, T-18, T-19
+and T-23, T-17 being done above. As built for the library: a char is stored and the length counted
+in two statements (T-14); `internal::Panel::ChangeMapping()` walks its pairs of modules by one
+counter rather than two in one declaration (T-13, T-14); the header of a font is read by one
+function into a struct, where `CheckFont()` and `GetGlyph()` each assigned four variables declared
+ahead, which also takes a copy the chapter Functions missed (T-13, FN-13); `Command` passes a
+command with a value on in a function of its own, where its status was declared ahead (T-13); a
+condition of three parts in `CheckFont()` and a sum in that of `CharShiftTask()` are named steps
+(T-18); and the `auto` of a port register says why the type cannot be written (T-8). On the Uno,
+in every variant, every example 8 bytes of flash smaller, Shutdown 12 and SerialControl 22; the
+same RAM.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

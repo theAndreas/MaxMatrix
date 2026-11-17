@@ -96,6 +96,7 @@ class Command {
   MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix,
                                                    Print& answer);
   MAXMATRIX_NODISCARD uint8_t Find(uint8_t from, char c) const;
+  MAXMATRIX_NODISCARD Status ExecuteWithValue(Matrix& matrix, uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix, uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteText(Matrix& matrix, uint8_t value) const;
   MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);

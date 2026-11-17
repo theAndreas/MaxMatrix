@@ -61,6 +61,28 @@ uint8_t ReadByte(span<uint8_t const> font, size_t position) {
   return pgm_read_byte(&font[position]);
 }
 
+/* what the header of a font says: its first and last code, the height of its
+ * chars, and where the width of its first char lies */
+struct FontHeader {
+  uint16_t first;
+  uint16_t last;
+  uint8_t height;
+  size_t offset;
+};
+
+// Reads the header of `font`; one that is not of version 1 is read as one of
+// version 2, as CheckFont() takes no other.
+FontHeader ReadHeader(span<uint8_t const> font) {
+  if (ReadByte(font, kVersionPosition) == kVersion1) {
+    return FontHeader{ReadByte(font, kFirstPosition),
+                      ReadByte(font, kLastPosition1),
+                      ReadByte(font, kHeightPosition1), kHeaderLength1};
+  }
+  return FontHeader{ReadNumber(font, kFirstPosition),
+                    ReadNumber(font, kLastPosition2),
+                    ReadByte(font, kHeightPosition2), kHeaderLength2};
+}
+
 }  // namespace
 
 /*
@@ -205,35 +227,28 @@ Status Font::CheckFont(span<uint8_t const> font) {
   }
 
   uint8_t const version{ReadByte(font, kVersionPosition)};
-  uint16_t first{0};
-  uint16_t last{0};
-  uint8_t height{0};
-  size_t offset{0};
-
-  if (version == kVersion1) {
-    first = ReadByte(font, kFirstPosition);
-    last = ReadByte(font, kLastPosition1);
-    height = ReadByte(font, kHeightPosition1);
-    offset = kHeaderLength1;
-  } else if ((version == kVersion2) && (font.size() >= kHeaderLength2)) {
-    first = ReadNumber(font, kFirstPosition);
-    last = ReadNumber(font, kLastPosition2);
-    height = ReadByte(font, kHeightPosition2);
-    offset = kHeaderLength2;
-  } else {
+  bool const header_whole{
+      (version == kVersion1) ||
+      ((version == kVersion2) && (font.size() >= kHeaderLength2))};
+  if (!header_whole) {
     return Error::kNotAFont;
   }
-  if ((first > last) || (height < 1) || (height > kRowNumberOfModule)) {
+  FontHeader const header{ReadHeader(font)};
+  bool const has_chars{header.first <= header.last};
+  bool const height_fits{(header.height >= 1) &&
+                         (header.height <= kRowNumberOfModule)};
+  if (!has_chars || !height_fits) {
     return Error::kNotAFont;
   }
+  size_t offset{header.offset};
   /* the loop ends at the last char rather than past it, as a last char of
    * 0xFFFF has no next */
-  for (uint16_t code{first};; code++) {
+  for (uint16_t code{header.first};; code++) {
     if (offset >= font.size()) {
       return Error::kNotAFont;
     }
     offset += ReadByte(font, offset) + 1u;
-    if (code == last) {
+    if (code == header.last) {
       break;
     }
   }
@@ -246,35 +261,21 @@ Status Font::CheckFont(span<uint8_t const> font) {
  * five bytes from flash cost less than the RAM to keep them.
  */
 Result<Glyph> Font::GetGlyph(span<uint8_t const> font, char c) {
-  bool const version_1{ReadByte(font, kVersionPosition) == kVersion1};
+  FontHeader const header{ReadHeader(font)};
   uint16_t const code{static_cast<uint8_t>(c)};
-  uint16_t first{0};
-  uint16_t last{0};
-  uint8_t height{0};
-  size_t offset{0};
 
-  if (version_1) {
-    first = ReadByte(font, kFirstPosition);
-    last = ReadByte(font, kLastPosition1);
-    height = ReadByte(font, kHeightPosition1);
-    offset = kHeaderLength1;
-  } else {
-    first = ReadNumber(font, kFirstPosition);
-    last = ReadNumber(font, kLastPosition2);
-    height = ReadByte(font, kHeightPosition2);
-    offset = kHeaderLength2;
-  }
-  if ((code < first) || (code > last)) {
+  if ((code < header.first) || (code > header.last)) {
     return Error::kUnknownChar;
   }
-  for (uint16_t skipped{first}; skipped < code; skipped++) {
+  size_t offset{header.offset};
+  for (uint16_t skipped{header.first}; skipped < code; skipped++) {
     offset += ReadByte(font, offset) + 1u;
   }
   uint8_t const width{ReadByte(font, offset)};
   if (width == 0) {
     return Error::kUnknownChar;
   }
-  return Glyph{font.subspan(offset + 1).first(width), height};
+  return Glyph{font.subspan(offset + 1).first(width), header.height};
 }
 
 DecodedChar Font::DecodeChar(span<char const> text) {

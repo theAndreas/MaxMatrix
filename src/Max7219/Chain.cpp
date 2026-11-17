@@ -180,7 +180,8 @@ void Chain::ShiftOut(uint8_t value) {
    * The core's portOutputRegister() makes the register's address, a number read
    * from flash, a pointer, and SREG is the status register at its fixed
    * address: clang-tidy reports both on the Uno, where there is no other way to
-   * a port.
+   * a port. T-8: auto, as the register is a volatile uint8_t on the board and
+   * the mock's object of its own on the host.
    */
   auto* const data_in_register{portOutputRegister(
       data_in_.port)}; /* NOLINT(performance-no-int-to-ptr) */
