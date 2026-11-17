@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1070,6 +1070,21 @@ A first look found, besides those two:
   only, the declaration of `kDefaultFont` in `Font.h`, which carries its `NOLINT`; on the
   board it does so even with the definition `constexpr`, as the other files cannot see it.
   The template dropped the exception in v0.10.1, so the check is on here as well.
+- FN-16: `bugprone-easily-swappable-parameters` is off. Turned on, it reports 20 places: the
+  three pins of `internal::Chain`, a port and its mask, the coordinates of the shapes and of
+  `internal::Text::SetChar()`, a register's address and value, and the host code's own. It
+  sees none of the facade, whose functions pass their parameters on in one call, which the
+  check takes for parameters used together; the pins of `Matrix`, `SetDot(x, y)` and a module
+  beside its column, `GetColumn(module, column)`, which swapped are as valid, it leaves to
+  review. Decided on 2026-11-17: a type for each pin, `DataInPin{11}`, `ChipSelectPin{10}`
+  and `ClockPin{13}`; a `struct Point` for the coordinates, `DrawLine(Point, Point)`, though
+  `Point{3, 2}` keeps x and y swappable; a type `Module`; and an `enum class` for the
+  registers. What no sketch sees is weighed place by place. A pull request each, and the
+  last turns the check on.
+
+  As built, the first: the registers are `max7219::Register`, and `RegisterWrite()` takes
+  one, `RegisterWrite(max7219::Register::kIntensity, 5)`; `test/compile_fail/` checks that a
+  value in its place does not compile. Every example is the same size in every variant.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per

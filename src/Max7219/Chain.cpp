@@ -64,38 +64,38 @@ void Chain::Init(uint8_t number_of_modules) {
   WritePin(clock_port_, clock_mask_, false);
 #endif
 
-  WriteRegisterAll(max7219::kScanLimitAddress,
+  WriteRegisterAll(max7219::Register::kScanLimit,
                    max7219::kScanLimitDisplayDigit0To7,  // display all digits
                    number_of_modules);
-  WriteRegisterAll(max7219::kDecodeModeAddress,
+  WriteRegisterAll(max7219::Register::kDecodeMode,
                    max7219::kDecodeModeNoDecode,  // an LED matrix, not digits
                    number_of_modules);
-  WriteRegisterAll(max7219::kShutdownAddress,
+  WriteRegisterAll(max7219::Register::kShutdown,
                    max7219::kShutdownModeNormalOperation,  // normal operation
                    number_of_modules);
-  WriteRegisterAll(max7219::kDisplayTestAddress,
+  WriteRegisterAll(max7219::Register::kDisplayTest,
                    max7219::kDisplayTestNormalOperation,  // no display test
                    number_of_modules);
 }
 
-void Chain::WriteRegisterAll(uint8_t register_address, uint8_t register_value,
+void Chain::WriteRegisterAll(max7219::Register address, uint8_t value,
                              uint8_t number_of_modules) {
   StartTransmission();
   for (uint8_t module{0}; module < number_of_modules; module++) {
-    Transfer(register_address, register_value);
+    Transfer(address, value);
   }
   StopTransmission();
 }
 
-void Chain::WriteRegisterEach(uint8_t register_address, span<Byte const> buffer,
-                              uint8_t column) {
+void Chain::WriteRegisterEach(max7219::Register address,
+                              span<Byte const> buffer, uint8_t column) {
   // A byte, as the buffer of at most kMaxNumberOfModules modules is: the index
   // then steps on in 8 bits, where the Uno would compute a size_t in 16.
   auto const columns{static_cast<uint8_t>(buffer.size())};
 
   StartTransmission();
   for (uint8_t index{column}; index < columns; index += kColumnNumberOfModule) {
-    Transfer(register_address, buffer[index].ToInteger());
+    Transfer(address, buffer[index].ToInteger());
   }
   StopTransmission();
 }
@@ -134,17 +134,18 @@ void Chain::StopTransmission() {
 // has to come first. Neither const nor static: it changes the chain, and bit
 // banging needs the pins, see Chain.h.
 // NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
-void Chain::Transfer(uint8_t register_address, uint8_t register_value) {
+void Chain::Transfer(max7219::Register address, uint8_t value) {
+  auto const address_byte{static_cast<uint8_t>(address)};
 #if (MAXMATRIX_USE_SPI == STD_ON)
   // the core's SPI object; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.transfer(register_address);
+  SPI.transfer(address_byte);
   // the core's SPI object; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.transfer(register_value);
+  SPI.transfer(value);
 #else
-  ShiftOut(register_address);
-  ShiftOut(register_value);
+  ShiftOut(address_byte);
+  ShiftOut(value);
 #endif
 }
 

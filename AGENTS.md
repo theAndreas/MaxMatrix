@@ -421,9 +421,11 @@ same, but a constant of a header carries its module's name, as a class does:
 `kSimulatorWebSocketOpcodeText`. A macro is left for what a sketch or the build sets
 with `-D` and what `#if` reads: the configuration parameters; and in the host code for what is
 no constant expression, a `wxColour`. Configuration switches are
-`STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. Register addresses
-and values of the MAX7219 get a named constant in `max7219` rather than a literal, as
-`Matrix::RegisterWrite()` takes them: `max7219::kIntensityAddress`.
+`STD_ON`/`STD_OFF` and are tested as `#if(MAXMATRIX_USE_SPI == STD_ON)`. The registers of the
+MAX7219 are the `enum class max7219::Register`, so that a value cannot take the place of an
+address (FN-16), and their values get a named constant in `max7219` rather than a literal, as
+`Matrix::RegisterWrite()` takes them:
+`RegisterWrite(max7219::Register::kIntensity, max7219::kIntensityMaxValue)`.
 
 Every configuration parameter is wrapped in `#ifndef`, because that is how the tests build the
 SPI variant (`-DMAXMATRIX_USE_SPI=STD_ON`). A new parameter gets the same guard.

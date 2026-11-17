@@ -597,13 +597,13 @@ class Matrix {
   /*!
    * \brief Writes one register of every MAX7219 in the chain, at once.
    *
-   * \param[in] register_address The address of the register, one of the
-   *                             `MAX7219_REG_..._ADDRESS`.
-   * \param[in] register_value The value for every module.
+   * \param[in] address The register, as `max7219::Register::kIntensity`.
+   * \param[in] value The value for every module, of the constants in `max7219`
+   *                  or a number.
    */
-  void RegisterWrite(uint8_t register_address, uint8_t register_value) {
-    panel_.GetWired().GetChain().WriteRegisterAll(
-        register_address, register_value, panel_.GetNumberOfModules());
+  void RegisterWrite(max7219::Register address, uint8_t value) {
+    panel_.GetWired().GetChain().WriteRegisterAll(address, value,
+                                                  panel_.GetNumberOfModules());
   }
 
   /*! \copydoc internal::Panel::ShiftLeft(ShiftFill) */

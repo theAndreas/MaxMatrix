@@ -27,7 +27,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   for (uint8_t i{0}; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
     EXPECT_EQ(mock::last_frame[size_t{2} * i],
-              max_matrix::max7219::kDigit3Address);
+              static_cast<uint8_t>(max_matrix::max7219::Register::kDigit3));
     EXPECT_EQ(mock::last_frame[(size_t{2} * i) + 1], i == module ? 0x02 : 0x00);
   }
 }
