@@ -1086,6 +1086,14 @@ A first look found, besides those two:
   one, `RegisterWrite(max7219::Register::kIntensity, 5)`; `test/compile_fail/` checks that a
   value in its place does not compile. Every example is the same size in every variant.
 
+  As built, the second: the pins are `DataInPin`, `ChipSelectPin` and `ClockPin`, each with
+  an `explicit` constructor, as a bare number would be any of them again; `Matrix`,
+  `MatrixOf` and the parts below take them,
+  `MatrixOf<4> matrix{DataInPin{11}, ChipSelectPin{10}, ClockPin{13}}`. The getters and
+  setters of one pin keep a number, as there is nothing to swap. `test/compile_fail/` checks
+  that numbers and swapped pins do not compile. Every example is the same size in every
+  variant.
+
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
 rule or chapter, with what it finds fixed, F-10 first, as it changes no code.

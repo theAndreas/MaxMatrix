@@ -59,7 +59,8 @@ modules there are:
 
 ```cpp
 max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(6)> buffer;
-max_matrix::Matrix matrix(11, 10, 13, buffer);
+max_matrix::Matrix matrix{max_matrix::DataInPin{11}, max_matrix::ChipSelectPin{10},
+                          max_matrix::ClockPin{13}, buffer};
 ```
 
 ## Usage
@@ -67,7 +68,9 @@ max_matrix::Matrix matrix(11, 10, 13, buffer);
 ```cpp
 #include <MaxMatrix.h>
 
-max_matrix::MatrixOf<4> matrix(11, 10, 13);   // a chain of 4 modules at DIN, CS, CLK
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},  // a chain of 4 modules
+                               max_matrix::ChipSelectPin{10},
+                               max_matrix::ClockPin{13}};
 char const kText[] = "Hello World!   ";
 
 void setup()

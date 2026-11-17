@@ -37,8 +37,8 @@ max7219::Register GetDigitRegister(uint8_t column) {
 
 }  // namespace
 
-Wired::Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-             span<Byte> buffer)
+Wired::Wired(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+             ClockPin clock_pin, span<Byte> buffer)
     : chain_{data_in_pin, chip_select_pin, clock_pin}, matrix_buffer_{buffer} {
   memset(matrix_buffer_.data(), 0, matrix_buffer_.size());
 }

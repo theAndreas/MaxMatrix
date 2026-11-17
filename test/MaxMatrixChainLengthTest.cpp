@@ -41,7 +41,9 @@ class MaxMatrixChainLengthTest
       number_of_modules_ * max_matrix::kColumnNumberOfModule)};
   std::vector<Byte> buffer_ =
       std::vector<Byte>(max_matrix::BufferSize(number_of_modules_), Byte{0xAA});
-  Matrix matrix_{kDataInPin, kChipSelectPin, kClockPin,
+  Matrix matrix_{max_matrix::DataInPin{kDataInPin},
+                 max_matrix::ChipSelectPin{kChipSelectPin},
+                 max_matrix::ClockPin{kClockPin},
                  max_matrix::span<Byte>{buffer_.data(), buffer_.size()}};
 
   void SetUp() override {

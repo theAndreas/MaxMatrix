@@ -15,8 +15,8 @@
 
 namespace max_matrix {
 
-Matrix::Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-               span<Byte> buffer)
+Matrix::Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+               ClockPin clock_pin, span<Byte> buffer)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
 void Matrix::Init() {

@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "Max7219/Chain.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "Utility/Bit.h"
@@ -46,8 +47,8 @@ Byte SwapBits(Byte value, Byte upper, uint8_t shift) {
 
 }  // namespace
 
-Panel::Panel(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-             span<Byte> buffer)
+Panel::Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+             ClockPin clock_pin, span<Byte> buffer)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
 Result<Byte> Panel::GetColumn(int16_t column) {

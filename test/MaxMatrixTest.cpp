@@ -134,7 +134,10 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
 }
 
 TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue) {
-  MatrixOf<kNumberOfModules> const fresh{kDataInPin, kChipSelectPin, kClockPin};
+  MatrixOf<kNumberOfModules> const fresh{
+      max_matrix::DataInPin{kDataInPin},
+      max_matrix::ChipSelectPin{kChipSelectPin},
+      max_matrix::ClockPin{kClockPin}};
 
   EXPECT_EQ(fresh.GetShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
 }

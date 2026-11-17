@@ -132,8 +132,9 @@ struct Dot {
 
 // the matrix, as a sketch has it, which every picture draws on
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-max_matrix::MatrixOf<kNumberOfModules> matrix{kDataInPin, kChipSelectPin,
-                                              kClockPin};
+max_matrix::MatrixOf<kNumberOfModules> matrix{
+    max_matrix::DataInPin{kDataInPin},
+    max_matrix::ChipSelectPin{kChipSelectPin}, max_matrix::ClockPin{kClockPin}};
 
 /* the names MD_MAX72XX gives four of the eight wirings, as the README uses them
  */
