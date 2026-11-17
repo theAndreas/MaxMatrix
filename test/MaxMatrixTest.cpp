@@ -16,6 +16,9 @@
 using max_matrix::Batch;
 using max_matrix::Error;
 using max_matrix::MatrixOf;
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
 
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
@@ -50,7 +53,8 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
 
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
-        column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
+        Point{X{column},
+              Y{static_cast<int16_t>(column % max_matrix::kRowNumberOfModule)}},
         true);
   }
   EXPECT_EQ(mock::frames - frames_before, kNumberOfColumns);
@@ -61,7 +65,8 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   frames_before = mock::frames;
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
-        column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
+        Point{X{column},
+              Y{static_cast<int16_t>(column % max_matrix::kRowNumberOfModule)}},
         true);
   }
   EXPECT_EQ(mock::frames, frames_before);
@@ -89,7 +94,8 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
     Batch batch{matrix_};
     for (uint8_t column{0}; column < kNumberOfColumns; column++) {
       matrix_.SetDot(
-          column, static_cast<int16_t>(column % max_matrix::kRowNumberOfModule),
+          Point{X{column}, Y{static_cast<int16_t>(
+                               column % max_matrix::kRowNumberOfModule)}},
           true);
     }
     EXPECT_FALSE(matrix_.GetAutoUpdate());
@@ -110,11 +116,11 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost) {
     Batch outer{matrix_};
     {
       Batch inner{matrix_};
-      matrix_.SetDot(1, 1, true);
+      matrix_.SetDot(Point{X{1}, Y{1}}, true);
     }
     EXPECT_EQ(mock::frames, frames_before)
         << "sent at the end of the inner block";
-    matrix_.SetDot(2, 2, true);
+    matrix_.SetDot(Point{X{2}, Y{2}}, true);
   }
   EXPECT_GT(mock::frames, frames_before);
 }
@@ -126,7 +132,7 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
 
   {
     Batch batch{matrix_};
-    matrix_.SetDot(1, 1, true);
+    matrix_.SetDot(Point{X{1}, Y{1}}, true);
   }
   EXPECT_FALSE(matrix_.GetAutoUpdate());
   EXPECT_EQ(mock::frames, frames_before);
@@ -226,11 +232,11 @@ TEST_F(MaxMatrixTest, ShutdownKeepsThePicture) {
         << "module " << static_cast<uint16_t>(module);
   }
   EXPECT_EQ(Display(), dark);
-  matrix_.SetDot(31, 7, true);
+  matrix_.SetDot(Point{X{31}, Y{7}}, true);
   EXPECT_EQ(Display(), dark) << "lit in shutdown";
 
   matrix_.SetShutdown(false);
-  EXPECT_TRUE(matrix_.GetDot(31, 7).GetValue());
+  EXPECT_TRUE(matrix_.GetDot(Point{X{31}, Y{7}}).GetValue());
   EXPECT_EQ(Display()[31], 0x80) << "the dot drawn in shutdown";
   EXPECT_EQ(ChipOfModule(0).intensity, 9);
 }

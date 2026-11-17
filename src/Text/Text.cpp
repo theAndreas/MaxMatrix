@@ -44,11 +44,11 @@ Status Text::SetFont(span<uint8_t const> font) {
   return status;
 }
 
-Status Text::SetChar(Panel& panel, int16_t x, int16_t y, char c) const {
+Status Text::SetChar(Panel& panel, Point top_left, char c) const {
   Result<Glyph> const found{Font::GetGlyph(GetFont(), c)};
 
   if (found.IsOk()) {
-    SetGlyph(panel, x, y, found.GetValue());
+    SetGlyph(panel, top_left, found.GetValue());
   }
   return found.GetError();
 }
@@ -79,7 +79,7 @@ Status Text::SetText(Panel& panel, span<char const> text) const {
       return found.GetError();
     }
     Glyph const glyph{found.GetValue()};
-    SetGlyph(panel, char_column, 0, glyph);
+    SetGlyph(panel, Point{X{char_column}, Y{0}}, glyph);
     auto const width{static_cast<int16_t>(glyph.columns.size())};
     char_column =
         static_cast<int16_t>(char_column + width + space_between_chars_);
@@ -101,7 +101,10 @@ Status Text::SetTextWithShift(span<char const> text, bool repeat) {
   return Error::kOk;
 }
 
-void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const& sprite) {
+void Text::SetSprite(Panel& panel, Point top_left, Sprite const& sprite) {
+  int16_t const x{top_left.x.number};
+  int16_t const y{top_left.y.number};
+
   // As in Panel::DrawBitmap(): right of the panel x plus a column
   // could overflow.
   if (x >= panel.GetNumberOfColumns()) {
@@ -109,13 +112,14 @@ void Text::SetSprite(Panel& panel, int16_t x, int16_t y, Sprite const& sprite) {
   }
   for (uint8_t sprite_column{0}; sprite_column < sprite.width;
        sprite_column++) {
-    panel.DrawColumn(static_cast<int16_t>(x + sprite_column), y, sprite.height,
+    X const column{static_cast<int16_t>(x + sprite_column)};
+    panel.DrawColumn(Point{column, Y{y}}, sprite.height,
                      Byte{sprite.columns[sprite_column]});
   }
 }
 
-void Text::SetGlyph(Panel& panel, int16_t x, int16_t y, Glyph const& glyph) {
-  panel.DrawBitmap(x, y, glyph.height, glyph.columns);
+void Text::SetGlyph(Panel& panel, Point top_left, Glyph const& glyph) {
+  panel.DrawBitmap(top_left, glyph.height, glyph.columns);
 }
 
 void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
@@ -131,10 +135,9 @@ bool Text::CharShiftTask(Panel& panel) {
 
   /* if sprite is completed set only spaces */
   if (sprite_shift_counter_ <= glyph_.columns.size()) {
-    SetGlyph(panel,
-             static_cast<int16_t>(panel.GetNumberOfColumns() -
-                                  sprite_shift_counter_),
-             0, glyph_);
+    X const left{static_cast<int16_t>(panel.GetNumberOfColumns() -
+                                      sprite_shift_counter_)};
+    SetGlyph(panel, Point{left, Y{0}}, glyph_);
   } else if (sprite_shift_counter_ ==
              static_cast<uint16_t>(glyph_.columns.size() +
                                    space_between_chars_ + 1)) {

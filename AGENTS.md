@@ -266,8 +266,9 @@ coordinates, a column of it at a time.
 The shapes, `DrawLine()`, `DrawRect()`, `FillRect()` and `DrawCircle()`, are drawn dot by dot
 through `SetDot()`; a column of a bitmap, a glyph or a sprite goes through `DrawColumn()`, which
 the text uses as well. Their sums are kept from overflowing an `int`, which is 16 bits on the
-Uno: the shapes add up in `int32_t`, which only a sketch that draws them pays for, and a column
-returns early where the sum could overflow, as the text should not pay for the shapes.
+Uno: the line and the circle add up in `int32_t`, which only a sketch that draws them pays for,
+a rectangle walks only the part of it on the panel, and a column returns early where the sum
+could overflow, as the text should not pay for the shapes.
 
 A new feature that works on coordinates builds on these and never branches on an orientation
 or a module type itself. When every function handled the orientations on its own, rows, shifts and dots
@@ -339,18 +340,26 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
 
 #### Parameters
 
-FN-3 allows four parameters, and the library departs from it where a sketch writer knows the
-function by five: the shapes take their coordinates as Adafruit GFX and MD_MAX72XX do,
-`DrawLine(x0, y0, x1, y1, value)`, `DrawRect(x, y, width, height, value)` and `FillRect`. A
-struct for a point was weighed and left for 2.0.0: every sketch that draws a shape would change,
-for a rule of review. Each carries a `NOLINT(readability-function-size)`; nothing else in
-`src/` does. `DrawBitmap(x, y, height, bitmap)` and the constructors, three pins and the
-buffer, have four, as a span brings its length.
+FN-3 allows four parameters, and nothing in `src/` takes more, as a dot is one `Point`: the
+shapes take two points or a point and a radius, `DrawLine(from, to, value)`,
+`DrawRect(corner, opposite_corner, value)`, `DrawCircle(centre, radius, value)`;
+`DrawBitmap(top_left, height, bitmap)` takes three, and the constructors, three pins and the
+buffer, four, as a span brings its length.
 
 Parameters that a caller could swap unnoticed take a type each (FN-16): the three pins are
 `DataInPin`, `ChipSelectPin` and `ClockPin`, with an `explicit` constructor, as a bare number
 would be any of them again; a module beside its column or row is a `Module`, as in
-`SetRow(Module{2}, 3, value)`; and a register is a `max7219::Register`.
+`SetRow(Module{2}, 3, value)`; a register is a `max7219::Register`; and a dot is a `Point` of an
+`X` and a `Y`, `Point{X{3}, Y{2}}`, so that a point with its column and row swapped does not
+compile either. A column or a row of the whole panel takes its `X` or `Y` as well,
+`SetColumn(X{5}, value)`, so that every coordinate a sketch writes names its axis. A rectangle is
+given by two opposite corners rather than a corner and a size, which would want a type each for
+its width and height; swapped, the two corners draw the same rectangle, as the two ends of a line
+draw the same line. Below the facade, the parts take a `Point` where a sketch's point arrives,
+and unpack it into `int16_t` at the start of a function, and pass on a new point rather than a
+part of one; `internal::Panel::SetDot()` unpacks it inline, before the call. avr-gcc 7.3 folds
+no constant through a part of a point, and passes a point to a function it does not inline as
+one value of four bytes: both cost the examples up to 120 bytes of flash (OIL 41).
 
 #### Integer types
 

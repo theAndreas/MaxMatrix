@@ -94,18 +94,17 @@ class Text {
   MAXMATRIX_NODISCARD Status SetFont(span<uint8_t const> font);
 
   /*!
-   * \brief Draws a char with its top left corner at `x`, `y`.
+   * \brief Draws a char with its top left corner at a dot.
    *
    * What lies off the panel is left out.
    *
    * \param[in,out] panel The panel to draw on.
-   * \param[in] x The column of the left edge; it may lie off the panel.
-   * \param[in] y The row of the top edge; it may lie off the panel.
+   * \param[in] top_left The top left corner; it may lie off the panel.
    * \param[in] c The char, latin-1.
    * \return Error::kOk, or Error::kUnknownChar if the font has no char for it;
    *         nothing is drawn then.
    */
-  MAXMATRIX_NODISCARD Status SetChar(Panel& panel, int16_t x, int16_t y,
+  MAXMATRIX_NODISCARD Status SetChar(Panel& panel, Point top_left,
                                      char c) const;
 
   /*!
@@ -154,29 +153,26 @@ class Text {
   void SetSpaceBetweenChars(uint8_t space_between_chars);
 
   /*!
-   * \brief Draws a sprite with its top left corner at `x`, `y`.
+   * \brief Draws a sprite with its top left corner at a dot.
    *
    * What lies off the panel is left out.
    *
    * \param[in,out] panel The panel to draw on.
-   * \param[in] x The column of the left edge; it may lie off the panel.
-   * \param[in] y The row of the top edge; it may lie off the panel.
+   * \param[in] top_left The top left corner; it may lie off the panel.
    * \param[in] sprite The sprite.
    */
-  static void SetSprite(Panel& panel, int16_t x, int16_t y,
-                        Sprite const& sprite);
+  static void SetSprite(Panel& panel, Point top_left, Sprite const& sprite);
 
   /*!
-   * \brief Draws a glyph of a font with its top left corner at `x`, `y`.
+   * \brief Draws a glyph of a font with its top left corner at a dot.
    *
    * What lies off the panel is left out.
    *
    * \param[in,out] panel The panel to draw on.
-   * \param[in] x The column of the left edge; it may lie off the panel.
-   * \param[in] y The row of the top edge; it may lie off the panel.
+   * \param[in] top_left The top left corner; it may lie off the panel.
    * \param[in] glyph The glyph, its columns in flash.
    */
-  static void SetGlyph(Panel& panel, int16_t x, int16_t y, Glyph const& glyph);
+  static void SetGlyph(Panel& panel, Point top_left, Glyph const& glyph);
 
   /*!
    * \brief Shifts the char one column further.

@@ -14,8 +14,11 @@
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Error;
+using max_matrix::Point;
 using max_matrix::Sprite;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 /* SetTextWithShift() took a char*, though the shift only reads the text, so
  * that a sketch could not make its text const */
@@ -40,7 +43,7 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   ASSERT_GT(pass, 0);
 
   matrix_.Clear();
-  matrix_.SetDot(0, 0, true);
+  matrix_.SetDot(Point{X{0}, Y{0}}, true);
   ASSERT_EQ(matrix_.SetTextWithShift(text, true).GetError(), Error::kOk);
   uint16_t const steps{static_cast<uint16_t>(kNumberOfColumns + (3 * pass))};
   for (uint16_t step{0}; step < steps; step++) {
@@ -118,7 +121,7 @@ TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
   int16_t const left{1};
   int16_t const top{2};
 
-  matrix_.SetSprite(left, top, sprite);
+  matrix_.SetSprite(Point{X{left}, Y{top}}, sprite);
 
   EXPECT_EQ(ShownPicture(matrix_), Picture([&sprite](int16_t x, int16_t y) {
               int16_t const column{static_cast<int16_t>(x - left)};

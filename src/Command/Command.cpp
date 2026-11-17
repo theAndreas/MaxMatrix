@@ -200,8 +200,10 @@ Status Command::ExecuteDot(Matrix& matrix, uint8_t value) {
   if (!lit.IsOk()) {
     return lit.GetError();
   }
-  matrix.SetDot(static_cast<int16_t>(column.GetValue()),
-                static_cast<int16_t>(row.GetValue()), lit.GetValue() == 1);
+  // ConvertToNumber() held both to the panel, which an int16_t holds.
+  Point const dot{X{static_cast<int16_t>(column.GetValue())},
+                  Y{static_cast<int16_t>(row.GetValue())}};
+  matrix.SetDot(dot, lit.GetValue() == 1);
   return Error::kOk;
 }
 
@@ -247,7 +249,7 @@ void Command::AnswerPicture(Matrix& matrix, Print& answer) {
 
   answer.print(F("picture="));
   for (int16_t column{0}; column < columns; column++) {
-    uint8_t const value{matrix.GetColumn(column).GetValue().ToInteger()};
+    uint8_t const value{matrix.GetColumn(X{column}).GetValue().ToInteger()};
     uint8_t const high_nibble{Bit<uint8_t>::ShiftDown(value, kNibbleWidth)};
     uint8_t const low_nibble{Bit<uint8_t>::ReadBitGroup(value, kLowNibble)};
     answer.write(static_cast<uint8_t>(ConvertToHexDigit(high_nibble)));

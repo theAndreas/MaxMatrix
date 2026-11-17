@@ -15,6 +15,10 @@
 #include <avr/pgmspace.h>
 #include <stdint.h>
 
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
+
 uint32_t const kShowMs{1000};
 uint8_t const kNumberOfShapes{4};
 
@@ -30,26 +34,27 @@ uint8_t shape{0};
 uint32_t last_shape{0};
 
 void DrawShape() {
-  int16_t const right{static_cast<int16_t>(matrix.GetNumberOfColumns() - 1)};
+  X const right{static_cast<int16_t>(matrix.GetNumberOfColumns() - 1)};
+  Y const bottom{max_matrix::kRowNumberOfModule - 1};
   max_matrix::Batch const batch{matrix};
 
   matrix.Clear();
   if (shape == 0) {
-    matrix.DrawRect(0, 0, matrix.GetNumberOfColumns(),
-                    max_matrix::kRowNumberOfModule, true);
-    matrix.FillRect(3, 2, 4, 4, true);
+    /* a rectangle by two opposite corners, both part of it */
+    matrix.DrawRect(Point{X{0}, Y{0}}, Point{right, bottom}, true);
+    matrix.FillRect(Point{X{3}, Y{2}}, Point{X{6}, Y{5}}, true);
   } else if (shape == 1) {
-    matrix.DrawLine(0, 0, right, 7, true);
-    matrix.DrawLine(0, 7, right, 0, true);
+    matrix.DrawLine(Point{X{0}, Y{0}}, Point{right, bottom}, true);
+    matrix.DrawLine(Point{X{0}, bottom}, Point{right, Y{0}}, true);
   } else if (shape == 2) {
     /* the radius grows from 0 to the 3 that fills the height of the matrix */
     for (int16_t radius{0}; radius <= 3; radius++) {
-      matrix.DrawCircle(static_cast<int16_t>(4 + (8 * radius)), 3, radius,
-                        true);
+      X const centre_x{static_cast<int16_t>(4 + (8 * radius))};
+      matrix.DrawCircle(Point{centre_x, Y{3}}, radius, true);
     }
   } else {
     for (int16_t x{0}; x < matrix.GetNumberOfColumns(); x += 8) {
-      matrix.DrawBitmap(x, 1, kHeart);
+      matrix.DrawBitmap(Point{X{x}, Y{1}}, kHeart);
     }
   }
 }

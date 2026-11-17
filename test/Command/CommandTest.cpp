@@ -16,8 +16,11 @@
 using max_matrix::Command;
 using max_matrix::CommandState;
 using max_matrix::Error;
+using max_matrix::Point;
 using max_matrix::Result;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace {
 
@@ -70,11 +73,11 @@ TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix) {
   EXPECT_EQ(matrix_.GetSpaceBetweenChars(), 3);
 
   EXPECT_EQ(FeedLine("setDot=5,3,1\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetDot(5, 3).GetError(), Error::kOk);
-  EXPECT_TRUE(matrix_.GetDot(5, 3).GetValue());
+  EXPECT_EQ(matrix_.GetDot(Point{X{5}, Y{3}}).GetError(), Error::kOk);
+  EXPECT_TRUE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
   EXPECT_EQ(FeedLine("setDot=5,3,0\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetDot(5, 3).GetError(), Error::kOk);
-  EXPECT_FALSE(matrix_.GetDot(5, 3).GetValue());
+  EXPECT_EQ(matrix_.GetDot(Point{X{5}, Y{3}}).GetError(), Error::kOk);
+  EXPECT_FALSE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
 
   matrix_.SetText("Hi");
   EXPECT_EQ(FeedLine("clear\n"), CommandState::kDone);
@@ -198,10 +201,10 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   TextPrint answer;
   std::string expected = "picture=";
 
-  matrix_.SetDot(0, 0, true);
-  matrix_.SetDot(9, 1, true);
-  matrix_.SetDot(16, 4, true);
-  matrix_.SetDot(31, 7, true);
+  matrix_.SetDot(Point{X{0}, Y{0}}, true);
+  matrix_.SetDot(Point{X{9}, Y{1}}, true);
+  matrix_.SetDot(Point{X{16}, Y{4}}, true);
+  matrix_.SetDot(Point{X{31}, Y{7}}, true);
   for (char const c : std::string("picture\n")) {
     command.Feed(matrix_, c, answer);
   }

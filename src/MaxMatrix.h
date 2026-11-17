@@ -194,9 +194,9 @@ class Matrix {
     return text_.GetSpaceBetweenChars();
   }
 
-  /*! \copydoc internal::Panel::GetColumn(int16_t) */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(int16_t column) {
-    return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(column));
+  /*! \copydoc internal::Panel::GetColumn(X) */
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x) {
+    return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(x));
   }
 
   /*! \copydoc internal::Panel::GetColumn(Module, uint8_t) */
@@ -210,17 +210,17 @@ class Matrix {
    *
    * \code{.cpp}
    * max_matrix::array<max_matrix::Byte, 4> row;
-   * matrix.GetRow(0, row);
+   * matrix.GetRow(max_matrix::Y{0}, row);
    * \endcode
    *
-   * \param[in] row The row, from 0 at the top.
+   * \param[in] y The row, from 0 at the top.
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row, span<Byte> values) {
-    return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(row, values));
+  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values) {
+    return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(y, values));
   }
 
   /*! \copydoc internal::Panel::GetRow(Module, uint8_t) */
@@ -228,9 +228,9 @@ class Matrix {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
-  /*! \copydoc internal::Panel::GetDot(int16_t, int16_t) */
-  MAXMATRIX_NODISCARD Result<bool> GetDot(int16_t column, int16_t row) {
-    return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(column, row));
+  /*! \copydoc internal::Panel::GetDot(Point) */
+  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot) {
+    return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(dot));
   }
 
   /*! \copydoc internal::Text::GetFont() */
@@ -325,9 +325,9 @@ class Matrix {
    */
   void SetDisplayTest(bool display_test);
 
-  /*! \copydoc internal::Panel::SetColumn(int16_t, Byte) */
-  void SetColumn(int16_t column, Byte value) {
-    panel_.SetColumn(column, value);
+  /*! \copydoc internal::Panel::SetColumn(X, Byte) */
+  void SetColumn(X x, Byte value) {
+    panel_.SetColumn(x, value);
     UpdateIfAuto();
   }
 
@@ -343,12 +343,12 @@ class Matrix {
    * A row off the panel is left out, as for SetDot(), and so are the modules
    * beyond the bytes given, or the bytes beyond the modules.
    *
-   * \param[in] row The row, from 0 at the top.
+   * \param[in] y The row, from 0 at the top.
    * \param[in] values The row, bit 7 of each byte the leftmost column of its
    *                   module.
    */
-  void SetRow(int16_t row, span<Byte const> values) {
-    panel_.SetRow(row, values);
+  void SetRow(Y y, span<Byte const> values) {
+    panel_.SetRow(y, values);
     UpdateIfAuto();
   }
 
@@ -358,45 +358,39 @@ class Matrix {
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::SetDot(int16_t, int16_t, bool) */
-  void SetDot(int16_t column, int16_t row, bool value) {
-    panel_.SetDot(column, row, value);
+  /*! \copydoc internal::Panel::SetDot(Point, bool) */
+  void SetDot(Point dot, bool value) {
+    panel_.SetDot(dot, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::DrawLine(int16_t, int16_t, int16_t, int16_t,
-   * bool) */
-  void DrawLine(  // NOLINT(readability-function-size)
-      int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value) {
-    panel_.DrawLine(x0, y0, x1, y1, value);
+  /*! \copydoc internal::Panel::DrawLine(Point, Point, bool) */
+  void DrawLine(Point from, Point to, bool value) {
+    panel_.DrawLine(from, to, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::DrawRect(int16_t, int16_t, int16_t, int16_t,
-   * bool) */
-  void DrawRect(  // NOLINT(readability-function-size)
-      int16_t x, int16_t y, int16_t width, int16_t height, bool value) {
-    panel_.DrawRect(x, y, width, height, value);
+  /*! \copydoc internal::Panel::DrawRect(Point, Point, bool) */
+  void DrawRect(Point corner, Point opposite_corner, bool value) {
+    panel_.DrawRect(corner, opposite_corner, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::FillRect(int16_t, int16_t, int16_t, int16_t,
-   * bool) */
-  void FillRect(  // NOLINT(readability-function-size)
-      int16_t x, int16_t y, int16_t width, int16_t height, bool value) {
-    panel_.FillRect(x, y, width, height, value);
+  /*! \copydoc internal::Panel::FillRect(Point, Point, bool) */
+  void FillRect(Point corner, Point opposite_corner, bool value) {
+    panel_.FillRect(corner, opposite_corner, value);
     UpdateIfAuto();
   }
 
-  /*! \copydoc internal::Panel::DrawCircle(int16_t, int16_t, int16_t, bool) */
-  void DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
-    panel_.DrawCircle(x, y, radius, value);
+  /*! \copydoc internal::Panel::DrawCircle(Point, int16_t, bool) */
+  void DrawCircle(Point centre, int16_t radius, bool value) {
+    panel_.DrawCircle(centre, radius, value);
     UpdateIfAuto();
   }
 
   /*!
    * \brief Draws a picture from flash, 8 rows high, with its top left corner at
-   *        `x`, `y`.
+   *        a dot.
    *
    * The picture is a column per byte, bit 0 the top row, as a glyph of a font:
    * a 0 bit turns its dot off. What lies off the matrix is left out.
@@ -404,39 +398,37 @@ class Matrix {
    * \code{.cpp}
    * constexpr auto kHeart PROGMEM{
    *     max_matrix::make_array<uint8_t>(0x0C, 0x1E, 0x3C, 0x1E, 0x0C)};
-   * matrix.DrawBitmap(3, 0, kHeart);
+   * matrix.DrawBitmap(max_matrix::Point{max_matrix::X{3}, max_matrix::Y{0}},
+   *                   kHeart);
    * \endcode
    *
-   * \param[in] x The column of the left edge; it may lie off the matrix.
-   * \param[in] y The row of the top edge; it may lie off the matrix.
+   * \param[in] top_left The top left corner; it may lie off the matrix.
    * \param[in] bitmap The columns, in `PROGMEM`; as many as it holds.
    */
-  void DrawBitmap(int16_t x, int16_t y, span<uint8_t const> bitmap) {
-    DrawBitmap(x, y, kRowNumberOfModule, bitmap);
+  void DrawBitmap(Point top_left, span<uint8_t const> bitmap) {
+    DrawBitmap(top_left, kRowNumberOfModule, bitmap);
   }
 
-  /*! \copydoc internal::Panel::DrawBitmap(int16_t, int16_t, uint8_t,
+  /*! \copydoc internal::Panel::DrawBitmap(Point, uint8_t,
    * span<uint8_t const>) */
-  void DrawBitmap(int16_t x, int16_t y, uint8_t height,
-                  span<uint8_t const> bitmap) {
-    panel_.DrawBitmap(x, y, height, bitmap);
+  void DrawBitmap(Point top_left, uint8_t height, span<uint8_t const> bitmap) {
+    panel_.DrawBitmap(top_left, height, bitmap);
     UpdateIfAuto();
   }
 
   /*!
-   * \brief Draws a char with its top left corner at `x`, `y`.
+   * \brief Draws a char with its top left corner at a dot.
    *
    * What lies off the matrix is left out.
    *
-   * \param[in] x The column of the left edge; it may lie off the matrix.
-   * \param[in] y The row of the top edge; it may lie off the matrix.
+   * \param[in] top_left The top left corner; it may lie off the matrix.
    * \param[in] c The char, latin-1.
    * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
    *         the char; nothing is drawn then.
    */
-  Status SetChar(int16_t x, int16_t y, char c) {
+  Status SetChar(Point top_left, char c) {
     return UpdateIfAuto(
-        MAXMATRIX_REPORT_ERROR("SetChar", text_.SetChar(panel_, x, y, c)));
+        MAXMATRIX_REPORT_ERROR("SetChar", text_.SetChar(panel_, top_left, c)));
   }
 
   /*!
@@ -536,16 +528,15 @@ class Matrix {
   }
 
   /*!
-   * \brief Draws a sprite with its top left corner at `x`, `y`.
+   * \brief Draws a sprite with its top left corner at a dot.
    *
    * What lies off the matrix is left out.
    *
-   * \param[in] x The column of the left edge; it may lie off the matrix.
-   * \param[in] y The row of the top edge; it may lie off the matrix.
+   * \param[in] top_left The top left corner; it may lie off the matrix.
    * \param[in] sprite The sprite.
    */
-  void SetSprite(int16_t x, int16_t y, Sprite const& sprite) {
-    max_matrix::internal::Text::SetSprite(panel_, x, y, sprite);
+  void SetSprite(Point top_left, Sprite const& sprite) {
+    max_matrix::internal::Text::SetSprite(panel_, top_left, sprite);
     UpdateIfAuto();
   }
 
