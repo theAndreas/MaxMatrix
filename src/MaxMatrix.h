@@ -568,8 +568,12 @@ class Matrix {
    *
    * The intensity is set to its start value. The cleared matrix is sent even
    * with auto update off, as after power-up the LEDs show anything.
+   *
+   * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
+   *         `NUM_DIGITAL_PINS` or above; then nothing is sent, and a matrix set
+   *         up before keeps its state and drives the pins it had.
    */
-  void Init();
+  Status Init();
 
   /*!
    * \brief Shifts a text or a char one column further, if the shift interval
