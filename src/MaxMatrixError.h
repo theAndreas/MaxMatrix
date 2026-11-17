@@ -71,11 +71,6 @@ enum class Error : uint8_t {
  *       `E_OK` was 0, so `if(matrix.SetText(...))` was true on an error.
  */
 class Status {
- private:
-  // A sketch reaches the error only through this class, so that it could carry
-  // more than the enum one day without a sketch changing.
-  Error error_;
-
  public:
   /*!
    * \brief Makes a status of `error`, ok when none is given.
@@ -127,6 +122,11 @@ class Status {
   friend constexpr bool operator!=(Status status, Error error) {
     return !(status == error);
   }
+
+ private:
+  // A sketch reaches the error only through this class, so that it could carry
+  // more than the enum one day without a sketch changing.
+  Error error_;
 };
 
 /*!
@@ -142,12 +142,6 @@ class Status {
  */
 template <typename ValueType>
 class Result {
- private:
-  // Side by side rather than in a union: a byte and its error still return in
-  // registers on the AVR, and the value is never left undefined.
-  ValueType value_;
-  Error error_;
-
  public:
   /*!
    * \brief Makes a result that holds `value`.
@@ -205,6 +199,12 @@ class Result {
   friend constexpr bool operator!=(Result const& result, Error error) {
     return !(result == error);
   }
+
+ private:
+  // Side by side rather than in a union: a byte and its error still return in
+  // registers on the AVR, and the value is never left undefined.
+  ValueType value_;
+  Error error_;
 };
 
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)

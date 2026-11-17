@@ -36,39 +36,6 @@ constexpr uint32_t kSimulatorAvrCyclesPerMillisecond{kSimulatorAvrFrequency /
  * time after the other.
  */
 class SimulatorAvr {
- private:
-  avr_t* avr_{nullptr};
-  elf_firmware_t firmware_{};
-  bool data_in_{false};
-  bool clock_{false};
-  // high, as the pull-up of a real module keeps it until Init() drives the pin
-  bool chip_select_{true};
-  // The bits of the byte on the wire so far, for the frame the page shows; the
-  // model has them one by one already.
-  uint8_t bits_{0};
-  uint8_t bit_count_{0};
-  // simavr's receive buffer has room.
-  bool receive_ready_{false};
-
-  void ReceiveSerial();
-  void TakeByte(uint8_t value);
-  /*
-   * simavr reports a pin or a byte through a C function and a pointer it was
-   * given, so each of those is a static function that is handed the object. The
-   * pins are followed rather than the port registers: digitalWrite() and
-   * shiftOut() write the port bit by bit, and only a change is a step on the
-   * wire.
-   */
-  void ConnectPins();
-  void ConnectUart();
-  static void OnDataIn(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnClock(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnChipSelect(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnSpiByte(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnSerialByte(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnReceiveReady(avr_irq_t* irq, uint32_t value, void* object);
-  static void OnReceiveFull(avr_irq_t* irq, uint32_t value, void* object);
-
  public:
   /*! \brief Makes a simulator without an AVR; Load() makes one. */
   SimulatorAvr();
@@ -135,6 +102,39 @@ class SimulatorAvr {
    * \pre Load() has succeeded.
    */
   bool Run(uint32_t milliseconds);
+
+ private:
+  void ReceiveSerial();
+  void TakeByte(uint8_t value);
+  /*
+   * simavr reports a pin or a byte through a C function and a pointer it was
+   * given, so each of those is a static function that is handed the object. The
+   * pins are followed rather than the port registers: digitalWrite() and
+   * shiftOut() write the port bit by bit, and only a change is a step on the
+   * wire.
+   */
+  void ConnectPins();
+  void ConnectUart();
+  static void OnDataIn(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnClock(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnChipSelect(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnSpiByte(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnSerialByte(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnReceiveReady(avr_irq_t* irq, uint32_t value, void* object);
+  static void OnReceiveFull(avr_irq_t* irq, uint32_t value, void* object);
+
+  avr_t* avr_{nullptr};
+  elf_firmware_t firmware_{};
+  bool data_in_{false};
+  bool clock_{false};
+  // high, as the pull-up of a real module keeps it until Init() drives the pin
+  bool chip_select_{true};
+  // The bits of the byte on the wire so far, for the frame the page shows; the
+  // model has them one by one already.
+  uint8_t bits_{0};
+  uint8_t bit_count_{0};
+  // simavr's receive buffer has room.
+  bool receive_ready_{false};
 };
 
 #endif  // MAXMATRIX_SIMULATOR_AVR_SIMULATORAVR_H_

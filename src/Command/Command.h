@@ -73,39 +73,6 @@ class Matrix;
  * shifts while the next line fills the line buffer.
  */
 class Command {
- private:
-  /*
-   * As internal::Text is, the class is handed the matrix by every call rather
-   * than keeping a reference to it.
-   */
-  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> line_;
-  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> shift_text_;
-  uint8_t line_length_{0};
-  bool line_too_long_{false};
-
-  /*
-   * The commands find their parts by their position in line_, a byte, as the
-   * static_assert below holds the line to: walked by a span instead, as T-20
-   * would have it for a text of unknown length, SerialControl was larger. The
-   * line always ends with a null character, which Feed() puts there, so a
-   * position needs no check against its size.
-   */
-  static constexpr uint16_t kMaxLineLength{0xFF};
-  static_assert(MAXMATRIX_COMMAND_LINE_LENGTH <= kMaxLineLength,
-                "a position in the line has to fit into a byte");
-  MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix,
-                                                   Print& answer);
-  MAXMATRIX_NODISCARD uint8_t Find(uint8_t from, char c) const;
-  MAXMATRIX_NODISCARD Status ExecuteWithValue(Matrix& matrix, uint8_t value);
-  MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix, uint8_t value);
-  MAXMATRIX_NODISCARD Status ExecuteText(Matrix& matrix, uint8_t value) const;
-  MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);
-  MAXMATRIX_NODISCARD Status ExecuteSetting(Matrix& matrix,
-                                            uint8_t value) const;
-  static void AnswerPicture(Matrix const& matrix, Print& answer);
-  MAXMATRIX_NODISCARD Result<uint16_t> ConvertToNumber(uint8_t text,
-                                                       uint16_t maximum) const;
-
  public:
   /*! \brief Makes a reader at the start of an empty line. */
   Command();
@@ -130,6 +97,40 @@ class Command {
    *         command failed: kNoText, kNotANumber, kOutOfRange or kUnknownChar.
    */
   Result<CommandState> Feed(Matrix& matrix, char c, Print& answer);
+
+ private:
+  /*
+   * The commands find their parts by their position in line_, a byte, as the
+   * static_assert below holds the line to: walked by a span instead, as T-20
+   * would have it for a text of unknown length, SerialControl was larger. The
+   * line always ends with a null character, which Feed() puts there, so a
+   * position needs no check against its size.
+   */
+  static constexpr uint16_t kMaxLineLength{0xFF};
+
+  static_assert(MAXMATRIX_COMMAND_LINE_LENGTH <= kMaxLineLength,
+                "a position in the line has to fit into a byte");
+  MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix,
+                                                   Print& answer);
+  MAXMATRIX_NODISCARD uint8_t Find(uint8_t from, char c) const;
+  MAXMATRIX_NODISCARD Status ExecuteWithValue(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteText(Matrix& matrix, uint8_t value) const;
+  MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteSetting(Matrix& matrix,
+                                            uint8_t value) const;
+  static void AnswerPicture(Matrix const& matrix, Print& answer);
+  MAXMATRIX_NODISCARD Result<uint16_t> ConvertToNumber(uint8_t text,
+                                                       uint16_t maximum) const;
+
+  /*
+   * As internal::Text is, the class is handed the matrix by every call rather
+   * than keeping a reference to it.
+   */
+  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> line_;
+  array<char, MAXMATRIX_COMMAND_LINE_LENGTH + 1> shift_text_;
+  uint8_t line_length_{0};
+  bool line_too_long_{false};
 };
 
 }  // namespace max_matrix

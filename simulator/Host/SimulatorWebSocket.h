@@ -52,20 +52,6 @@ struct SimulatorWebSocketFrame {
  * max_matrix::Font.
  */
 class SimulatorWebSocket {
- private:
-  /* the five words of the hash while SHA-1 runs, FIPS 180-4 */
-  static constexpr uint8_t kSha1StateWords{5};
-  using Sha1State = std::array<uint32_t, kSha1StateWords>;
-
-  MAXMATRIX_NODISCARD static SimulatorFoundText GetKey(
-      std::string const& request);
-  MAXMATRIX_NODISCARD static std::string PadSha1Message(
-      std::string const& message);
-  MAXMATRIX_NODISCARD static Sha1State ProcessSha1Block(
-      std::string const& padded, size_t offset, Sha1State state);
-  MAXMATRIX_NODISCARD static uint32_t MixSha1(uint8_t round, uint32_t b,
-                                              uint32_t c, uint32_t d);
-
  public:
   /*!
    * \brief Builds the answer to a browser's request to open a WebSocket.
@@ -135,6 +121,20 @@ class SimulatorWebSocket {
    */
   MAXMATRIX_NODISCARD static std::string ConvertToBase64(
       std::string const& bytes);
+
+ private:
+  /* the five words of the hash while SHA-1 runs, FIPS 180-4 */
+  static constexpr uint8_t kSha1StateWords{5};
+  using Sha1State = std::array<uint32_t, kSha1StateWords>;
+
+  MAXMATRIX_NODISCARD static SimulatorFoundText GetKey(
+      std::string const& request);
+  MAXMATRIX_NODISCARD static std::string PadSha1Message(
+      std::string const& message);
+  MAXMATRIX_NODISCARD static Sha1State ProcessSha1Block(
+      std::string const& padded, size_t offset, Sha1State state);
+  MAXMATRIX_NODISCARD static uint32_t MixSha1(uint8_t round, uint32_t b,
+                                              uint32_t c, uint32_t d);
 };
 
 #endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_

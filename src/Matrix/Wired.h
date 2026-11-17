@@ -32,19 +32,6 @@ namespace internal {
  * changed to the chain.
  */
 class Wired {
- private:
-  Chain chain_;
-  // The sketch's, BufferSize() of the chain's modules long, which says how
-  // many modules the chain has; MatrixOf brings one.
-  span<Byte> matrix_buffer_;
-  /*
-   * A frame carries one register of every module, so the same column of all
-   * modules goes out in one frame. The buffer therefore keeps which columns of
-   * a module have changed, one bit each, and Send() needs one frame per changed
-   * column: eight at most for a whole picture, however many calls drew it.
-   */
-  Byte changed_columns_{};
-
  public:
   /*!
    * \brief Makes the matrix of the chain at these pins, and empties its buffer.
@@ -120,6 +107,19 @@ class Wired {
    * nothing goes out when nothing has changed.
    */
   void Send();
+
+ private:
+  Chain chain_;
+  // The sketch's, BufferSize() of the chain's modules long, which says how
+  // many modules the chain has; MatrixOf brings one.
+  span<Byte> matrix_buffer_;
+  /*
+   * A frame carries one register of every module, so the same column of all
+   * modules goes out in one frame. The buffer therefore keeps which columns of
+   * a module have changed, one bit each, and Send() needs one frame per changed
+   * column: eight at most for a whole picture, however many calls drew it.
+   */
+  Byte changed_columns_{};
 };
 
 }  // namespace internal

@@ -34,35 +34,6 @@
  * Derived from wxPanel, as wxWidgets makes a control of its own (C-8).
  */
 class ControlDotPanel : public wxPanel {
- private:
-  /* the LED under a point, as GetDotAt() finds it, if there is one: named
-   * members, which a call cannot swap (FN-16) */
-  struct Dot {
-    bool found;
-    uint8_t column;
-    uint8_t row;
-  };
-
-  /* one byte per column, bit 0 the top row, as SerialControl answers picture */
-  std::vector<uint8_t> columns_;
-  std::function<void(uint8_t, uint8_t, bool)> on_switch_;
-  /* while the button is held: the state every LED passed takes, and the LED the
-   * mouse was on last, if it was on one */
-  bool painting_{false};
-  bool paint_lit_{false};
-  bool on_dot_{false};
-  uint8_t last_column_{0};
-  uint8_t last_row_{0};
-
-  void OnPaint(wxPaintEvent& event);
-  void OnLeftDown(wxMouseEvent& event);
-  void OnMotion(wxMouseEvent& event);
-  void OnLeftUp(wxMouseEvent& event);
-  void OnCaptureLost(wxMouseCaptureLostEvent& event);
-  void PaintDot(uint8_t column, uint8_t row);
-  MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
-  MAXMATRIX_NODISCARD Dot GetDotAt(wxPoint point) const;
-
  public:
   /*!
    * \brief Makes the panel with every LED off.
@@ -86,6 +57,35 @@ class ControlDotPanel : public wxPanel {
 
   /*! \brief Turns every LED off. */
   void Clear();
+
+ private:
+  /* the LED under a point, as GetDotAt() finds it, if there is one: named
+   * members, which a call cannot swap (FN-16) */
+  struct Dot {
+    bool found;
+    uint8_t column;
+    uint8_t row;
+  };
+
+  void OnPaint(wxPaintEvent& event);
+  void OnLeftDown(wxMouseEvent& event);
+  void OnMotion(wxMouseEvent& event);
+  void OnLeftUp(wxMouseEvent& event);
+  void OnCaptureLost(wxMouseCaptureLostEvent& event);
+  void PaintDot(uint8_t column, uint8_t row);
+  MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
+  MAXMATRIX_NODISCARD Dot GetDotAt(wxPoint point) const;
+
+  /* one byte per column, bit 0 the top row, as SerialControl answers picture */
+  std::vector<uint8_t> columns_;
+  std::function<void(uint8_t, uint8_t, bool)> on_switch_;
+  /* while the button is held: the state every LED passed takes, and the LED the
+   * mouse was on last, if it was on one */
+  bool painting_{false};
+  bool paint_lit_{false};
+  bool on_dot_{false};
+  uint8_t last_column_{0};
+  uint8_t last_row_{0};
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLDOTPANEL_H_

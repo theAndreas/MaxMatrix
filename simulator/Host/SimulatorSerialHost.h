@@ -30,13 +30,6 @@
  * simulator's tick, as the web host is.
  */
 class SimulatorSerialHost {
- private:
-  int listener_;
-  int client_;
-
-  void AcceptClient();
-  void DropClient();
-
  public:
   /*! \brief Makes a host that listens nowhere until Begin(). */
   SimulatorSerialHost();
@@ -80,6 +73,13 @@ class SimulatorSerialHost {
    * \param[in] text The bytes, as the sketch printed them.
    */
   void Send(std::string const& text);
+
+ private:
+  void AcceptClient();
+  void DropClient();
+
+  int listener_;
+  int client_;
 };
 
 #endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORSERIALHOST_H_

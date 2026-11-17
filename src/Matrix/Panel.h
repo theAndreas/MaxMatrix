@@ -167,62 +167,6 @@ namespace internal {
  * takes most of its functions over.
  */
 class Panel {
- private:
-  Wired wired_;
-  ModuleType module_type_{ModuleType::kDr0Cr0Rr1};
-  MatrixOrientation matrix_orientation_{MatrixOrientation::k0};
-
-  /* where a dot lies in the buffer: the buffer column and its bit */
-  struct BufferDot {
-    uint8_t column;
-    uint8_t bit;
-  };
-
-  /*
-   * Whether a column, a row or a dot lies on the panel, or a column or row
-   * within a module. Templates, as SetFarDot() checks its sums as int32_t and
-   * the rest int16_t, which is cheaper on the Uno.
-   */
-  template <typename Coordinate>
-  MAXMATRIX_NODISCARD bool HasColumn(Coordinate column) const {
-    return (column >= 0) && (column < GetNumberOfColumns());
-  }
-  template <typename Coordinate>
-  MAXMATRIX_NODISCARD static constexpr bool HasRow(Coordinate row) {
-    return (row >= 0) && (row < kRowNumberOfModule);
-  }
-  template <typename Coordinate>
-  MAXMATRIX_NODISCARD bool HasDot(Coordinate column, Coordinate row) const {
-    return HasColumn(column) && HasRow(row);
-  }
-  MAXMATRIX_NODISCARD bool HasModuleColumn(Module module,
-                                           uint8_t column) const {
-    return (module.number < GetNumberOfModules()) &&
-           (column < kColumnNumberOfModule);
-  }
-  MAXMATRIX_NODISCARD bool HasModuleRow(Module module, uint8_t row) const {
-    return (module.number < GetNumberOfModules()) && (row < kRowNumberOfModule);
-  }
-
-  static Byte ReverseByte(Byte input);
-  MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(uint8_t column,
-                                                   uint8_t row) const;
-  MAXMATRIX_NODISCARD Byte GetLine(uint8_t column, uint8_t row,
-                                   bool vertical) const;
-  void SetLine(uint8_t column, uint8_t row, bool vertical, Byte value);
-  /*
-   * SetDot() with its point unpacked, inline, before the call: avr-gcc 7.3
-   * passes a Point to a function it does not inline as one value of four
-   * bytes, and every caller that built one paid for it, 88 bytes of flash in
-   * Basics and 30 in SerialControl. Only SetDot() calls it.
-   */
-  void SetDotAt(int16_t column, int16_t row, bool value);
-  void SetFarDot(int32_t column, int32_t row, bool value);
-  void ChangeMapping(MatrixOrientation matrix_orientation,
-                     ModuleType module_type);
-  Byte GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
-  void ShiftRows(bool up, ShiftFill fill);
-
  public:
   /*!
    * \brief Makes the panel of the chain at these pins, of modules
@@ -525,6 +469,62 @@ class Panel {
    *                 the top one as it was.
    */
   void ShiftDown(ShiftFill fill = ShiftFill::kZero);
+
+ private:
+  /* where a dot lies in the buffer: the buffer column and its bit */
+  struct BufferDot {
+    uint8_t column;
+    uint8_t bit;
+  };
+
+  /*
+   * Whether a column, a row or a dot lies on the panel, or a column or row
+   * within a module. Templates, as SetFarDot() checks its sums as int32_t and
+   * the rest int16_t, which is cheaper on the Uno.
+   */
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD bool HasColumn(Coordinate column) const {
+    return (column >= 0) && (column < GetNumberOfColumns());
+  }
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD static constexpr bool HasRow(Coordinate row) {
+    return (row >= 0) && (row < kRowNumberOfModule);
+  }
+  template <typename Coordinate>
+  MAXMATRIX_NODISCARD bool HasDot(Coordinate column, Coordinate row) const {
+    return HasColumn(column) && HasRow(row);
+  }
+  MAXMATRIX_NODISCARD bool HasModuleColumn(Module module,
+                                           uint8_t column) const {
+    return (module.number < GetNumberOfModules()) &&
+           (column < kColumnNumberOfModule);
+  }
+  MAXMATRIX_NODISCARD bool HasModuleRow(Module module, uint8_t row) const {
+    return (module.number < GetNumberOfModules()) && (row < kRowNumberOfModule);
+  }
+
+  static Byte ReverseByte(Byte input);
+  MAXMATRIX_NODISCARD BufferDot ConvertDotToBuffer(uint8_t column,
+                                                   uint8_t row) const;
+  MAXMATRIX_NODISCARD Byte GetLine(uint8_t column, uint8_t row,
+                                   bool vertical) const;
+  void SetLine(uint8_t column, uint8_t row, bool vertical, Byte value);
+  /*
+   * SetDot() with its point unpacked, inline, before the call: avr-gcc 7.3
+   * passes a Point to a function it does not inline as one value of four
+   * bytes, and every caller that built one paid for it, 88 bytes of flash in
+   * Basics and 30 in SerialControl. Only SetDot() calls it.
+   */
+  void SetDotAt(int16_t column, int16_t row, bool value);
+  void SetFarDot(int32_t column, int32_t row, bool value);
+  void ChangeMapping(MatrixOrientation matrix_orientation,
+                     ModuleType module_type);
+  Byte GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
+  void ShiftRows(bool up, ShiftFill fill);
+
+  Wired wired_;
+  ModuleType module_type_{ModuleType::kDr0Cr0Rr1};
+  MatrixOrientation matrix_orientation_{MatrixOrientation::k0};
 };
 
 }  // namespace internal

@@ -170,50 +170,6 @@ namespace internal {
  * pins; bit banging or SPI is chosen with `MAXMATRIX_USE_SPI`.
  */
 class Chain {
- private:
-  /* a pin's port and its bit there, as one, so that the two cannot be mixed up
-   * between pins or swapped in a call (FN-16) */
-  struct PortBit {
-    uint8_t port;
-    uint8_t mask;
-  };
-
-  uint8_t data_in_pin_;
-  uint8_t chip_select_pin_;
-  uint8_t clock_pin_;
-  /*
-   * The port and the bit of each pin, looked up once in Init(): digitalWrite()
-   * looks both up in tables in flash on every call, which made a byte bit
-   * banged by shiftOut() take about 1500 cycles of the Uno's 16 MHz. The port,
-   * not its register: the core reads the register's address from flash with a
-   * statement expression, which decltype() cannot take outside a function, so
-   * it is read where it is written. Data in and clock only bit bang.
-   */
-  PortBit chip_select_{};
-#if (MAXMATRIX_USE_SPI == STD_OFF)
-  PortBit data_in_{};
-  PortBit clock_{};
-#endif
-
-  /*
-   * Not const, though they change no member: they change the chain this object
-   * stands for, and a const Chain that still sends would be a lie.
-   * transfer() is not static either, though with SPI it uses no member: bit
-   * banging needs the pins. clang-tidy reports all three, and each definition
-   * answers it with a NOLINT.
-   */
-  void StartTransmission();
-  void StopTransmission();
-  void Transfer(max7219::Register address, uint8_t value);
-#if (MAXMATRIX_USE_SPI == STD_OFF)
-  void ShiftOut(uint8_t value);
-#endif
-  static PortBit LookUpPortBit(uint8_t pin);
-  static void WritePin(PortBit pin, bool high);
-  // Whether each of the three pins is one of the board's, which Init() checks
-  // before it takes them.
-  MAXMATRIX_NODISCARD bool HasBoardPins() const;
-
  public:
   /*!
    * \brief Makes the chain at these pins; nothing is sent until Init().
@@ -300,6 +256,50 @@ class Chain {
    */
   void WriteRegisterEach(max7219::Register address, span<Byte const> buffer,
                          uint8_t column);
+
+ private:
+  /* a pin's port and its bit there, as one, so that the two cannot be mixed up
+   * between pins or swapped in a call (FN-16) */
+  struct PortBit {
+    uint8_t port;
+    uint8_t mask;
+  };
+
+  /*
+   * Not const, though they change no member: they change the chain this object
+   * stands for, and a const Chain that still sends would be a lie.
+   * transfer() is not static either, though with SPI it uses no member: bit
+   * banging needs the pins. clang-tidy reports all three, and each definition
+   * answers it with a NOLINT.
+   */
+  void StartTransmission();
+  void StopTransmission();
+  void Transfer(max7219::Register address, uint8_t value);
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+  void ShiftOut(uint8_t value);
+#endif
+  static PortBit LookUpPortBit(uint8_t pin);
+  static void WritePin(PortBit pin, bool high);
+  // Whether each of the three pins is one of the board's, which Init() checks
+  // before it takes them.
+  MAXMATRIX_NODISCARD bool HasBoardPins() const;
+
+  uint8_t data_in_pin_;
+  uint8_t chip_select_pin_;
+  uint8_t clock_pin_;
+  /*
+   * The port and the bit of each pin, looked up once in Init(): digitalWrite()
+   * looks both up in tables in flash on every call, which made a byte bit
+   * banged by shiftOut() take about 1500 cycles of the Uno's 16 MHz. The port,
+   * not its register: the core reads the register's address from flash with a
+   * statement expression, which decltype() cannot take outside a function, so
+   * it is read where it is written. Data in and clock only bit bang.
+   */
+  PortBit chip_select_{};
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+  PortBit data_in_{};
+  PortBit clock_{};
+#endif
 };
 
 }  // namespace internal

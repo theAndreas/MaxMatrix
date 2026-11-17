@@ -81,27 +81,6 @@ enum class State : uint8_t {
  *       fails reports its name and the error to ReportError().
  */
 class Matrix {
- private:
-  internal::Panel panel_;
-  internal::Text text_;
-  State state_{State::kNone};
-  bool auto_update_{true};
-  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
-  uint32_t last_shift_{0};
-
-  // Sends what changed, if auto update is on; every public function that draws
-  // ends with it.
-  void UpdateIfAuto() {
-    if (auto_update_) {
-      Update();
-    }
-  }
-  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
-    UpdateIfAuto();
-    return status;
-  }
-  void StartShift(State shift_state);
-
  public:
   /*!
    * \brief Makes a matrix on the chain at these pins, in the buffer given, and
@@ -652,6 +631,27 @@ class Matrix {
     panel_.ShiftDown(fill);
     UpdateIfAuto();
   }
+
+ private:
+  // Sends what changed, if auto update is on; every public function that draws
+  // ends with it.
+  void UpdateIfAuto() {
+    if (auto_update_) {
+      Update();
+    }
+  }
+  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
+    UpdateIfAuto();
+    return status;
+  }
+  void StartShift(State shift_state);
+
+  internal::Panel panel_;
+  internal::Text text_;
+  State state_{State::kNone};
+  bool auto_update_{true};
+  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
+  uint32_t last_shift_{0};
 };
 
 /*!
@@ -677,10 +677,6 @@ class Matrix {
  * that is what Matrix::SetAutoUpdate() and Matrix::Update() are for.
  */
 class Batch {
- private:
-  internal::reference_wrapper<Matrix> matrix_;
-  bool previous_auto_update_;
-
  public:
   /*!
    * \brief Turns auto update of `matrix` off until the end of the block.
@@ -710,6 +706,10 @@ class Batch {
 
   /*! \brief Not movable, as it is not copyable. */
   Batch& operator=(Batch&&) = delete;
+
+ private:
+  internal::reference_wrapper<Matrix> matrix_;
+  bool previous_auto_update_;
 };
 
 namespace internal {
