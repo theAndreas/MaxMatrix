@@ -208,7 +208,7 @@ bool FindLed(DocuLed* led) {
  */
 bool FindLedOfDot(uint8_t x, uint8_t y, DocuLed* led) {
   matrix.Clear();
-  matrix.SetDot(x, y, true);
+  matrix.SetDot(max_matrix::Point{max_matrix::X{x}, max_matrix::Y{y}}, true);
   return FindLed(led);
 }
 
@@ -227,7 +227,8 @@ bool IsUpright(Max7219Wiring const& wiring) {
   matrix.Clear();
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      matrix.SetDot(x, y, (((x * x) + (3 * y) + (x * y)) % 3) == 0);
+      bool const lit{(((x * x) + (3 * y) + (x * y)) % 3) == 0};
+      matrix.SetDot(max_matrix::Point{max_matrix::X{x}, max_matrix::Y{y}}, lit);
     }
   }
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
@@ -524,7 +525,8 @@ std::string DrawWiring(max_matrix::ModuleType module_type) {
 void LabelLitDots(uint8_t bit, PerDot<std::string>* labels) {
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      if (matrix.GetDot(x, y).GetValue()) {
+      if (matrix.GetDot(max_matrix::Point{max_matrix::X{x}, max_matrix::Y{y}})
+              .GetValue()) {
         (*labels)[x][y] = std::to_string(bit);
       }
     }
@@ -543,7 +545,7 @@ void DrawFunctionNames(DocuSvg* svg) {
       GetCellX(kExampleRowModule * max_matrix::kColumnNumberOfModule)};
 
   svg->AddText({GetCellX(kExampleColumn) + (kCell / 2), names},
-               "SetColumn(" + std::to_string(kExampleColumn) + ", value)",
+               "SetColumn(X{" + std::to_string(kExampleColumn) + "}, value)",
                kColumnFunctionText);
   svg->AddText(
       {row_module_left + (max_matrix::kColumnNumberOfModule * kCell / 2),
@@ -576,7 +578,7 @@ std::string DrawCoordinates() {
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   for (uint8_t bit{0}; bit < max_matrix::kRowNumberOfModule; bit++) {
     matrix.Clear();
-    matrix.SetColumn(kExampleColumn, max_matrix::Byte{1} << bit);
+    matrix.SetColumn(max_matrix::X{kExampleColumn}, max_matrix::Byte{1} << bit);
     LabelLitDots(bit, &column_labels);
     matrix.Clear();
     matrix.SetRow(max_matrix::Module{kExampleRowModule}, kExampleRow,

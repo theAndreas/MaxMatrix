@@ -117,18 +117,31 @@ More examples can be found in [examples/](https://github.com/theAndreas/MaxMatri
 
 ![Coordinates as a sketch uses them](docu/Coordinates.svg)
 
-`SetDot(x, y)` counts x from the left and y from the top, across all modules: x from 0 to
-`GetNumberOfColumns() - 1`, eight columns per module, y from 0 to 7. Module 0 is the leftmost, at the far end of the chain from DIN.
-This holds for every type of module once the module type is set, see [Module type](#module-type).
+A dot is a `max_matrix::Point` of its column x, counted from the left across all modules, and its row y, counted
+from the top: x from 0 to `GetNumberOfColumns() - 1`, eight columns per module, y from 0 to 7. Module 0 is the
+leftmost, at the far end of the chain from DIN. This holds for every type of module once the module type is set, see
+[Module type](#module-type).
+
+x and y take a type each, `max_matrix::X` and `max_matrix::Y`, so that a point with the two swapped does not
+compile. Named once at the top of a sketch, they keep every call short:
+
+```cpp
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
+
+matrix.SetDot(Point{X{20}, Y{3}}, true);
+matrix.DrawRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);   // the frame of four modules
+```
 
 Eight LEDs at once are a `max_matrix::Byte`, a byte of dots that is no number, so that a column and its value
-cannot be swapped: `matrix.SetColumn(3, max_matrix::Byte{0x3C})`. `ToInteger()` gives its bits as a number, and it
+cannot be swapped: `matrix.SetColumn(X{3}, max_matrix::Byte{0x3C})`. `ToInteger()` gives its bits as a number, and it
 takes the bitwise operators `&`, `|`, `~`, `<<` and `>>`, as `std::byte` does. The two functions that set eight LEDs
 at once read their byte in different directions:
 
-- `SetColumn(x, value)` sets a column, **bit 0 at the top**.
+- `SetColumn(X{x}, value)` sets a column, **bit 0 at the top**.
 - `SetRow(max_matrix::Module{m}, row, value)` sets the row of one module, **bit 7 on the left**, so the byte reads as
-  it is written: `max_matrix::Byte{0b10000000}` lights the leftmost LED. `SetRow(row, values)` sets a whole row, an
+  it is written: `max_matrix::Byte{0b10000000}` lights the leftmost LED. `SetRow(Y{y}, values)` sets a whole row, an
   array of one `Byte` per module, module 0 first. The module is a type of its own, so that it cannot be swapped
   with the row.
 
@@ -138,15 +151,15 @@ at once read their byte in different directions:
 |----------|--------------|
 | `Init()` | sets up the pins and every MAX7219, clears the LEDs and sets the intensity; fails with `kOutOfRange` on a pin the board lacks |
 | `Clear()` | turns every LED off |
-| `SetDot(x, y, value)`, `GetDot(x, y)` | one LED |
-| `SetColumn(x, value)`, `SetColumn(Module{m}, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
-| `SetRow(row, values)`, `SetRow(Module{m}, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
-| `SetChar(x, y, c)`, `SetText(text)` | a char at x, y, or a text from the left edge |
-| `SetSprite(x, y, sprite)` | a sprite of your own, up to 5 columns wide |
-| `DrawLine(x0, y0, x1, y1, value)` | a straight line, both ends included |
-| `DrawRect(x, y, width, height, value)`, `FillRect(…)` | the outline of a rectangle, or the rectangle with its inside |
-| `DrawCircle(x, y, radius, value)` | the outline of a circle; radius 3 fills the height |
-| `DrawBitmap(x, y, bitmap)`, `DrawBitmap(x, y, height, bitmap)` | a picture in `PROGMEM`, a column per byte as wide as its array, bit 0 at the top |
+| `SetDot(point, value)`, `GetDot(point)` | one LED |
+| `SetColumn(X{x}, value)`, `SetColumn(Module{m}, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
+| `SetRow(Y{y}, values)`, `SetRow(Module{m}, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
+| `SetChar(top_left, c)`, `SetText(text)` | a char with its top left corner at a point, or a text from the left edge |
+| `SetSprite(top_left, sprite)` | a sprite of your own, up to 5 columns wide |
+| `DrawLine(from, to, value)` | a straight line between two points, both ends included |
+| `DrawRect(corner, opposite_corner, value)`, `FillRect(…)` | the outline of a rectangle between two opposite corners, both part of it, or the rectangle with its inside |
+| `DrawCircle(centre, radius, value)` | the outline of a circle; radius 3 fills the height |
+| `DrawBitmap(top_left, bitmap)`, `DrawBitmap(top_left, height, bitmap)` | a picture in `PROGMEM`, a column per byte as wide as its array, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
 | `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
 | `StopShift()` | stops a shifting char or text where it stands |
@@ -163,13 +176,13 @@ at once read their byte in different directions:
 | `max_matrix::Command`, `Feed(matrix, c, answer)` | carries out commands that arrive as lines of text, see [below](#control-over-serial) |
 
 Drawing leaves out whatever lies off the panel, so that a sprite or a text may stand partly off it while it moves
-in or out: `SetDot(-1, 0, true)` does nothing, and a char at x = -2 shows its right part. x and y may be negative,
-and so may the ends of a line or the centre of a circle. `value` false turns the dots off rather than on.
+in or out: `SetDot(Point{X{-1}, Y{0}}, true)` does nothing, and a char at x = -2 shows its right part. x and y may be
+negative, in every point: the ends of a line, the corners of a rectangle and the centre of a circle as well. `value` false turns the dots off rather than on.
 A function that can fail says why, and changes nothing when it does. A getter returns the value together with the
 error, so ask `IsOk()` before you use `GetValue()`:
 
 ```cpp
-max_matrix::Result<bool> lit = matrix.GetDot(x, y);
+max_matrix::Result<bool> lit = matrix.GetDot(Point{X{x}, Y{y}});
 if(lit.IsOk() && lit.GetValue()) { /* the LED at x, y is on */ }
 
 max_matrix::Status status = matrix.SetText(text);
@@ -209,7 +222,7 @@ draw it inside a block that starts with a `max_matrix::Batch`; the picture is se
 {
     max_matrix::Batch batch(matrix);   // nothing is sent until the end of this block
     matrix.Clear();
-    for(uint8_t column = 0; column < matrix.GetNumberOfColumns(); column++) matrix.SetDot(column, column % 8, true);
+    for(int16_t x = 0; x < 8; x++) matrix.SetDot(Point{X{x}, Y{x}}, true);
 }                                   // the whole picture at once, in at most eight frames
 ```
 

@@ -18,7 +18,10 @@ using max_matrix::CommandState;
 using max_matrix::Error;
 using max_matrix::Matrix;
 using max_matrix::ModuleType;
+using max_matrix::Point;
 using max_matrix::Result;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace max_matrix {
 
@@ -104,7 +107,7 @@ bool Pattern(int16_t x, int16_t y) {
 std::vector<std::string> ShownPicture(Matrix& matrix) {
   return Picture(
       [&matrix](int16_t x, int16_t y) {
-        return matrix.GetDot(x, y).GetValue();
+        return matrix.GetDot(Point{X{x}, Y{y}}).GetValue();
       },
       matrix.GetNumberOfColumns());
 }
@@ -112,7 +115,7 @@ std::vector<std::string> ShownPicture(Matrix& matrix) {
 void DrawPattern(Matrix& matrix) {
   for (uint8_t x{0}; x < matrix.GetNumberOfColumns(); x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      matrix.SetDot(x, y, Pattern(x, y));
+      matrix.SetDot(Point{X{x}, Y{y}}, Pattern(x, y));
     }
   }
 }

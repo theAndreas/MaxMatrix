@@ -1077,8 +1077,10 @@ A first look found, besides those two:
   check takes for parameters used together; the pins of `Matrix`, `SetDot(x, y)` and a module
   beside its column, `GetColumn(module, column)`, which swapped are as valid, it leaves to
   review. Decided on 2026-11-17: a type for each pin, `DataInPin{11}`, `ChipSelectPin{10}`
-  and `ClockPin{13}`; a `struct Point` for the coordinates, `DrawLine(Point, Point)`, though
-  `Point{3, 2}` keeps x and y swappable; a type `Module`; and an `enum class` for the
+  and `ClockPin{13}`; a `struct Point` for the coordinates, `DrawLine(Point, Point)`, at
+  first of two numbers, which kept x and y swappable, and the same day of a type for each,
+  `Point{X{3}, Y{2}}`, with a rectangle by two opposite corners rather than a corner and a
+  size, which would want two types more; a type `Module`; and an `enum class` for the
   registers. What no sketch sees is weighed place by place. A pull request each, and the
   last turns the check on.
 
@@ -1099,6 +1101,23 @@ A first look found, besides those two:
   `SetRow(Module{2}, 3, value)`; `test/compile_fail/` checks that a number or a column in its
   place does not compile. Every example is the same size in every variant. It also tells these functions from those of the whole panel,
   `GetRow(0, values)`, by type rather than by the number of arguments.
+
+  As built, the fourth: a dot is a `Point` of an `X` and a `Y`, each with an `explicit`
+  constructor, in every function that takes one, `SetDot(Point{X{3}, Y{2}}, true)`,
+  `DrawLine(from, to, value)`, `DrawRect(corner, opposite_corner, value)`, `FillRect()`,
+  `DrawCircle(centre, radius, value)`, `DrawBitmap(top_left, ...)`, `SetChar(top_left, c)` and
+  `SetSprite(top_left, sprite)`; a column or row of the whole panel takes its `X` or `Y`,
+  `SetColumn(X{5}, value)`. A rectangle by two corners has at least one dot, where a width of
+  0 drew nothing. No function takes more than four parameters now, and the
+  `NOLINT(readability-function-size)` of the shapes went. `test/compile_fail/` checks that
+  swapped axes and bare numbers do not compile. avr-gcc 7.3 made the examples up to 176 bytes
+  of flash larger at first, and Shapes 8 bytes of RAM: it folds no constant through a part of
+  a point passed on, 120 bytes in ScrollText; it passes a point to a function it does not
+  inline as one value of four bytes, 88 in Basics; and it kept constant points made as an
+  aggregate in RAM. With each point unpacked at the start of a function, `SetDot()` unpacking
+  inline before its call and a constructor for `Point`, on the Uno, the same in every
+  variant: Shapes 214 bytes of flash smaller, as `DrawRect()` adds nothing up; SerialControl
+  36 larger, Basics 8, Sprites 4, Messages and ScrollText 2; the rest and every RAM the same.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per

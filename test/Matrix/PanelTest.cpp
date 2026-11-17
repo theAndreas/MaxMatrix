@@ -15,6 +15,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "Arduino.h"
@@ -31,10 +32,13 @@ using max_matrix::kDefaultFont;
 using max_matrix::Matrix;
 using max_matrix::MatrixOrientation;
 using max_matrix::ModuleType;
+using max_matrix::Point;
 using max_matrix::Result;
 using max_matrix::ShiftFill;
 using max_matrix::span;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace {
 
@@ -65,8 +69,8 @@ TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
 
   for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
     SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
-    matrix_.SetRow(row, in);
-    EXPECT_EQ(matrix_.GetRow(row, out).GetError(), Error::kOk);
+    matrix_.SetRow(Y{row}, in);
+    EXPECT_EQ(matrix_.GetRow(Y{row}, out).GetError(), Error::kOk);
     EXPECT_EQ(Bytes(out), Bytes(in));
   }
 }
@@ -95,20 +99,29 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
   };
   std::array<Call, 11> const calls{{
       {"SetText", [](Matrix& m) { m.SetText("Hi!"); }},
-      {"SetChar off the top row", [](Matrix& m) { m.SetChar(9, 1, 'A'); }},
+      {"SetChar off the top row",
+       [](Matrix& m) { m.SetChar(Point{X{9}, Y{1}}, 'A'); }},
       {"SetRow",
        [](Matrix& m) {
          PanelRow const row{Byte{0xFF}, Byte{0x0F}, Byte{0xF0}, Byte{0x3C}};
-         m.SetRow(5, row);
+         m.SetRow(Y{5}, row);
        }},
-      {"SetColumn", [](Matrix& m) { m.SetColumn(17, Byte{0x5A}); }},
+      {"SetColumn", [](Matrix& m) { m.SetColumn(X{17}, Byte{0x5A}); }},
       {"ShiftUp", [](Matrix& m) { m.ShiftUp(ShiftFill::kRotate); }},
       {"ShiftLeft a column", [](Matrix& m) { m.ShiftLeft(Byte{0x3C}); }},
       {"clear", [](Matrix& m) { m.Clear(); }},
-      {"DrawLine", [](Matrix& m) { m.DrawLine(0, 7, 31, 0, true); }},
-      {"FillRect", [](Matrix& m) { m.FillRect(-1, -1, 34, 10, true); }},
-      {"DrawCircle", [](Matrix& m) { m.DrawCircle(15, 3, 9, true); }},
-      {"DrawBitmap", [](Matrix& m) { m.DrawBitmap(3, 1, kBitmap); }},
+      {"DrawLine",
+       [](Matrix& m) {
+         m.DrawLine(Point{X{0}, Y{7}}, Point{X{31}, Y{0}}, true);
+       }},
+      {"FillRect",
+       [](Matrix& m) {
+         m.FillRect(Point{X{-1}, Y{-1}}, Point{X{32}, Y{8}}, true);
+       }},
+      {"DrawCircle",
+       [](Matrix& m) { m.DrawCircle(Point{X{15}, Y{3}}, 9, true); }},
+      {"DrawBitmap",
+       [](Matrix& m) { m.DrawBitmap(Point{X{3}, Y{1}}, kBitmap); }},
   }};
   char const text[] = "Hi \xC4!";
 
@@ -148,7 +161,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
         Bit<uint8_t>::ToggleBits(0x81u, static_cast<uint8_t>(module * 0x16u))};
   }
 
-  matrix_.SetRow(2, row);
+  matrix_.SetRow(Y{2}, row);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
               return (y == 2) &&
                      ReadBit(row[static_cast<size_t>(
@@ -158,7 +171,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
             }));
 
   matrix_.Clear();
-  matrix_.SetColumn(5, Byte{0xA3});
+  matrix_.SetColumn(X{5}, Byte{0xA3});
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return (x == 5) && bitRead(0xA3, y);
             }));
@@ -235,7 +248,7 @@ TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
 TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
   DrawPattern(matrix_);
   std::vector<std::string> const before = ShownPicture(matrix_);
-  Byte const leftmost{matrix_.GetColumn(0).GetValue()};
+  Byte const leftmost{matrix_.GetColumn(X{0}).GetValue()};
 
   EXPECT_EQ(matrix_.ShiftLeft(Byte{0xA5}), leftmost);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
@@ -264,7 +277,7 @@ TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
     out.push_back(matrix_.ShiftLeft(Byte{column}).ToInteger());
   }
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(),
+    EXPECT_EQ(matrix_.GetColumn(X{column}).GetValue().ToInteger(),
               band[band.size() - kNumberOfColumns + column])
         << "column " << static_cast<uint16_t>(column);
   }
@@ -302,8 +315,9 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
                    << "Column " << static_cast<uint16_t>(column) << ", Row "
                    << static_cast<uint16_t>(row));
       bool const expected{Bit<uint32_t>::ReadBit((column * 3u) + row, 0)};
-      matrix_.SetDot(column, row, expected);
-      Result<bool> const value{matrix_.GetDot(column, row)};
+      Point const dot{X{column}, Y{row}};
+      matrix_.SetDot(dot, expected);
+      Result<bool> const value{matrix_.GetDot(dot)};
       EXPECT_EQ(value.GetError(), Error::kOk);
       EXPECT_EQ(value.GetValue(), expected);
     }
@@ -353,7 +367,7 @@ TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
   matrix_.SetModuleType(module_type);
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      matrix_.SetDot(x, y, pattern(x, y));
+      matrix_.SetDot(Point{X{x}, Y{y}}, pattern(x, y));
     }
   }
   for (uint16_t x{0}; x < kNumberOfColumns; x++) {
@@ -374,20 +388,22 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
   };
   std::array<OffPanel, 12> const cases{{
       {"SetDot left",
-       [](Matrix& m, PanelRow const&) { m.SetDot(-1, 0, true); }},
+       [](Matrix& m, PanelRow const&) { m.SetDot(Point{X{-1}, Y{0}}, true); }},
       {"SetDot right",
-       [](Matrix& m, PanelRow const&) { m.SetDot(kNumberOfColumns, 0, true); }},
+       [](Matrix& m, PanelRow const&) {
+         m.SetDot(Point{X{kNumberOfColumns}, Y{0}}, true);
+       }},
       {"SetDot above",
-       [](Matrix& m, PanelRow const&) { m.SetDot(0, -1, true); }},
+       [](Matrix& m, PanelRow const&) { m.SetDot(Point{X{0}, Y{-1}}, true); }},
       {"SetDot below",
        [](Matrix& m, PanelRow const&) {
-         m.SetDot(0, max_matrix::kRowNumberOfModule, true);
+         m.SetDot(Point{X{0}, Y{max_matrix::kRowNumberOfModule}}, true);
        }},
       {"SetColumn left",
-       [](Matrix& m, PanelRow const&) { m.SetColumn(-1, Byte{0xFF}); }},
+       [](Matrix& m, PanelRow const&) { m.SetColumn(X{-1}, Byte{0xFF}); }},
       {"SetColumn right",
        [](Matrix& m, PanelRow const&) {
-         m.SetColumn(kNumberOfColumns, Byte{0xFF});
+         m.SetColumn(X{kNumberOfColumns}, Byte{0xFF});
        }},
       {"SetColumn no module",
        [](Matrix& m, PanelRow const&) {
@@ -398,10 +414,11 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
          m.SetColumn(max_matrix::Module{0}, max_matrix::kColumnNumberOfModule,
                      Byte{0xFF});
        }},
-      {"SetRow above", [](Matrix& m, PanelRow const& r) { m.SetRow(-1, r); }},
+      {"SetRow above",
+       [](Matrix& m, PanelRow const& r) { m.SetRow(Y{-1}, r); }},
       {"SetRow below",
        [](Matrix& m, PanelRow const& r) {
-         m.SetRow(max_matrix::kRowNumberOfModule, r);
+         m.SetRow(Y{max_matrix::kRowNumberOfModule}, r);
        }},
       {"SetRow no module",
        [](Matrix& m, PanelRow const&) {
@@ -445,7 +462,8 @@ TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
 
   for (auto const& place : places) {
     matrix_.Clear();
-    ASSERT_EQ(matrix_.SetChar(place.x, place.y, 'A').GetError(), Error::kOk);
+    ASSERT_EQ(matrix_.SetChar(Point{X{place.x}, Y{place.y}}, 'A').GetError(),
+              Error::kOk);
     EXPECT_EQ(ShownPicture(matrix_),
               Picture([columns, &place, width, height](int16_t x, int16_t y) {
                 int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
@@ -484,9 +502,9 @@ void ExpectDotsAt(Matrix& matrix, Axes const& axes, int16_t along,
   uint16_t lit{0};
 
   for (int16_t across{0}; across < breadth; across++) {
-    bool const dot{(axes.steep ? matrix.GetDot(across, along)
-                               : matrix.GetDot(along, across))
-                       .GetValue()};
+    Point const steep_dot{X{across}, Y{along}};
+    Point const flat_dot{X{along}, Y{across}};
+    bool const dot{matrix.GetDot(axes.steep ? steep_dot : flat_dot).GetValue()};
     if (!dot) {
       continue;
     }
@@ -546,70 +564,91 @@ TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
                    << "(" << line.x0 << ", " << line.y0 << ") to (" << line.x1
                    << ", " << line.y1 << ")" << (reverse ? " reversed" : ""));
       matrix_.Clear();
+      Point const from{X{line.x0}, Y{line.y0}};
+      Point const to{X{line.x1}, Y{line.y1}};
       if (reverse) {
-        matrix_.DrawLine(line.x1, line.y1, line.x0, line.y0, true);
+        matrix_.DrawLine(to, from, true);
       } else {
-        matrix_.DrawLine(line.x0, line.y0, line.x1, line.y1, true);
+        matrix_.DrawLine(from, to, true);
       }
       ExpectLine(matrix_, line);
     }
   }
   matrix_.Clear();
-  matrix_.DrawLine(-32768, 0, 32767, 7, true);
-  matrix_.DrawLine(-32768, 0, 32767, 7, false);
+  Point const far_left{X{-32768}, Y{0}};
+  Point const far_right{X{32767}, Y{7}};
+  matrix_.DrawLine(far_left, far_right, true);
+  matrix_.DrawLine(far_left, far_right, false);
   EXPECT_EQ(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }))
       << "a line turned off";
 }
 
-/* a rectangle on the panel, one partly off it and one as large as an int16_t
- * allows; the outline is what the filled one has more than its inside */
+/* a rectangle on the panel, one partly off it, one of a row, a column or a
+ * dot, and one as large as an int16_t allows, by either pair of opposite
+ * corners in either order; the outline is what the filled one has more than its
+ * inside */
 TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
   struct Rectangle {
-    int16_t x, y, width, height;
+    int16_t left, top, right, bottom;
   };
-  std::array<Rectangle, 8> const rectangles{{
-      {2, 1, 5, 4},
-      {10, 0, 1, 8},
-      {20, 6, 4, 1},
-      {-3, -2, 6, 5},
-      {29, 5, 10, 10},
+  std::array<Rectangle, 9> const rectangles{{
+      {2, 1, 6, 4},
+      {10, 0, 10, 7},
+      {20, 6, 23, 6},
+      {12, 4, 12, 4},
+      {-3, -2, 2, 2},
+      {29, 5, 38, 14},
       {-32768, -32768, 32767, 32767},
       {0, 0, 32767, 32767},
-      {32767, 0, 32767, 8},
+      {32767, 0, 32767, 7},
   }};
 
   for (auto const& r : rectangles) {
-    SCOPED_TRACE(::testing::Message()
-                 << r.x << ", " << r.y << ", " << r.width << " x " << r.height);
-    int32_t const right{static_cast<int32_t>(r.x) + r.width - 1};
-    int32_t const bottom{static_cast<int32_t>(r.y) + r.height - 1};
     auto inside{[&](int16_t x, int16_t y) {
-      return (x >= r.x) && (x <= right) && (y >= r.y) && (y <= bottom);
+      return (x >= r.left) && (x <= r.right) && (y >= r.top) && (y <= r.bottom);
     }};
     auto const edge{[&](int16_t x, int16_t y) {
-      return inside(x, y) &&
-             ((x == r.x) || (x == right) || (y == r.y) || (y == bottom));
+      return inside(x, y) && ((x == r.left) || (x == r.right) || (y == r.top) ||
+                              (y == r.bottom));
+    }};
+    Point const top_left{X{r.left}, Y{r.top}};
+    Point const bottom_right{X{r.right}, Y{r.bottom}};
+    Point const top_right{X{r.right}, Y{r.top}};
+    Point const bottom_left{X{r.left}, Y{r.bottom}};
+    std::array<std::pair<Point, Point>, 4> const corners{{
+        {top_left, bottom_right},
+        {bottom_right, top_left},
+        {top_right, bottom_left},
+        {bottom_left, top_right},
     }};
 
-    matrix_.Clear();
-    matrix_.FillRect(r.x, r.y, r.width, r.height, true);
-    EXPECT_EQ(ShownPicture(matrix_), Picture(inside)) << "filled";
-    matrix_.Clear();
-    matrix_.DrawRect(r.x, r.y, r.width, r.height, true);
-    EXPECT_EQ(ShownPicture(matrix_), Picture(edge)) << "outline";
+    for (auto const& pair : corners) {
+      SCOPED_TRACE(::testing::Message()
+                   << "(" << pair.first.x.number << ", " << pair.first.y.number
+                   << ") to (" << pair.second.x.number << ", "
+                   << pair.second.y.number << ")");
+      matrix_.Clear();
+      matrix_.FillRect(pair.first, pair.second, true);
+      EXPECT_EQ(ShownPicture(matrix_), Picture(inside)) << "filled";
+      matrix_.Clear();
+      matrix_.DrawRect(pair.first, pair.second, true);
+      EXPECT_EQ(ShownPicture(matrix_), Picture(edge)) << "outline";
+    }
   }
 
-  matrix_.FillRect(0, 0, 32, 8, true);
-  matrix_.FillRect(1, 1, 3, 2, false);
-  matrix_.DrawRect(5, 0, 0, 8, false);
-  matrix_.DrawRect(5, 0, 8, 0, false);
-  matrix_.FillRect(5, 0, 0, 8, false);
-  matrix_.FillRect(5, 0, 8, -1, false);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return (x < 1) || (x > 3) || (y < 1) || (y > 2);
-            }))
-      << "turned off, and nothing drawn without a width or height";
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+  matrix_.FillRect(Point{X{1}, Y{1}}, Point{X{3}, Y{2}}, false);
+  matrix_.DrawRect(Point{X{5}, Y{3}}, Point{X{7}, Y{5}}, false);
+  EXPECT_EQ(
+      ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
+        bool const filled_off{(x >= 1) && (x <= 3) && (y >= 1) && (y <= 2)};
+        bool const in_outline{(x >= 5) && (x <= 7) && (y >= 3) && (y <= 5)};
+        bool const off_centre{(x != 6) || (y != 4)};
+        bool const outline_off{in_outline && off_centre};
+        return !(filled_off || outline_off);
+      }))
+      << "turned off";
 }
 
 /* the outlines the midpoint circle gives for small radii, round and closed,
@@ -620,7 +659,7 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
       "#.....#", ".#...#.", "..###..",
   };
 
-  matrix_.DrawCircle(10, 3, 3, true);
+  matrix_.DrawCircle(Point{X{10}, Y{3}}, 3, true);
   EXPECT_EQ(
       ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
         return (x >= 7) && (x <= 13) && (y <= 6) &&
@@ -629,7 +668,7 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
       }));
 
   matrix_.Clear();
-  matrix_.DrawCircle(0, 0, 3, true);
+  matrix_.DrawCircle(Point{X{0}, Y{0}}, 3, true);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
               return (x <= 3) && (y <= 3) &&
                      (radius_3[static_cast<size_t>(y + 3)]
@@ -638,9 +677,9 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
       << "the quarter on the panel";
 
   matrix_.Clear();
-  matrix_.DrawCircle(20, 4, 0, true);
-  matrix_.DrawCircle(25, 4, 1, true);
-  matrix_.DrawCircle(28, 4, -1, true);
+  matrix_.DrawCircle(Point{X{20}, Y{4}}, 0, true);
+  matrix_.DrawCircle(Point{X{25}, Y{4}}, 1, true);
+  matrix_.DrawCircle(Point{X{28}, Y{4}}, -1, true);
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return ((x == 20) && (y == 4)) ||
                      ((std::abs(x - 25) + std::abs(y - 4)) == 1);
@@ -648,8 +687,8 @@ TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
       << "radius 0 is a dot, 1 a cross, a negative one nothing";
 
   matrix_.Clear();
-  matrix_.DrawCircle(16, 3, 32767, true);
-  matrix_.DrawCircle(-32768, -32768, 32767, true);
+  matrix_.DrawCircle(Point{X{16}, Y{3}}, 32767, true);
+  matrix_.DrawCircle(Point{X{-32768}, Y{-32768}}, 32767, true);
   EXPECT_EQ(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }))
       << "circles far beyond the panel";
@@ -664,21 +703,21 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
            bitRead(kBitmap[static_cast<size_t>(column)], row);
   }};
 
-  matrix_.DrawBitmap(3, 0, kBitmap);
+  matrix_.DrawBitmap(Point{X{3}, Y{0}}, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return bitmap_dot(x - 3, y);
             }));
 
   matrix_.Clear();
-  matrix_.DrawBitmap(-2, 3, kBitmap);
-  matrix_.DrawBitmap(29, -1, kBitmap);
+  matrix_.DrawBitmap(Point{X{-2}, Y{3}}, kBitmap);
+  matrix_.DrawBitmap(Point{X{29}, Y{-1}}, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return bitmap_dot(x + 2, y - 3) || bitmap_dot(x - 29, y + 1);
             }))
       << "partly off the panel";
 
-  matrix_.FillRect(0, 0, 32, 8, true);
-  matrix_.DrawBitmap(10, 2, 3, kBitmap);
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+  matrix_.DrawBitmap(Point{X{10}, Y{2}}, 3, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
               return (x < 10) || (x >= 15) || (y < 2) || (y >= 5) ||
                      bitmap_dot(x - 10, y - 2);
@@ -686,10 +725,10 @@ TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
       << "three rows high, over a lit panel";
 
   matrix_.Clear();
-  matrix_.DrawBitmap(32767, 0, kBitmap);
-  matrix_.DrawBitmap(-32768, 0, kBitmap);
-  matrix_.DrawBitmap(0, 32767, 8, kBitmap);
-  matrix_.DrawBitmap(0, -32768, 8, kBitmap);
+  matrix_.DrawBitmap(Point{X{32767}, Y{0}}, kBitmap);
+  matrix_.DrawBitmap(Point{X{-32768}, Y{0}}, kBitmap);
+  matrix_.DrawBitmap(Point{X{0}, Y{32767}}, 8, kBitmap);
+  matrix_.DrawBitmap(Point{X{0}, Y{-32768}}, 8, kBitmap);
   EXPECT_EQ(ShownPicture(matrix_),
             Picture([](int16_t, int16_t) { return false; }))
       << "far off the panel";
@@ -702,7 +741,8 @@ struct TakesAWidthAfterTheBitmap : std::false_type {};
 template <typename Matrix>
 struct TakesAWidthAfterTheBitmap<
     Matrix, std::void_t<decltype(std::declval<Matrix&>().DrawBitmap(
-                0, 0, kBitmap, kBitmap.size()))>> : std::true_type {};
+                Point{X{0}, Y{0}}, kBitmap, kBitmap.size()))>>
+    : std::true_type {};
 
 /* Bug, of the width taken from the bitmap: DrawBitmap(x, y, bitmap, width), as
  * it was called before, compiled with the height last and drew the width as
@@ -715,9 +755,9 @@ TEST_F(MaxMatrixTest, DrawBitmapTakesNoWidthAfterTheBitmap) {
 /* a bitmap less than a module high at the top row leaves the rows below it,
  * where a whole column at once would have turned them off */
 TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
-  matrix_.FillRect(0, 0, 32, 8, true);
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
 
-  matrix_.DrawBitmap(10, 0, 3, kBitmap);
+  matrix_.DrawBitmap(Point{X{10}, Y{0}}, 3, kBitmap);
 
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return (x < 10) || (x >= 15) || (y >= 3) ||

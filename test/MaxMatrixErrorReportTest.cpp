@@ -13,6 +13,7 @@
 
 using max_matrix::Error;
 using max_matrix::MatrixOf;
+using max_matrix::X;
 
 namespace {
 
@@ -29,7 +30,7 @@ TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {
                                     max_matrix::ClockPin{kClockPin}};
   mock::serial_output.clear();
 
-  EXPECT_EQ(matrix.GetColumn(-1).GetError(), Error::kOutOfRange);
+  EXPECT_EQ(matrix.GetColumn(X{-1}).GetError(), Error::kOutOfRange);
 
   EXPECT_EQ(mock::serial_output, "MaxMatrix GetColumn: out of range\r\n");
 }

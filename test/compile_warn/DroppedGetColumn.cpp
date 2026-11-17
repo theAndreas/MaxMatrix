@@ -8,4 +8,6 @@
 
 #include "MaxMatrix.h"
 
-void DropColumn(max_matrix::Matrix& matrix) { matrix.GetColumn(0); }
+void DropColumn(max_matrix::Matrix& matrix) {
+  matrix.GetColumn(max_matrix::X{0});
+}

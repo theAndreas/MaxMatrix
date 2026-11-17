@@ -48,6 +48,63 @@ struct Module {
   uint8_t number; /*!< The module, from 0 at the left. */
 };
 
+/*!
+ * \brief A column of the panel, from 0 at the left, across all modules:
+ *        `max_matrix::X{3}`.
+ *
+ * A type of its own beside Y, so that a sketch cannot swap the column and the
+ * row of a Point unnoticed (CodingStyle.md FN-16); explicit, as a bare number
+ * would be either again.
+ */
+struct X {
+  /*!
+   * \brief Names the column.
+   *
+   * \param[in] column The column, negative to the left of the panel.
+   */
+  constexpr explicit X(int16_t column) : number{column} {}
+
+  int16_t number; /*!< The column, negative to the left of the panel. */
+};
+
+/*!
+ * \brief A row of the panel, from 0 at the top: `max_matrix::Y{2}`.
+ *
+ * A type of its own beside X, as X says.
+ */
+struct Y {
+  /*!
+   * \brief Names the row.
+   *
+   * \param[in] row The row, negative above the panel.
+   */
+  constexpr explicit Y(int16_t row) : number{row} {}
+
+  int16_t number; /*!< The row, negative above the panel. */
+};
+
+/*!
+ * \brief A dot of the panel, its column and row as the viewer sees them:
+ *        `max_matrix::Point{max_matrix::X{3}, max_matrix::Y{2}}`.
+ *
+ * The column comes first, and each takes its type, so that a point with the
+ * two swapped does not compile.
+ */
+struct Point {
+  // A constructor rather than an aggregate: avr-gcc 7.3 kept constant points
+  // built as an aggregate in RAM, 8 bytes in Shapes.
+  /*!
+   * \brief Names the dot.
+   *
+   * \param[in] column The column, negative to the left of the panel.
+   * \param[in] row The row, negative above the panel.
+   */
+  constexpr Point(X column, Y row) : x{column}, y{row} {}
+
+  X x; /*!< The column, negative to the left of the panel. */
+  Y y; /*!< The row, negative above the panel. */
+};
+
 namespace internal {
 
 /* the three properties of a ModuleType, one bit each of its value */
@@ -126,9 +183,14 @@ class Panel {
                                                    uint8_t row) const;
   Byte GetLine(uint8_t column, uint8_t row, bool vertical);
   void SetLine(uint8_t column, uint8_t row, bool vertical, Byte value);
+  /*
+   * SetDot() with its point unpacked, inline, before the call: avr-gcc 7.3
+   * passes a Point to a function it does not inline as one value of four
+   * bytes, and every caller that built one paid for it, 88 bytes of flash in
+   * Basics and 30 in SerialControl. Only SetDot() calls it.
+   */
+  void SetDotAt(int16_t column, int16_t row, bool value);
   void SetFarDot(int32_t column, int32_t row, bool value);
-  void FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
-                bool value);
   void ChangeMapping(MatrixOrientation matrix_orientation,
                      ModuleType module_type);
   Byte GetFill(ShiftFill fill, uint8_t rotated_column, uint8_t kept_column);
@@ -176,12 +238,11 @@ class Panel {
   /*!
    * \brief Returns a column of the matrix.
    *
-   * \param[in] column The column, from 0 at the left to eight times the
-   *                   modules.
+   * \param[in] x The column, from 0 at the left to eight times the modules.
    * \return The column, bit 0 the top row, or Error::kOutOfRange if it lies off
    *         the panel.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(int16_t column);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x);
 
   /*!
    * \brief Returns a column of a module.
@@ -196,13 +257,13 @@ class Panel {
   /*!
    * \brief Gives a row of the matrix, one byte per module.
    *
-   * \param[in] row The row, from 0 at the top.
+   * \param[in] y The row, from 0 at the top.
    * \param[out] values The row, bit 7 of each byte the leftmost column of its
    *                    module; left as it was on an error.
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has room for fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(int16_t row, span<Byte> values);
+  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values);
 
   /*!
    * \brief Returns a row of a module.
@@ -220,23 +281,21 @@ class Panel {
   /*!
    * \brief Returns whether a dot is lit.
    *
-   * \param[in] column The column, negative to the left of the panel.
-   * \param[in] row The row, negative above the panel.
+   * \param[in] dot The dot.
    * \return Whether the dot is lit, or Error::kOutOfRange if it lies off the
    *         panel.
    */
-  MAXMATRIX_NODISCARD Result<bool> GetDot(int16_t column, int16_t row);
+  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot);
 
   /*!
    * \brief Sets a column of the matrix.
    *
    * A column off the panel is left out, as for SetDot().
    *
-   * \param[in] column The column, from 0 at the left to eight times the
-   *                   modules.
+   * \param[in] x The column, from 0 at the left to eight times the modules.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(int16_t column, Byte value);
+  void SetColumn(X x, Byte value);
 
   /*!
    * \brief Sets a column of a module.
@@ -255,11 +314,11 @@ class Panel {
    * A row off the panel is left out, as for SetDot(), and so are the modules
    * beyond the bytes given, or the bytes beyond the modules.
    *
-   * \param[in] row The row, from 0 at the top.
+   * \param[in] y The row, from 0 at the top.
    * \param[in] values The row, bit 7 of each byte the leftmost column of its
    *                   module.
    */
-  void SetRow(int16_t row, span<Byte const> values);
+  void SetRow(Y y, span<Byte const> values);
 
   /*!
    * \brief Sets a row of a module.
@@ -280,11 +339,12 @@ class Panel {
    * moves in or out, and a sketch would only have to clip it itself. Adafruit
    * GFX's `drawPixel()` and Rust's embedded-graphics do the same.
    *
-   * \param[in] column The column, negative to the left of the panel.
-   * \param[in] row The row, negative above the panel.
+   * \param[in] dot The dot; it may lie off the panel.
    * \param[in] value True to light it.
    */
-  void SetDot(int16_t column, int16_t row, bool value);
+  void SetDot(Point dot, bool value) {
+    SetDotAt(dot.x.number, dot.y.number, value);
+  }
 
   /*!
    * \brief Draws a straight line from one dot to another, both ends included.
@@ -292,43 +352,36 @@ class Panel {
    * What lies off the panel is left out, as for SetDot(); the ends may lie off
    * it.
    *
-   * \param[in] x0 The column of the first end.
-   * \param[in] y0 The row of the first end.
-   * \param[in] x1 The column of the second end.
-   * \param[in] y1 The row of the second end.
+   * \param[in] from The first end.
+   * \param[in] to The second end; swapped with `from`, the line is the same.
    * \param[in] value True to light the line, false to turn it off.
    */
-  void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool value);
+  void DrawLine(Point from, Point to, bool value);
 
   /*!
-   * \brief Draws the outline of a rectangle.
+   * \brief Draws the outline of a rectangle, given by two opposite corners.
    *
-   * What lies off the panel is left out, as for SetDot(). A width or height of
-   * 0 or less draws nothing.
+   * Both corners are part of the outline, and either may come first: any two
+   * opposite corners give the same rectangle. A rectangle of one row or column
+   * is a line. What lies off the panel is left out, as for SetDot().
    *
-   * \param[in] x The column of the left edge.
-   * \param[in] y The row of the top edge.
-   * \param[in] width The columns it spans.
-   * \param[in] height The rows it spans.
+   * \param[in] corner A corner.
+   * \param[in] opposite_corner The corner opposite it.
    * \param[in] value True to light the outline, false to turn it off.
    */
-  void DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                bool value);
+  void DrawRect(Point corner, Point opposite_corner, bool value);
 
   /*!
-   * \brief Draws a rectangle with its inside.
+   * \brief Draws a rectangle with its inside, given by two opposite corners.
    *
-   * What lies off the panel is left out, as for SetDot(). A width or height of
-   * 0 or less draws nothing.
+   * Both corners are part of it, and either may come first, as for
+   * DrawRect(). What lies off the panel is left out, as for SetDot().
    *
-   * \param[in] x The column of the left edge.
-   * \param[in] y The row of the top edge.
-   * \param[in] width The columns it spans.
-   * \param[in] height The rows it spans.
+   * \param[in] corner A corner.
+   * \param[in] opposite_corner The corner opposite it.
    * \param[in] value True to light it, false to turn it off.
    */
-  void FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                bool value);
+  void FillRect(Point corner, Point opposite_corner, bool value);
 
   /*!
    * \brief Draws the outline of a circle.
@@ -336,16 +389,15 @@ class Panel {
    * What lies off the panel is left out, as for SetDot(). A radius of 0 draws
    * the centre only, a negative one nothing.
    *
-   * \param[in] x The column of the centre.
-   * \param[in] y The row of the centre.
+   * \param[in] centre The centre.
    * \param[in] radius The dots from the centre to the outline; 3 fills the
    *                   height of the panel.
    * \param[in] value True to light the outline, false to turn it off.
    */
-  void DrawCircle(int16_t x, int16_t y, int16_t radius, bool value);
+  void DrawCircle(Point centre, int16_t radius, bool value);
 
   /*!
-   * \brief Draws a picture from flash with its top left corner at `x`, `y`.
+   * \brief Draws a picture from flash with its top left corner at a dot.
    *
    * The picture is a column per byte, bit 0 the top row, as a glyph of a font:
    * a 0 bit turns its dot off. Rows below `height` are left as they are, and
@@ -354,26 +406,23 @@ class Panel {
    * The height goes before the bitmap, so that a width after it, as the
    * columns were once given, does not compile: the bitmap brings its width.
    *
-   * \param[in] x The column of the left edge; it may lie off the panel.
-   * \param[in] y The row of the top edge; it may lie off the panel.
+   * \param[in] top_left The top left corner; it may lie off the panel.
    * \param[in] height The rows of the picture, 1 to 8.
    * \param[in] bitmap The columns, in `PROGMEM`; as many as it holds.
    */
-  void DrawBitmap(int16_t x, int16_t y, uint8_t height,
-                  span<uint8_t const> bitmap);
+  void DrawBitmap(Point top_left, uint8_t height, span<uint8_t const> bitmap);
 
   /*!
-   * \brief Draws one column of a picture, `height` rows from `y` on.
+   * \brief Draws one column of a picture, `height` rows from `top` down.
    *
    * What lies off the panel is left out; rows below `height` are left as they
    * are.
    *
-   * \param[in] x The column; it may lie off the panel.
-   * \param[in] y The row of bit 0; it may lie off the panel.
+   * \param[in] top The dot of bit 0; it may lie off the panel.
    * \param[in] height The rows to draw, 1 to 8.
-   * \param[in] value The column, bit 0 at `y`.
+   * \param[in] value The column, bit 0 at `top`.
    */
-  void DrawColumn(int16_t x, int16_t y, uint8_t height, Byte value);
+  void DrawColumn(Point top, uint8_t height, Byte value);
 
   /*!
    * \brief Sets how the LEDs of every module are wired.

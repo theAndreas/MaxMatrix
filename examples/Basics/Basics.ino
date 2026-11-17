@@ -13,6 +13,10 @@
 #include <MaxMatrix.h>
 #include <stdint.h>
 
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
+
 /* a chain of four modules, with the buffer for them; one of eight is
  * max_matrix::MatrixOf<8> */
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
@@ -36,7 +40,9 @@ void ShowText() {
 void DrawDiagonal() {
   matrix.Clear();
   for (uint8_t column{0}; column < matrix.GetNumberOfColumns(); column++) {
-    matrix.SetDot(column, column % max_matrix::kRowNumberOfModule, true);
+    auto const row{
+        static_cast<int16_t>(column % max_matrix::kRowNumberOfModule)};
+    matrix.SetDot(Point{X{column}, Y{row}}, true);
     delay(30);
   }
   delay(1000);
@@ -55,14 +61,17 @@ void DrawFrame() {
   {
     // nothing is sent until the end of this block
     max_matrix::Batch const batch{matrix};
+    X const right{static_cast<int16_t>(matrix.GetNumberOfColumns() - 1)};
+    Y const bottom{max_matrix::kRowNumberOfModule - 1};
+
     matrix.Clear();
     for (uint8_t column{0}; column < matrix.GetNumberOfColumns(); column++) {
-      matrix.SetDot(column, 0, true);
-      matrix.SetDot(column, max_matrix::kRowNumberOfModule - 1, true);
+      matrix.SetDot(Point{X{column}, Y{0}}, true);
+      matrix.SetDot(Point{X{column}, bottom}, true);
     }
     for (uint8_t row{0}; row < max_matrix::kRowNumberOfModule; row++) {
-      matrix.SetDot(0, row, true);
-      matrix.SetDot(matrix.GetNumberOfColumns() - 1, row, true);
+      matrix.SetDot(Point{X{0}, Y{row}}, true);
+      matrix.SetDot(Point{right, Y{row}}, true);
     }
   }
   delay(1000);

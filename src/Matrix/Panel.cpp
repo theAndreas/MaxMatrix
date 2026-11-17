@@ -45,13 +45,25 @@ Byte SwapBits(Byte value, Byte upper, uint8_t shift) {
   return (high >> shift) | (low << shift);
 }
 
+// The lesser and the greater of two coordinates: avr-gcc has no <algorithm>,
+// and the core's min() and max() are macros.
+int16_t GetLesser(int16_t first, int16_t second) {
+  return (first < second) ? first : second;
+}
+
+int16_t GetGreater(int16_t first, int16_t second) {
+  return (first > second) ? first : second;
+}
+
 }  // namespace
 
 Panel::Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin, span<Byte> buffer)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
-Result<Byte> Panel::GetColumn(int16_t column) {
+Result<Byte> Panel::GetColumn(X x) {
+  int16_t const column{x.number};
+
   if ((column >= 0) && (column < GetNumberOfColumns())) {
     return GetLine(static_cast<uint8_t>(column), 0, true);
   }
@@ -61,13 +73,15 @@ Result<Byte> Panel::GetColumn(int16_t column) {
 Result<Byte> Panel::GetColumn(Module module, uint8_t column) {
   if ((module.number < GetNumberOfModules()) &&
       (column < kColumnNumberOfModule)) {
-    return GetColumn(
-        static_cast<int16_t>((module.number * kColumnNumberOfModule) + column));
+    return GetColumn(X{static_cast<int16_t>(
+        (module.number * kColumnNumberOfModule) + column)});
   }
   return Error::kOutOfRange;
 }
 
-void Panel::SetColumn(int16_t column, Byte value) {
+void Panel::SetColumn(X x, Byte value) {
+  int16_t const column{x.number};
+
   if ((column >= 0) && (column < GetNumberOfColumns())) {
     SetLine(static_cast<uint8_t>(column), 0, true, value);
   }
@@ -78,13 +92,15 @@ void Panel::SetColumn(Module module, uint8_t column, Byte value) {
   // module 0 would be drawn on module 1.
   if ((module.number < GetNumberOfModules()) &&
       (column < kColumnNumberOfModule)) {
-    SetColumn(
-        static_cast<int16_t>((module.number * kColumnNumberOfModule) + column),
-        value);
+    SetColumn(X{static_cast<int16_t>((module.number * kColumnNumberOfModule) +
+                                     column)},
+              value);
   }
 }
 
-Status Panel::GetRow(int16_t row, span<Byte> values) {
+Status Panel::GetRow(Y y, span<Byte> values) {
+  int16_t const row{y.number};
+
   if ((row >= 0) && (row < kRowNumberOfModule) &&
       (values.size() >= GetNumberOfModules())) {
     uint8_t const modules{GetNumberOfModules()};
@@ -105,7 +121,9 @@ Result<Byte> Panel::GetRow(Module module, uint8_t row) {
   return Error::kOutOfRange;
 }
 
-void Panel::SetRow(int16_t row, span<Byte const> values) {
+void Panel::SetRow(Y y, span<Byte const> values) {
+  int16_t const row{y.number};
+
   if ((row >= 0) && (row < kRowNumberOfModule)) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; (module < modules) && (module < values.size());
@@ -122,22 +140,25 @@ void Panel::SetRow(Module module, uint8_t row, Byte value) {
   }
 }
 
-Result<bool> Panel::GetDot(int16_t column, int16_t row) {
+Result<bool> Panel::GetDot(Point dot) {
+  int16_t const column{dot.x.number};
+  int16_t const row{dot.y.number};
+
   if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
       (row < kRowNumberOfModule)) {
-    BufferDot const dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
-                                           static_cast<uint8_t>(row))};
-    return ReadBit(wired_.GetColumn(dot.column), dot.bit);
+    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                                  static_cast<uint8_t>(row))};
+    return ReadBit(wired_.GetColumn(buffer_dot.column), buffer_dot.bit);
   }
   return Error::kOutOfRange;
 }
 
-void Panel::SetDot(int16_t column, int16_t row, bool value) {
+void Panel::SetDotAt(int16_t column, int16_t row, bool value) {
   if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
       (row < kRowNumberOfModule)) {
-    BufferDot const dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
-                                           static_cast<uint8_t>(row))};
-    wired_.StoreBit(dot.column, dot.bit, value);
+    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                                  static_cast<uint8_t>(row))};
+    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, value);
   }
 }
 
@@ -147,10 +168,11 @@ void Panel::SetDot(int16_t column, int16_t row, bool value) {
  * keeps it small. The sums are int32_t, as the ends may lie further apart than
  * an int16_t holds, and an int is 16 bits on the Uno.
  */
-// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
-// NOLINTNEXTLINE(readability-function-size)
-void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
-                     bool value) {
+void Panel::DrawLine(Point from, Point to, bool value) {
+  int16_t const x0{from.x.number};
+  int16_t const y0{from.y.number};
+  int16_t const x1{to.x.number};
+  int16_t const y1{to.y.number};
   int32_t const width{(x1 > x0) ? (static_cast<int32_t>(x1) - x0)
                                 : (static_cast<int32_t>(x0) - x1)};
   int32_t const height{(y1 > y0) ? (static_cast<int32_t>(y0) - y1)
@@ -178,31 +200,43 @@ void Panel::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
   }
 }
 
-// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
-// NOLINTNEXTLINE(readability-function-size)
-void Panel::DrawRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                     bool value) {
-  if ((width <= 0) || (height <= 0)) {
-    return;
-  }
-  int32_t const right{static_cast<int32_t>(x) + width - 1};
-  int32_t const bottom{static_cast<int32_t>(y) + height - 1};
+/*
+ * The four edges, each a rectangle of one row or column between two corners:
+ * the corners beside `corner` share its row or its column.
+ */
+void Panel::DrawRect(Point corner, Point opposite_corner, bool value) {
+  int16_t const x0{corner.x.number};
+  int16_t const y0{corner.y.number};
+  int16_t const x1{opposite_corner.x.number};
+  int16_t const y1{opposite_corner.y.number};
+  Point const in_its_row{X{x1}, Y{y0}};
+  Point const in_its_column{X{x0}, Y{y1}};
 
-  FillArea(x, y, right, y, value);
-  FillArea(x, bottom, right, bottom, value);
-  FillArea(x, y, x, bottom, value);
-  FillArea(right, y, right, bottom, value);
+  FillRect(corner, in_its_row, value);
+  FillRect(corner, in_its_column, value);
+  FillRect(in_its_row, opposite_corner, value);
+  FillRect(in_its_column, opposite_corner, value);
 }
 
-// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
-// NOLINTNEXTLINE(readability-function-size)
-void Panel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
-                     bool value) {
-  if ((width <= 0) || (height <= 0)) {
-    return;
+// Only the part on the panel is walked, so that a corner far off it costs no
+// time, and the loops cannot overflow.
+void Panel::FillRect(Point corner, Point opposite_corner, bool value) {
+  auto const last_column{static_cast<int16_t>(GetNumberOfColumns() - 1)};
+  int16_t const last_row{kRowNumberOfModule - 1};
+  int16_t const left{
+      GetGreater(GetLesser(corner.x.number, opposite_corner.x.number), 0)};
+  int16_t const right{GetLesser(
+      GetGreater(corner.x.number, opposite_corner.x.number), last_column)};
+  int16_t const top{
+      GetGreater(GetLesser(corner.y.number, opposite_corner.y.number), 0)};
+  int16_t const bottom{GetLesser(
+      GetGreater(corner.y.number, opposite_corner.y.number), last_row)};
+
+  for (int16_t column{left}; column <= right; column++) {
+    for (int16_t row{top}; row <= bottom; row++) {
+      SetDot(Point{X{column}, Y{row}}, value);
+    }
   }
-  FillArea(x, y, static_cast<int32_t>(x) + width - 1,
-           static_cast<int32_t>(y) + height - 1, value);
 }
 
 /*
@@ -211,10 +245,12 @@ void Panel::FillRect(int16_t x, int16_t y, int16_t width, int16_t height,
  * says whether the next dot lies inside the true circle, and so whether the
  * step goes inwards as well.
  */
-void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
+void Panel::DrawCircle(Point centre, int16_t radius, bool value) {
   if (radius < 0) {
     return;
   }
+  int16_t const x{centre.x.number};
+  int16_t const y{centre.y.number};
   int32_t outer{radius};
   int32_t inner{0};
   int32_t error{1 - outer};
@@ -238,15 +274,22 @@ void Panel::DrawCircle(int16_t x, int16_t y, int16_t radius, bool value) {
   }
 }
 
-// Right of the panel nothing is drawn: the loop ends at its right edge, so
-// that the column on the panel, x plus a column of the bitmap, cannot overflow.
-void Panel::DrawBitmap(int16_t x, int16_t y, uint8_t height,
+/*
+ * Right of the panel nothing is drawn: the loop ends at its right edge, so that
+ * the column on the panel, x plus a column of the bitmap, cannot overflow. The
+ * point is unpacked first and a new one made for each column, here and in
+ * DrawColumn(): with a part of the point passed on, avr-gcc 7.3 no longer saw
+ * that a text's row is 0, 120 bytes of flash in ScrollText.
+ */
+void Panel::DrawBitmap(Point top_left, uint8_t height,
                        span<uint8_t const> bitmap) {
-  int16_t left{x};
+  int16_t left{top_left.x.number};
+  int16_t const top{top_left.y.number};
 
   for (size_t column{0};
        (column < bitmap.size()) && (left < GetNumberOfColumns()); column++) {
-    DrawColumn(left, y, height, Byte{pgm_read_byte(&bitmap[column])});
+    DrawColumn(Point{X{left}, Y{top}}, height,
+               Byte{pgm_read_byte(&bitmap[column])});
     left++;
   }
 }
@@ -256,12 +299,16 @@ void Panel::DrawBitmap(int16_t x, int16_t y, uint8_t height,
  * outside it are not its own. A column that starts eight rows or more off the
  * panel draws nothing, and one that starts nearer cannot overflow y plus a row.
  */
-void Panel::DrawColumn(int16_t x, int16_t y, uint8_t height, Byte value) {
+void Panel::DrawColumn(Point top, uint8_t height, Byte value) {
+  int16_t const x{top.x.number};
+  int16_t const y{top.y.number};
+
   if ((height == kRowNumberOfModule) && (y == 0)) {
-    SetColumn(x, value);
+    SetColumn(X{x}, value);
   } else if ((y > -kRowNumberOfModule) && (y < kRowNumberOfModule)) {
     for (uint8_t row{0}; row < height; row++) {
-      SetDot(x, static_cast<int16_t>(y + row), ReadBit(value, row));
+      SetDot(Point{X{x}, Y{static_cast<int16_t>(y + row)}},
+             ReadBit(value, row));
     }
   }
 }
@@ -271,35 +318,7 @@ void Panel::DrawColumn(int16_t x, int16_t y, uint8_t height, Byte value) {
 void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
   if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
       (row < kRowNumberOfModule)) {
-    SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
-  }
-}
-
-// Sets every dot from `left`, `top` to `right`, `bottom`, both included, that
-// lies on the panel.
-// FN-3: the coordinates as Adafruit GFX and MD_MAX72XX take them, AGENTS.md
-// NOLINTNEXTLINE(readability-function-size)
-void Panel::FillArea(int32_t left, int32_t top, int32_t right, int32_t bottom,
-                     bool value) {
-  // avr-gcc has no <algorithm>, and the core's max() is a macro
-  // NOLINTNEXTLINE(readability-use-std-min-max)
-  if (left < 0) {
-    left = 0;
-  }
-  // NOLINTNEXTLINE(readability-use-std-min-max): as for left
-  if (top < 0) {
-    top = 0;
-  }
-  if (right >= GetNumberOfColumns()) {
-    right = GetNumberOfColumns() - 1;
-  }
-  if (bottom >= kRowNumberOfModule) {
-    bottom = kRowNumberOfModule - 1;
-  }
-  for (int32_t column{left}; column <= right; column++) {
-    for (int32_t row{top}; row <= bottom; row++) {
-      SetDot(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
-    }
+    SetDotAt(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
   }
 }
 

@@ -23,9 +23,12 @@ using max_matrix::Error;
 using max_matrix::Font;
 using max_matrix::Glyph;
 using max_matrix::kDefaultFont;
+using max_matrix::Point;
 using max_matrix::Result;
 using max_matrix::span;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 /* fonts in the format of MD_MAX72XX for the tests of SetFont(): the digits 0
  * and 1, 7 rows high, with a 2 of width 0 that the font lacks, in version 1 and
@@ -178,9 +181,10 @@ TEST_F(MaxMatrixTest, SetFontDrawsInThatFont) {
   EXPECT_EQ(matrix_.GetFont().data(), kDigitFont.data());
   ASSERT_EQ(matrix_.SetText("10").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(
-        matrix_.GetColumn(static_cast<int16_t>(column)).GetValue().ToInteger(),
-        expected[column])
+    EXPECT_EQ(matrix_.GetColumn(X{static_cast<int16_t>(column)})
+                  .GetValue()
+                  .ToInteger(),
+              expected[column])
         << "column " << column;
   }
   EXPECT_EQ(matrix_.SetText("2").GetError(), Error::kUnknownChar);
@@ -198,9 +202,10 @@ TEST_F(MaxMatrixTest, SetFontTakesVersion2) {
   ASSERT_EQ(matrix_.SetFont(kDigitFontVersion2).GetError(), Error::kOk);
   ASSERT_EQ(matrix_.SetText("01").GetError(), Error::kOk);
   for (size_t column{0}; column < expected.size(); column++) {
-    EXPECT_EQ(
-        matrix_.GetColumn(static_cast<int16_t>(column)).GetValue().ToInteger(),
-        expected[column])
+    EXPECT_EQ(matrix_.GetColumn(X{static_cast<int16_t>(column)})
+                  .GetValue()
+                  .ToInteger(),
+              expected[column])
         << "column " << column;
   }
 }
@@ -211,9 +216,9 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   uint16_t steps{0};
 
   ASSERT_EQ(matrix_.SetFont(kWideFont).GetError(), Error::kOk);
-  ASSERT_EQ(matrix_.SetChar(0, 0, 'W').GetError(), Error::kOk);
+  ASSERT_EQ(matrix_.SetChar(Point{X{0}, Y{0}}, 'W').GetError(), Error::kOk);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(column).GetValue().ToInteger(),
+    EXPECT_EQ(matrix_.GetColumn(X{column}).GetValue().ToInteger(),
               Bit<uint8_t>::ToMask(column))
         << "standing, column " << static_cast<uint16_t>(column);
   }
@@ -225,10 +230,12 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   }
   EXPECT_EQ(steps, 8 + MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE);
   for (uint8_t column{0}; column < 8; column++) {
-    EXPECT_EQ(matrix_.GetColumn(kNumberOfColumns - 10 + column)
-                  .GetValue()
-                  .ToInteger(),
-              Bit<uint8_t>::ToMask(column))
+    EXPECT_EQ(
+        matrix_
+            .GetColumn(X{static_cast<int16_t>(kNumberOfColumns - 10 + column)})
+            .GetValue()
+            .ToInteger(),
+        Bit<uint8_t>::ToMask(column))
         << "shifted, column " << static_cast<uint16_t>(column);
   }
 }

@@ -19,9 +19,12 @@ using max_matrix::CommandState;
 using max_matrix::Error;
 using max_matrix::Matrix;
 using max_matrix::Module;
+using max_matrix::Point;
 using max_matrix::Result;
 using max_matrix::State;
 using max_matrix::Status;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace {
 
@@ -73,10 +76,11 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
          return error;
        },
        Error::kOutOfRange, "Init"},
-      {"GetColumn left", [](Matrix& m) { return m.GetColumn(-1).GetError(); },
+      {"GetColumn left",
+       [](Matrix& m) { return m.GetColumn(X{-1}).GetError(); },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn right",
-       [](Matrix& m) { return m.GetColumn(kNumberOfColumns).GetError(); },
+       [](Matrix& m) { return m.GetColumn(X{kNumberOfColumns}).GetError(); },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn no module",
        [](Matrix& m) {
@@ -92,13 +96,13 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"GetRow above",
        [](Matrix& m) {
          PanelRow row;
-         return m.GetRow(-1, row).GetError();
+         return m.GetRow(Y{-1}, row).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetRow below",
        [](Matrix& m) {
          PanelRow row;
-         return m.GetRow(max_matrix::kRowNumberOfModule, row).GetError();
+         return m.GetRow(Y{max_matrix::kRowNumberOfModule}, row).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetRow no module",
@@ -111,16 +115,21 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
          return m.GetRow(Module{0}, max_matrix::kRowNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetRow"},
-      {"GetDot left", [](Matrix& m) { return m.GetDot(-1, 0).GetError(); },
+      {"GetDot left",
+       [](Matrix& m) { return m.GetDot(Point{X{-1}, Y{0}}).GetError(); },
        Error::kOutOfRange, "GetDot"},
       {"GetDot right",
-       [](Matrix& m) { return m.GetDot(kNumberOfColumns, 0).GetError(); },
+       [](Matrix& m) {
+         return m.GetDot(Point{X{kNumberOfColumns}, Y{0}}).GetError();
+       },
        Error::kOutOfRange, "GetDot"},
-      {"GetDot above", [](Matrix& m) { return m.GetDot(0, -1).GetError(); },
+      {"GetDot above",
+       [](Matrix& m) { return m.GetDot(Point{X{0}, Y{-1}}).GetError(); },
        Error::kOutOfRange, "GetDot"},
       {"GetDot below",
        [](Matrix& m) {
-         return m.GetDot(0, max_matrix::kRowNumberOfModule).GetError();
+         return m.GetDot(Point{X{0}, Y{max_matrix::kRowNumberOfModule}})
+             .GetError();
        },
        Error::kOutOfRange, "GetDot"},
       {"SetFont", [](Matrix& m) { return m.SetFont(kNoFont).GetError(); },
@@ -131,7 +140,10 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
              .GetError();
        },
        Error::kOutOfRange, "SetIntensity"},
-      {"SetChar", [](Matrix& m) { return m.SetChar(0, 0, '\x01').GetError(); },
+      {"SetChar",
+       [](Matrix& m) {
+         return m.SetChar(Point{X{0}, Y{0}}, '\x01').GetError();
+       },
        Error::kUnknownChar, "SetChar"},
       {"SetText unknown char",
        [](Matrix& m) { return m.SetText("\x01").GetError(); },

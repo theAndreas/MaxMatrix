@@ -17,8 +17,12 @@
 #include <MaxMatrix.h>
 #include <stdint.h>
 
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
+
 uint16_t const kStepDelayMs{100};
-int16_t const kSpriteY{2};
+Y const kSpriteY{2};
 
 /*   .###.      .###.
  *   #.#.#      #.#.#
@@ -48,7 +52,7 @@ void loop() {
        * dark without a flicker */
       max_matrix::Batch const batch{matrix};
       matrix.Clear();
-      matrix.SetSprite(x, kSpriteY,
+      matrix.SetSprite(Point{X{x}, kSpriteY},
                        ((x % 2) != 0) ? kInvaderLegsOut : kInvaderLegsIn);
     }
     delay(kStepDelayMs);

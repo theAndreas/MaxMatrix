@@ -22,8 +22,11 @@ using max_matrix::Matrix;
 using max_matrix::MatrixOrientation;
 using max_matrix::Module;
 using max_matrix::ModuleType;
+using max_matrix::Point;
 using max_matrix::ShiftFill;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace {
 
@@ -95,9 +98,9 @@ TEST_P(MaxMatrixChainLengthTest, EmptiesItsBufferAndFramesEveryModule) {
 TEST_P(MaxMatrixChainLengthTest, DotsRoundTrip) {
   DrawPattern(matrix_);
   EXPECT_EQ(ShownPicture(matrix_), Pattern());
-  EXPECT_EQ(matrix_.GetDot(number_of_columns_, 0).GetError(),
+  EXPECT_EQ(matrix_.GetDot(Point{X{number_of_columns_}, Y{0}}).GetError(),
             Error::kOutOfRange);
-  matrix_.SetDot(number_of_columns_, 0, true);
+  matrix_.SetDot(Point{X{number_of_columns_}, Y{0}}, true);
   EXPECT_EQ(ShownPicture(matrix_), Pattern())
       << "a dot right of the panel drawn";
 }
@@ -145,7 +148,8 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
                     columns));
   EXPECT_EQ(matrix_.ShiftLeft(Byte{0x81}), Byte{0x00})
       << "the empty column the last shift brought";
-  EXPECT_EQ(matrix_.GetColumn(columns - 1).GetValue(), Byte{0x81});
+  EXPECT_EQ(matrix_.GetColumn(X{static_cast<int16_t>(columns - 1)}).GetValue(),
+            Byte{0x81});
 }
 
 /* a row of the whole panel takes one byte per module: an array longer than the
@@ -158,17 +162,17 @@ TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
   max_matrix::array<Byte, 1> read_one{};
   max_matrix::array<Byte, 1> const one{{Byte{0xFF}}};
 
-  matrix_.SetRow(2, values);
-  ASSERT_EQ(matrix_.GetRow(2, read).GetError(), Error::kOk);
+  matrix_.SetRow(Y{2}, values);
+  ASSERT_EQ(matrix_.GetRow(Y{2}, read).GetError(), Error::kOk);
   for (uint8_t module{0}; module < number_of_modules_; module++) {
     EXPECT_EQ(read[module], values[module])
         << "module " << static_cast<uint16_t>(module);
     EXPECT_EQ(matrix_.GetRow(Module{module}, 2).GetValue(), values[module])
         << "module " << static_cast<uint16_t>(module);
   }
-  EXPECT_EQ(matrix_.GetRow(2, read_one).GetError(),
+  EXPECT_EQ(matrix_.GetRow(Y{2}, read_one).GetError(),
             (number_of_modules_ == 1) ? Error::kOk : Error::kOutOfRange);
-  matrix_.SetRow(3, one);
+  matrix_.SetRow(Y{3}, one);
   EXPECT_EQ(matrix_.GetRow(Module{0}, 3).GetValue(), Byte{0xFF});
   if (number_of_modules_ > 1) {
     EXPECT_EQ(matrix_.GetRow(Module{1}, 3).GetValue(), Byte{0x00})

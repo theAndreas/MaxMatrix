@@ -25,7 +25,7 @@ namespace max_matrix {
  * the other way round. A sketch makes one from a number in braces:
  *
  * \code{.cpp}
- * matrix.SetColumn(3, max_matrix::Byte{0x3C});
+ * matrix.SetColumn(max_matrix::X{3}, max_matrix::Byte{0x3C});
  * \endcode
  *
  * As `std::byte`, which it stands in for until every target has C++17, a byte

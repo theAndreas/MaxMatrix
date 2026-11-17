@@ -14,6 +14,10 @@
 #include <MaxMatrix.h>
 #include <stdint.h>
 
+using max_matrix::Point;
+using max_matrix::X;
+using max_matrix::Y;
+
 uint32_t const kStepIntervalMs{40};
 
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
@@ -30,7 +34,7 @@ void setup() {
   matrix.Init();
   matrix.SetModuleType(
       max_matrix::ModuleType::kFc16);  // see the README for other modules
-  matrix.SetDot(ball_x, ball_y, true);
+  matrix.SetDot(Point{X{ball_x}, Y{ball_y}}, true);
 }
 
 void loop() {
@@ -44,7 +48,7 @@ void loop() {
   /* without the batch the matrix would show the frame without a ball in
    * between, as a flicker */
   max_matrix::Batch const batch{matrix};
-  matrix.SetDot(ball_x, ball_y, false);
+  matrix.SetDot(Point{X{ball_x}, Y{ball_y}}, false);
   /* turn round at an edge rather than leave the matrix */
   if (((ball_x + step_x) < 0) ||
       ((ball_x + step_x) >= matrix.GetNumberOfColumns())) {
@@ -56,5 +60,5 @@ void loop() {
   }
   ball_x += step_x;
   ball_y += step_y;
-  matrix.SetDot(ball_x, ball_y, true);
+  matrix.SetDot(Point{X{ball_x}, Y{ball_y}}, true);
 }
