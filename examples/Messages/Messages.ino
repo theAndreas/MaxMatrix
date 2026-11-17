@@ -40,7 +40,9 @@ constexpr auto kMessages{
                                     Message{kFast, 15}, Message{kSlow, 120})};
 uint8_t const kNumberOfMessages{kMessages.size()};
 
-max_matrix::MatrixOf<4> matrix{11, 10, 13};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+                               max_matrix::ChipSelectPin{10},
+                               max_matrix::ClockPin{13}};
 uint8_t current{0};
 
 void Show(Message const& message) {

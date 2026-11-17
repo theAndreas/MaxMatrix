@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1085,6 +1085,14 @@ A first look found, besides those two:
   As built, the first: the registers are `max7219::Register`, and `RegisterWrite()` takes
   one, `RegisterWrite(max7219::Register::kIntensity, 5)`; `test/compile_fail/` checks that a
   value in its place does not compile. Every example is the same size in every variant.
+
+  As built, the second: the pins are `DataInPin`, `ChipSelectPin` and `ClockPin`, each with
+  an `explicit` constructor, as a bare number would be any of them again; `Matrix`,
+  `MatrixOf` and the parts below take them,
+  `MatrixOf<4> matrix{DataInPin{11}, ChipSelectPin{10}, ClockPin{13}}`. The getters and
+  setters of one pin keep a number, as there is nothing to swap. `test/compile_fail/` checks
+  that numbers and swapped pins do not compile. Every example is the same size in every
+  variant.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per

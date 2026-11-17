@@ -56,8 +56,8 @@ class Wired {
    *                    1 to `kMaxNumberOfModules`; it has to live as long as
    *                    the matrix.
    */
-  Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-        span<Byte> buffer);
+  Wired(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+        ClockPin clock_pin, span<Byte> buffer);
 
   /*! \brief Returns the chain the matrix sends to. */
   Chain& GetChain() { return chain_; }

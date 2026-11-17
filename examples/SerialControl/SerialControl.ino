@@ -28,9 +28,9 @@
 #include <MaxMatrix.h>
 #include <stdint.h>
 
-uint8_t const kDataInPin{11};
-uint8_t const kChipSelectPin{10};
-uint8_t const kClockPin{13};
+max_matrix::DataInPin const kDataInPin{11};
+max_matrix::ChipSelectPin const kChipSelectPin{10};
+max_matrix::ClockPin const kClockPin{13};
 uint32_t const kBaudRate{115200};
 
 max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};

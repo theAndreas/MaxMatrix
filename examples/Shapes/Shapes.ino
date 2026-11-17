@@ -22,7 +22,9 @@ uint8_t const kNumberOfShapes{4};
 constexpr auto kHeart PROGMEM{
     max_matrix::make_array<uint8_t>(0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06)};
 
-max_matrix::MatrixOf<4> matrix{11, 10, 13};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+                               max_matrix::ChipSelectPin{10},
+                               max_matrix::ClockPin{13}};
 
 uint8_t shape{0};
 uint32_t last_shape{0};

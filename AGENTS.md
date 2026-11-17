@@ -347,6 +347,10 @@ for a rule of review. Each carries a `NOLINT(readability-function-size)`; nothin
 `src/` does. `DrawBitmap(x, y, height, bitmap)` and the constructors, three pins and the
 buffer, have four, as a span brings its length.
 
+Parameters that a caller could swap unnoticed take a type each (FN-16): the three pins are
+`DataInPin`, `ChipSelectPin` and `ClockPin`, with an `explicit` constructor, as a bare number
+would be any of them again, and a register is a `max7219::Register`.
+
 #### Integer types
 
 Every integer has a fixed width, in `src/`, `simulator/` and `test/` alike: `uint8_t`,

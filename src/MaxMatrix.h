@@ -63,7 +63,9 @@ enum class State : uint8_t {
  * A sketch makes it as a MatrixOf, which brings the buffer for its chain:
  *
  * \code{.cpp}
- * max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+ *                                max_matrix::ChipSelectPin{10},
+ *                                max_matrix::ClockPin{13}};
  *
  * void setup() {
  *     matrix.Init();
@@ -112,7 +114,9 @@ class Matrix {
    *
    * \code{.cpp}
    * max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(4)> buffer;
-   * max_matrix::Matrix matrix(kDataInPin, kChipSelectPin, kClockPin, buffer);
+   * max_matrix::Matrix matrix{max_matrix::DataInPin{11},
+   *                           max_matrix::ChipSelectPin{10},
+   *                           max_matrix::ClockPin{13}, buffer};
    * \endcode
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
@@ -122,8 +126,8 @@ class Matrix {
    *                    1 to `kMaxNumberOfModules`; it has to live as long as
    *                    the matrix.
    */
-  Matrix(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
-         span<Byte> buffer);
+  Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+         ClockPin clock_pin, span<Byte> buffer);
 
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
@@ -725,7 +729,9 @@ class Buffer {
  * compile.
  *
  * \code{.cpp}
- * max_matrix::MatrixOf<4> matrix(kDataInPin, kChipSelectPin, kClockPin);
+ * max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+ *                                max_matrix::ChipSelectPin{10},
+ *                                max_matrix::ClockPin{13}};
  * \endcode
  *
  * \tparam NumberOfModules The modules of the chain, 1 to `kMaxNumberOfModules`.
@@ -745,7 +751,8 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    */
-  MatrixOf(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
+  MatrixOf(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+           ClockPin clock_pin)
       : internal::Buffer<NumberOfModules>{},
         Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_} {}
 };

@@ -113,8 +113,10 @@ std::vector<uint8_t> Display();
 
 class MaxMatrixTest : public ::testing::Test {
  protected:
-  max_matrix::MatrixOf<kNumberOfModules> matrix_{kDataInPin, kChipSelectPin,
-                                                 kClockPin};
+  max_matrix::MatrixOf<kNumberOfModules> matrix_{
+      max_matrix::DataInPin{kDataInPin},
+      max_matrix::ChipSelectPin{kChipSelectPin},
+      max_matrix::ClockPin{kClockPin}};
 
   void SetUp() override {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);

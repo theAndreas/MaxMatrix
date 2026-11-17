@@ -24,7 +24,9 @@ constexpr uint8_t kNumberOfModules{4};
 /* a call that fails prints its name and the error on Serial */
 TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  MatrixOf<kNumberOfModules> matrix{kDataInPin, kChipSelectPin, kClockPin};
+  MatrixOf<kNumberOfModules> matrix{max_matrix::DataInPin{kDataInPin},
+                                    max_matrix::ChipSelectPin{kChipSelectPin},
+                                    max_matrix::ClockPin{kClockPin}};
   mock::serial_output.clear();
 
   EXPECT_EQ(matrix.GetColumn(-1).GetError(), Error::kOutOfRange);

@@ -15,7 +15,9 @@
 
 /* a chain of four modules, with the buffer for them; one of eight is
  * max_matrix::MatrixOf<8> */
-max_matrix::MatrixOf<4> matrix{11, 10, 13};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+                               max_matrix::ChipSelectPin{10},
+                               max_matrix::ClockPin{13}};
 
 void setup() {
   matrix.Init();

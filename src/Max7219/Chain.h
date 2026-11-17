@@ -111,6 +111,55 @@ constexpr uint8_t kDisplayTestDisplayTestMode{0x01};
 
 }  // namespace max7219
 
+/*
+ * The three pins of the chain, a type each, so that a sketch cannot swap them
+ * unnoticed (CodingStyle.md FN-16). Explicit, as a bare number would be any of
+ * them again.
+ */
+
+/*!
+ * \brief The pin DIN of the chain is connected to: `max_matrix::DataInPin{11}`.
+ */
+struct DataInPin {
+  /*!
+   * \brief Names the pin.
+   *
+   * \param[in] pin The pin's number, as `pinMode()` takes it.
+   */
+  constexpr explicit DataInPin(uint8_t pin) : number{pin} {}
+
+  uint8_t number; /*!< The pin's number, as `pinMode()` takes it. */
+};
+
+/*!
+ * \brief The pin CS of the chain is connected to:
+ *        `max_matrix::ChipSelectPin{10}`.
+ */
+struct ChipSelectPin {
+  /*!
+   * \brief Names the pin.
+   *
+   * \param[in] pin The pin's number, as `pinMode()` takes it.
+   */
+  constexpr explicit ChipSelectPin(uint8_t pin) : number{pin} {}
+
+  uint8_t number; /*!< The pin's number, as `pinMode()` takes it. */
+};
+
+/*!
+ * \brief The pin CLK of the chain is connected to: `max_matrix::ClockPin{13}`.
+ */
+struct ClockPin {
+  /*!
+   * \brief Names the pin.
+   *
+   * \param[in] pin The pin's number, as `pinMode()` takes it.
+   */
+  constexpr explicit ClockPin(uint8_t pin) : number{pin} {}
+
+  uint8_t number; /*!< The pin's number, as `pinMode()` takes it. */
+};
+
 namespace internal {
 
 /*!
@@ -164,7 +213,8 @@ class Chain {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    */
-  Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin);
+  Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+        ClockPin clock_pin);
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetDataInPin() const { return data_in_pin_; }

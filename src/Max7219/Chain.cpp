@@ -39,10 +39,11 @@ constexpr uint8_t kFirstBit{0x80};
 }  // namespace
 #endif
 
-Chain::Chain(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin)
-    : data_in_pin_{data_in_pin},
-      chip_select_pin_{chip_select_pin},
-      clock_pin_{clock_pin} {}
+Chain::Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
+             ClockPin clock_pin)
+    : data_in_pin_{data_in_pin.number},
+      chip_select_pin_{chip_select_pin.number},
+      clock_pin_{clock_pin.number} {}
 
 void Chain::Init(uint8_t number_of_modules) {
   pinMode(chip_select_pin_, OUTPUT);

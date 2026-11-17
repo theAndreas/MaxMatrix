@@ -29,7 +29,9 @@ max_matrix::Sprite const kInvaderLegsOut{
     5, 5, {{0x16, 0x0D, 0x07, 0x0D, 0x16}}};
 max_matrix::Sprite const kInvaderLegsIn{5, 5, {{0x06, 0x1D, 0x07, 0x1D, 0x06}}};
 
-max_matrix::MatrixOf<4> matrix{11, 10, 13};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
+                               max_matrix::ChipSelectPin{10},
+                               max_matrix::ClockPin{13}};
 
 void setup() {
   matrix.Init();
