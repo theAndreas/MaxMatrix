@@ -78,8 +78,10 @@ bool SetNonBlocking(Socket socket) {
 #endif
 
 // The socket is kept as an intptr_t, which holds both kinds.
-Socket ToSocket(intptr_t socket) { return static_cast<Socket>(socket); }
-Length ToLength(size_t length) { return static_cast<Length>(length); }
+constexpr Socket ToSocket(intptr_t socket) {
+  return static_cast<Socket>(socket);
+}
+constexpr Length ToLength(size_t length) { return static_cast<Length>(length); }
 
 }  // namespace
 

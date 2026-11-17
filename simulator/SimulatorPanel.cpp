@@ -41,7 +41,8 @@ constexpr std::array<NamedWiring, 4> kNamedWirings{{
 
 SimulatorPanel::SimulatorPanel()
     : wiring_name_(kSimulatorPanelDefaultWiring),
-      wiring_{FindWiring(wiring_name_)} {}
+      // the default is one of the table's, so it is always found
+      wiring_{*FindWiring(wiring_name_)} {}
 
 // FN-16: the texts of a lit and a dark LED and of the end of a row; the tests
 // of the simulator compare what it draws with simulator/Expected/
@@ -52,7 +53,7 @@ std::string SimulatorPanel::GetText(char const* lit, char const* dark,
 
   for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
     for (uint8_t x{0}; x < GetNumberOfColumns(); x++) {
-      text += mock::chain.IsLit(*wiring_, x, y, upside_down_) ? lit : dark;
+      text += mock::chain.IsLit(wiring_.get(), x, y, upside_down_) ? lit : dark;
     }
     text += end_of_row;
   }
@@ -69,7 +70,7 @@ bool SimulatorPanel::SetWiring(std::string const& name) {
   Max7219Wiring const* found{FindWiring(name)};
 
   if (found != nullptr) {
-    wiring_ = found;
+    wiring_ = *found;
     wiring_name_ = name;
     draw_requested_ = true;
     return true;

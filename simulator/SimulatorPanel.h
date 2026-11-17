@@ -14,6 +14,7 @@
 #ifndef MAXMATRIX_SIMULATOR_SIMULATORPANEL_H_
 #define MAXMATRIX_SIMULATOR_SIMULATORPANEL_H_
 
+#include <functional>
 #include <string>
 
 #include "Arduino.h"
@@ -36,7 +37,7 @@ constexpr uint32_t kSimulatorPanelRedrawInterval{33u};
 class SimulatorPanel {
  private:
   std::string wiring_name_;
-  Max7219Wiring const* wiring_;
+  std::reference_wrapper<Max7219Wiring const> wiring_;
   bool upside_down_{false};
   int32_t drawn_frames_{-1};
   uint32_t last_draw_{0};

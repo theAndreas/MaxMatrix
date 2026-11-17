@@ -23,13 +23,13 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "Arduino.h"
 #include "DocuSvg.h"
+#include "Host/SimulatorFile.h"
 #include "Max7219.h"
 #include "MaxMatrix.h"
 #include "Utility/Bit.h"
@@ -169,6 +169,9 @@ template <typename Type>
 using PerDot = std::array<std::array<Type, max_matrix::kRowNumberOfModule>,
                           kNumberOfColumns>;
 
+/* each picture's file name and its SVG text */
+using Pictures = std::vector<std::pair<std::string, std::string>>;
+
 /*! \brief The LED of every dot, if each lit exactly one. */
 struct FoundLeds {
   bool found;           /*!< Whether every dot lit exactly one LED. */
@@ -261,8 +264,6 @@ constexpr bool IsPatternDot(uint8_t x, uint8_t y) {
  * \return True if every dot is lit where it was set.
  */
 bool IsUpright(Max7219Wiring const& wiring) {
-  bool upright{true};
-
   matrix.Clear();
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
@@ -273,11 +274,28 @@ bool IsUpright(Max7219Wiring const& wiring) {
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (mock::chain.IsLit(wiring, x, y) != IsPatternDot(x, y)) {
-        upright = false;
+        return false;
       }
     }
   }
-  return upright;
+  return true;
+}
+
+/*!
+ * \brief Finds the name MD_MAX72XX gives a wiring, if it gives it one.
+ *
+ * \param[in] wiring The wiring.
+ * \return The name, as the README uses it, or nullptr for a wiring without one.
+ */
+char const* FindModuleName(Max7219Wiring const& wiring) {
+  for (auto const& named : kModuleNames) {
+    if ((named.wiring->digits_as_rows == wiring.digits_as_rows) &&
+        (named.wiring->reversed_columns == wiring.reversed_columns) &&
+        (named.wiring->reversed_rows == wiring.reversed_rows)) {
+      return named.name;
+    }
+  }
+  return nullptr;
 }
 
 /*!
@@ -299,12 +317,9 @@ std::string GetModules() {
       modules += ", ";
     }
     modules += wiring.name;
-    for (auto const& named : kModuleNames) {
-      if ((named.wiring->digits_as_rows == wiring.digits_as_rows) &&
-          (named.wiring->reversed_columns == wiring.reversed_columns) &&
-          (named.wiring->reversed_rows == wiring.reversed_rows)) {
-        modules += std::string(" (") + named.name + ")";
-      }
+    char const* const name{FindModuleName(wiring)};
+    if (name != nullptr) {
+      modules += std::string(" (") + name + ")";
     }
   }
   return modules.empty() ? "no module" : modules;
@@ -317,7 +332,7 @@ std::string GetModules() {
  * \param[in] x The column, as the viewer sees it.
  * \return The pixels from the left.
  */
-int32_t GetCellX(uint8_t x) {
+constexpr int32_t GetCellX(uint8_t x) {
   return kLeft +
          ((x / max_matrix::kColumnNumberOfModule) *
           ((max_matrix::kColumnNumberOfModule * kCell) + kModuleGap)) +
@@ -331,7 +346,7 @@ int32_t GetCellX(uint8_t x) {
  * \param[in] y The row, as the viewer sees it.
  * \return The pixels from the top.
  */
-int32_t GetCellY(uint8_t y) { return kTop + (y * kCell); }
+constexpr int32_t GetCellY(uint8_t y) { return kTop + (y * kCell); }
 
 /*!
  * \brief Returns the width of a picture of the whole panel.
@@ -340,7 +355,7 @@ int32_t GetCellY(uint8_t y) { return kTop + (y * kCell); }
  *
  * \return The width in pixels.
  */
-uint16_t GetPictureWidth() {
+constexpr uint16_t GetPictureWidth() {
   return static_cast<uint16_t>(GetCellX(kNumberOfColumns - 1) + kCell + kRight);
 }
 
@@ -351,7 +366,7 @@ uint16_t GetPictureWidth() {
  *
  * \return The height in pixels.
  */
-uint16_t GetPictureHeight() {
+constexpr uint16_t GetPictureHeight() {
   return static_cast<uint16_t>(GetCellY(max_matrix::kRowNumberOfModule - 1) +
                                kCell + kBottom);
 }
@@ -642,28 +657,13 @@ std::string DrawCoordinates() {
 }
 
 /*!
- * \brief Reads a whole file.
- *
- * \param[in] path The file.
- * \return What it holds, or an empty text if it cannot be read, which no
- *         picture equals.
- */
-std::string ReadFile(std::string const& path) {
-  std::ifstream const file{path};
-  std::stringstream content;
-
-  content << file.rdbuf();
-  return content.str();
-}
-
-/*!
  * \brief Draws every picture.
  *
  * \return Each picture's file name and its SVG text, which is empty if a dot
  *         did not light exactly one LED.
  */
-std::vector<std::pair<std::string, std::string>> DrawPictures() {
-  std::vector<std::pair<std::string, std::string>> pictures;
+Pictures DrawPictures() {
+  Pictures pictures;
 
   pictures.emplace_back("Coordinates.svg", DrawCoordinates());
   // The module types in the order of the model's wirings, whose names the files
@@ -677,26 +677,59 @@ std::vector<std::pair<std::string, std::string>> DrawPictures() {
 }
 
 /*!
- * \brief Writes the pictures into a folder, or checks that it holds them.
+ * \brief Counts the pictures that could not be drawn, and names each.
+ *
+ * \param[in] pictures Each picture's file name and its SVG text, empty for one
+ *                     that could not be drawn.
+ * \return How many could not be drawn.
+ */
+uint8_t CountUndrawn(Pictures const& pictures) {
+  uint8_t undrawn{0};
+
+  for (auto const& picture : pictures) {
+    if (picture.second.empty()) {
+      std::cerr << picture.first << ": a dot did not light exactly one LED\n";
+      undrawn++;
+    }
+  }
+  return undrawn;
+}
+
+/*!
+ * \brief Writes the pictures that were drawn into a folder.
  *
  * \param[in] pictures Each picture's file name and its SVG text.
  * \param[in] folder The folder.
- * \param[in] write True to write, false to check.
- * \return How many pictures could not be drawn or differ.
+ * \return How many could not be written.
  */
-uint8_t WriteOrCheck(
-    std::vector<std::pair<std::string, std::string>> const& pictures,
-    std::string const& folder, bool write) {
+uint8_t WritePictures(Pictures const& pictures, std::string const& folder) {
   uint8_t failed{0};
 
   for (auto const& picture : pictures) {
     std::string const path = folder + "/" + picture.first;
-    if (picture.second.empty()) {
-      std::cerr << picture.first << ": a dot did not light exactly one LED\n";
+    if (!picture.second.empty() && !(std::ofstream{path} << picture.second)) {
+      std::cerr << path << " cannot be written\n";
       failed++;
-    } else if (write) {
-      std::ofstream(path) << picture.second;
-    } else if (ReadFile(path) != picture.second) {
+    }
+  }
+  return failed;
+}
+
+/*!
+ * \brief Checks that a folder holds the pictures that were drawn.
+ *
+ * \param[in] pictures Each picture's file name and its SVG text.
+ * \param[in] folder The folder.
+ * \return How many differ from the files, or have none.
+ */
+uint8_t CheckPictures(Pictures const& pictures, std::string const& folder) {
+  uint8_t failed{0};
+
+  for (auto const& picture : pictures) {
+    std::string const path = folder + "/" + picture.first;
+    SimulatorFileText const file{SimulatorFile::Read(path.c_str())};
+    if (!picture.second.empty() &&
+        (!file.complete || (file.text != picture.second))) {
       std::cerr << path
                 << " is not what the library draws; run DocuPictures --write\n";
       failed++;
@@ -736,5 +769,9 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
     std::cerr << "the matrix does not start on the pins of the examples\n";
     return 1;
   }
-  return (WriteOrCheck(DrawPictures(), arguments[2], write) == 0) ? 0 : 1;
+  Pictures const pictures{DrawPictures()};
+  uint8_t const undrawn{CountUndrawn(pictures)};
+  uint8_t const failed{write ? WritePictures(pictures, arguments[2])
+                             : CheckPictures(pictures, arguments[2])};
+  return ((undrawn == 0) && (failed == 0)) ? 0 : 1;
 }

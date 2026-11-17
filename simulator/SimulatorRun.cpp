@@ -27,8 +27,9 @@ bool SimulatorRun::SetUp(int argc, char** argv, SimulatorOptions& options,
 
 int SimulatorRun::End(SimulatorOptions const& options,
                       SimulatorPanel const& panel) {
+  SimulatorTerminal::PrintResult(panel);
   bool const as_expected{
-      SimulatorTerminal::PrintResult(panel, options.GetExpectFile())};
+      SimulatorTerminal::IsExpected(panel, options.GetExpectFile())};
   bool const passed{as_expected && (mock::errors == 0)};
   return passed ? kSimulatorRunExitOk : kSimulatorRunExitFailed;
 }

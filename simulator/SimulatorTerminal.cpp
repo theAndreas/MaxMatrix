@@ -66,15 +66,16 @@ void SimulatorTerminal::Draw(SimulatorPanel const& panel) {
   std::cout.flush();
 }
 
-bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
-                                    char const* expect_file) {
-  std::string const result = panel.GetText(kResultLit, kResultDark, "\n");
+void SimulatorTerminal::PrintResult(SimulatorPanel const& panel) {
+  std::cout << panel.GetText(kResultLit, kResultDark, "\n");
+}
 
-  std::cout << result;
+bool SimulatorTerminal::IsExpected(SimulatorPanel const& panel,
+                                   char const* expect_file) {
   if (expect_file == nullptr) {
     return true;
   }
-
+  std::string const result = panel.GetText(kResultLit, kResultDark, "\n");
   SimulatorFileText const expected{SimulatorFile::Read(expect_file)};
   if (!expected.complete || (expected.text != result)) {
     std::cerr << "differs from " << expect_file << ":\n" << expected.text;

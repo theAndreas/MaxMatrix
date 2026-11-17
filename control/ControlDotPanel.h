@@ -59,7 +59,7 @@ class ControlDotPanel : public wxPanel {
   void OnCaptureLost(wxMouseCaptureLostEvent& event);
   void PaintDot(uint8_t column, uint8_t row);
   MAXMATRIX_NODISCARD bool IsLit(uint8_t column, uint8_t row) const;
-  MAXMATRIX_NODISCARD Dot GetDotAt(wxPoint const& point) const;
+  MAXMATRIX_NODISCARD Dot GetDotAt(wxPoint point) const;
 
  public:
   /*!

@@ -161,8 +161,8 @@ exception goes at the end of a list, with its reason.
       loopback, one client at a time, for the control program, which has no WebSocket.
     - `SimulatorSocket` — what both hosts do with a socket: listen on loopback, never wait, send
       all, and tell a connection that is gone.
-    - `SimulatorFile` — a whole file read into a string, the page the web host serves and the
-      panel `--expect` names.
+    - `SimulatorFile` — a whole file read into a string, the page the web host serves, the
+      panel `--expect` names and the pictures `DocuPictures --check` compares.
   - `Avr/` — `mainAvr.cpp` and `SimulatorAvr`, the executable `SimulatorAvr`: the same simulator
     for the `.elf` `avr-gcc` makes of an example (`--elf`). simavr runs it on an ATmega328P, its
     pins 10, 11 and 13 and its SPI output drive the model, its UART is `Serial`. It writes the

@@ -45,14 +45,15 @@ std::string DocuSvg::GetDocument() const {
   return document.str();
 }
 
-void DocuSvg::AddRect(DocuPoint corner, DocuSize size, DocuPaint paint) {
+void DocuSvg::AddRect(DocuPoint corner, DocuSize size, DocuPaint const& paint) {
   body_ << "  <rect x=\"" << corner.x << "\" y=\"" << corner.y << "\" width=\""
         << size.width << "\" height=\"" << size.height << "\" rx=\""
         << static_cast<uint16_t>(paint.radius) << "\" fill=\"" << paint.fill
         << "\" stroke=\"" << paint.stroke << "\" stroke-width=\"2\"/>\n";
 }
 
-void DocuSvg::AddText(DocuPoint at, std::string const& text, DocuFont font) {
+void DocuSvg::AddText(DocuPoint at, std::string const& text,
+                      DocuFont const& font) {
   body_ << "  <text x=\"" << at.x << "\" y=\"" << at.y << "\" font-size=\""
         << static_cast<uint16_t>(font.size) << "\" fill=\"" << font.fill
         << "\" text-anchor=\"" << font.anchor << "\""

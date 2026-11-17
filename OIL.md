@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1189,6 +1189,23 @@ whether something changed, as wxWidgets' `Enable()`, goes to `Discard()` as well
 `close()`, through `SimulatorSocket::Close()` in the simulator. What the host code computes or
 finds is `MAXMATRIX_NODISCARD` now, some thirty functions. A reference to the object itself or a
 handle to what was just added is no result, AGENTS.md says why.
+
+As built for the rest of the chapter: printing the panel at the end of a run and comparing it
+with `--expect` are two functions (FN-1), as are writing the pictures of `DocuPictures` and
+checking them, which reports a picture it cannot write now; `IsUpright()` returns at the first
+dot that differs, and the name MD_MAX72XX gives a wiring is found by a function of its own
+(FN-14); `DocuSvg` takes its paint and font by `const&`, the control program a `wxPoint` by
+value (FN-7); a few helpers of `control/` and `docu/` are `constexpr` (FN-9); the panel of the
+simulator holds its wiring by `std::reference_wrapper`, as it always has one (FN-15);
+`SimulatorAvr::TakeByte()` is not `const`, as it writes the frame (FN-11); and `DocuPictures`
+reads a file through `SimulatorFile` (FN-13). Left as they are for FN-16, as clang-tidy does not
+see them and a test fails on a swap of each: `ControlCommand::MakeDot(column, row)` and the
+column and row of `ControlDotPanel`, which `ControlCommandTest` and the order of the line pin;
+`DocuSvg::AddArrow(from, to_x, thickness)`, `CountLit(chip, digit)` and `FindLedOfDot(x, y)`, which
+`docu/pictures` pins; and `SimulatorWebHost::SendResponse(status, content_type)`, which
+`simulator/web` pins for the page and a 404, the page's now as well. `SimulatorWeb::ConvertToHex(value,
+digits)` is left too: `SimulatorTest` pins the call that escapes a char, the frame log of the page
+only the eye.
 
 ### 42 A newer avr-gcc as a cross-check
 
