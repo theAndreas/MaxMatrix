@@ -1033,8 +1033,9 @@ A first look found, besides those two:
   without what nothing here calls. Every example is the same size in every variant. No check
   reported it, as `cppcoreguidelines-avoid-const-or-ref-data-members` of clang-tidy 23 leaves
   out a class whose assignment is deleted, as `Batch`'s is: the check follows the reason of
-  the rule, assignability, where the rule says never. That is the template's to take up, in
-  the rule's text or its "Checked by". `Batch` was the only such member in the repository.
+  the rule, assignability, where the rule says never. The template names that gap in the
+  rule's "Checked by" since v0.10.1, and leaves such a class to review. `Batch` was the only
+  such member in the repository.
 - F-5: `misc-include-cleaner` is still off, with some 540 places, waiting for the pull request
   36 named for it. As built, it is on, and every file includes what it uses: some 175 includes
   in 59 files, and 7 that nothing used are gone. The C library's headers are written as
@@ -1068,7 +1069,7 @@ A first look found, besides those two:
   `bugprone-dynamic-static-initializers`, an exception of the template's, reports one place
   only, the declaration of `kDefaultFont` in `Font.h`, which carries its `NOLINT`; on the
   board it does so even with the definition `constexpr`, as the other files cannot see it.
-  Whether the template needs the exception is the template's to take up.
+  The template dropped the exception in v0.10.1, so the check is on here as well.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per
