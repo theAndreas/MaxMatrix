@@ -25,6 +25,8 @@
 /* SimulatorAvr Parameter */
 constexpr char kSimulatorAvrMcu[] = "atmega328p";
 constexpr uint32_t kSimulatorAvrFrequency{16000000u};
+constexpr uint32_t kSimulatorAvrCyclesPerMillisecond{kSimulatorAvrFrequency /
+                                                     1000u};
 
 /*!
  * \brief An ATmega328P in simavr that runs the .elf of an example, wired to the
@@ -86,13 +88,20 @@ class SimulatorAvr {
   SimulatorAvr& operator=(SimulatorAvr const&) = delete;
 
   /*!
-   * \brief Returns the simulated time.
+   * \brief Returns the cycles the AVR runs in `milliseconds`, at its 16 MHz.
    *
-   * It counts the cycles the AVR has run, at its 16 MHz, not the host's clock.
+   * In 64 bits throughout: simavr's own conversion takes the microseconds as
+   * 32, which wrap after 71.6 minutes, and a run of the page or the control
+   * program lasts until Ctrl+C.
    *
-   * \return The milliseconds since the AVR started, or 0 before Load().
+   * \param[in] milliseconds The simulated time.
+   * \return The cycles.
    */
-  MAXMATRIX_NODISCARD uint32_t GetMillis() const;
+  MAXMATRIX_NODISCARD static constexpr avr_cycle_count_t ConvertToCycles(
+      uint32_t milliseconds) {
+    return static_cast<avr_cycle_count_t>(milliseconds) *
+           kSimulatorAvrCyclesPerMillisecond;
+  }
 
   /*!
    * \brief Makes the AVR and loads an example into it.
