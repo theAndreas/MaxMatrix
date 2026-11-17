@@ -42,7 +42,8 @@ class SimulatorPanel {
   uint32_t last_draw_{0};
   bool draw_requested_{true};
 
-  static Max7219Wiring const* FindWiring(std::string const& name);
+  MAXMATRIX_NODISCARD static Max7219Wiring const* FindWiring(
+      std::string const& name);
 
  public:
   /*! \brief Makes a panel of the default wiring, mounted upright, that has
@@ -59,12 +60,12 @@ class SimulatorPanel {
 
   /*! \brief Returns the modules of the model's chain, as mock::Reset() made it.
    */
-  static uint8_t GetNumberOfModules() {
+  MAXMATRIX_NODISCARD static uint8_t GetNumberOfModules() {
     return static_cast<uint8_t>(mock::chain.chips.size());
   }
 
   /*! \brief Returns the columns of the model's chain, eight per module. */
-  static uint8_t GetNumberOfColumns() {
+  MAXMATRIX_NODISCARD static uint8_t GetNumberOfColumns() {
     return static_cast<uint8_t>(GetNumberOfModules() *
                                 max_matrix::kColumnNumberOfModule);
   }
@@ -78,8 +79,8 @@ class SimulatorPanel {
    * \param[in] end_of_row What follows every row.
    * \return The panel.
    */
-  std::string GetText(char const* lit, char const* dark,
-                      char const* end_of_row) const;
+  MAXMATRIX_NODISCARD std::string GetText(char const* lit, char const* dark,
+                                          char const* end_of_row) const;
 
   /*!
    * \brief Returns the brightness of a module.

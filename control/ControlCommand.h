@@ -58,7 +58,8 @@ class ControlCommand {
    * \param[in] shift True to shift it in, false to show it at once.
    * \return The line.
    */
-  static std::string MakeText(std::string const& text, bool shift);
+  MAXMATRIX_NODISCARD static std::string MakeText(std::string const& text,
+                                                  bool shift);
 
   /*!
    * \brief Makes the line that sets the brightness.
@@ -66,7 +67,7 @@ class ControlCommand {
    * \param[in] intensity The brightness, 0 to 15.
    * \return The line.
    */
-  static std::string MakeIntensity(uint8_t intensity);
+  MAXMATRIX_NODISCARD static std::string MakeIntensity(uint8_t intensity);
 
   /*!
    * \brief Makes the line that sets how fast a text shifts.
@@ -74,7 +75,7 @@ class ControlCommand {
    * \param[in] milliseconds The time per column.
    * \return The line.
    */
-  static std::string MakeSpeed(uint16_t milliseconds);
+  MAXMATRIX_NODISCARD static std::string MakeSpeed(uint16_t milliseconds);
 
   /*!
    * \brief Makes the line that sets the empty columns between the chars of a
@@ -83,7 +84,7 @@ class ControlCommand {
    * \param[in] columns The columns.
    * \return The line.
    */
-  static std::string MakeSpace(uint8_t columns);
+  MAXMATRIX_NODISCARD static std::string MakeSpace(uint8_t columns);
 
   /*!
    * \brief Makes the line that lights a dot or turns it off.
@@ -93,21 +94,22 @@ class ControlCommand {
    * \param[in] lit True to light it, false to turn it off.
    * \return The line.
    */
-  static std::string MakeDot(uint8_t column, uint8_t row, bool lit);
+  MAXMATRIX_NODISCARD static std::string MakeDot(uint8_t column, uint8_t row,
+                                                 bool lit);
 
   /*!
    * \brief Makes the line that turns every LED off.
    *
    * \return The line.
    */
-  static std::string MakeClear();
+  MAXMATRIX_NODISCARD static std::string MakeClear();
 
   /*!
    * \brief Makes the line that asks what the matrix shows.
    *
    * \return The line.
    */
-  static std::string MakePicture();
+  MAXMATRIX_NODISCARD static std::string MakePicture();
 
   /*!
    * \brief Decodes the answer to `picture` into the columns of the panel.
@@ -128,7 +130,7 @@ class ControlCommand {
    * \return True if it fits into the board's line buffer and holds no line
    *         break.
    */
-  static bool Fits(std::string const& line);
+  MAXMATRIX_NODISCARD static bool Fits(std::string const& line);
 
   /*!
    * \brief Returns how many bytes `line` may still grow by before SerialControl
@@ -138,7 +140,7 @@ class ControlCommand {
    * \return The bytes left in the board's line buffer, negative by as many
    *         bytes as the line is too long.
    */
-  static int32_t GetBytesLeft(std::string const& line);
+  MAXMATRIX_NODISCARD static int32_t GetBytesLeft(std::string const& line);
 };
 
 #endif  // MAXMATRIX_CONTROL_CONTROLCOMMAND_H_

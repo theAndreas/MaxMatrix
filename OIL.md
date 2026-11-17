@@ -1180,6 +1180,16 @@ calls, as what a port has read, the index into the command line and the labels a
 `DocuPictures` draws on are references. `SimulatorRun::SetUp()` keeps its two references, as it
 sets up the objects the tick reaches through a plain function pointer.
 
+As built for FN-10 in the host code: no result is dropped without `Discard()` and its reason,
+a system call's included. Where a failure matters it is handled instead: a socket that still
+blocks after `SetNonBlocking()`, or that would wait without end for a request, is closed rather
+than polled; `avr_init()` that fails fails the load; a matrix of `DocuPictures` that does not
+start fails the run; and the control program logs a window without a timer. What only says
+whether something changed, as wxWidgets' `Enable()`, goes to `Discard()` as well, and so does
+`close()`, through `SimulatorSocket::Close()` in the simulator. What the host code computes or
+finds is `MAXMATRIX_NODISCARD` now, some thirty functions. A reference to the object itself or a
+handle to what was just added is no result, AGENTS.md says why.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

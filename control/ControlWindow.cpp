@@ -39,6 +39,7 @@
 #include "ControlCommand.h"
 #include "ControlDotPanel.h"
 #include "ControlLink.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 namespace {
@@ -118,7 +119,9 @@ ControlWindow::ControlWindow()
   SetMinClientSize(content->GetBestSize());
 
   Bind(wxEVT_TIMER, &ControlWindow::OnTimer, this);
-  timer_.Start(kPollMs);
+  if (!timer_.Start(kPollMs)) {
+    Log("No timer: the window follows neither the board nor the simulator.\n");
+  }
   ShowState();
 }
 
@@ -130,8 +133,9 @@ void ControlWindow::MakeMenu() {
 
   file->Append(wxID_EXIT);
   help->Append(wxID_ABOUT);
-  bar->Append(file, "&File");
-  bar->Append(help, "&Help");
+  // A bar fails only past the menus it can take, far more than two.
+  max_matrix::Discard(bar->Append(file, "&File"));
+  max_matrix::Discard(bar->Append(help, "&Help"));
   SetMenuBar(bar);
   Bind(wxEVT_MENU, &ControlWindow::OnExit, this, wxID_EXIT);
   Bind(wxEVT_MENU, &ControlWindow::OnAbout, this, wxID_ABOUT);
@@ -385,7 +389,8 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
 
   serial_port_name_->Clear();
   for (std::string const& port : ControlSerialPort::List()) {
-    serial_port_name_->Append(wxString::FromUTF8(port));
+    // the place of the new entry, which the list keeps in order
+    max_matrix::Discard(serial_port_name_->Append(wxString::FromUTF8(port)));
   }
   if (!typed.empty()) {
     serial_port_name_->SetValue(typed);
@@ -427,13 +432,18 @@ void ControlWindow::OnAbout(wxCommandEvent& /* event */) {
   wxAboutBox(about, this);
 }
 
-void ControlWindow::OnExit(wxCommandEvent& /* event */) { Close(true); }
+// Forced, the window closes whatever its handlers say.
+void ControlWindow::OnExit(wxCommandEvent& /* event */) {
+  max_matrix::Discard(Close(true));
+}
 
 // Sends `line` to every end that takes commands, and logs it once.
 void ControlWindow::Broadcast(std::string const& line) {
   Log("> " + ConvertToText(line) + "\n");
-  board_link_.Send(line);
-  simulator_link_.Send(line);
+  // A link that is not ready takes nothing, and one whose port broke shows it
+  // at the next Follow().
+  max_matrix::Discard(board_link_.Send(line));
+  max_matrix::Discard(simulator_link_.Send(line));
   ShowState();
 }
 
@@ -478,7 +488,8 @@ void ControlWindow::SendSettings(ControlLink& link, char const* name) {
 
   for (std::string const& line : lines) {
     Log(wxString(name) + ": > " + ConvertToText(line) + "\n");
-    link.Send(line);
+    // as in Broadcast()
+    max_matrix::Discard(link.Send(line));
   }
 }
 
@@ -531,30 +542,37 @@ ControlLink* ControlWindow::GetShownLink() {
 void ControlWindow::ShowState() {
   bool const any_ready{board_link_.IsReady() || simulator_link_.IsReady()};
 
+  /*
+   * Enable() and SetForegroundColour() say whether they changed anything, here
+   * and in ShowBytesLeft(), which the window does not need: it shows the state
+   * whatever it was before.
+   */
   board_button_->SetLabel(serial_port_.IsOpen() ? "Close" : "Open");
-  serial_port_name_->Enable(!serial_port_.IsOpen());
+  max_matrix::Discard(serial_port_name_->Enable(!serial_port_.IsOpen()));
   if (board_link_.IsReady()) {
     board_status_->SetLabel("ready");
-    board_status_->SetForegroundColour(CONTROL_WINDOW_READY);
+    max_matrix::Discard(
+        board_status_->SetForegroundColour(CONTROL_WINDOW_READY));
   } else if (serial_port_.IsOpen()) {
     board_status_->SetLabel("waiting for ready");
-    board_status_->SetForegroundColour(CONTROL_WINDOW_WAITING);
+    max_matrix::Discard(
+        board_status_->SetForegroundColour(CONTROL_WINDOW_WAITING));
   } else {
     board_status_->SetLabel("closed");
-    board_status_->SetForegroundColour(
-        wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+    max_matrix::Discard(board_status_->SetForegroundColour(
+        wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)));
   }
   simulator_button_->SetLabel(tcp_port_.IsOpen() ? "Disconnect" : "Connect");
-  tcp_port_number_->Enable(!tcp_port_.IsOpen());
+  max_matrix::Discard(tcp_port_number_->Enable(!tcp_port_.IsOpen()));
   simulator_status_->SetLabel(simulator_link_.IsReady() ? "ready"
                                                         : "not connected");
-  simulator_status_->SetForegroundColour(
+  max_matrix::Discard(simulator_status_->SetForegroundColour(
       simulator_link_.IsReady()
           ? CONTROL_WINDOW_READY
-          : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
-  controls_->Enable(any_ready);
+          : wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)));
+  max_matrix::Discard(controls_->Enable(any_ready));
   ShowBytesLeft();
-  speed_->Enable(any_ready && shift_->GetValue());
+  max_matrix::Discard(speed_->Enable(any_ready && shift_->GetValue()));
   dots_->Refresh();
 }
 
@@ -574,10 +592,11 @@ void ControlWindow::ShowBytesLeft() {
     bytes_left_->SetLabel(
         wxString::Format("%" PRId32 " bytes too long", -left));
   }
-  bytes_left_->SetForegroundColour(
+  // whether they changed anything, as in ShowState()
+  max_matrix::Discard(bytes_left_->SetForegroundColour(
       (left >= 0) ? wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT)
-                  : CONTROL_WINDOW_TOO_LONG);
-  send_->Enable(ControlCommand::Fits(line));
+                  : CONTROL_WINDOW_TOO_LONG));
+  max_matrix::Discard(send_->Enable(ControlCommand::Fits(line)));
 }
 
 void ControlWindow::Log(wxString const& text) { log_->AppendText(text); }

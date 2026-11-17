@@ -40,12 +40,13 @@ class SimulatorWebHost {
   char const* page_path_{nullptr};
 
   void AcceptClients();
-  std::vector<std::string> ReadClient(uint8_t slot);
-  bool AnswerRequest(int socket, std::string const& request);
+  MAXMATRIX_NODISCARD std::vector<std::string> ReadClient(uint8_t slot);
+  MAXMATRIX_NODISCARD bool AnswerRequest(int socket,
+                                         std::string const& request);
   void SendPage(int socket);
   MAXMATRIX_NODISCARD uint8_t FindFreeSlot() const;
   void DropClient(uint8_t slot);
-  static std::string ReadRequest(int socket);
+  MAXMATRIX_NODISCARD static std::string ReadRequest(int socket);
   MAXMATRIX_NODISCARD static SimulatorFoundText GetPath(
       std::string const& request);
   static void SendResponse(int socket, char const* status,

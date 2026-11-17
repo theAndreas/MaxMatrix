@@ -41,17 +41,27 @@ class SimulatorSocket {
    * nobody is waiting.
    *
    * \param[in] port The port to listen on.
-   * \return The socket, or `kSimulatorSocketNone` if the port is taken.
+   * \return The socket, or `kSimulatorSocketNone` if the port is taken or the
+   *         socket would block.
    */
-  static int OpenListener(uint16_t port);
+  MAXMATRIX_NODISCARD static int OpenListener(uint16_t port);
 
   /*!
    * \brief Lets `socket` return at once: sets O_NONBLOCK, so that polling it
    *        from the tick never stops the sketch.
    *
    * \param[in] socket The socket.
+   * \return True, or false if it still blocks, which the caller must not poll
+   *         then.
    */
-  static void SetNonBlocking(int socket);
+  MAXMATRIX_NODISCARD static bool SetNonBlocking(int socket);
+
+  /*!
+   * \brief Closes `socket`.
+   *
+   * \param[in] socket The socket.
+   */
+  static void Close(int socket);
 
   /*!
    * \brief Returns whether the other end of a connection is gone, as a recv()
@@ -72,8 +82,11 @@ class SimulatorSocket {
    * \param[in] socket The socket.
    * \param[in] timeout The longest wait; a duration rather than a number, so
    *                    that it cannot take the socket's place (FN-16).
+   * \return True, or false if recv() would wait without end, which the caller
+   *         must not call then.
    */
-  static void SetReceiveTimeout(int socket, std::chrono::milliseconds timeout);
+  MAXMATRIX_NODISCARD static bool SetReceiveTimeout(
+      int socket, std::chrono::milliseconds timeout);
 
   /*!
    * \brief Sends all of `data` on the connection `socket`.

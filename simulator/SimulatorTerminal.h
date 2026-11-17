@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "MaxMatrixAttributes.h"
 #include "SimulatorPanel.h"
 
 /*!
@@ -34,7 +35,8 @@ class SimulatorTerminal {
    * \param[in] panel The panel to describe.
    * \return The line, without a line break.
    */
-  static std::string GetStatusLine(SimulatorPanel const& panel);
+  MAXMATRIX_NODISCARD static std::string GetStatusLine(
+      SimulatorPanel const& panel);
 
   /*!
    * \brief Clears the terminal.

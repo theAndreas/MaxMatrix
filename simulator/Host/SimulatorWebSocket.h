@@ -59,10 +59,12 @@ class SimulatorWebSocket {
 
   MAXMATRIX_NODISCARD static SimulatorFoundText GetKey(
       std::string const& request);
-  static std::string PadSha1Message(std::string const& message);
-  static Sha1State ProcessSha1Block(std::string const& padded, size_t offset,
-                                    Sha1State state);
-  static uint32_t MixSha1(uint8_t round, uint32_t b, uint32_t c, uint32_t d);
+  MAXMATRIX_NODISCARD static std::string PadSha1Message(
+      std::string const& message);
+  MAXMATRIX_NODISCARD static Sha1State ProcessSha1Block(
+      std::string const& padded, size_t offset, Sha1State state);
+  MAXMATRIX_NODISCARD static uint32_t MixSha1(uint8_t round, uint32_t b,
+                                              uint32_t c, uint32_t d);
 
  public:
   /*!
@@ -87,7 +89,8 @@ class SimulatorWebSocket {
    * \note The 64 bit length is never written, as a panel update is a few
    *       hundred bytes: a payload of 64 KiB or more does not fit.
    */
-  static std::string EncodeFrame(std::string const& payload);
+  MAXMATRIX_NODISCARD static std::string EncodeFrame(
+      std::string const& payload);
 
   /*!
    * \brief Takes the first frame out of what has arrived.
@@ -110,7 +113,8 @@ class SimulatorWebSocket {
    * \param[in] key The value of `Sec-WebSocket-Key`.
    * \return The value of `Sec-WebSocket-Accept`.
    */
-  static std::string ConvertKeyToAcceptKey(std::string const& key);
+  MAXMATRIX_NODISCARD static std::string ConvertKeyToAcceptKey(
+      std::string const& key);
 
   /*!
    * \brief Calculates the SHA-1 of a message.
@@ -118,7 +122,8 @@ class SimulatorWebSocket {
    * \param[in] message The bytes to hash.
    * \return The hash.
    */
-  static SimulatorSha1Digest CalculateSha1(std::string const& message);
+  MAXMATRIX_NODISCARD static SimulatorSha1Digest CalculateSha1(
+      std::string const& message);
 
   /*!
    * \brief Converts bytes to base64.
@@ -128,7 +133,8 @@ class SimulatorWebSocket {
    * \param[in] bytes The bytes to convert.
    * \return The base64 text.
    */
-  static std::string ConvertToBase64(std::string const& bytes);
+  MAXMATRIX_NODISCARD static std::string ConvertToBase64(
+      std::string const& bytes);
 };
 
 #endif  // MAXMATRIX_SIMULATOR_HOST_SIMULATORWEBSOCKET_H_

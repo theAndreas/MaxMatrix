@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #include <array>
 #include <string>
@@ -32,10 +31,10 @@ SimulatorSerialHost::SimulatorSerialHost()
 
 SimulatorSerialHost::~SimulatorSerialHost() {
   if (client_ != kSimulatorSocketNone) {
-    close(client_);
+    SimulatorSocket::Close(client_);
   }
   if (listener_ != kSimulatorSocketNone) {
-    close(listener_);
+    SimulatorSocket::Close(listener_);
   }
 }
 
@@ -85,17 +84,17 @@ void SimulatorSerialHost::AcceptClient() {
   int accepted{0};
 
   while ((accepted = accept(listener_, nullptr, nullptr)) >= 0) {
-    if (client_ == kSimulatorSocketNone) {
-      SimulatorSocket::SetNonBlocking(accepted);
+    if ((client_ == kSimulatorSocketNone) &&
+        SimulatorSocket::SetNonBlocking(accepted)) {
       client_ = accepted;
     } else {
-      close(accepted);
+      SimulatorSocket::Close(accepted);
     }
   }
 }
 
 // Closes the client's connection, so that the next one may connect.
 void SimulatorSerialHost::DropClient() {
-  close(client_);
+  SimulatorSocket::Close(client_);
   client_ = kSimulatorSocketNone;
 }

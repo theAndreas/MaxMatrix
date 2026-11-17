@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "ControlCommand.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "Utility/Bit.h"
 
@@ -57,9 +58,9 @@ ControlDotPanel::ControlDotPanel(
   wxCoord const height{(max_matrix::kRowNumberOfModule * kCell) +
                        (2 * kMargin)};
 
-  // the background is painted whole by OnPaint(), which the buffered DC needs
-  // to know
-  SetBackgroundStyle(wxBG_STYLE_PAINT);
+  // The background is painted whole by OnPaint(), which the buffered DC needs
+  // to know; the style fails only for a transparent background a system lacks.
+  max_matrix::Discard(SetBackgroundStyle(wxBG_STYLE_PAINT));
   SetMinSize(FromDIP(wxSize(width, height)));
   Bind(wxEVT_PAINT, &ControlDotPanel::OnPaint, this);
   Bind(wxEVT_LEFT_DOWN, &ControlDotPanel::OnLeftDown, this);

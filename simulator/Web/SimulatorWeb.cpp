@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "Arduino.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 #include "SimulatorPanel.h"
 
@@ -126,7 +127,9 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message) {
   std::string const serial_command = kCommandSerial;
 
   if (message.compare(0, wiring_command.size(), wiring_command) == 0) {
-    panel.SetWiring(message.substr(wiring_command.size()));
+    // An unknown wiring keeps the panel as it is, and the page shows what it
+    // draws, so it says nothing more.
+    max_matrix::Discard(panel.SetWiring(message.substr(wiring_command.size())));
   } else if (message.compare(0, serial_command.size(), serial_command) == 0) {
     mock::serial_input += message.substr(serial_command.size()) + "\n";
   } else if (message == kCommandUpsideDown) {
