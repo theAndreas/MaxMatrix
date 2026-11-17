@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1093,6 +1093,12 @@ A first look found, besides those two:
   setters of one pin keep a number, as there is nothing to swap. `test/compile_fail/` checks
   that numbers and swapped pins do not compile. Every example is the same size in every
   variant.
+
+  As built, the third: a module beside its column or row is a `Module`, with an `explicit`
+  constructor, in `GetColumn()`, `SetColumn()`, `GetRow()` and `SetRow()` of one module,
+  `SetRow(Module{2}, 3, value)`; `test/compile_fail/` checks that a number or a column in its
+  place does not compile. Every example is the same size in every variant. It also tells these functions from those of the whole panel,
+  `GetRow(0, values)`, by type rather than by the number of arguments.
 
 The rest a review finds, chapter by chapter, as the files of `docs/` group them: files,
 functions, types, classes, memory and hardware, errors, tests and MISRA. A pull request per

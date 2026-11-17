@@ -129,12 +129,12 @@ TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
 }
 /* a column of a module is the column of the panel that many modules in */
 TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
-  matrix_.SetColumn(1, 2, Byte{0xA3});
+  matrix_.SetColumn(max_matrix::Module{1}, 2, Byte{0xA3});
 
   EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
               return x == 10 && bitRead(0xA3, y);
             }));
-  Result<Byte> const value{matrix_.GetColumn(1, 2)};
+  Result<Byte> const value{matrix_.GetColumn(max_matrix::Module{1}, 2)};
   EXPECT_EQ(value.GetError(), Error::kOk);
   EXPECT_EQ(value.GetValue(), Byte{0xA3});
 }
@@ -163,7 +163,7 @@ TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
               return x == 5 && bitRead(0xA3, y);
             }));
   for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-    Result<Byte> const value{matrix_.GetRow(0, y)};
+    Result<Byte> const value{matrix_.GetRow(max_matrix::Module{0}, y)};
     EXPECT_EQ(value.GetError(), Error::kOk);
     EXPECT_EQ(value.GetValue().ToInteger(),
               bitRead(0xA3, y) ? Bit<uint8_t>::ToMask(7u - 5u) : 0u)
@@ -391,11 +391,12 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
        }},
       {"SetColumn no module",
        [](Matrix& m, PanelRow const&) {
-         m.SetColumn(kNumberOfModules, 0, Byte{0xFF});
+         m.SetColumn(max_matrix::Module{kNumberOfModules}, 0, Byte{0xFF});
        }},
       {"SetColumn off its module",
        [](Matrix& m, PanelRow const&) {
-         m.SetColumn(0, max_matrix::kColumnNumberOfModule, Byte{0xFF});
+         m.SetColumn(max_matrix::Module{0}, max_matrix::kColumnNumberOfModule,
+                     Byte{0xFF});
        }},
       {"SetRow above", [](Matrix& m, PanelRow const& r) { m.SetRow(-1, r); }},
       {"SetRow below",
@@ -404,11 +405,12 @@ TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
        }},
       {"SetRow no module",
        [](Matrix& m, PanelRow const&) {
-         m.SetRow(kNumberOfModules, 0, Byte{0xFF});
+         m.SetRow(max_matrix::Module{kNumberOfModules}, 0, Byte{0xFF});
        }},
       {"SetRow off its module",
        [](Matrix& m, PanelRow const&) {
-         m.SetRow(0, max_matrix::kRowNumberOfModule, Byte{0xFF});
+         m.SetRow(max_matrix::Module{0}, max_matrix::kRowNumberOfModule,
+                  Byte{0xFF});
        }},
   }};
 

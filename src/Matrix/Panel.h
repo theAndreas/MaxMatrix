@@ -30,6 +30,24 @@ enum class MatrixOrientation : uint8_t {
   k180 /*!< The board upside down: the module at the input on the left. */
 };
 
+/*!
+ * \brief A module of the chain, from 0 at the left: `max_matrix::Module{1}`.
+ *
+ * A type of its own beside the column or row within it, so that a sketch
+ * cannot swap the two unnoticed (CodingStyle.md FN-16); explicit, as a bare
+ * number would be a column again.
+ */
+struct Module {
+  /*!
+   * \brief Names the module.
+   *
+   * \param[in] index The module, from 0 at the left.
+   */
+  constexpr explicit Module(uint8_t index) : number{index} {}
+
+  uint8_t number; /*!< The module, from 0 at the left. */
+};
+
 namespace internal {
 
 /* the three properties of a ModuleType, one bit each of its value */
@@ -173,7 +191,7 @@ class Panel {
    * \return The column, bit 0 the top row, or Error::kOutOfRange if the module
    *         or the column does not exist.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(uint8_t module, uint8_t column);
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module, uint8_t column);
 
   /*!
    * \brief Gives a row of the matrix, one byte per module.
@@ -197,7 +215,7 @@ class Panel {
    * \return The row, bit 7 the leftmost column, or Error::kOutOfRange if the
    *         module or the row does not exist.
    */
-  MAXMATRIX_NODISCARD Result<Byte> GetRow(uint8_t module, uint8_t row);
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row);
 
   /*!
    * \brief Returns whether a dot is lit.
@@ -229,7 +247,7 @@ class Panel {
    * \param[in] column The column within the module, 0 to 7.
    * \param[in] value The column, bit 0 the top row.
    */
-  void SetColumn(uint8_t module, uint8_t column, Byte value);
+  void SetColumn(Module module, uint8_t column, Byte value);
 
   /*!
    * \brief Sets a row of the matrix, one byte per module.
@@ -252,7 +270,7 @@ class Panel {
    * \param[in] row The row within the module, 0 to 7.
    * \param[in] value The row, bit 7 the leftmost column.
    */
-  void SetRow(uint8_t module, uint8_t row, Byte value);
+  void SetRow(Module module, uint8_t row, Byte value);
 
   /*!
    * \brief Lights a dot or turns it off.

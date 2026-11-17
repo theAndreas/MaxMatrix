@@ -17,6 +17,7 @@ array	KEYWORD1
 DataInPin	KEYWORD1
 ChipSelectPin	KEYWORD1
 ClockPin	KEYWORD1
+Module	KEYWORD1
 Init	KEYWORD2
 make_array	KEYWORD2
 Clear	KEYWORD2

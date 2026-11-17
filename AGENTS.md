@@ -349,7 +349,8 @@ buffer, have four, as a span brings its length.
 
 Parameters that a caller could swap unnoticed take a type each (FN-16): the three pins are
 `DataInPin`, `ChipSelectPin` and `ClockPin`, with an `explicit` constructor, as a bare number
-would be any of them again, and a register is a `max7219::Register`.
+would be any of them again; a module beside its column or row is a `Module`, as in
+`SetRow(Module{2}, 3, value)`; and a register is a `max7219::Register`.
 
 #### Integer types
 

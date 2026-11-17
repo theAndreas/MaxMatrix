@@ -20,6 +20,7 @@ using max_matrix::Command;
 using max_matrix::Error;
 using max_matrix::Matrix;
 using max_matrix::MatrixOrientation;
+using max_matrix::Module;
 using max_matrix::ModuleType;
 using max_matrix::ShiftFill;
 using max_matrix::State;
@@ -162,15 +163,15 @@ TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
   for (uint8_t module{0}; module < number_of_modules_; module++) {
     EXPECT_EQ(read[module], values[module])
         << "module " << static_cast<uint16_t>(module);
-    EXPECT_EQ(matrix_.GetRow(module, 2).GetValue(), values[module])
+    EXPECT_EQ(matrix_.GetRow(Module{module}, 2).GetValue(), values[module])
         << "module " << static_cast<uint16_t>(module);
   }
   EXPECT_EQ(matrix_.GetRow(2, read_one).GetError(),
             number_of_modules_ == 1 ? Error::kOk : Error::kOutOfRange);
   matrix_.SetRow(3, one);
-  EXPECT_EQ(matrix_.GetRow(0, 3).GetValue(), Byte{0xFF});
+  EXPECT_EQ(matrix_.GetRow(Module{0}, 3).GetValue(), Byte{0xFF});
   if (number_of_modules_ > 1) {
-    EXPECT_EQ(matrix_.GetRow(1, 3).GetValue(), Byte{0x00})
+    EXPECT_EQ(matrix_.GetRow(Module{1}, 3).GetValue(), Byte{0x00})
         << "drawn beyond the array";
   }
 }
