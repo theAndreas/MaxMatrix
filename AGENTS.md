@@ -639,6 +639,8 @@ all of the simulator but `main.cpp` is one library, built once, because it reads
 never the library.
 `SimulatorSerialHostTest` checks what a client of `--tcp` may do that the sketch never sees,
 connect a second time and come back, on port 18087.
+`SimulatorAvrTest` checks the simulated time `SimulatorAvr` runs the AVR to, past the 71.6
+minutes where simavr's own conversion wrapped; it is built wherever simavr is, as `SimulatorAvr`.
 
 The control program's classes without a window are tested once under the `control/` prefix:
 `ControlCommandTest` the lines, `ControlLinkTest` the waiting for `ready` and the cutting into

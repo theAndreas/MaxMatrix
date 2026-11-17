@@ -21,7 +21,6 @@
 #include <sim_elf.h>
 #include <sim_io.h>
 #include <sim_irq.h>
-#include <sim_time.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -41,10 +40,8 @@ constexpr uint8_t kClockBit{5u};
 /* Serial is the first and only UART of the ATmega328P */
 constexpr char kUart{'0'};
 
-/* the bits of a byte on the wire, and the clock's microseconds per millisecond
- */
+/* the bits of a byte on the wire */
 constexpr uint8_t kBitsPerByte{8};
-constexpr uint32_t kMicrosecondsPerMillisecond{1000};
 
 /*!
  * \brief Passes on simavr's log, errors only.
@@ -74,13 +71,6 @@ SimulatorAvr::~SimulatorAvr() {
   if (avr_ != nullptr) {
     avr_terminate(avr_);
   }
-}
-
-uint32_t SimulatorAvr::GetMillis() const {
-  if (avr_ == nullptr) {
-    return 0;
-  }
-  return (avr_cycles_to_usec(avr_, avr_->cycle) / kMicrosecondsPerMillisecond);
 }
 
 bool SimulatorAvr::Load(char const* elf_file) {
@@ -138,8 +128,7 @@ void SimulatorAvr::ConnectUart() {
 }
 
 bool SimulatorAvr::Run(uint32_t milliseconds) {
-  avr_cycle_count_t const end{
-      avr_usec_to_cycles(avr_, milliseconds * kMicrosecondsPerMillisecond)};
+  avr_cycle_count_t const end{ConvertToCycles(milliseconds)};
 
   ReceiveSerial();
   while (avr_->cycle < end) {
