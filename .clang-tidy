@@ -42,7 +42,6 @@ Checks: >
   -readability-identifier-length,
   -readability-math-missing-parentheses,
   -readability-named-parameter,
-  -bugprone-easily-swappable-parameters,
   -cert-err58-cpp,
   -bugprone-throwing-static-initialization,
   -modernize-concat-nested-namespaces
@@ -55,11 +54,6 @@ Checks: >
 #   library and all host code but the tests are built as gnu++11, as avr-gcc builds a sketch,
 #   where it does not compile; the check reports a header only where a test, built as C++17
 #   for GoogleTest, includes it.
-# MaxMatrix's own, for now:
-# bugprone-easily-swappable-parameters: reports every pair of coordinates, as x and y of the
-#   shapes and of internal::Panel::ConvertDotToBuffer(), the three pins of internal::Chain, a
-#   port and its mask, and the same in the host code. FN-16 asks for a type each, which the
-#   review of FN-16 in OIL 41 weighs against the shapes' parameters as Adafruit GFX names them.
 # house-*: the checks of our own, in tools/lib/tidy_module/; tools/tidy.sh loads them. Without
 #   the module, as in clangd, the name matches nothing. house-bitwise-in-bit-class takes the
 #   bit class to be any class named Bit (docs/CodingStyle.md H-9); a project whose class has

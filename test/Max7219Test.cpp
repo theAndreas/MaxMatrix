@@ -163,6 +163,9 @@ TEST(Max7219Test, IntensityKeepsFourBits) {
   EXPECT_EQ(chain.chips[0].intensity, 0x07);
 }
 
+// FN-16: a test's helper; a swap lights another LED, which the test it
+// serves reports
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 Max7219Chain ChainWithOneSegment(uint8_t number_of_chips, uint8_t chip,
                                  uint8_t digit, uint8_t segment) {
   Max7219Chain chain{ChainInNormalOperation(number_of_chips)};

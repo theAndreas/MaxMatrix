@@ -327,6 +327,9 @@ SimulatorWebSocket::Sha1State SimulatorWebSocket::ProcessSha1Block(
  * function of `b`, `c` and `d`, the second, third and fourth word of the
  * working state, plus its constant. Both change every 20 rounds.
  */
+// FN-16: b, c and d of RFC 3174's f(t; B, C, D), in its order; the tests
+// against its examples fail on a swap
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c,
                                      uint32_t d) {
   static constexpr std::array<uint32_t, 4> kRoundConstants{

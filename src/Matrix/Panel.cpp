@@ -479,6 +479,9 @@ Byte Panel::ReverseByte(Byte input) {
  * than a case for each of the eight types, so that a mirrored module costs no
  * code of its own.
  */
+// FN-16: private; its callers pass a column and a row on the panel that they
+// checked or walk, by those names
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 Panel::BufferDot Panel::ConvertDotToBuffer(uint8_t column, uint8_t row) const {
   if (matrix_orientation_ == MatrixOrientation::k180) {
     column = static_cast<uint8_t>(GetNumberOfColumns() - 1 - column);

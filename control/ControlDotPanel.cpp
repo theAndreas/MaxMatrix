@@ -118,12 +118,13 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
  * outside the panel.
  */
 void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
-  uint8_t column{0};
-  uint8_t row{0};
+  Dot dot{};
 
-  if (!GetDotAt(event.GetPosition(), &column, &row)) {
+  if (!GetDotAt(event.GetPosition(), &dot)) {
     return;
   }
+  uint8_t const column{dot.column};
+  uint8_t const row{dot.row};
   painting_ = true;
   paint_lit_ = !IsLit(column, row);
   on_dot_ = true;
@@ -142,16 +143,17 @@ void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
  * starts again at the next LED without a line to it.
  */
 void ControlDotPanel::OnMotion(wxMouseEvent& event) {
-  uint8_t column{0};
-  uint8_t row{0};
+  Dot dot{};
 
   if (!painting_ || !event.LeftIsDown()) {
     return;
   }
-  if (!GetDotAt(event.GetPosition(), &column, &row)) {
+  if (!GetDotAt(event.GetPosition(), &dot)) {
     on_dot_ = false;
     return;
   }
+  uint8_t const column{dot.column};
+  uint8_t const row{dot.row};
   if (on_dot_) {
     auto const delta_column{static_cast<int16_t>(column - last_column_)};
     auto const delta_row{static_cast<int16_t>(row - last_row_)};
@@ -200,12 +202,11 @@ bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
 }
 
 /*
- * Finds the LED at `point`, in pixels of the panel, and gives its `column` and
- * `row`. Returns false for a point in the margin or in the gap between two
- * modules, which belongs to no LED.
+ * Finds the LED at `point`, in pixels of the panel, and gives it in `dot`.
+ * Returns false for a point in the margin or in the gap between two modules,
+ * which belongs to no LED.
  */
-bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
-                               uint8_t* row) const {
+bool ControlDotPanel::GetDotAt(wxPoint const& point, Dot* dot) const {
   wxCoord const cell{FromDIP(kCell)};
   wxCoord const module_width{(max_matrix::kColumnNumberOfModule * cell) +
                              FromDIP(kModuleGap)};
@@ -225,7 +226,7 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
       (found_row >= max_matrix::kRowNumberOfModule)) {
     return false;
   }
-  *column = static_cast<uint8_t>(found_column);
-  *row = static_cast<uint8_t>(found_row);
+  dot->column = static_cast<uint8_t>(found_column);
+  dot->row = static_cast<uint8_t>(found_row);
   return true;
 }
