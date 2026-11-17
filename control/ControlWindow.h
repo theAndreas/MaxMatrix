@@ -48,7 +48,8 @@ class ControlDotPanel;
  * that the two agree.
  *
  * It holds no logic a test would need: the lines are ControlCommand's, the
- * connections ControlLink's, so the window itself is checked by hand.
+ * connections ControlLink's, so the window itself is checked by hand. Derived
+ * from wxFrame, as wxWidgets makes a window of its own (C-8).
  */
 class ControlWindow : public wxFrame {
  private:

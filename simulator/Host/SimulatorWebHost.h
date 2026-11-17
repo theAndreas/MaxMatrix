@@ -56,6 +56,15 @@ class SimulatorWebHost {
   /*! \brief Makes a host that listens nowhere until Begin(). */
   SimulatorWebHost();
 
+  /*! \brief Closes every WebSocket and the port. */
+  ~SimulatorWebHost();
+
+  // A copy would close the sockets of the original a second time.
+  SimulatorWebHost(SimulatorWebHost const&) = delete;
+  SimulatorWebHost& operator=(SimulatorWebHost const&) = delete;
+  SimulatorWebHost(SimulatorWebHost&&) = delete;
+  SimulatorWebHost& operator=(SimulatorWebHost&&) = delete;
+
   /*!
    * \brief Opens the port on localhost and starts listening.
    *

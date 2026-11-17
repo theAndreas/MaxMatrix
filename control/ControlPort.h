@@ -22,9 +22,10 @@
  * ControlLink needs to know neither. How a port is opened differs, so each kind
  * has an Open() of its own.
  *
- * Virtual functions, which the library avoids for the RAM of their tables on
- * the Uno: the program runs on a PC, and a test hands ControlLink a port of its
- * own.
+ * C-6, virtual functions, which the library avoids for the RAM of their tables
+ * on the Uno and for calls that cannot be inlined: the program runs on a PC,
+ * where neither counts, and the window holds a link over each kind of port, as
+ * one class rather than a template made twice of the same code.
  */
 class ControlPort {
  public:

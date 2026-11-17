@@ -30,6 +30,8 @@
  * simulator's page draws them. What it shows is the last picture it was given,
  * from SerialControl's answer to `picture`; a click or Clear() changes it at
  * once, so that the click shows before the next picture does.
+ *
+ * Derived from wxPanel, as wxWidgets makes a control of its own (C-8).
  */
 class ControlDotPanel : public wxPanel {
  private:

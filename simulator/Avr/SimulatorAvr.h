@@ -87,6 +87,12 @@ class SimulatorAvr {
   /*! \brief Not assignable, as it is not copyable. */
   SimulatorAvr& operator=(SimulatorAvr const&) = delete;
 
+  /*! \brief Not movable: simavr calls back with the object's address. */
+  SimulatorAvr(SimulatorAvr&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  SimulatorAvr& operator=(SimulatorAvr&&) = delete;
+
   /*!
    * \brief Returns the cycles the AVR runs in `milliseconds`, at its 16 MHz.
    *

@@ -132,11 +132,20 @@ class Matrix {
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
 
+  /*! \brief No matrix without its pins and its buffer. */
+  Matrix() = delete;
+
   /*! \brief Not copyable: the copy would draw into the same buffer. */
   Matrix(Matrix const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
   Matrix& operator=(Matrix const&) = delete;
+
+  /*! \brief Not movable: a Batch or a Command may hold on to the matrix. */
+  Matrix(Matrix&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  Matrix& operator=(Matrix&&) = delete;
 
   /*! \brief Returns the modules of the chain. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {
@@ -687,11 +696,20 @@ class Batch {
    * on. */
   ~Batch() { matrix_.get().SetAutoUpdate(previous_auto_update_); }
 
+  /*! \brief No batch without the matrix it holds back. */
+  Batch() = delete;
+
   /*! \brief Not copyable: a copy would put auto update back twice. */
   Batch(Batch const&) = delete;
 
   /*! \brief Not assignable, as it is not copyable. */
   Batch& operator=(Batch const&) = delete;
+
+  /*! \brief Not movable: the moved one would put auto update back as well. */
+  Batch(Batch&&) = delete;
+
+  /*! \brief Not movable, as it is not copyable. */
+  Batch& operator=(Batch&&) = delete;
 };
 
 namespace internal {
@@ -716,7 +734,9 @@ class Buffer {
 // misc-multiple-inheritance, suppressed below: the buffer is a base of its own,
 // so that it is made before the Matrix it is handed to (internal::Buffer); it
 // is private and has no virtual function, so that nothing but the constructor
-// reaches it.
+// reaches it. C-8, as both bases are reused by deriving: the buffer for that
+// order, and Matrix, as a MatrixOf is the matrix a sketch hands wherever one is
+// taken, Command::Feed() and Batch among them, without its length.
 /*!
  * \brief A Matrix with the buffer for a chain of `NumberOfModules` modules.
  *

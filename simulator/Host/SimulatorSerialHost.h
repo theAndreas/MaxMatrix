@@ -47,6 +47,9 @@ class SimulatorSerialHost {
   // A copy would close the sockets of the original a second time.
   SimulatorSerialHost(SimulatorSerialHost const&) = delete;
   SimulatorSerialHost& operator=(SimulatorSerialHost const&) = delete;
+  // Nor a move, which nothing needs.
+  SimulatorSerialHost(SimulatorSerialHost&&) = delete;
+  SimulatorSerialHost& operator=(SimulatorSerialHost&&) = delete;
 
   /*!
    * \brief Opens the port on localhost and starts listening.

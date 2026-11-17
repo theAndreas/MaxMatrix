@@ -49,6 +49,9 @@ class ControlSerialPort final : public ControlPort {
   // A copy would close the port of the original a second time.
   ControlSerialPort(ControlSerialPort const&) = delete;
   ControlSerialPort& operator=(ControlSerialPort const&) = delete;
+  // Nor a move, which nothing needs.
+  ControlSerialPort(ControlSerialPort&&) = delete;
+  ControlSerialPort& operator=(ControlSerialPort&&) = delete;
 
   /*!
    * \brief Opens the port `name` at `baud_rate`.

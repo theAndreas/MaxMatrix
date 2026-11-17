@@ -41,6 +41,9 @@ class ControlTcpPort final : public ControlPort {
   // A copy would close the socket of the original a second time.
   ControlTcpPort(ControlTcpPort const&) = delete;
   ControlTcpPort& operator=(ControlTcpPort const&) = delete;
+  // Nor a move, which nothing needs.
+  ControlTcpPort(ControlTcpPort&&) = delete;
+  ControlTcpPort& operator=(ControlTcpPort&&) = delete;
 
   /*!
    * \brief Connects to the simulator on localhost.
