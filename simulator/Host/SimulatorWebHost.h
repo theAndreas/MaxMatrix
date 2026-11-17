@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "MaxMatrixAttributes.h"
+#include "SimulatorWebSocket.h"
 
 /* SimulatorWebHost Parameter */
 constexpr uint8_t kSimulatorWebHostMaxClients{4u};
@@ -39,13 +40,14 @@ class SimulatorWebHost {
   char const* page_path_{nullptr};
 
   void AcceptClients();
-  void ReadClient(uint8_t slot, std::vector<std::string>* messages);
+  std::vector<std::string> ReadClient(uint8_t slot);
   bool AnswerRequest(int socket, std::string const& request);
   void SendPage(int socket);
   MAXMATRIX_NODISCARD uint8_t FindFreeSlot() const;
   void DropClient(uint8_t slot);
   static std::string ReadRequest(int socket);
-  static bool GetPath(std::string const& request, std::string* path);
+  MAXMATRIX_NODISCARD static SimulatorFoundText GetPath(
+      std::string const& request);
   static void SendResponse(int socket, char const* status,
                            char const* content_type, std::string const& body);
 
@@ -73,10 +75,9 @@ class SimulatorWebHost {
    * It accepts and answers new connections and reads the frames of the open
    * WebSockets. Until Begin() has opened the port, it does nothing.
    *
-   * \param[in,out] messages Every text message a page has sent since the last
-   *                         call is appended.
+   * \return Every text message a page has sent since the last call.
    */
-  void Task(std::vector<std::string>* messages);
+  MAXMATRIX_NODISCARD std::vector<std::string> Task();
 
   /*!
    * \brief Sends a text to every open WebSocket.

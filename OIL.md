@@ -1171,6 +1171,15 @@ makes each line from its fields in one place, the front end says a port is taken
 the seven `avr_irq_register_notify()` of `SimulatorAvr`, one call of simavr each, which a function
 of two numbers side by side, the port and the bit, would only make swappable.
 
+As built for FN-8 and FN-15 in the host code: no function writes its result through a pointer.
+What one finds or reads it returns, with whether it did in a small struct of its own where both
+are needed, as the WebSocket's frames and key, the web host's path, the command line's numbers,
+the control program's picture, lines and LED under the mouse, and the LEDs `DocuPictures` looks
+up; what the hosts receive they return, and the caller appends. A buffer that grows over many
+calls, as what a port has read, the index into the command line and the labels and picture
+`DocuPictures` draws on are references. `SimulatorRun::SetUp()` keeps its two references, as it
+sets up the objects the tick reaches through a plain function pointer.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

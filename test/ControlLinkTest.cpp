@@ -35,11 +35,11 @@ class FakePort : public ControlPort {
     written += data;
     return true;
   }
-  bool Read(std::string* data) override {
+  bool Read(std::string& data) override {
     if (!open) {
       return false;
     }
-    *data += incoming;
+    data += incoming;
     incoming.clear();
     if (gone) {
       open = false;
@@ -48,6 +48,15 @@ class FakePort : public ControlPort {
   }
   void Close() override { open = false; }
 };
+
+// Calls Task() and appends the lines it read to `lines`, as the window logs
+// them one after another; returns whether the port is still open.
+bool TaskInto(ControlLink& link, std::vector<std::string>& lines) {
+  ControlLinkLines const read{link.Task()};
+
+  lines.insert(lines.end(), read.lines.begin(), read.lines.end());
+  return read.open;
+}
 
 // opening the port resets an Uno, and a line sent before SerialControl has
 // started is lost; the link holds back until the sketch says ready
@@ -62,7 +71,7 @@ TEST(ControlLinkTest, WaitsForReadyOnABoard) {
   EXPECT_EQ(port.written, "");
 
   port.incoming = "ready\r\n";
-  EXPECT_TRUE(link.Task(&lines));
+  EXPECT_TRUE(TaskInto(link, lines));
   EXPECT_TRUE(link.IsReady());
   EXPECT_TRUE(link.Send("text=Hi"));
   EXPECT_EQ(port.written, "text=Hi\n");
@@ -89,10 +98,10 @@ TEST(ControlLinkTest, CutsWhatArrivesIntoLines) {
 
   link.Begin(false);
   port.incoming = "o";
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_TRUE(lines.empty());
   port.incoming = "k\r\nerror: out of range\r\nre";
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_EQ(lines, (std::vector<std::string>{"ok", "error: out of range"}));
 }
 
@@ -105,7 +114,7 @@ TEST(ControlLinkTest, CutsALineThatNeverEnds) {
 
   link.Begin(false);
   port.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
-  link.Task(&lines);
+  TaskInto(link, lines);
   ASSERT_EQ(lines.size(), 1u);
   EXPECT_EQ(lines[0].size(), kControlLinkMaxLineLength);
 }
@@ -120,7 +129,7 @@ TEST(ControlLinkTest, SaysWhenThePortIsGone) {
   link.Begin(false);
   port.incoming = "ok\r\n";
   port.gone = true;
-  EXPECT_FALSE(link.Task(&lines));
+  EXPECT_FALSE(TaskInto(link, lines));
   EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
   EXPECT_FALSE(link.IsReady());
   EXPECT_FALSE(link.Send("clear"));
@@ -135,10 +144,10 @@ TEST(ControlLinkTest, BeginForgetsHalfALine) {
 
   link.Begin(true);
   port.incoming = "rea";
-  link.Task(&lines);
+  TaskInto(link, lines);
   link.Begin(true);
   port.incoming = "dy\r\n";
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_EQ(lines, (std::vector<std::string>{"dy"}));
   EXPECT_FALSE(link.IsReady());
 }
@@ -163,7 +172,7 @@ TEST(ControlLinkTest, AsksForThePictureOncePerInterval) {
   link.AskForPicture(1010);
   EXPECT_EQ(port.written, "picture\n");
   port.incoming = Picture("81");
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_TRUE(lines.empty());
   ASSERT_EQ(link.GetPicture().size(),
             static_cast<size_t>(kControlNumberOfColumns));
@@ -200,12 +209,12 @@ TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
   link.AskForPicture(0);
   link.Send("setDot=0,0,1");
   port.incoming = Picture("00") + "ok\r\n";
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_TRUE(link.GetPicture().empty());
   EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
   link.AskForPicture(kControlLinkPictureIntervalMs);
   port.incoming = Picture("01");
-  link.Task(&lines);
+  TaskInto(link, lines);
   ASSERT_FALSE(link.GetPicture().empty());
   EXPECT_EQ(link.GetPicture()[0], 0x01);
 }
@@ -221,7 +230,7 @@ TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
   link.Begin(false);
   link.AskForPicture(0);
   port.incoming = "ready\r\n";
-  link.Task(&lines);
+  TaskInto(link, lines);
   EXPECT_EQ(lines, (std::vector<std::string>{"ready"}));
   link.AskForPicture(kControlLinkPictureIntervalMs);
   EXPECT_EQ(port.written, "picture\npicture\n");

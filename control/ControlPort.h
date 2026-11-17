@@ -67,7 +67,7 @@ class ControlPort {
    * \return True while the port is open, or false once the other end is gone:
    *         the cable pulled, the simulator stopped. The port is closed then.
    */
-  virtual bool Read(std::string* data) = 0;
+  virtual bool Read(std::string& data) = 0;
 
   /*! \brief Closes the port, if it is open. */
   virtual void Close() = 0;

@@ -41,7 +41,9 @@ class SimulatorRun {
    * \brief Sets a run up from its command line.
    *
    * It reads the options, draws the panel for their wiring and mounting, and
-   * gives the mock the chain every example has and the serial input.
+   * gives the mock the chain every example has and the serial input. It sets
+   * up the caller's objects rather than returning new ones, as the tick reaches
+   * those through a plain function pointer (FN-8).
    *
    * \param[in] argc The number of arguments, the program's name included.
    * \param[in] argv The arguments.

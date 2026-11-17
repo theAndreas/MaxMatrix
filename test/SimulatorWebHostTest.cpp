@@ -51,7 +51,7 @@ TEST(SimulatorWebHostTest, TaskDoesNotWaitForAConnectionThatSaysNothing) {
   }};
 
   auto const start{std::chrono::steady_clock::now()};
-  host.Task(&messages);
+  messages = host.Task();
   auto const elapsed{std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::steady_clock::now() - start)};
 

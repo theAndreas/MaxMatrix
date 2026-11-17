@@ -44,10 +44,28 @@ class SimulatorOptions {
   char const* elf_file_{nullptr};
   std::string serial_input_;
 
-  bool ParseOption(std::vector<char const*> const& arguments, size_t* index);
+  /* a number read from the command line, and whether it is one the option
+   * takes */
+  template <typename Number>
+  struct Converted {
+    bool valid;
+    Number value;
+  };
+
+  bool ParseOption(std::vector<char const*> const& arguments, size_t& index);
   bool ParseValue(std::string const& option, char const* value);
-  static bool ConvertToPort(char const* text, uint16_t* port);
-  static bool ConvertToRunFor(char const* text, uint32_t* run_for);
+  MAXMATRIX_NODISCARD static Converted<uint16_t> ConvertToPort(
+      char const* text);
+  MAXMATRIX_NODISCARD static Converted<uint32_t> ConvertToRunFor(
+      char const* text);
+  // Keeps `converted` in `option` if it is valid, and says whether it is.
+  template <typename Number>
+  static bool Keep(Converted<Number> converted, Number& option) {
+    if (converted.valid) {
+      option = converted.value;
+    }
+    return converted.valid;
+  }
 
  public:
   /*!

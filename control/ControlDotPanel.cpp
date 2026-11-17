@@ -118,9 +118,9 @@ void ControlDotPanel::OnPaint(wxPaintEvent& /* event */) {
  * outside the panel.
  */
 void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
-  Dot dot{};
+  Dot const dot{GetDotAt(event.GetPosition())};
 
-  if (!GetDotAt(event.GetPosition(), &dot)) {
+  if (!dot.found) {
     return;
   }
   uint8_t const column{dot.column};
@@ -143,12 +143,11 @@ void ControlDotPanel::OnLeftDown(wxMouseEvent& event) {
  * starts again at the next LED without a line to it.
  */
 void ControlDotPanel::OnMotion(wxMouseEvent& event) {
-  Dot dot{};
-
   if (!painting_ || !event.LeftIsDown()) {
     return;
   }
-  if (!GetDotAt(event.GetPosition(), &dot)) {
+  Dot const dot{GetDotAt(event.GetPosition())};
+  if (!dot.found) {
     on_dot_ = false;
     return;
   }
@@ -202,11 +201,11 @@ bool ControlDotPanel::IsLit(uint8_t column, uint8_t row) const {
 }
 
 /*
- * Finds the LED at `point`, in pixels of the panel, and gives it in `dot`.
- * Returns false for a point in the margin or in the gap between two modules,
- * which belongs to no LED.
+ * Finds the LED at `point`, in pixels of the panel; none for a point in the
+ * margin or in the gap between two modules, which belongs to no LED.
  */
-bool ControlDotPanel::GetDotAt(wxPoint const& point, Dot* dot) const {
+ControlDotPanel::Dot ControlDotPanel::GetDotAt(wxPoint const& point) const {
+  Dot const none{false, 0, 0};
   wxCoord const cell{FromDIP(kCell)};
   wxCoord const module_width{(max_matrix::kColumnNumberOfModule * cell) +
                              FromDIP(kModuleGap)};
@@ -216,7 +215,7 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, Dot* dot) const {
 
   if ((x < 0) || (y < 0) ||
       (in_module >= (max_matrix::kColumnNumberOfModule * cell))) {
-    return false;
+    return none;
   }
   wxCoord const found_column{
       (x / module_width * max_matrix::kColumnNumberOfModule) +
@@ -224,9 +223,8 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, Dot* dot) const {
   wxCoord const found_row{y / cell};
   if ((found_column >= kControlNumberOfColumns) ||
       (found_row >= max_matrix::kRowNumberOfModule)) {
-    return false;
+    return none;
   }
-  dot->column = static_cast<uint8_t>(found_column);
-  dot->row = static_cast<uint8_t>(found_row);
-  return true;
+  return Dot{true, static_cast<uint8_t>(found_column),
+             static_cast<uint8_t>(found_row)};
 }

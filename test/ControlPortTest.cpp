@@ -43,8 +43,7 @@ std::string Receive(int descriptor) {
 std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
-  for (int16_t i{0}; (i < 50) && received.empty() && port.Read(&received);
-       i++) {
+  for (int16_t i{0}; (i < 50) && received.empty() && port.Read(received); i++) {
     usleep(10000);
   }
   return received;
@@ -93,7 +92,7 @@ TEST_F(ControlSerialPortTest, ReadDoesNotWait) {
   std::string received;
 
   ASSERT_TRUE(port.Open(name_, 115200));
-  EXPECT_TRUE(port.Read(&received));
+  EXPECT_TRUE(port.Read(received));
   EXPECT_EQ(received, "");
 }
 
@@ -107,7 +106,7 @@ TEST_F(ControlSerialPortTest, ReadSaysWhenTheBoardIsGone) {
   ASSERT_TRUE(port.Open(name_, 115200));
   close(board_);
   board_ = -1;
-  EXPECT_FALSE(port.Read(&received));
+  EXPECT_FALSE(port.Read(received));
   EXPECT_FALSE(port.IsOpen());
 }
 
@@ -141,7 +140,7 @@ TEST(ControlTcpPortTest, CarriesBothWaysToTheSimulator) {
   ASSERT_TRUE(port.Open(kPort));
   EXPECT_TRUE(port.Write("clear\n"));
   for (int16_t i{0}; (i < 50) && received.empty(); i++) {
-    host.Task(&received);
+    received += host.Task();
     usleep(10000);
   }
   EXPECT_EQ(received, "clear\n");
@@ -159,9 +158,9 @@ TEST(ControlTcpPortTest, ReadSaysWhenTheSimulatorIsGone) {
     SimulatorSerialHost host;
     ASSERT_TRUE(host.Begin(kPort));
     ASSERT_TRUE(port.Open(kPort));
-    host.Task(&received);
+    received += host.Task();
   }
-  for (int16_t i{0}; (i < 50) && port.Read(&received); i++) {
+  for (int16_t i{0}; (i < 50) && port.Read(received); i++) {
     usleep(10000);
   }
   EXPECT_FALSE(port.IsOpen());

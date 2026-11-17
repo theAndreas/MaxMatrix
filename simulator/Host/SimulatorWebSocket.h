@@ -19,6 +19,8 @@
 #include <array>
 #include <string>
 
+#include "MaxMatrixAttributes.h"
+
 /* SimulatorWebSocket opcodes, RFC 6455 section 5.2 */
 constexpr uint8_t kSimulatorWebSocketOpcodeText{0x1u};
 constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8u};
@@ -27,6 +29,21 @@ constexpr uint8_t kSimulatorWebSocketOpcodeClose{0x8u};
 constexpr size_t kSimulatorWebSocketSha1Length{20u};
 /* the hash of SHA-1 */
 using SimulatorSha1Digest = std::array<uint8_t, kSimulatorWebSocketSha1Length>;
+
+/*! \brief A text looked for in a request: a header's value, a path or an
+ *         answer. */
+struct SimulatorFoundText {
+  bool found;       /*!< Whether there is one. */
+  std::string text; /*!< The text; empty if there is none. */
+};
+
+/*! \brief The first frame out of what has arrived, as
+ *         SimulatorWebSocket::DecodeFrame() takes it. */
+struct SimulatorWebSocketFrame {
+  bool complete;       /*!< Whether a whole frame had arrived. */
+  uint8_t opcode;      /*!< Its opcode. */
+  std::string payload; /*!< Its payload, unmasked. */
+};
 
 /*!
  * \brief The WebSocket protocol of the simulator's web page.
@@ -40,7 +57,8 @@ class SimulatorWebSocket {
   static constexpr uint8_t kSha1StateWords{5};
   using Sha1State = std::array<uint32_t, kSha1StateWords>;
 
-  static bool GetKey(std::string const& request, std::string* key);
+  MAXMATRIX_NODISCARD static SimulatorFoundText GetKey(
+      std::string const& request);
   static std::string PadSha1Message(std::string const& message);
   static Sha1State ProcessSha1Block(std::string const& padded, size_t offset,
                                     Sha1State state);
@@ -53,11 +71,11 @@ class SimulatorWebSocket {
    * The answer is the 101 response with the accept key the browser checks.
    *
    * \param[in] request The whole HTTP request, headers included.
-   * \param[out] answer The response to send back; left as it was on false.
-   * \return True, or false if the request has no `Sec-WebSocket-Key`.
+   * \return The response to send back, or none if the request has no
+   *         `Sec-WebSocket-Key`.
    */
-  static bool GetHandshakeAnswer(std::string const& request,
-                                 std::string* answer);
+  MAXMATRIX_NODISCARD static SimulatorFoundText GetHandshakeAnswer(
+      std::string const& request);
 
   /*!
    * \brief Wraps a text into a frame.
@@ -77,16 +95,14 @@ class SimulatorWebSocket {
    * The payload is unmasked, as a browser always masks it, and the frame is
    * removed from `buffer`. A frame that has not fully arrived stays in `buffer`
    * for the next call. A frame with a 64 bit length is not read: `buffer` is
-   * cleared, and false comes back.
+   * cleared, and no frame comes back.
    *
    * \param[in,out] buffer What has arrived on the connection and is not yet
    *                       decoded.
-   * \param[out] opcode The opcode of the frame.
-   * \param[out] payload The payload of the frame, unmasked.
-   * \return True, or false if `buffer` holds no complete frame.
+   * \return The frame, or none if `buffer` holds no complete frame.
    */
-  static bool DecodeFrame(std::string* buffer, uint8_t* opcode,
-                          std::string* payload);
+  MAXMATRIX_NODISCARD static SimulatorWebSocketFrame DecodeFrame(
+      std::string& buffer);
 
   /*!
    * \brief Converts the browser's key into the key it expects back.

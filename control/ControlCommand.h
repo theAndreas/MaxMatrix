@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
 
 /* ControlCommand Parameter */
@@ -25,6 +26,16 @@
 constexpr uint8_t kControlNumberOfModules{4};
 constexpr uint8_t kControlNumberOfColumns{kControlNumberOfModules *
                                           max_matrix::kColumnNumberOfModule};
+
+/*! \brief A line SerialControl answered with, as
+ *         ControlCommand::DecodePicture() reads it. */
+struct ControlPicture {
+  bool answers_picture; /*!< Whether the line answers `picture`. */
+  /*! One byte per column as the viewer sees it, from the left, bit 0 the top
+   * row; empty if the picture is not one of `kControlNumberOfColumns` columns
+   * in hex, as from a sketch built for another chain. */
+  std::vector<uint8_t> columns;
+};
 
 /*!
  * \brief The command lines of SerialControl, as the control program sends them,
@@ -102,14 +113,10 @@ class ControlCommand {
    * \brief Decodes the answer to `picture` into the columns of the panel.
    *
    * \param[in] line A line SerialControl answered with, without its line end.
-   * \param[out] columns One byte per column as the viewer sees it, from the
-   *                     left, bit 0 the top row; empty if the picture is not
-   *                     one of `kControlNumberOfColumns` columns in hex, as
-   *                     from a sketch built for another chain.
-   * \return True if `line` answers `picture`, false for any other line.
+   * \return Whether `line` answers `picture`, and the columns if it does.
    */
-  static bool DecodePicture(std::string const& line,
-                            std::vector<uint8_t>* columns);
+  MAXMATRIX_NODISCARD static ControlPicture DecodePicture(
+      std::string const& line);
 
   /*!
    * \brief Returns whether SerialControl takes `line` whole.

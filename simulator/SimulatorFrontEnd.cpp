@@ -66,7 +66,7 @@ void SimulatorFrontEnd::Follow(SimulatorPanel& panel, uint32_t now) {
     web_.Task(panel, printed);
   }
   serial_host_.Send(printed);
-  serial_host_.Task(&mock::serial_input);
+  mock::serial_input += serial_host_.Task();
 
   if (panel.IsDrawDue(now)) {
     if (web_on_) {

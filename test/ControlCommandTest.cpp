@@ -66,35 +66,32 @@ TEST(ControlCommandTest, FitsRefusesALineBreak) {
 // the answer to picture, as max_matrix::Command prints it: "Hi" from the left
 // edge and the empty columns after it
 TEST(ControlCommandTest, DecodesThePicture) {
-  std::vector<uint8_t> columns;
   std::vector<uint8_t> expected{0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40};
 
   expected.resize(static_cast<size_t>(kControlNumberOfColumns), 0x00);
-  ASSERT_TRUE(ControlCommand::DecodePicture(
+  ControlPicture const hi{ControlCommand::DecodePicture(
       "picture=7F08087F00447D40" +
-          std::string((2 * kControlNumberOfColumns) - 16, '0'),
-      &columns));
-  EXPECT_EQ(columns, expected);
-  ASSERT_TRUE(ControlCommand::DecodePicture(
-      "picture=ff" + std::string((2 * kControlNumberOfColumns) - 2, '0'),
-      &columns));
-  EXPECT_EQ(columns[0], 0xFF);
+      std::string((2 * kControlNumberOfColumns) - 16, '0'))};
+  ASSERT_TRUE(hi.answers_picture);
+  EXPECT_EQ(hi.columns, expected);
+  ControlPicture const lower_case{ControlCommand::DecodePicture(
+      "picture=ff" + std::string((2 * kControlNumberOfColumns) - 2, '0'))};
+  ASSERT_TRUE(lower_case.answers_picture);
+  EXPECT_EQ(lower_case.columns[0], 0xFF);
 }
 
 // a picture of another chain, or one cut short, is still an answer to picture,
 // but has no columns to draw; any other line is no answer to it
 TEST(ControlCommandTest, DecodesAPictureItCannotDrawAsEmpty) {
-  std::vector<uint8_t> columns{1, 2, 3};
-
-  EXPECT_TRUE(ControlCommand::DecodePicture(
-      "picture=" + std::string((2 * kControlNumberOfColumns) + 2, '0'),
-      &columns));
-  EXPECT_TRUE(columns.empty());
-  EXPECT_TRUE(ControlCommand::DecodePicture(
-      "picture=" + std::string((2 * kControlNumberOfColumns) - 1, '0') + "x",
-      &columns));
-  EXPECT_TRUE(columns.empty());
-  EXPECT_FALSE(ControlCommand::DecodePicture("ok", &columns));
+  ControlPicture const too_long{ControlCommand::DecodePicture(
+      "picture=" + std::string((2 * kControlNumberOfColumns) + 2, '0'))};
+  EXPECT_TRUE(too_long.answers_picture);
+  EXPECT_TRUE(too_long.columns.empty());
+  ControlPicture const no_hex{ControlCommand::DecodePicture(
+      "picture=" + std::string((2 * kControlNumberOfColumns) - 1, '0') + "x")};
+  EXPECT_TRUE(no_hex.answers_picture);
+  EXPECT_TRUE(no_hex.columns.empty());
+  EXPECT_FALSE(ControlCommand::DecodePicture("ok").answers_picture);
   EXPECT_FALSE(
-      ControlCommand::DecodePicture("error: unknown command", &columns));
+      ControlCommand::DecodePicture("error: unknown command").answers_picture);
 }
