@@ -26,35 +26,42 @@ namespace max_matrix {
  */
 namespace max7219 {
 
-/* the addresses of the registers */
-/*! No-op: a module that is not addressed in a frame gets it. */
-constexpr uint8_t kNoOpAddress{0x00};
-/*! Digit 0: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit0Address{0x01};
-/*! Digit 1: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit1Address{0x02};
-/*! Digit 2: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit2Address{0x03};
-/*! Digit 3: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit3Address{0x04};
-/*! Digit 4: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit4Address{0x05};
-/*! Digit 5: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit5Address{0x06};
-/*! Digit 6: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit6Address{0x07};
-/*! Digit 7: the LEDs of one row or column of a module. */
-constexpr uint8_t kDigit7Address{0x08};
-/*! Decode mode: BCD code B per digit, or none. */
-constexpr uint8_t kDecodeModeAddress{0x09};
-/*! Intensity: the brightness, 0 to 15. */
-constexpr uint8_t kIntensityAddress{0x0A};
-/*! Scan limit: how many digits, here rows or columns, are lit. */
-constexpr uint8_t kScanLimitAddress{0x0B};
-/*! Shutdown: off, or normal operation. */
-constexpr uint8_t kShutdownAddress{0x0C};
-/*! Display test: every LED on, or normal operation. */
-constexpr uint8_t kDisplayTestAddress{0x0F};
+/*!
+ * \brief The registers, by their addresses.
+ *
+ * A type of its own rather than a number, so that a value cannot take the place
+ * of the address unnoticed (CodingStyle.md FN-16).
+ */
+enum class Register : uint8_t {
+  /*! No-op: a module that is not addressed in a frame gets it. */
+  kNoOp = 0x00,
+  /*! Digit 0: the LEDs of one row or column of a module. */
+  kDigit0 = 0x01,
+  /*! Digit 1: the LEDs of one row or column of a module. */
+  kDigit1 = 0x02,
+  /*! Digit 2: the LEDs of one row or column of a module. */
+  kDigit2 = 0x03,
+  /*! Digit 3: the LEDs of one row or column of a module. */
+  kDigit3 = 0x04,
+  /*! Digit 4: the LEDs of one row or column of a module. */
+  kDigit4 = 0x05,
+  /*! Digit 5: the LEDs of one row or column of a module. */
+  kDigit5 = 0x06,
+  /*! Digit 6: the LEDs of one row or column of a module. */
+  kDigit6 = 0x07,
+  /*! Digit 7: the LEDs of one row or column of a module. */
+  kDigit7 = 0x08,
+  /*! Decode mode: BCD code B per digit, or none. */
+  kDecodeMode = 0x09,
+  /*! Intensity: the brightness, 0 to 15. */
+  kIntensity = 0x0A,
+  /*! Scan limit: how many digits, here rows or columns, are lit. */
+  kScanLimit = 0x0B,
+  /*! Shutdown: off, or normal operation. */
+  kShutdown = 0x0C,
+  /*! Display test: every LED on, or normal operation. */
+  kDisplayTest = 0x0F
+};
 
 /* the values of the decode mode register */
 /*! No digit decoded: each bit is an LED. */
@@ -143,7 +150,7 @@ class Chain {
    */
   void StartTransmission();
   void StopTransmission();
-  void Transfer(uint8_t register_address, uint8_t register_value);
+  void Transfer(max7219::Register address, uint8_t value);
 #if (MAXMATRIX_USE_SPI == STD_OFF)
   void ShiftOut(uint8_t value);
 #endif
@@ -210,12 +217,11 @@ class Chain {
    *
    * One frame, with the same address and value for every module.
    *
-   * \param[in] register_address The address of the register, one of
-   *                             `MAX7219_REG_..._ADDRESS`.
-   * \param[in] register_value The value.
+   * \param[in] address The register.
+   * \param[in] value The value.
    * \param[in] number_of_modules The MAX7219s in the chain.
    */
-  void WriteRegisterAll(uint8_t register_address, uint8_t register_value,
+  void WriteRegisterAll(max7219::Register address, uint8_t value,
                         uint8_t number_of_modules);
 
   /*!
@@ -225,13 +231,12 @@ class Chain {
    * One frame, with the same address and one value per module. The values of
    * a column lie a module's columns apart in the buffer.
    *
-   * \param[in] register_address The address of the register, one of
-   *                             `MAX7219_REG_..._ADDRESS`.
+   * \param[in] address The register.
    * \param[in] buffer The matrix buffer, `BufferSize()` of the modules in the
    *                   chain, module 0 first.
    * \param[in] column The column of a module to write, 0 to 7.
    */
-  void WriteRegisterEach(uint8_t register_address, span<Byte const> buffer,
+  void WriteRegisterEach(max7219::Register address, span<Byte const> buffer,
                          uint8_t column);
 };
 

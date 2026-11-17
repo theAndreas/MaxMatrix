@@ -28,6 +28,13 @@ namespace {
 /* a bit for each column of a module, all set */
 constexpr Byte kAllColumnsChanged{0xFF};
 
+// The digit register that drives a column of every module: the MAX7219 numbers
+// its digits from the register after the no-op.
+max7219::Register GetDigitRegister(uint8_t column) {
+  auto const digit0{static_cast<uint8_t>(max7219::Register::kDigit0)};
+  return static_cast<max7219::Register>(digit0 + column);
+}
+
 }  // namespace
 
 Wired::Wired(uint8_t data_in_pin, uint8_t chip_select_pin, uint8_t clock_pin,
@@ -57,7 +64,7 @@ void Wired::Clear() {
 void Wired::Send() {
   for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
     if (ReadBit(changed_columns_, column)) {
-      chain_.WriteRegisterEach(max7219::kDigit0Address + column, matrix_buffer_,
+      chain_.WriteRegisterEach(GetDigitRegister(column), matrix_buffer_,
                                column);
     }
   }

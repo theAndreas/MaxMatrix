@@ -61,18 +61,18 @@ Status Matrix::SetIntensity(uint8_t intensity) {
   if (intensity > max7219::kIntensityMaxValue) {
     return MAXMATRIX_REPORT_ERROR("SetIntensity", Status(Error::kOutOfRange));
   }
-  RegisterWrite(max7219::kIntensityAddress, intensity);
+  RegisterWrite(max7219::Register::kIntensity, intensity);
   return Error::kOk;
 }
 
 void Matrix::SetShutdown(bool shutdown) {
-  RegisterWrite(max7219::kShutdownAddress,
+  RegisterWrite(max7219::Register::kShutdown,
                 shutdown ? max7219::kShutdownModeShutdownMode
                          : max7219::kShutdownModeNormalOperation);
 }
 
 void Matrix::SetDisplayTest(bool display_test) {
-  RegisterWrite(max7219::kDisplayTestAddress,
+  RegisterWrite(max7219::Register::kDisplayTest,
                 display_test ? max7219::kDisplayTestDisplayTestMode
                              : max7219::kDisplayTestNormalOperation);
 }
