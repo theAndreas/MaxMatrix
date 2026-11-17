@@ -48,7 +48,8 @@ class SimulatorWeb {
   static void Command(SimulatorPanel& panel, std::string const& message);
   MAXMATRIX_NODISCARD std::string GetMessage(SimulatorPanel const& panel) const;
   MAXMATRIX_NODISCARD std::string GetLog() const;
-  static std::string GetIntensities(SimulatorPanel const& panel);
+  MAXMATRIX_NODISCARD static std::string GetIntensities(
+      SimulatorPanel const& panel);
 
  public:
   /*! \brief Makes a web view that has logged no frame yet. */
@@ -91,7 +92,8 @@ class SimulatorWeb {
    * \param[in] text The bytes, as the sketch printed them.
    * \return The text for between the quotes of a JSON string.
    */
-  static std::string ConvertToJsonString(std::string const& text);
+  MAXMATRIX_NODISCARD static std::string ConvertToJsonString(
+      std::string const& text);
 };
 
 #endif  // MAXMATRIX_SIMULATOR_WEB_SIMULATORWEB_H_

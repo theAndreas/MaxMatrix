@@ -23,6 +23,7 @@
 #include <chrono>
 #include <string>
 
+#include "MaxMatrixAttributes.h"
 #include "Utility/Bit.h"
 
 namespace {
@@ -44,8 +45,11 @@ int SimulatorSocket::OpenListener(uint16_t port) {
     return kSimulatorSocketNone;
   }
 
-  // so that a restart does not wait out the last connection's TIME_WAIT
-  setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+  // So that a restart does not wait out the last connection's TIME_WAIT;
+  // without it the port is taken a minute longer, which bind() below then
+  // reports.
+  max_matrix::Discard(
+      setsockopt(listening, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)));
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
   address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -54,22 +58,31 @@ int SimulatorSocket::OpenListener(uint16_t port) {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
   if ((bind(listening, reinterpret_cast<sockaddr*>(&address),
             sizeof(address)) != 0) ||
-      (listen(listening, kBacklog) != 0)) {
-    close(listening);
+      (listen(listening, kBacklog) != 0) || !SetNonBlocking(listening)) {
+    Close(listening);
     return kSimulatorSocketNone;
   }
-  SetNonBlocking(listening);
   return listening;
 }
 
-void SimulatorSocket::SetNonBlocking(int socket) {
+bool SimulatorSocket::SetNonBlocking(int socket) {
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
   int const flags{fcntl(socket, F_GETFL, 0)};
+  if (flags < 0) {
+    return false;
+  }
   // H-8: fcntl() takes its flags as an int, or'ed here as the bits they are.
   int const non_blocking_flags{
       static_cast<int>(max_matrix::Bit<uint32_t>::Combine(
           static_cast<uint32_t>(flags), static_cast<uint32_t>(O_NONBLOCK)))};
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's fcntl()
-  fcntl(socket, F_SETFL, non_blocking_flags);
+  return fcntl(socket, F_SETFL, non_blocking_flags) == 0;
+}
+
+void SimulatorSocket::Close(int socket) {
+  // close() frees the descriptor even when it reports an error, and there is
+  // nothing to try again.
+  max_matrix::Discard(close(socket));
 }
 
 bool SimulatorSocket::IsGone(ssize_t received) {
@@ -77,7 +90,7 @@ bool SimulatorSocket::IsGone(ssize_t received) {
 }
 
 // setsockopt() takes the timeout in whole seconds and the microseconds beyond.
-void SimulatorSocket::SetReceiveTimeout(int socket,
+bool SimulatorSocket::SetReceiveTimeout(int socket,
                                         std::chrono::milliseconds timeout) {
   auto const seconds{std::chrono::duration_cast<std::chrono::seconds>(timeout)};
   auto const beyond{
@@ -86,7 +99,7 @@ void SimulatorSocket::SetReceiveTimeout(int socket,
 
   wait.tv_sec = static_cast<time_t>(seconds.count());
   wait.tv_usec = static_cast<suseconds_t>(beyond.count());
-  setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &wait, sizeof(wait));
+  return setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &wait, sizeof(wait)) == 0;
 }
 
 bool SimulatorSocket::SendAll(int socket, std::string const& data) {

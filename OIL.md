@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1179,6 +1179,16 @@ up; what the hosts receive they return, and the caller appends. A buffer that gr
 calls, as what a port has read, the index into the command line and the labels and picture
 `DocuPictures` draws on are references. `SimulatorRun::SetUp()` keeps its two references, as it
 sets up the objects the tick reaches through a plain function pointer.
+
+As built for FN-10 in the host code: no result is dropped without `Discard()` and its reason,
+a system call's included. Where a failure matters it is handled instead: a socket that still
+blocks after `SetNonBlocking()`, or that would wait without end for a request, is closed rather
+than polled; `avr_init()` that fails fails the load; a matrix of `DocuPictures` that does not
+start fails the run; and the control program logs a window without a timer. What only says
+whether something changed, as wxWidgets' `Enable()`, goes to `Discard()` as well, and so does
+`close()`, through `SimulatorSocket::Close()` in the simulator. What the host code computes or
+finds is `MAXMATRIX_NODISCARD` now, some thirty functions. A reference to the object itself or a
+handle to what was just added is no result, AGENTS.md says why.
 
 ### 42 A newer avr-gcc as a cross-check
 

@@ -732,6 +732,9 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   bool const write{arguments[1] == "--write"};
 
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  matrix.Init();
+  if (!matrix.Init().IsOk()) {
+    std::cerr << "the matrix does not start on the pins of the examples\n";
+    return 1;
+  }
   return (WriteOrCheck(DrawPictures(), arguments[2], write) == 0) ? 0 : 1;
 }

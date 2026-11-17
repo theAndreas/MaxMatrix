@@ -77,9 +77,9 @@ class ControlWindow : public wxFrame {
   wxTextCtrl* log_{};
 
   void MakeMenu();
-  wxWindow* MakeMatrix(wxWindow* parent);
-  wxWindow* MakeText(wxWindow* parent);
-  wxWindow* MakeConnections(wxWindow* parent);
+  MAXMATRIX_NODISCARD wxWindow* MakeMatrix(wxWindow* parent);
+  MAXMATRIX_NODISCARD wxWindow* MakeText(wxWindow* parent);
+  MAXMATRIX_NODISCARD wxWindow* MakeConnections(wxWindow* parent);
   void OnSend(wxCommandEvent& event);
   void OnClear(wxCommandEvent& event);
   void OnShift(wxCommandEvent& event);
@@ -100,11 +100,11 @@ class ControlWindow : public wxFrame {
   MAXMATRIX_NODISCARD std::string GetSpeedLine() const;
   MAXMATRIX_NODISCARD std::string GetSpaceLine() const;
   void Follow(ControlLink& link, char const* name);
-  ControlLink* GetShownLink();
+  MAXMATRIX_NODISCARD ControlLink* GetShownLink();
   void ShowState();
   void ShowBytesLeft();
   void Log(wxString const& text);
-  static wxString ConvertToText(std::string const& line);
+  MAXMATRIX_NODISCARD static wxString ConvertToText(std::string const& line);
 
  public:
   /*! \brief Makes the window, with nothing connected. */

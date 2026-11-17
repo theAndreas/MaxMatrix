@@ -75,7 +75,7 @@ class ControlLink {
   bool picture_timed_{false};
   uint32_t picture_asked_at_{0};
 
-  bool Take(std::string const& line);
+  MAXMATRIX_NODISCARD bool Take(std::string const& line);
 
  public:
   /*!

@@ -27,6 +27,7 @@
 
 #include "ControlStream.h"
 #include "ControlTcpPort.h"
+#include "MaxMatrixAttributes.h"
 #include "Utility/Bit.h"
 
 namespace {
@@ -42,7 +43,9 @@ using Length = int;
 constexpr int kSendFlags{0};
 
 bool WouldBlock() { return WSAGetLastError() == WSAEWOULDBLOCK; }
-void CloseSocket(Socket socket) { closesocket(socket); }
+// The socket is gone even when closing reports an error, and there is nothing
+// to try again.
+void CloseSocket(Socket socket) { max_matrix::Discard(closesocket(socket)); }
 int Poll(pollfd* descriptor, int timeout) {
   return WSAPoll(descriptor, 1, timeout);
 }
@@ -58,7 +61,8 @@ using Length = size_t;
 constexpr int kSendFlags{MSG_NOSIGNAL};
 
 bool WouldBlock() { return (errno == EAGAIN) || (errno == EWOULDBLOCK); }
-void CloseSocket(Socket socket) { close(socket); }
+// As on Windows.
+void CloseSocket(Socket socket) { max_matrix::Discard(close(socket)); }
 int Poll(pollfd* descriptor, int timeout) {
   return poll(descriptor, 1, timeout);
 }
@@ -99,7 +103,8 @@ bool ControlTcpPort::Open(uint16_t port) {
   socket_ = static_cast<intptr_t>(socket(AF_INET, SOCK_STREAM, 0));
   if (socket_ == kNone) {
 #ifdef _WIN32
-    WSACleanup();
+    // It fails only without the WSAStartup() above.
+    max_matrix::Discard(WSACleanup());
 #endif
     return false;
   }
@@ -165,6 +170,7 @@ void ControlTcpPort::Close() {
   CloseSocket(ToSocket(socket_));
   socket_ = kNone;
 #ifdef _WIN32
-  WSACleanup();
+  // It fails only without the WSAStartup() of Open().
+  max_matrix::Discard(WSACleanup());
 #endif
 }

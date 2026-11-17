@@ -35,6 +35,8 @@ class ControlSerialPort final : public ControlPort {
   void* handle_;
 #else
   int descriptor_{-1};
+
+  MAXMATRIX_NODISCARD bool Configure(uint32_t baud_rate);
 #endif
 
  public:
@@ -70,7 +72,7 @@ class ControlSerialPort final : public ControlPort {
    *
    * \return The names, sorted.
    */
-  static std::vector<std::string> List();
+  MAXMATRIX_NODISCARD static std::vector<std::string> List();
 
   MAXMATRIX_NODISCARD bool IsOpen() const override;
   bool Write(std::string const& data) override;

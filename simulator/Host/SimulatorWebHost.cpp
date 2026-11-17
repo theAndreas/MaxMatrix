@@ -16,7 +16,6 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #include <array>
 #include <chrono>
@@ -24,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "MaxMatrixAttributes.h"
 #include "SimulatorFile.h"
 #include "SimulatorSocket.h"
 #include "SimulatorWebSocket.h"
@@ -88,11 +88,11 @@ void SimulatorWebHost::AcceptClients() {
     uint8_t const slot{FindFreeSlot()};
 
     if ((slot < kSimulatorWebHostMaxClients) &&
-        AnswerRequest(accepted, request)) {
-      SimulatorSocket::SetNonBlocking(accepted);
+        AnswerRequest(accepted, request) &&
+        SimulatorSocket::SetNonBlocking(accepted)) {
       clients_[slot] = accepted;
     } else {
-      close(accepted);
+      SimulatorSocket::Close(accepted);
     }
   }
 }
@@ -185,7 +185,7 @@ uint8_t SimulatorWebHost::FindFreeSlot() const {
 // Closes the WebSocket in `slot`, frees the slot and forgets what the client
 // sent that was not yet a whole frame.
 void SimulatorWebHost::DropClient(uint8_t slot) {
-  close(clients_[slot]);
+  SimulatorSocket::Close(clients_[slot]);
   clients_[slot] = kSimulatorSocketNone;
   pending_[slot].clear();
 }
@@ -207,8 +207,11 @@ std::string SimulatorWebHost::ReadRequest(int socket) {
   std::string request;
   std::array<char, kRequestChunkLength> chunk{};
 
-  SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeout);
-
+  // Without the timeout a silent client would stop the sketch, so its request
+  // is not read; it gets no answer, and its connection is closed.
+  if (!SimulatorSocket::SetReceiveTimeout(socket, kRequestTimeout)) {
+    return request;
+  }
   while (request.find("\r\n\r\n") == std::string::npos) {
     ssize_t const received{recv(socket, chunk.data(), chunk.size(), 0)};
     if (received <= 0) {
@@ -247,5 +250,7 @@ void SimulatorWebHost::SendResponse(int socket, char const* status,
            << "\r\nContent-Length: " << body.size()
            << "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
            << body;
-  SimulatorSocket::SendAll(socket, response.str());
+  // The connection is closed after the answer either way, and a browser that
+  // has gone needs none.
+  max_matrix::Discard(SimulatorSocket::SendAll(socket, response.str()));
 }

@@ -474,6 +474,16 @@ be lost, and the `Status` a part below the facade passes on. A setter's `Status`
 to tell, and the examples do. Where the library drops a marked result on purpose, it hands it to
 `Discard()` with the reason beside it.
 
+The host code marks alike what it computes or finds, as `ControlCommand::MakeText()` or
+`SimulatorWebSocket::EncodeFrame()`, and leaves unmarked what only says whether an action
+worked, as `Send()` or `Begin()`. It drops no result without `Discard()` and its reason, marked
+or not, a system call's as well (`close()`, `setsockopt()`, `avr_ioctl()`), and handles one
+whose failure matters instead: a socket that still blocks is closed, not polled. A result is a
+value that tells the caller something, success, a count, a place or whether something changed;
+a reference to the object itself, as `std::string::append()` and `std::ostream::flush()` return,
+or a handle to what was just added, as `wxSizer::Add()` returns, is none, as the call returns
+it only so that calls can be chained.
+
 The texts lie in a table in `PROGMEM`, not behind a `switch`: avr-gcc turns a `switch` that
 returns a constant per case into a table in `.rodata`, which the Uno copies into RAM, as it does
 with every constant not marked `PROGMEM`.

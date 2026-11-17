@@ -18,6 +18,8 @@
 #include <sstream>
 #include <string>
 
+#include "MaxMatrixAttributes.h"
+
 /*! \brief A point of a picture, in pixels from its left and top. */
 struct DocuPoint {
   int32_t x; /*!< From the left. */
@@ -75,7 +77,7 @@ class DocuSvg {
    *
    * \return The SVG text.
    */
-  std::string GetDocument() const;
+  MAXMATRIX_NODISCARD std::string GetDocument() const;
 
   /*!
    * \brief Adds a rectangle, with an outline 2 pixels wide where it has one.

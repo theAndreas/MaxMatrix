@@ -16,6 +16,7 @@
 #include <wx/app.h>
 
 #include "ControlWindow.h"
+#include "MaxMatrixAttributes.h"
 
 /*!
  * \brief The control program: one window.
@@ -31,7 +32,8 @@ class ControlApp : public wxApp {  // NOLINT(misc-use-internal-linkage): the
    *         starting.
    */
   bool OnInit() override {
-    (new ControlWindow())->Show();
+    // Show() says whether the window was hidden before, as a new one is.
+    max_matrix::Discard((new ControlWindow())->Show());
     return true;
   }
 };

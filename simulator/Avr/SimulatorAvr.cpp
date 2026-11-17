@@ -89,10 +89,9 @@ bool SimulatorAvr::Load(char const* elf_file) {
     return false;
   }
   avr_ = avr_make_mcu_by_name(kSimulatorAvrMcu);
-  if (avr_ == nullptr) {
+  if ((avr_ == nullptr) || (avr_init(avr_) != 0)) {
     return false;
   }
-  avr_init(avr_);
   avr_->frequency = kSimulatorAvrFrequency;
   avr_load_firmware(avr_, &firmware_);
   ConnectPins();
@@ -121,10 +120,12 @@ void SimulatorAvr::ConnectPins() {
 // itself, between the panel and the command line.
 void SimulatorAvr::ConnectUart() {
   uint32_t flags{0};
-  avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags);
+  // Without the flags, simavr also prints the sketch's Serial on the console,
+  // between the panel and the command line; the run is right all the same.
+  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags));
   max_matrix::Bit<uint32_t>::ClearBits(
       flags, static_cast<uint32_t>(AVR_UART_FLAG_STDIO));
-  avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags);
+  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags));
   avr_irq_register_notify(
       avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUTPUT),
       OnSerialByte, this);
