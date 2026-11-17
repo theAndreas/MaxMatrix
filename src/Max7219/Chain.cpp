@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "MaxMatrixConfig.h"
+#include "MaxMatrixError.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Utility/Byte.h"
 #include "Utility/span.h"
@@ -30,14 +31,19 @@
 namespace max_matrix {
 namespace internal {
 
-#if (MAXMATRIX_USE_SPI == STD_OFF)
 namespace {
 
+// The core looks a pin up in tables of NUM_DIGITAL_PINS entries without a
+// check: a pin beyond them takes the bytes that follow for its port, and a
+// write goes to whatever address they make.
+constexpr bool IsBoardPin(uint8_t pin) { return pin < NUM_DIGITAL_PINS; }
+
+#if (MAXMATRIX_USE_SPI == STD_OFF)
 /* the MAX7219 takes a byte most significant bit first */
 constexpr uint8_t kFirstBit{0x80};
+#endif
 
 }  // namespace
-#endif
 
 Chain::Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin)
@@ -45,7 +51,11 @@ Chain::Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
       chip_select_pin_{chip_select_pin.number},
       clock_pin_{clock_pin.number} {}
 
-void Chain::Init(uint8_t number_of_modules) {
+Status Chain::Init(uint8_t number_of_modules) {
+  if (!HasBoardPins()) {
+    return Error::kOutOfRange;
+  }
+
   pinMode(chip_select_pin_, OUTPUT);
   chip_select_port_ = digitalPinToPort(chip_select_pin_);
   chip_select_mask_ = digitalPinToBitMask(chip_select_pin_);
@@ -77,6 +87,7 @@ void Chain::Init(uint8_t number_of_modules) {
   WriteRegisterAll(max7219::Register::kDisplayTest,
                    max7219::kDisplayTestNormalOperation,  // no display test
                    number_of_modules);
+  return Error::kOk;
 }
 
 void Chain::WriteRegisterAll(max7219::Register address, uint8_t value,
@@ -206,6 +217,15 @@ void Chain::WritePin(uint8_t port, uint8_t mask, bool high) {
     Bit<uint8_t>::ClearBits(*port_register, mask);
   }
   SREG = status_register;
+}
+
+// All three, though SPI drives data in and clock by pins of its own: a sketch
+// names the same pins for both, and one the board lacks is a mistake in either.
+bool Chain::HasBoardPins() const {
+  bool const data_in_on_board{IsBoardPin(data_in_pin_)};
+  bool const chip_select_on_board{IsBoardPin(chip_select_pin_)};
+  bool const clock_on_board{IsBoardPin(clock_pin_)};
+  return data_in_on_board && chip_select_on_board && clock_on_board;
 }
 
 }  // namespace internal

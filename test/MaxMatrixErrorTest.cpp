@@ -63,7 +63,15 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     Error expected;
     char const* api;
   };
-  std::array<Case, 26> const cases{{
+  std::array<Case, 27> const cases{{
+      {"Init with a pin beyond the board",
+       [](Matrix& m) {
+         m.SetChipSelectPin(NUM_DIGITAL_PINS);
+         Error const error{m.Init().GetError()};
+         m.SetChipSelectPin(kChipSelectPin);
+         return error;
+       },
+       Error::kOutOfRange, "Init"},
       {"GetColumn left", [](Matrix& m) { return m.GetColumn(-1).GetError(); },
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn right",
