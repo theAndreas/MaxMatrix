@@ -42,6 +42,13 @@ constexpr uint8_t kDecimalBase{10};
 constexpr uint8_t kLowNibble{0x0Fu};
 constexpr uint8_t kNibbleWidth{4u};
 
+// Computed rather than looked up: a table of the digits would lie in RAM on the
+// Uno.
+constexpr char ConvertToHexDigit(uint8_t value) {
+  return static_cast<char>(
+      (value < kDecimalBase) ? ('0' + value) : ('A' + value - kDecimalBase));
+}
+
 }  // namespace
 
 // P-1: a line ends at its null character, so only that is set; emptying both
@@ -247,7 +254,7 @@ Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
  * buffer as wired, so that the answer does not depend on the modules, their
  * type and orientation. The column is on the panel, so GetColumn() cannot fail.
  */
-void Command::AnswerPicture(Matrix& matrix, Print& answer) {
+void Command::AnswerPicture(Matrix const& matrix, Print& answer) {
   int16_t const columns{matrix.GetNumberOfColumns()};
 
   answer.print(F("picture="));
@@ -291,13 +298,6 @@ Result<uint16_t> Command::ConvertToNumber(uint8_t text,
     return Error::kOutOfRange;
   }
   return static_cast<uint16_t>(value);
-}
-
-// Computed rather than looked up: a table of the digits would lie in RAM on the
-// Uno.
-char Command::ConvertToHexDigit(uint8_t value) {
-  return static_cast<char>(
-      (value < kDecimalBase) ? ('0' + value) : ('A' + value - kDecimalBase));
 }
 
 }  // namespace max_matrix

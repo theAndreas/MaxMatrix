@@ -194,13 +194,14 @@ class Matrix {
     return text_.GetSpaceBetweenChars();
   }
 
-  /*! \copydoc internal::Panel::GetColumn(X) */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x) {
+  /*! \copydoc internal::Panel::GetColumn(X) const */
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(X x) const {
     return MAXMATRIX_REPORT_ERROR("GetColumn", panel_.GetColumn(x));
   }
 
-  /*! \copydoc internal::Panel::GetColumn(Module, uint8_t) */
-  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module, uint8_t column) {
+  /*! \copydoc internal::Panel::GetColumn(Module, uint8_t) const */
+  MAXMATRIX_NODISCARD Result<Byte> GetColumn(Module module,
+                                             uint8_t column) const {
     return MAXMATRIX_REPORT_ERROR("GetColumn",
                                   panel_.GetColumn(module, column));
   }
@@ -219,17 +220,17 @@ class Matrix {
    * \return Error::kOk, or Error::kOutOfRange if the row lies off the panel or
    *         `values` has fewer bytes than there are modules.
    */
-  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values) {
+  MAXMATRIX_NODISCARD Status GetRow(Y y, span<Byte> values) const {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(y, values));
   }
 
-  /*! \copydoc internal::Panel::GetRow(Module, uint8_t) */
-  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row) {
+  /*! \copydoc internal::Panel::GetRow(Module, uint8_t) const */
+  MAXMATRIX_NODISCARD Result<Byte> GetRow(Module module, uint8_t row) const {
     return MAXMATRIX_REPORT_ERROR("GetRow", panel_.GetRow(module, row));
   }
 
-  /*! \copydoc internal::Panel::GetDot(Point) */
-  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot) {
+  /*! \copydoc internal::Panel::GetDot(Point) const */
+  MAXMATRIX_NODISCARD Result<bool> GetDot(Point dot) const {
     return MAXMATRIX_REPORT_ERROR("GetDot", panel_.GetDot(dot));
   }
 

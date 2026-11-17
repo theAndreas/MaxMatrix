@@ -171,6 +171,13 @@ namespace internal {
  */
 class Chain {
  private:
+  /* a pin's port and its bit there, as one, so that the two cannot be mixed up
+   * between pins or swapped in a call (FN-16) */
+  struct PortBit {
+    uint8_t port;
+    uint8_t mask;
+  };
+
   uint8_t data_in_pin_;
   uint8_t chip_select_pin_;
   uint8_t clock_pin_;
@@ -182,13 +189,10 @@ class Chain {
    * statement expression, which decltype() cannot take outside a function, so
    * it is read where it is written. Data in and clock only bit bang.
    */
-  uint8_t chip_select_port_{0};
-  uint8_t chip_select_mask_{0};
+  PortBit chip_select_{};
 #if (MAXMATRIX_USE_SPI == STD_OFF)
-  uint8_t data_in_port_{0};
-  uint8_t data_in_mask_{0};
-  uint8_t clock_port_{0};
-  uint8_t clock_mask_{0};
+  PortBit data_in_{};
+  PortBit clock_{};
 #endif
 
   /*
@@ -204,7 +208,8 @@ class Chain {
 #if (MAXMATRIX_USE_SPI == STD_OFF)
   void ShiftOut(uint8_t value);
 #endif
-  static void WritePin(uint8_t port, uint8_t mask, bool high);
+  static PortBit LookUpPortBit(uint8_t pin);
+  static void WritePin(PortBit pin, bool high);
   // Whether each of the three pins is one of the board's, which Init() checks
   // before it takes them.
   MAXMATRIX_NODISCARD bool HasBoardPins() const;

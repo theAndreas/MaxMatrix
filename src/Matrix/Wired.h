@@ -84,7 +84,9 @@ class Wired {
    *
    * \param[in] column The column in the buffer.
    */
-  Byte GetColumn(uint8_t column) { return matrix_buffer_[column]; }
+  MAXMATRIX_NODISCARD Byte GetColumn(uint8_t column) const {
+    return matrix_buffer_[column];
+  }
 
   /*!
    * \brief Sets one bit of the buffer.

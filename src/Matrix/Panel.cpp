@@ -47,11 +47,11 @@ Byte SwapBits(Byte value, Byte upper, uint8_t shift) {
 
 // The lesser and the greater of two coordinates: avr-gcc has no <algorithm>,
 // and the core's min() and max() are macros.
-int16_t GetLesser(int16_t first, int16_t second) {
+constexpr int16_t GetLesser(int16_t first, int16_t second) {
   return (first < second) ? first : second;
 }
 
-int16_t GetGreater(int16_t first, int16_t second) {
+constexpr int16_t GetGreater(int16_t first, int16_t second) {
   return (first > second) ? first : second;
 }
 
@@ -61,18 +61,17 @@ Panel::Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin, span<Byte> buffer)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
-Result<Byte> Panel::GetColumn(X x) {
+Result<Byte> Panel::GetColumn(X x) const {
   int16_t const column{x.number};
 
-  if ((column >= 0) && (column < GetNumberOfColumns())) {
+  if (HasColumn(column)) {
     return GetLine(static_cast<uint8_t>(column), 0, true);
   }
   return Error::kOutOfRange;
 }
 
-Result<Byte> Panel::GetColumn(Module module, uint8_t column) {
-  if ((module.number < GetNumberOfModules()) &&
-      (column < kColumnNumberOfModule)) {
+Result<Byte> Panel::GetColumn(Module module, uint8_t column) const {
+  if (HasModuleColumn(module, column)) {
     return GetColumn(X{static_cast<int16_t>(
         (module.number * kColumnNumberOfModule) + column)});
   }
@@ -82,7 +81,7 @@ Result<Byte> Panel::GetColumn(Module module, uint8_t column) {
 void Panel::SetColumn(X x, Byte value) {
   int16_t const column{x.number};
 
-  if ((column >= 0) && (column < GetNumberOfColumns())) {
+  if (HasColumn(column)) {
     SetLine(static_cast<uint8_t>(column), 0, true, value);
   }
 }
@@ -90,19 +89,17 @@ void Panel::SetColumn(X x, Byte value) {
 void Panel::SetColumn(Module module, uint8_t column, Byte value) {
   // The column is checked against the module, not the panel, or column 8 of
   // module 0 would be drawn on module 1.
-  if ((module.number < GetNumberOfModules()) &&
-      (column < kColumnNumberOfModule)) {
+  if (HasModuleColumn(module, column)) {
     SetColumn(X{static_cast<int16_t>((module.number * kColumnNumberOfModule) +
                                      column)},
               value);
   }
 }
 
-Status Panel::GetRow(Y y, span<Byte> values) {
+Status Panel::GetRow(Y y, span<Byte> values) const {
   int16_t const row{y.number};
 
-  if ((row >= 0) && (row < kRowNumberOfModule) &&
-      (values.size() >= GetNumberOfModules())) {
+  if (HasRow(row) && (values.size() >= GetNumberOfModules())) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; module < modules; module++) {
       values[module] =
@@ -113,8 +110,8 @@ Status Panel::GetRow(Y y, span<Byte> values) {
   return Error::kOutOfRange;
 }
 
-Result<Byte> Panel::GetRow(Module module, uint8_t row) {
-  if ((module.number < GetNumberOfModules()) && (row < kRowNumberOfModule)) {
+Result<Byte> Panel::GetRow(Module module, uint8_t row) const {
+  if (HasModuleRow(module, row)) {
     return ReverseByte(
         GetLine(module.number * kColumnNumberOfModule, row, false));
   }
@@ -124,7 +121,7 @@ Result<Byte> Panel::GetRow(Module module, uint8_t row) {
 void Panel::SetRow(Y y, span<Byte const> values) {
   int16_t const row{y.number};
 
-  if ((row >= 0) && (row < kRowNumberOfModule)) {
+  if (HasRow(row)) {
     uint8_t const modules{GetNumberOfModules()};
     for (uint8_t module{0}; (module < modules) && (module < values.size());
          module++) {
@@ -134,18 +131,17 @@ void Panel::SetRow(Y y, span<Byte const> values) {
 }
 
 void Panel::SetRow(Module module, uint8_t row, Byte value) {
-  if ((module.number < GetNumberOfModules()) && (row < kRowNumberOfModule)) {
+  if (HasModuleRow(module, row)) {
     SetLine(module.number * kColumnNumberOfModule, row, false,
             ReverseByte(value));
   }
 }
 
-Result<bool> Panel::GetDot(Point dot) {
+Result<bool> Panel::GetDot(Point dot) const {
   int16_t const column{dot.x.number};
   int16_t const row{dot.y.number};
 
-  if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
-      (row < kRowNumberOfModule)) {
+  if (HasDot(column, row)) {
     BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
                                                   static_cast<uint8_t>(row))};
     return ReadBit(wired_.GetColumn(buffer_dot.column), buffer_dot.bit);
@@ -154,8 +150,7 @@ Result<bool> Panel::GetDot(Point dot) {
 }
 
 void Panel::SetDotAt(int16_t column, int16_t row, bool value) {
-  if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
-      (row < kRowNumberOfModule)) {
+  if (HasDot(column, row)) {
     BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
                                                   static_cast<uint8_t>(row))};
     wired_.StoreBit(buffer_dot.column, buffer_dot.bit, value);
@@ -316,8 +311,7 @@ void Panel::DrawColumn(Point top, uint8_t height, Byte value) {
 // SetDot() for a dot whose coordinates were added up past what an int16_t
 // holds.
 void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
-  if ((column >= 0) && (column < GetNumberOfColumns()) && (row >= 0) &&
-      (row < kRowNumberOfModule)) {
+  if (HasDot(column, row)) {
     SetDotAt(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
   }
 }
@@ -514,7 +508,7 @@ Panel::BufferDot Panel::ConvertDotToBuffer(uint8_t column, uint8_t row) const {
  * right, or downwards if `vertical`; the first in bit 0. The line has to lie
  * within the matrix.
  */
-Byte Panel::GetLine(uint8_t column, uint8_t row, bool vertical) {
+Byte Panel::GetLine(uint8_t column, uint8_t row, bool vertical) const {
   Byte value{};
 
   for (uint8_t dot{0}; dot < kDotsPerLine; dot++) {
