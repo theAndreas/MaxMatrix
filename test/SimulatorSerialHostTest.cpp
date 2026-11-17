@@ -54,8 +54,8 @@ std::string Receive(int client) {
     return "";
   }
   ssize_t const length{recv(client, chunk.data(), chunk.size(), 0)};
-  return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
-                    : "";
+  return (length > 0) ? std::string(chunk.data(), static_cast<size_t>(length))
+                      : "";
 }
 
 // Whether the host has closed the connection of `client` within half a second:
@@ -64,7 +64,7 @@ bool IsClosedByHost(int client) {
   pollfd ready{client, POLLIN, 0};
   char c{0};
 
-  return poll(&ready, 1, 500) > 0 && recv(client, &c, 1, 0) == 0;
+  return (poll(&ready, 1, 500) > 0) && (recv(client, &c, 1, 0) == 0);
 }
 
 // Calls Task() until something arrives or a second has passed, as the tick
@@ -72,7 +72,7 @@ bool IsClosedByHost(int client) {
 std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
-  for (int16_t i{0}; i < 100 && received.empty(); i++) {
+  for (int16_t i{0}; (i < 100) && received.empty(); i++) {
     host.Task(&received);
     usleep(10000);
   }

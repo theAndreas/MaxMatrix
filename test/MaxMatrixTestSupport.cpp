@@ -33,7 +33,7 @@ void PrintTo(Error error, std::ostream* out) {
 /* what Feed() returns, compared with a state as with an error: a line is done
  * only if it did not fail as well */
 bool operator==(Result<CommandState> const& result, CommandState state) {
-  return result.IsOk() && result.GetValue() == state;
+  return result.IsOk() && (result.GetValue() == state);
 }
 
 void PrintTo(Result<CommandState> const& result, std::ostream* out) {
@@ -98,7 +98,7 @@ std::string ModuleTypeName(ModuleType module_type) {
 }
 
 bool Pattern(int16_t x, int16_t y) {
-  return ((x * x) + (3 * y) + (x * y)) % 3 == 0;
+  return (((x * x) + (3 * y) + (x * y)) % 3) == 0;
 }
 
 std::vector<std::string> ShownPicture(Matrix& matrix) {

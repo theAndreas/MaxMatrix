@@ -128,7 +128,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
 
   uint8_t const second_byte{static_cast<uint8_t>(frame[1])};
   size_t const mask_length{
-      ByteBits::ReadBitGroup(second_byte, kMaskFlag) != 0u ? kMaskLength : 0};
+      (ByteBits::ReadBitGroup(second_byte, kMaskFlag) != 0u) ? kMaskLength : 0};
   size_t length{ByteBits::ReadBitGroup(second_byte, kLengthMask)};
   size_t offset{kHeaderLength};
 
@@ -147,7 +147,7 @@ bool SimulatorWebSocket::DecodeFrame(std::string* buffer, uint8_t* opcode,
         static_cast<uint8_t>(frame[3]));
     offset = kHeaderLength16Bit;
   }
-  if (frame.size() < offset + mask_length + length) {
+  if (frame.size() < (offset + mask_length + length)) {
     return false;
   }
 
@@ -214,10 +214,10 @@ std::string SimulatorWebSocket::ConvertToBase64(std::string const& bytes) {
     encoded +=
         kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask, 2u * kBase64Bits)];
     encoded +=
-        remaining > 1
+        (remaining > 1)
             ? kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask, kBase64Bits)]
             : '=';
-    encoded += remaining > 2
+    encoded += (remaining > 2)
                    ? kAlphabet[WordBits::ReadBitGroup(group, kBase64Mask)]
                    : '=';
   }
@@ -243,7 +243,7 @@ bool SimulatorWebSocket::GetKey(std::string const& request, std::string* key) {
   }
 
   size_t start{found + sizeof(kKeyHeader) - 1};
-  while (start < request.size() && request[start] == ' ') {
+  while ((start < request.size()) && (request[start] == ' ')) {
     start++;
   }
   size_t const end{request.find("\r\n", start)};
@@ -266,7 +266,7 @@ std::string SimulatorWebSocket::PadSha1Message(std::string const& message) {
   std::string padded(message);
 
   padded.push_back(static_cast<char>(kSha1PadBit));
-  while (padded.size() % kSha1BlockLength != kSha1LengthPosition) {
+  while ((padded.size() % kSha1BlockLength) != kSha1LengthPosition) {
     padded.push_back('\0');
   }
   for (uint8_t i{1}; i <= kSha1LengthBytes; i++) {

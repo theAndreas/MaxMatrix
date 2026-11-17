@@ -33,7 +33,7 @@ bool SimulatorOptions::Parse(int argc, char** argv) {
       return false;
     }
   }
-  return expect_file_ == nullptr || run_for_ != 0;
+  return (expect_file_ == nullptr) || (run_for_ != 0);
 }
 
 void SimulatorOptions::PrintUsage(char const* program) {
@@ -64,7 +64,7 @@ bool SimulatorOptions::ParseOption(std::vector<char const*> const& arguments,
     web_ = true;
     return true;
   }
-  if (*index + 1 >= arguments.size()) {
+  if ((*index + 1) >= arguments.size()) {
     return false;
   }
   ++*index;
@@ -116,8 +116,8 @@ bool SimulatorOptions::ConvertToPort(char const* text, uint16_t* port) {
 
   /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
    * check then refuses */
-  if (end == text || *end != '\0' || value == 0 ||
-      value > kSimulatorOptionsMaxPort) {
+  if ((end == text) || (*end != '\0') || (value == 0) ||
+      (value > kSimulatorOptionsMaxPort)) {
     return false;
   }
   *port = static_cast<uint16_t>(value);
@@ -139,9 +139,9 @@ bool SimulatorOptions::ConvertToRunFor(char const* text, uint32_t* run_for) {
 
   /* asked as whether it lies in the range, so that NaN, which compares false
    * with everything, is refused as well */
-  bool const in_range{milliseconds >= 1 &&
-                      milliseconds <= kSimulatorOptionsMaxRunFor};
-  if (end == text || *end != '\0' || !in_range) {
+  bool const in_range{(milliseconds >= 1) &&
+                      (milliseconds <= kSimulatorOptionsMaxRunFor)};
+  if ((end == text) || (*end != '\0') || !in_range) {
     return false;
   }
   *run_for = static_cast<uint32_t>(milliseconds);

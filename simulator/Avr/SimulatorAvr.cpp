@@ -143,7 +143,7 @@ bool SimulatorAvr::Run(uint32_t milliseconds) {
   ReceiveSerial();
   while (avr_->cycle < end) {
     int const state{avr_run(avr_)};
-    if (state == cpu_Done || state == cpu_Crashed) {
+    if ((state == cpu_Done) || (state == cpu_Crashed)) {
       return false;
     }
   }
@@ -187,7 +187,7 @@ void SimulatorAvr::OnDataIn(avr_irq_t* irq, uint32_t value, void* object) {
  */
 void SimulatorAvr::OnClock(avr_irq_t* irq, uint32_t value, void* object) {
   auto* const simulator{static_cast<SimulatorAvr*>(object)};
-  bool const rising{value != 0 && !simulator->clock_};
+  bool const rising{(value != 0) && !simulator->clock_};
 
   (void)irq;
   simulator->clock_ = value != 0;

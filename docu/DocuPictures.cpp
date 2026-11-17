@@ -227,13 +227,13 @@ bool IsUpright(Max7219Wiring const& wiring) {
   matrix.Clear();
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      matrix.SetDot(x, y, ((x * x) + (3 * y) + (x * y)) % 3 == 0);
+      matrix.SetDot(x, y, (((x * x) + (3 * y) + (x * y)) % 3) == 0);
     }
   }
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       if (mock::chain.IsLit(wiring, x, y) !=
-          (((x * x) + (3 * y) + (x * y)) % 3 == 0)) {
+          ((((x * x) + (3 * y) + (x * y)) % 3) == 0)) {
         upright = false;
       }
     }
@@ -261,9 +261,9 @@ std::string GetModules() {
     }
     modules += wiring.name;
     for (auto const& named : kModuleNames) {
-      if (named.wiring->digits_as_rows == wiring.digits_as_rows &&
-          named.wiring->reversed_columns == wiring.reversed_columns &&
-          named.wiring->reversed_rows == wiring.reversed_rows) {
+      if ((named.wiring->digits_as_rows == wiring.digits_as_rows) &&
+          (named.wiring->reversed_columns == wiring.reversed_columns) &&
+          (named.wiring->reversed_rows == wiring.reversed_rows)) {
         modules += std::string(" (") + named.name + ")";
       }
     }
@@ -362,13 +362,13 @@ void DrawModule(DocuSvg* svg, uint8_t module) {
   svg->AddText({left + (module_width / 2), kTop - kModuleNameAbove},
                "Module " + std::to_string(module), kNameText);
   if (!FindLedOfDot(module * max_matrix::kColumnNumberOfModule, 0, &led) ||
-      led.chip != 0) {
+      (led.chip != 0)) {
     return;
   }
-  bool const right{module == kNumberOfModules - 1};
-  int32_t const edge{right ? left + module_width + (2 * kFramePadding)
-                           : left - (2 * kFramePadding)};
-  int32_t const outside{right ? edge + kArrowLength : edge - kArrowLength};
+  bool const right{module == (kNumberOfModules - 1)};
+  int32_t const edge{right ? (left + module_width + (2 * kFramePadding))
+                           : (left - (2 * kFramePadding))};
+  int32_t const outside{right ? (edge + kArrowLength) : (edge - kArrowLength)};
   svg->AddArrow({outside, middle}, edge, kArrowThickness, kColourFrame);
   svg->AddText({(outside + edge) / 2, middle - kDinAbove}, "DIN", kDinText);
 }
@@ -446,13 +446,13 @@ void DrawBands(DocuSvg* svg, PerDot<DocuLed> const& leds) {
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
       DocuPoint const corner{GetCellX(x) + inset, GetCellY(y) + inset};
-      bool const right_in_module{x % max_matrix::kColumnNumberOfModule <
-                                 max_matrix::kColumnNumberOfModule - 1};
-      bool const below_on_panel{y < max_matrix::kRowNumberOfModule - 1};
-      if (right_in_module && leds[x + 1][y].digit == leds[x][y].digit) {
+      bool const right_in_module{(x % max_matrix::kColumnNumberOfModule) <
+                                 (max_matrix::kColumnNumberOfModule - 1)};
+      bool const below_on_panel{y < (max_matrix::kRowNumberOfModule - 1)};
+      if (right_in_module && (leds[x + 1][y].digit == leds[x][y].digit)) {
         svg->AddRect(corner, {across, along}, {kColourBand, "none", 0});
       }
-      if (below_on_panel && leds[x][y + 1].digit == leds[x][y].digit) {
+      if (below_on_panel && (leds[x][y + 1].digit == leds[x][y].digit)) {
         svg->AddRect(corner, {along, across}, {kColourBand, "none", 0});
       }
     }
@@ -505,7 +505,7 @@ std::string DrawWiring(max_matrix::ModuleType module_type) {
   DrawBands(&svg, leds);
   for (uint8_t x{0}; x < kNumberOfColumns; x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
-      char const* colour{leds[x][y].bit == 0 ? kColourLedBit0 : kColourLed};
+      char const* colour{(leds[x][y].bit == 0) ? kColourLedBit0 : kColourLed};
       DrawLed(&svg, {x, y}, colour,
               std::to_string(leds[x][y].digit) + "." +
                   std::to_string(leds[x][y].bit));
@@ -683,8 +683,8 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
   // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   std::vector<std::string> const arguments(argv, argv + argc);
 
-  if (arguments.size() != 3 ||
-      (arguments[1] != "--write" && arguments[1] != "--check")) {
+  if ((arguments.size() != 3) ||
+      ((arguments[1] != "--write") && (arguments[1] != "--check"))) {
     std::cerr << "usage: " << arguments[0] << " --write|--check FOLDER\n";
     return 2;
   }
@@ -692,5 +692,5 @@ int main(int argc, char** argv) {  // NOLINT(misc-const-correctness): main()
 
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
   matrix.Init();
-  return WriteOrCheck(DrawPictures(), arguments[2], write) == 0 ? 0 : 1;
+  return (WriteOrCheck(DrawPictures(), arguments[2], write) == 0) ? 0 : 1;
 }

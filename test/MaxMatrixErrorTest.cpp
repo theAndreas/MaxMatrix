@@ -181,7 +181,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << test_case.name;
     EXPECT_EQ(matrix_.GetState(), State::kReady) << test_case.name;
     std::vector<Report> expected;
-    if (kDevErrorDetect && test_case.api != nullptr) {
+    if (kDevErrorDetect && (test_case.api != nullptr)) {
       expected.emplace_back(test_case.api, test_case.expected);
     }
     EXPECT_EQ(reports, expected) << test_case.name;

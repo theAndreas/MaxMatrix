@@ -61,7 +61,7 @@ namespace internal {
  * \param[in] position The position, from 0.
  */
 constexpr bool IsEndOfText(span<char const> text, size_t position) {
-  return position >= text.size() || text[position] == kNullCharacter;
+  return (position >= text.size()) || (text[position] == kNullCharacter);
 }
 
 }  // namespace internal

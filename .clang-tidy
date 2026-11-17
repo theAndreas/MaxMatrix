@@ -40,6 +40,7 @@ Checks: >
   -modernize-return-braced-init-list,
   -modernize-use-trailing-return-type,
   -readability-identifier-length,
+  -readability-math-missing-parentheses,
   -readability-named-parameter,
   -bugprone-easily-swappable-parameters,
   -cert-err58-cpp,
@@ -91,6 +92,9 @@ Checks: >
 # modernize-use-trailing-return-type: Google puts the return type in front.
 # readability-identifier-length: Google allows `f` or `a` and `b` where the scope is a few
 #   lines.
+# readability-math-missing-parentheses: house-operator-precedence holds MISRA C++:2023 Rule 8.0.1
+#   in full, a comparison in a logical operator and the branches of ?: among it; this check holds
+#   only arithmetic and bits mixed, a part of it, and two names would report one place twice.
 # readability-named-parameter: Google leaves out the name of a parameter that is unused where
 #   the context explains it, as a tag type that only picks an overload.
 WarningsAsErrors: '*'

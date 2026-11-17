@@ -69,7 +69,7 @@ ControlDotPanel::ControlDotPanel(
 }
 
 void ControlDotPanel::SetPicture(std::vector<uint8_t> const& columns) {
-  if (columns.size() != columns_.size() || columns == columns_) {
+  if ((columns.size() != columns_.size()) || (columns == columns_)) {
     return;
   }
   columns_ = columns;
@@ -213,15 +213,16 @@ bool ControlDotPanel::GetDotAt(wxPoint const& point, uint8_t* column,
   wxCoord const y{point.y - FromDIP(kMargin)};
   wxCoord const in_module{x % module_width};
 
-  if (x < 0 || y < 0 || in_module >= max_matrix::kColumnNumberOfModule * cell) {
+  if ((x < 0) || (y < 0) ||
+      (in_module >= (max_matrix::kColumnNumberOfModule * cell))) {
     return false;
   }
   wxCoord const found_column{
       (x / module_width * max_matrix::kColumnNumberOfModule) +
       (in_module / cell)};
   wxCoord const found_row{y / cell};
-  if (found_column >= kControlNumberOfColumns ||
-      found_row >= max_matrix::kRowNumberOfModule) {
+  if ((found_column >= kControlNumberOfColumns) ||
+      (found_row >= max_matrix::kRowNumberOfModule)) {
     return false;
   }
   *column = static_cast<uint8_t>(found_column);

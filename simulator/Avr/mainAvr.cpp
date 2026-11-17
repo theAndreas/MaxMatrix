@@ -64,12 +64,12 @@ SimulatorAvr avr;
 bool RunAvr() {
   /* a page or the control program, and whoever is in front of it, speaks in
    * real time */
-  bool const real_time{options.IsWeb() || options.GetTcpPort() != 0 ||
-                       options.GetRunFor() == 0};
+  bool const real_time{options.IsWeb() || (options.GetTcpPort() != 0) ||
+                       (options.GetRunFor() == 0)};
   std::chrono::steady_clock::time_point const start{
       std::chrono::steady_clock::now()};
-  for (uint32_t now{1}; options.GetRunFor() == 0 || now <= options.GetRunFor();
-       now++) {
+  for (uint32_t now{1};
+       (options.GetRunFor() == 0) || (now <= options.GetRunFor()); now++) {
     if (!avr.Run(now)) {
       std::cerr << "the AVR stopped after " << now << " ms\n";
       return false;
@@ -100,7 +100,7 @@ bool RunAvr() {
  *         wrong.
  */
 int main(int argc, char** argv) {
-  if (!options.Parse(argc, argv) || options.GetElfFile() == nullptr ||
+  if (!options.Parse(argc, argv) || (options.GetElfFile() == nullptr) ||
       !panel.SetWiring(options.GetWiringName())) {
     SimulatorOptions::PrintUsage(*argv);
     return kExitUsage;
@@ -121,6 +121,6 @@ int main(int argc, char** argv) {
   }
   bool const passed{
       SimulatorTerminal::PrintResult(panel, options.GetExpectFile()) &&
-      mock::errors == 0};
+      (mock::errors == 0)};
   return passed ? kExitOk : kExitFailed;
 }

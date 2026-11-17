@@ -49,8 +49,8 @@ void ControlLink::AskForPicture(uint32_t now) {
     return;
   }
   if (picture_timed_ &&
-      waited < (picture_asked_ ? kControlLinkPictureTimeoutMs
-                               : kControlLinkPictureIntervalMs)) {
+      (waited < (picture_asked_ ? kControlLinkPictureTimeoutMs
+                                : kControlLinkPictureIntervalMs))) {
     return;
   }
   if (!port_.get().Write(ControlCommand::MakePicture() + "\n")) {
@@ -70,13 +70,13 @@ bool ControlLink::Task(std::vector<std::string>* lines) {
   }
   bool const open{port_.get().Read(&received_)};
 
-  while ((end = received_.find('\n')) != std::string::npos ||
-         received_.size() >= kControlLinkMaxLineLength) {
-    size_t const length{end != std::string::npos ? end
-                                                 : kControlLinkMaxLineLength};
+  while (((end = received_.find('\n')) != std::string::npos) ||
+         (received_.size() >= kControlLinkMaxLineLength)) {
+    size_t const length{(end != std::string::npos) ? end
+                                                   : kControlLinkMaxLineLength};
     std::string line = received_.substr(0, length);
-    received_.erase(0, end != std::string::npos ? end + 1 : length);
-    if (!line.empty() && line.back() == '\r') {
+    received_.erase(0, (end != std::string::npos) ? (end + 1) : length);
+    if (!line.empty() && (line.back() == '\r')) {
       line.pop_back();
     }
     Take(std::move(line), lines);

@@ -148,8 +148,8 @@ class MaxMatrixTest : public ::testing::Test {
     matrix_.Clear();
     int32_t const frames_before{mock::frames};
     matrix_.SetTextWithShift(text);
-    for (shift_calls_ = 0;
-         shift_calls_ < 1000 && matrix_.GetState() != max_matrix::State::kReady;
+    for (shift_calls_ = 0; (shift_calls_ < 1000) &&
+                           (matrix_.GetState() != max_matrix::State::kReady);
          shift_calls_++) {
       matrix_.ShiftTask();
     }

@@ -34,8 +34,8 @@ std::string Receive(int descriptor) {
     return "";
   }
   ssize_t const length{read(descriptor, chunk.data(), chunk.size())};
-  return length > 0 ? std::string(chunk.data(), static_cast<size_t>(length))
-                    : "";
+  return (length > 0) ? std::string(chunk.data(), static_cast<size_t>(length))
+                      : "";
 }
 
 // Reads `port` until something arrives or half a second has passed, as the
@@ -43,7 +43,8 @@ std::string Receive(int descriptor) {
 std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
-  for (int16_t i{0}; i < 50 && received.empty() && port.Read(&received); i++) {
+  for (int16_t i{0}; (i < 50) && received.empty() && port.Read(&received);
+       i++) {
     usleep(10000);
   }
   return received;
@@ -139,7 +140,7 @@ TEST(ControlTcpPortTest, CarriesBothWaysToTheSimulator) {
   ASSERT_TRUE(host.Begin(kPort));
   ASSERT_TRUE(port.Open(kPort));
   EXPECT_TRUE(port.Write("clear\n"));
-  for (int16_t i{0}; i < 50 && received.empty(); i++) {
+  for (int16_t i{0}; (i < 50) && received.empty(); i++) {
     host.Task(&received);
     usleep(10000);
   }
@@ -160,7 +161,7 @@ TEST(ControlTcpPortTest, ReadSaysWhenTheSimulatorIsGone) {
     ASSERT_TRUE(port.Open(kPort));
     host.Task(&received);
   }
-  for (int16_t i{0}; i < 50 && port.Read(&received); i++) {
+  for (int16_t i{0}; (i < 50) && port.Read(&received); i++) {
     usleep(10000);
   }
   EXPECT_FALSE(port.IsOpen());

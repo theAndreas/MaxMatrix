@@ -52,9 +52,9 @@ int SimulatorSocket::OpenListener(uint16_t port) {
 
   // the sockets API takes every address as a sockaddr
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-  if (bind(listening, reinterpret_cast<sockaddr*>(&address), sizeof(address)) !=
-          0 ||
-      listen(listening, kBacklog) != 0) {
+  if ((bind(listening, reinterpret_cast<sockaddr*>(&address),
+            sizeof(address)) != 0) ||
+      (listen(listening, kBacklog) != 0)) {
     close(listening);
     return kSimulatorSocketNone;
   }
@@ -90,7 +90,7 @@ bool SimulatorSocket::SendAll(int socket, std::string const& data) {
         send(socket, &data[sent], data.size() - sent, MSG_NOSIGNAL)};
     if (written > 0) {
       sent += static_cast<size_t>(written);
-    } else if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+    } else if ((written < 0) && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
       continue;
     } else {
       return false;

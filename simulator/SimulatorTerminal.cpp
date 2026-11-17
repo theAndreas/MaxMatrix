@@ -76,7 +76,7 @@ bool SimulatorTerminal::PrintResult(SimulatorPanel const& panel,
     return true;
   }
 
-  if (!ReadFile(expect_file, &expected) || expected != result) {
+  if (!ReadFile(expect_file, &expected) || (expected != result)) {
     std::cerr << "differs from " << expect_file << ":\n" << expected;
     return false;
   }

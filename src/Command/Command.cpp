@@ -132,7 +132,8 @@ Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
 uint8_t Command::Find(uint8_t from, char c) const {
   uint8_t position{from};
 
-  while (line_[position] != internal::kNullCharacter && line_[position] != c) {
+  while ((line_[position] != internal::kNullCharacter) &&
+         (line_[position] != c)) {
     position++;
   }
   return position;
@@ -271,7 +272,7 @@ Result<uint16_t> Command::ConvertToNumber(uint8_t text,
   for (uint8_t position{text}; line_[position] != internal::kNullCharacter;
        position++) {
     char const digit{line_[position]};
-    if (digit < '0' || digit > '9') {
+    if ((digit < '0') || (digit > '9')) {
       return Error::kNotANumber;
     }
     if (value <= maximum) {
@@ -287,8 +288,8 @@ Result<uint16_t> Command::ConvertToNumber(uint8_t text,
 // Computed rather than looked up: a table of the digits would lie in RAM on the
 // Uno.
 char Command::ConvertToHexDigit(uint8_t value) {
-  return static_cast<char>(value < kDecimalBase ? '0' + value
-                                                : 'A' + value - kDecimalBase);
+  return static_cast<char>(
+      (value < kDecimalBase) ? ('0' + value) : ('A' + value - kDecimalBase));
 }
 
 }  // namespace max_matrix

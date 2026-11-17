@@ -104,15 +104,16 @@ it:
 | T-20 | An array is a class that knows its size, `std::array` or its counterpart by M-3, which does not decay to a pointer; a C array only for a string literal: `char const kName[] = "font";`. An element is reached by index, not by arithmetic on a pointer. | `modernize-avoid-c-arrays`, `cppcoreguidelines-pro-bounds-pointer-arithmetic` |
 | T-21 | A `char` is widened to a number through `unsigned char`: whether `char` has a sign depends on the target, and where it has one, a character above 127 turns negative. | `bugprone-signed-char-misuse` |
 | T-22 | A literal's suffix with the `u` in lower case and every `L` in upper case: `192u`, `1000uL`, `1LL`, `1.0L`. An `l` is read as a 1; a `U` reads as one more digit of a hexadecimal value, as in `0x04U`, where a `u` stands apart. A float's `f` is written either way. | `readability-uppercase-literal-suffix` |
+| T-23 | An operand that is itself an operation of higher precedence stands in parentheses: `(a == b) && ready`, `(x + 1) < limit`, `ready ? (a + b) : c`, `sizeof(value)`. The reader need not know the table of precedence, and an operand that moves keeps what it binds (MISRA C++:2023 8.0.1). An operand of the same precedence, `a + b + c`, needs none, nor one that is a call, a cast, a unary operator or a name, nor the operands of an assignment. | `house-operator-precedence`, `-Wparentheses`; an `#if` by review |
 
 T-18 in an example:
 
 ```cpp
 // Not:
-if ((now - start_ >= kInterval) && (state_ == State::kOn) && !paused_) {
+if (((now - start_) >= kInterval) && (state_ == State::kOn) && !paused_) {
 // But:
-bool const elapsed{now - start_ >= kInterval};
-bool const running{state_ == State::kOn && !paused_};
+bool const elapsed{(now - start_) >= kInterval};
+bool const running{(state_ == State::kOn) && !paused_};
 if (elapsed && running) {
 ```
 

@@ -49,7 +49,8 @@ TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   }
   EXPECT_EQ(matrix_.GetState(), State::kStringShift);
   EXPECT_NE(pictures.back(), Picture([](int16_t, int16_t) { return false; }));
-  for (uint16_t step{kNumberOfColumns}; step + pass < pictures.size(); step++) {
+  for (uint16_t step{kNumberOfColumns}; (step + pass) < pictures.size();
+       step++) {
     ASSERT_EQ(pictures[step + pass], pictures[step])
         << "step " << step << " and one pass later";
   }
@@ -103,7 +104,7 @@ TEST_F(MaxMatrixTest, CharWithTheLargestSpaceStopsShifting) {
 
   matrix_.SetSpaceBetweenChars(255);
   ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);
-  for (; steps < 1000 && matrix_.GetState() != State::kReady; steps++) {
+  for (; (steps < 1000) && (matrix_.GetState() != State::kReady); steps++) {
     matrix_.ShiftTask();
   }
   EXPECT_EQ(steps, 4 + 255);
@@ -122,8 +123,8 @@ TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
   EXPECT_EQ(ShownPicture(matrix_), Picture([&sprite](int16_t x, int16_t y) {
               int16_t const column{static_cast<int16_t>(x - left)};
               int16_t const row{static_cast<int16_t>(y - top)};
-              bool const inside{column >= 0 && column < sprite.width &&
-                                row >= 0 && row < sprite.height};
+              bool const inside{(column >= 0) && (column < sprite.width) &&
+                                (row >= 0) && (row < sprite.height)};
               return inside &&
                      bitRead(sprite.columns[static_cast<size_t>(column)], row);
             }));

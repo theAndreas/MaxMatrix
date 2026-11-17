@@ -12,6 +12,7 @@
 #include "clang-tidy/ClangTidyModule.h"
 #include "no_friend_check.h"
 #include "operator_form_check.h"
+#include "operator_precedence_check.h"
 
 namespace house {
 namespace {
@@ -26,6 +27,8 @@ class HouseModule : public clang::tidy::ClangTidyModule {
     factories.registerCheck<BracedVarInitCheck>("house-braced-var-init");
     factories.registerCheck<NoFriendCheck>("house-no-friend");
     factories.registerCheck<OperatorFormCheck>("house-operator-form");
+    factories.registerCheck<OperatorPrecedenceCheck>(
+        "house-operator-precedence");
   }
 };
 

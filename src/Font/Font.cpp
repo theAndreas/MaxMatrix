@@ -200,7 +200,7 @@ array<uint8_t, kDefaultFontSize> const kDefaultFont PROGMEM{make_array<uint8_t>(
  * its size before each read.
  */
 Status Font::CheckFont(span<uint8_t const> font) {
-  if (font.size() < kHeaderLength1 || ReadByte(font, 0) != kFileIndicator) {
+  if ((font.size() < kHeaderLength1) || (ReadByte(font, 0) != kFileIndicator)) {
     return Error::kNotAFont;
   }
 
@@ -215,7 +215,7 @@ Status Font::CheckFont(span<uint8_t const> font) {
     last = ReadByte(font, kLastPosition1);
     height = ReadByte(font, kHeightPosition1);
     offset = kHeaderLength1;
-  } else if (version == kVersion2 && font.size() >= kHeaderLength2) {
+  } else if ((version == kVersion2) && (font.size() >= kHeaderLength2)) {
     first = ReadNumber(font, kFirstPosition);
     last = ReadNumber(font, kLastPosition2);
     height = ReadByte(font, kHeightPosition2);
@@ -223,7 +223,7 @@ Status Font::CheckFont(span<uint8_t const> font) {
   } else {
     return Error::kNotAFont;
   }
-  if (first > last || height < 1 || height > kRowNumberOfModule) {
+  if ((first > last) || (height < 1) || (height > kRowNumberOfModule)) {
     return Error::kNotAFont;
   }
   /* the loop ends at the last char rather than past it, as a last char of
@@ -237,7 +237,7 @@ Status Font::CheckFont(span<uint8_t const> font) {
       break;
     }
   }
-  return offset == font.size() ? Error::kOk : Error::kNotAFont;
+  return (offset == font.size()) ? Error::kOk : Error::kNotAFont;
 }
 
 /*
@@ -264,7 +264,7 @@ Result<Glyph> Font::GetGlyph(span<uint8_t const> font, char c) {
     height = ReadByte(font, kHeightPosition2);
     offset = kHeaderLength2;
   }
-  if (code < first || code > last) {
+  if ((code < first) || (code > last)) {
     return Error::kUnknownChar;
   }
   for (uint16_t skipped{first}; skipped < code; skipped++) {
@@ -284,7 +284,7 @@ DecodedChar Font::DecodeChar(span<char const> text) {
                               : static_cast<uint8_t>(text[1])};
 
   /* two byte UTF-8 sequence of a char from U+0080 to U+00FF */
-  bool const is_latin_1_lead{0xC2 == lead_byte || 0xC3 == lead_byte};
+  bool const is_latin_1_lead{(0xC2 == lead_byte) || (0xC3 == lead_byte)};
   bool const is_continuation{
       kUtf8ContinuationTag ==
       Bit<uint8_t>::ReadBitGroup(next_byte, kUtf8ContinuationMask)};

@@ -192,8 +192,8 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   }
 
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
-  bool opened{ioctl(descriptor_, TIOCEXCL) == 0 &&
-              tcgetattr(descriptor_, &settings) == 0};
+  bool opened{(ioctl(descriptor_, TIOCEXCL) == 0) &&
+              (tcgetattr(descriptor_, &settings) == 0)};
   cfmakeraw(&settings);
   max_matrix::Bit<tcflag_t>::SetBits(settings.c_cflag, kLocalReceive);
   max_matrix::Bit<tcflag_t>::ClearBits(settings.c_cflag, kTwoStopsHandshake);
@@ -201,8 +201,8 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   settings.c_cc[VTIME] = 0;
   // glibc's cfsetspeed() takes a rate as its number as well as its B constant,
   // so no table maps one to the other.
-  opened = opened && cfsetspeed(&settings, baud_rate) == 0 &&
-           tcsetattr(descriptor_, TCSANOW, &settings) == 0;
+  opened = opened && (cfsetspeed(&settings, baud_rate) == 0) &&
+           (tcsetattr(descriptor_, TCSANOW, &settings) == 0);
   if (opened) {
     tcflush(descriptor_, TCIOFLUSH);
   } else {
@@ -246,8 +246,8 @@ bool ControlSerialPort::Write(std::string const& data) {
     pollfd writable{descriptor_, POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
-    } else if (written < 0 && errno == EAGAIN &&
-               poll(&writable, 1, kWriteTimeoutMs) > 0) {
+    } else if ((written < 0) && (errno == EAGAIN) &&
+               (poll(&writable, 1, kWriteTimeoutMs) > 0)) {
       continue;
     } else {
       Close();
@@ -267,7 +267,7 @@ bool ControlSerialPort::Read(std::string* data) {
     ssize_t const length{read(descriptor_, chunk.data(), chunk.size())};
     if (length > 0) {
       data->append(chunk.data(), static_cast<size_t>(length));
-    } else if (length < 0 && errno == EAGAIN) {
+    } else if ((length < 0) && (errno == EAGAIN)) {
       return true;
     } else {
       Close();

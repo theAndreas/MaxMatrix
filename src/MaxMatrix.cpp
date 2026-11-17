@@ -40,16 +40,16 @@ void Matrix::ShiftTask() {
   uint32_t const now{millis()};
 
   // The interval counts from this step on, not from when the step was due.
-  if (now - last_shift_ < shift_interval_) {
+  if ((now - last_shift_) < shift_interval_) {
     return;
   }
   last_shift_ = now;
 
-  if (State::kStringShift == state_ && !text_.StringShiftTask(panel_)) {
+  if ((State::kStringShift == state_) && !text_.StringShiftTask(panel_)) {
     state_ = State::kReady;
   }
 
-  if (State::kCharShift == state_ && !text_.CharShiftTask(panel_)) {
+  if ((State::kCharShift == state_) && !text_.CharShiftTask(panel_)) {
     state_ = State::kReady;
   }
 
@@ -104,7 +104,7 @@ Status Matrix::SetTextWithShift(span<char const> text, bool repeat) {
 void Matrix::StopShift() {
   // Only a shift ends here: before Init() the state says the chain is not set
   // up.
-  if (state_ == State::kStringShift || state_ == State::kCharShift) {
+  if ((state_ == State::kStringShift) || (state_ == State::kCharShift)) {
     state_ = State::kReady;
   }
 }

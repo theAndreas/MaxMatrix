@@ -58,7 +58,7 @@ using Length = size_t;
  * program with SIGPIPE */
 constexpr int kSendFlags{MSG_NOSIGNAL};
 
-bool WouldBlock() { return errno == EAGAIN || errno == EWOULDBLOCK; }
+bool WouldBlock() { return (errno == EAGAIN) || (errno == EWOULDBLOCK); }
 void CloseSocket(Socket socket) { close(socket); }
 int Poll(pollfd* descriptor, int timeout) {
   return poll(descriptor, 1, timeout);
@@ -133,8 +133,8 @@ bool ControlTcpPort::Write(std::string const& data) {
     pollfd writable{ToSocket(socket_), POLLOUT, 0};
     if (written > 0) {
       sent += static_cast<size_t>(written);
-    } else if (written < 0 && WouldBlock() &&
-               Poll(&writable, kWriteTimeoutMs) > 0) {
+    } else if ((written < 0) && WouldBlock() &&
+               (Poll(&writable, kWriteTimeoutMs) > 0)) {
       continue;
     } else {
       Close();
@@ -155,7 +155,7 @@ bool ControlTcpPort::Read(std::string* data) {
                            static_cast<int>(chunk.size()), 0)};
     if (length > 0) {
       data->append(chunk.data(), static_cast<size_t>(length));
-    } else if (length < 0 && WouldBlock()) {
+    } else if ((length < 0) && WouldBlock()) {
       return true;
     } else {
       Close();

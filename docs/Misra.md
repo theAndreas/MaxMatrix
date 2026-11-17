@@ -21,8 +21,8 @@ rule. Read the rule in the standard.
   **Advisory** ones may be left out with a reason.
 
 No free tool checks MISRA C++ as a whole: clang-tidy has no MISRA module, Cppcheck's free addon
-knows MISRA C only. Where a project needs evidence of compliance, a checker such as Cppcheck
-Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
+knows MISRA C only. Where a project needs evidence of compliance, a commercial checker, as
+PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 
 ## The matrix
 
@@ -117,7 +117,7 @@ Premium or PC-lint Plus fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 8.0.1 | Advisory | Parentheses make the meaning clear | `readability-math-missing-parentheses`, `-Wparentheses` |  |
+| Rule 8.0.1 | Advisory | Parentheses make the meaning clear | `house-operator-precedence`, `-Wparentheses`, CodingStyle T-23; the expression of an `#if` by review |  |
 | Rule 8.1.1 | Required | No implicit capture of `this` | `cppcoreguidelines-misleading-capture-default-by-value`, in part |  |
 | Rule 8.1.2 | Advisory | Lambda captures explicit | Review |  |
 | Rule 8.2.1 | Required | Virtual bases cast by `dynamic_cast` only | n/a: no virtual base (13.1.1), no RTTI |  |

@@ -40,7 +40,7 @@ void setup() {
 void loop() {
   /* a step only every kStepIntervalMs; the rest of loop() is free for other
    * work */
-  if (millis() - last_step < kStepIntervalMs) {
+  if ((millis() - last_step) < kStepIntervalMs) {
     return;
   }
   last_step = millis();
