@@ -1386,6 +1386,13 @@ pins, `BufferSize()`, `IsEndOfText()`, `span`, a group of `Bit` and the conversi
 `reference_wrapper` when compiling (TS-16); the first and last port and the edges of the
 WebSocket's 16-bit length; and an `array` of no element as a case of `test/compile_fail/`.
 
+As built for `test/MaxMatrixErrorTest.cpp` (TS-5, 9, 10, 14, 17): the 34 ways to fail are a
+`TEST_P` with a name each, every one on a fixture of its own, rather than a loop over one
+matrix, whose cases depended on their order; the text of every error is a `TEST_P` over a table
+that a `static_assert` holds as long as the enum, and the text of a `Result` and of a byte off
+the enum are tests of their own; the tests on the fixture take the file's name; and every test
+is arranged, acted and asserted in paragraphs.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

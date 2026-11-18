@@ -472,8 +472,9 @@ A function of the library that can fail says why, in `Error`
 `E_OK` was 0 and `if(matrix.SetText(…))` was true on an error; code asks `IsOk()` or compares
 with an error. Only an array still goes through a parameter (`GetRow()` of the whole panel by
 reference). A new reason gets its own value in the enum, a text in `kErrorTexts`
-(`src/MaxMatrixError.cpp`) and a row in the test `EveryErrorSaysWhy`, which checks every way a
-call can fail and that it changes nothing. `Command::Feed()` answers a failed line with
+(`src/MaxMatrixError.cpp`), a case in `kTextCases` of `test/MaxMatrixErrorTest.cpp`, and each
+way to fail a case of `ErrorCaseTest` there, which checks the reason and that the call changes
+nothing. `Command::Feed()` answers a failed line with
 `GetErrorText()` on the `Print` it is given, and returns the reason as well.
 
 A result whose drop is a mistake is `MAXMATRIX_NODISCARD` (FN-10): a getter's, whose value would
