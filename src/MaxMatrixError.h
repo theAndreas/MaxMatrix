@@ -55,7 +55,8 @@ enum class Error : uint8_t {
   kLineTooLong,
   /*! The font is null, does not start as Font says, or its chars do
      not fill its array. */
-  kNotAFont
+  kNotAFont,
+  kNotSetUp /*!< Matrix::Init() has not succeeded yet. */
 };
 
 /*!

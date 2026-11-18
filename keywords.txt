@@ -97,6 +97,7 @@ kNotANumber	LITERAL1
 kUnknownCommand	LITERAL1
 kLineTooLong	LITERAL1
 kNotAFont	LITERAL1
+kNotSetUp	LITERAL1
 kPending	LITERAL1
 kDone	LITERAL1
 kAnswered	LITERAL1

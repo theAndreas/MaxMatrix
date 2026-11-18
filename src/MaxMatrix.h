@@ -39,7 +39,7 @@ namespace max_matrix {
 
 /*! \brief What a Matrix is doing, as Matrix::GetState() tells it. */
 enum class State : uint8_t {
-  kNone, /*!< Constructed; Matrix::Init() not called yet. */
+  kNone, /*!< Constructed; no Matrix::Init() has succeeded yet. */
   kInit, /*!< Matrix::Init() is running. */
   /*! Nothing to shift: a text or a char shifted in is complete, or stopped. */
   kReady,
@@ -408,8 +408,9 @@ class Matrix {
    * the char stands.
    *
    * \param[in] c The char, latin-1.
-   * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
-   *         the char; nothing starts then.
+   * \return Error::kOk; Error::kNotSetUp before an Init() has succeeded; or
+   *         Error::kUnknownChar if the font has no sprite for the char. Nothing
+   *         starts on an error.
    */
   Status SetCharWithShift(char c);
 
@@ -443,8 +444,9 @@ class Matrix {
    *                 character or the end of the span, as for SetText(). It has
    *                 to live until the text stands, or as long as it repeats.
    * \param[in] repeat True to start over after the last char, without end.
-   * \return Error::kOk, or Error::kNoText if `text` is an empty span; nothing
-   *         starts then.
+   * \return Error::kOk; Error::kNotSetUp before an Init() has succeeded; or
+   *         Error::kNoText if `text` is an empty span. Nothing starts on an
+   *         error.
    */
   Status SetTextWithShift(span<char const> text, bool repeat = false);
 
