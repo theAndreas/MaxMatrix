@@ -1393,6 +1393,15 @@ that a `static_assert` holds as long as the enum, and the text of a `Result` and
 the enum are tests of their own; the tests on the fixture take the file's name; and every test
 is arranged, acted and asserted in paragraphs.
 
+As built for `test/MaxMatrixTest.cpp` (TS-5, 9, 10, 13, 14, 17): the tests of `Batch` have a file
+of their own, `test/MaxMatrixBatchTest.cpp`; a test that drew in both modes, those of the
+shutdown and of the display test, and the tests of the pace of a shift are split into one
+behaviour each, the pace's on a fixture that starts the shift; what a test saw inside a block is
+asserted after it; a register of every chip is compared with a vector written down rather than
+looped over; the tests of a matrix not set up share a fixture of their own rather than making
+one beside the fixture's; and a test that leaves the LEDs other than the buffer, as one in
+shutdown, puts them back at its end, with the reason.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
