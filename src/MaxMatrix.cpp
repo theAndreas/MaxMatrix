@@ -13,8 +13,6 @@
 
 #include <stdint.h>
 
-#include "MaxMatrixAttributes.h"
-
 namespace max_matrix {
 
 Matrix::Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
@@ -26,24 +24,39 @@ void Matrix::SetAutoUpdate(bool auto_update) {
   UpdateIfAuto();
 }
 
+// The settings are sent at once and not kept: before Init() nothing is sent,
+// and Init() then sends its own, so that one set before would be lost unseen.
 Status Matrix::SetIntensity(uint8_t intensity) {
+  Status status{Error::kNotSetUp};
   if (intensity > max7219::kIntensityMaxValue) {
-    return MAXMATRIX_REPORT_ERROR("SetIntensity", Status(Error::kOutOfRange));
+    status = Error::kOutOfRange;
+  } else if (state_ != State::kNone) {
+    RegisterWrite(max7219::Register::kIntensity, intensity);
+    status = Error::kOk;
   }
-  RegisterWrite(max7219::Register::kIntensity, intensity);
-  return Error::kOk;
+  return MAXMATRIX_REPORT_ERROR("SetIntensity", status);
 }
 
-void Matrix::SetShutdown(bool shutdown) {
-  RegisterWrite(max7219::Register::kShutdown,
-                shutdown ? max7219::kShutdownModeShutdownMode
-                         : max7219::kShutdownModeNormalOperation);
+Status Matrix::SetShutdown(bool shutdown) {
+  Status status{Error::kNotSetUp};
+  if (state_ != State::kNone) {
+    RegisterWrite(max7219::Register::kShutdown,
+                  shutdown ? max7219::kShutdownModeShutdownMode
+                           : max7219::kShutdownModeNormalOperation);
+    status = Error::kOk;
+  }
+  return MAXMATRIX_REPORT_ERROR("SetShutdown", status);
 }
 
-void Matrix::SetDisplayTest(bool display_test) {
-  RegisterWrite(max7219::Register::kDisplayTest,
-                display_test ? max7219::kDisplayTestDisplayTestMode
-                             : max7219::kDisplayTestNormalOperation);
+Status Matrix::SetDisplayTest(bool display_test) {
+  Status status{Error::kNotSetUp};
+  if (state_ != State::kNone) {
+    RegisterWrite(max7219::Register::kDisplayTest,
+                  display_test ? max7219::kDisplayTestDisplayTestMode
+                               : max7219::kDisplayTestNormalOperation);
+    status = Error::kOk;
+  }
+  return MAXMATRIX_REPORT_ERROR("SetDisplayTest", status);
 }
 
 void Matrix::SetColumn(X x, Byte value) {
@@ -152,10 +165,13 @@ Status Matrix::Init() {
   panel_.GetWired().Clear();
   Update();
 
-  // The static_assert beside max7219::kIntensityMaxValue holds the value in
-  // range, so it cannot fail; SetIntensity() rather than RegisterWrite(), as
-  // a sketch that sets the intensity itself shares it, 14 bytes of flash less.
-  Discard(SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE));
+  /*
+   * The static_assert beside max7219::kIntensityMaxValue holds the value in
+   * range. RegisterWrite() rather than SetIntensity(), whose checks and report
+   * cost up to 82 bytes of flash with MAXMATRIX_DEV_ERROR_DETECT in a sketch
+   * that never sets the intensity, and only Basics, which does, 10 bytes.
+   */
+  RegisterWrite(max7219::Register::kIntensity, MAXMATRIX_INTENSITY_INIT_VALUE);
   state_ = State::kReady;
   return status;
 }

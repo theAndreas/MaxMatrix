@@ -1311,6 +1311,16 @@ SerialControl calls it on every `loop()`; and `Command` passes the status of `Se
 rather than dropping it (E-1), which costs SerialControl 2 bytes of flash with
 `MAXMATRIX_DEV_ERROR_DETECT` and nothing otherwise.
 
+As built for the settings of the chapter Errors (E-1, E-2): `SetIntensity()`, `SetShutdown()` and
+`SetDisplayTest()` return `Error::kNotSetUp` before an `Init()` has succeeded and change nothing,
+as decided on 2026-11-18, rather than a success, or nothing, for a setting that `Init()` then
+overwrote unseen; the two that returned `void` return a `Status`, and their `\pre Init()` is gone.
+An `intensity=` line on such a matrix is answered `error: not set up`, as `Command` passes the
+status on since #140. `Init()` writes its intensity through `RegisterWrite()` now rather than
+handing the status of `SetIntensity()` to `Discard()` (#139): with the check of the state, that
+cost up to 82 bytes of flash with `MAXMATRIX_DEV_ERROR_DETECT` in every example that never sets
+the intensity, against 10 in `Basics`, which does.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
