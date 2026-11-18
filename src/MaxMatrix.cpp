@@ -154,8 +154,14 @@ void Matrix::SetMatrixOrientation(MatrixOrientation matrix_orientation) {
 }
 
 Status Matrix::Init() {
-  Status const status{MAXMATRIX_REPORT_ERROR(
-      "Init", panel_.GetWired().GetChain().Init(panel_.GetNumberOfModules()))};
+  // A buffer that is no chain would wrap the count of the columns or leave
+  // columns no module has.
+  Status chain_status{Error::kOutOfRange};
+  if (panel_.GetWired().HoldsAChain()) {
+    chain_status =
+        panel_.GetWired().GetChain().Init(panel_.GetNumberOfModules());
+  }
+  Status const status{MAXMATRIX_REPORT_ERROR("Init", chain_status)};
   if (!status.IsOk()) {
     return status;
   }

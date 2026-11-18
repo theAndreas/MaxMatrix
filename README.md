@@ -210,7 +210,7 @@ void max_matrix::ReportError(__FlashStringHelper const* api, max_matrix::Error e
 }
 ```
 
-Switched off, as it is by default, the reports cost nothing. Switched on, `Basics` grows by 1182 bytes of flash and
+Switched off, as it is by default, the reports cost nothing. Switched on, `Basics` grows by 1178 bytes of flash and
 179 of RAM, most of it `Serial`; with a report of its own, by little more than the names of the functions it calls.
 In SerialControl a `text=` with a char the font lacks is then reported as well, in a line before its answer.
 

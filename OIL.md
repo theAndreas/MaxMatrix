@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1365,6 +1365,13 @@ sprite higher than a module is drawn eight rows high, and a sprite wider than it
 wide as they, rather than reading bits past a byte, which turned the row below the eighth off and
 from bit 32 on was undefined, or columns past the sprite's array; a height or width of 0 draws
 nothing. The reference says so where it names the ranges.
+
+As built for the buffer handed to a `Matrix` (TS-25), as decided on 2026-11-18: `Init()` refuses
+with `Error::kOutOfRange` a buffer that is no chain of 1 to `kMaxNumberOfModules` modules, eight
+bytes each, as it refuses a pin the board lacks, and sends nothing; one longer than 255 bytes
+wrapped the count of the columns, one that is no multiple of eight left columns no module has,
+and an empty one was a chain of none. `MatrixOf` was checked when compiling already. The
+longest chain, of 31 modules, has a test of its own.
 
 ### 42 A newer avr-gcc as a cross-check
 

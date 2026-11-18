@@ -5,8 +5,10 @@
  * shifting text, and the settings of the MAX7219. */
 
 #include <gtest/gtest.h>
+#include <stddef.h>
 #include <stdint.h>
 
+#include <string>
 #include <vector>
 
 #include "Arduino.h"
@@ -289,6 +291,71 @@ TEST_F(MaxMatrixTest, DisplayTestLightsEveryLed) {
       << "still in shutdown";
   matrix_.SetShutdown(false);
   EXPECT_EQ(Display(), shown);
+}
+
+/* a buffer that is no chain of 1 to kMaxNumberOfModules modules: more than 255
+ * bytes wrapped the count of the columns, a length that is no multiple of eight
+ * left columns no module has, and none was a chain of no module */
+struct BufferCase {
+  char const* name;
+  size_t length;
+};
+
+class MatrixBufferTest : public ::testing::TestWithParam<BufferCase> {};
+
+std::string BufferCaseName(::testing::TestParamInfo<BufferCase> const& info) {
+  return info.param.name;
+}
+
+TEST_P(MatrixBufferTest, InitRefusesABufferThatIsNoChain) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  std::vector<Byte> buffer(GetParam().length);
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, span<Byte>{buffer.data(), buffer.size()}};
+
+  Error const error{matrix.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+  EXPECT_EQ(matrix.GetState(), State::kNone);
+  EXPECT_EQ(mock::frames, 0);
+  EXPECT_EQ(mock::pin_mode[kChipSelectPin], INPUT);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Lengths, MatrixBufferTest,
+    ::testing::Values(BufferCase{"Empty", 0},
+                      BufferCase{"LessThanAModule", kColumnNumberOfModule - 1},
+                      BufferCase{"OneColumnMore", kColumnNumberOfModule + 1},
+                      BufferCase{"OneModuleTooMany",
+                                 BufferSize(kMaxNumberOfModules + 1)}),
+    BufferCaseName);
+
+/* an empty buffer, which Init() refuses, was cleared by a memset() of a null
+ * pointer, which C does not define even for no byte */
+TEST(MatrixTest, ClearOfAnEmptyBufferSendsNothing) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, span<Byte>{}};
+
+  matrix.Clear();
+
+  EXPECT_EQ(mock::frames, 0);
+  EXPECT_EQ(mock::errors, 0);
+}
+
+/* the longest chain, kMaxNumberOfModules modules, is one */
+TEST(MatrixTest, InitTakesTheLongestChain) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kMaxNumberOfModules);
+  array<Byte, BufferSize(kMaxNumberOfModules)> buffer{};
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, buffer};
+
+  Error const error{matrix.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(matrix.GetNumberOfModules(), kMaxNumberOfModules);
+  EXPECT_EQ(mock::chain.chips.back().intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
+  EXPECT_EQ(mock::errors, 0);
 }
 
 }  // namespace
