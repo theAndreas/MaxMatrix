@@ -24,7 +24,13 @@ max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
                                max_matrix::ClockPin{13}};
 
 void setup() {
-  matrix.Init();
+  // A pin the board lacks fails: the LED on the board says so, and loop()
+  // draws nothing, as the matrix is not set up.
+  if (!matrix.Init().IsOk()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    return;
+  }
   matrix.SetModuleType(
       max_matrix::ModuleType::kFc16);  // see the README for other modules
 }
@@ -87,6 +93,9 @@ void FadeIn() {
 }
 
 void loop() {
+  if (matrix.GetState() == max_matrix::State::kNone) {
+    return;
+  }
   ShowText();
   DrawDiagonal();
   FillRow();

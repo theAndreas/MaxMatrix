@@ -31,13 +31,22 @@ int8_t step_y{1};
 uint32_t last_step{0};
 
 void setup() {
-  matrix.Init();
+  // A pin the board lacks fails: the LED on the board says so, and loop()
+  // draws nothing, as the matrix is not set up.
+  if (!matrix.Init().IsOk()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    return;
+  }
   matrix.SetModuleType(
       max_matrix::ModuleType::kFc16);  // see the README for other modules
   matrix.SetDot(Point{X{ball_x}, Y{ball_y}}, true);
 }
 
 void loop() {
+  if (matrix.GetState() == max_matrix::State::kNone) {
+    return;
+  }
   /* a step only every kStepIntervalMs; the rest of loop() is free for other
    * work */
   if ((millis() - last_step) < kStepIntervalMs) {

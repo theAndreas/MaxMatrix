@@ -38,13 +38,22 @@ max_matrix::Command command;
 
 void setup() {
   Serial.begin(kBaudRate);
-  matrix.Init();
+  // A pin the board lacks fails: the LED on the board says so, and loop()
+  // draws nothing, as the matrix is not set up.
+  if (!matrix.Init().IsOk()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    return;
+  }
   /* the common 4-in-1 FC-16 boards; the README lists the other modules */
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   Serial.println(F("ready"));
 }
 
 void loop() {
+  if (matrix.GetState() == max_matrix::State::kNone) {
+    return;
+  }
   while (Serial.available() > 0) {
     command.Feed(matrix, static_cast<char>(Serial.read()), Serial);
   }

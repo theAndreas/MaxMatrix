@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1275,6 +1275,13 @@ As built for F-13: `test/`, of fifteen files that tested the library, the simula
 control program and the model side by side, keeps the library's; the simulator's tests lie in
 `test/Simulator/`, the control program's in `test/Control/`, and the model's test beside the
 model in `test/model/`. `control/` stays one folder of fifteen, as it holds one program.
+
+As built for F-15: every example checks `Init()`, which fails on a pin the board lacks, as a
+user who copies an example may set one; it then lights the board's LED and draws nothing, at 166
+to 188 bytes of flash with bit banging for the core's `pinMode()` and `digitalWrite()`, 12 to 30
+with SPI, whose library links them already, as decided on 2026-11-18 over a matrix that only
+stays dark, as it would with a wiring fault. The examples still drop what a setter returns, why
+is in AGENTS.md.
 
 ### 42 A newer avr-gcc as a cross-check
 
