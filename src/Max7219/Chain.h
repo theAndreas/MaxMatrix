@@ -80,6 +80,20 @@ constexpr uint8_t kIntensityMinValue{0x00};
 /*! The highest brightness, 31/32 duty cycle. */
 constexpr uint8_t kIntensityMaxValue{0x0F};
 
+// E-2: a sketch sets it, and Init() takes it as it is.
+static_assert((MAXMATRIX_INTENSITY_INIT_VALUE >= kIntensityMinValue) &&
+                  (MAXMATRIX_INTENSITY_INIT_VALUE <= kIntensityMaxValue),
+              "MAXMATRIX_INTENSITY_INIT_VALUE is 0 to 15");
+
+/*! The fastest clock the MAX7219 takes, in Hz. */
+constexpr uint32_t kClockSpeedMaxValue{10000000};
+
+// E-2: the core picks the fastest clock up to the one asked for, which a board
+// faster than the Uno makes too fast for the chain.
+static_assert((MAXMATRIX_SPI_CLOCK_SPEED > 0) &&
+                  (MAXMATRIX_SPI_CLOCK_SPEED <= kClockSpeedMaxValue),
+              "MAXMATRIX_SPI_CLOCK_SPEED is 1 to 10000000 Hz");
+
 /* the values of the scan limit register */
 /*! Digit 0 alone is lit. */
 constexpr uint8_t kScanLimitDisplayDigit0{0x00};

@@ -1283,6 +1283,26 @@ with SPI, whose library links them already, as decided on 2026-11-18 over a matr
 stays dark, as it would with a wiring fault. The examples still drop what a setter returns, why
 is in AGENTS.md.
 
+As reviewed for the chapter Errors on 2026-11-18, its rules E-1 to E-3. Found: `Init()` dropped
+the status of `SetIntensity()` for the intensity a sketch configures, and `Command` dropped it
+for one it had checked (E-1); no value of the configuration was checked, though the compiler can
+check each, and braces alone only warn in a sketch, as Arduino compiles with
+`-Wno-error=narrowing` (E-2); `SetShutdown()` and `SetDisplayTest()` named `Init()` as their
+precondition, which #137 made a lost setting rather than a hang, `ShiftTask()` one that
+SerialControl does not keep, as it calls it on every `loop()`, and what a sketch has to keep
+alive stood in a `\param` rather than a `\pre` (E-2); and no test proved that `MatrixOf` with no
+module or too many, a status as a `bool`, arithmetic on a `Byte` and a copy of a `Matrix` fail
+when compiling (E-3). What the scan found besides, a byte count of `Print` and the byte SPI
+receives, are no errors of E-1, and the chaining returns are none at all. Decided the same day:
+the settings that are sent at once fail with `Error::kNotSetUp` before an `Init()` has
+succeeded, as the shifts of #138 do. As built for the configuration: every parameter fails when
+compiling outside its range, the intensity and the SPI clock beside the limits of the MAX7219,
+the space and the interval beside their members, and the two switches unless `STD_ON` or
+`STD_OFF`, each with a test in `test/compile_fail/`; `Init()` hands the status of
+`SetIntensity()`, which can no longer fail there, to `Discard()` with that reason, rather than
+writing the register itself, which made `Basics` 14 bytes larger, as its own call of
+`SetIntensity()` no longer shares the function.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

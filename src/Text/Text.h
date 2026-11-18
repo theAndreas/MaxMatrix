@@ -188,6 +188,13 @@ class Text {
   Glyph glyph_{};
   /* 16 bits, as a char and its space take up to 255 + 255 columns */
   uint16_t sprite_shift_counter_{kShiftIdle};
+  // E-2: braces only warn of a value beyond a byte in a sketch, as Arduino
+  // compiles with -Wno-error=narrowing. Asked as whether the value survives
+  // the byte, as avr-libc has no UINT8_MAX in C++.
+  static_assert(
+      static_cast<uint8_t>(MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE) ==
+          MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE,
+      "MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE is 0 to 255");
   uint8_t space_between_chars_{MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE};
   /* the text that shifts in, the position of its next char, and whether it
    * starts over after its last char */

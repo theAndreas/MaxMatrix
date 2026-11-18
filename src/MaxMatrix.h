@@ -597,6 +597,10 @@ class Matrix {
   internal::Text text_;
   State state_{State::kNone};
   bool auto_update_{true};
+  // E-2: as for the space between chars in Text.
+  static_assert(static_cast<uint16_t>(MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE) ==
+                    MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE,
+                "MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE is 0 to 65535");
   uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
   uint32_t last_shift_{0};
 };

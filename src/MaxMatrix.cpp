@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include "MaxMatrixAttributes.h"
+
 namespace max_matrix {
 
 Matrix::Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
@@ -145,7 +147,10 @@ Status Matrix::Init() {
   panel_.GetWired().Clear();
   Update();
 
-  SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE);
+  // The static_assert beside max7219::kIntensityMaxValue holds the value in
+  // range, so it cannot fail; SetIntensity() rather than RegisterWrite(), as
+  // a sketch that sets the intensity itself shares it, 14 bytes of flash less.
+  Discard(SetIntensity(MAXMATRIX_INTENSITY_INIT_VALUE));
   state_ = State::kReady;
   return status;
 }
