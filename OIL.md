@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1270,6 +1270,11 @@ flash otherwise; every `.cpp` defines its members in the order its header declar
 the order of C-2 had undone in eight (F-11); and the test support's constants are `constexpr`
 rather than `static` (F-9). Every example the same size. Nothing else: every file starts with its
 copyright and licence, the sources are ASCII, and no header includes itself round about.
+
+As built for F-13: `test/`, of fifteen files that tested the library, the simulator, the
+control program and the model side by side, keeps the library's; the simulator's tests lie in
+`test/Simulator/`, the control program's in `test/Control/`, and the model's test beside the
+model in `test/model/`. `control/` stays one folder of fifteen, as it holds one program.
 
 ### 42 A newer avr-gcc as a cross-check
 
