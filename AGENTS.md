@@ -106,7 +106,10 @@ exception goes at the end of a list, with its reason.
   lies in the namespace `max_matrix`, the parts below the facade in `max_matrix::internal`;
   the names below are as the code in the namespace writes them.
   - `MaxMatrix.h` / `MaxMatrix.cpp` — the class `Matrix`, the facade a sketch includes:
-    the public API, the state of the library and `Init()`; the rest it passes on.
+    the public API, the state of the library and `Init()`; the rest it passes on. `MatrixOf`
+    and its `internal::Buffer` stay beside it, a Matrix with its buffer, as `MatrixOf` derives
+    from it and a header of its own would make an include cycle with the one that exports it.
+  - `MaxMatrixBatch.h` / `.cpp` — `Batch`, which holds the sending back for a block.
   - `MaxMatrixConfig.h` — the configuration macros and the size of a module; the length of the
     chain is the sketch's, `MatrixOf<N>` or a buffer handed to `Matrix`.
   - `Max7219/` — `internal::Chain`, the transfer to the chain, and the register macros.
@@ -339,9 +342,10 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   `simulator/Host/SimulatorWebHost.cpp`. Google's `snake_case` for files was tried and dropped
   (#45); Utl keeps it, as it stands in for the STL. The files at the root of `src/` keep the
   prefix, against F-3: `src/MaxMatrix.h`, as a sketch includes it by the library's name, and
-  `MaxMatrixAttributes.h`, `MaxMatrixConfig.h`, `MaxMatrixError.h`, `MaxMatrixErrorReport.cpp` and
-  `MaxMatrixStandardTypes.h`, as Arduino puts `src/` on the include path of every sketch and
-  library it builds with MaxMatrix, where an `Error.h` or `Config.h` would meet another's. In a
+  `MaxMatrixAttributes.h`, `MaxMatrixBatch.h`, `MaxMatrixConfig.h`, `MaxMatrixError.h`,
+  `MaxMatrixErrorReport.cpp` and `MaxMatrixStandardTypes.h`, as Arduino puts `src/` on the
+  include path of every sketch and library it builds with MaxMatrix, where an `Error.h` or
+  `Config.h` would meet another's. In a
   folder, the folder's name in the path keeps them apart.
 
 #### Parameters

@@ -78,12 +78,12 @@ ControlPicture ControlCommand::DecodePicture(std::string const& line) {
   return picture;
 }
 
-int32_t ControlCommand::GetBytesLeft(std::string const& line) {
-  return static_cast<int32_t>(MAXMATRIX_COMMAND_LINE_LENGTH) -
-         static_cast<int32_t>(line.size());
-}
-
 bool ControlCommand::Fits(std::string const& line) {
   return (line.size() <= MAXMATRIX_COMMAND_LINE_LENGTH) &&
          (line.find_first_of("\r\n") == std::string::npos);
+}
+
+int32_t ControlCommand::GetBytesLeft(std::string const& line) {
+  return static_cast<int32_t>(MAXMATRIX_COMMAND_LINE_LENGTH) -
+         static_cast<int32_t>(line.size());
 }

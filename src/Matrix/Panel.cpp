@@ -78,24 +78,6 @@ Result<Byte> Panel::GetColumn(Module module, uint8_t column) const {
   return Error::kOutOfRange;
 }
 
-void Panel::SetColumn(X x, Byte value) {
-  int16_t const column{x.number};
-
-  if (HasColumn(column)) {
-    SetLine(static_cast<uint8_t>(column), 0, true, value);
-  }
-}
-
-void Panel::SetColumn(Module module, uint8_t column, Byte value) {
-  // The column is checked against the module, not the panel, or column 8 of
-  // module 0 would be drawn on module 1.
-  if (HasModuleColumn(module, column)) {
-    SetColumn(X{static_cast<int16_t>((module.number * kColumnNumberOfModule) +
-                                     column)},
-              value);
-  }
-}
-
 Status Panel::GetRow(Y y, span<Byte> values) const {
   int16_t const row{y.number};
 
@@ -118,6 +100,36 @@ Result<Byte> Panel::GetRow(Module module, uint8_t row) const {
   return Error::kOutOfRange;
 }
 
+Result<bool> Panel::GetDot(Point dot) const {
+  int16_t const column{dot.x.number};
+  int16_t const row{dot.y.number};
+
+  if (HasDot(column, row)) {
+    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                                  static_cast<uint8_t>(row))};
+    return ReadBit(wired_.GetColumn(buffer_dot.column), buffer_dot.bit);
+  }
+  return Error::kOutOfRange;
+}
+
+void Panel::SetColumn(X x, Byte value) {
+  int16_t const column{x.number};
+
+  if (HasColumn(column)) {
+    SetLine(static_cast<uint8_t>(column), 0, true, value);
+  }
+}
+
+void Panel::SetColumn(Module module, uint8_t column, Byte value) {
+  // The column is checked against the module, not the panel, or column 8 of
+  // module 0 would be drawn on module 1.
+  if (HasModuleColumn(module, column)) {
+    SetColumn(X{static_cast<int16_t>((module.number * kColumnNumberOfModule) +
+                                     column)},
+              value);
+  }
+}
+
 void Panel::SetRow(Y y, span<Byte const> values) {
   int16_t const row{y.number};
 
@@ -134,26 +146,6 @@ void Panel::SetRow(Module module, uint8_t row, Byte value) {
   if (HasModuleRow(module, row)) {
     SetLine(module.number * kColumnNumberOfModule, row, false,
             ReverseByte(value));
-  }
-}
-
-Result<bool> Panel::GetDot(Point dot) const {
-  int16_t const column{dot.x.number};
-  int16_t const row{dot.y.number};
-
-  if (HasDot(column, row)) {
-    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
-                                                  static_cast<uint8_t>(row))};
-    return ReadBit(wired_.GetColumn(buffer_dot.column), buffer_dot.bit);
-  }
-  return Error::kOutOfRange;
-}
-
-void Panel::SetDotAt(int16_t column, int16_t row, bool value) {
-  if (HasDot(column, row)) {
-    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
-                                                  static_cast<uint8_t>(row))};
-    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, value);
   }
 }
 
@@ -308,12 +300,12 @@ void Panel::DrawColumn(Point top, uint8_t height, Byte value) {
   }
 }
 
-// SetDot() for a dot whose coordinates were added up past what an int16_t
-// holds.
-void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
-  if (HasDot(column, row)) {
-    SetDotAt(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
-  }
+void Panel::SetModuleType(ModuleType module_type) {
+  ChangeMapping(matrix_orientation_, module_type);
+}
+
+void Panel::SetMatrixOrientation(MatrixOrientation matrix_orientation) {
+  ChangeMapping(matrix_orientation, module_type_);
 }
 
 /*
@@ -354,106 +346,6 @@ Byte Panel::ShiftRight(Byte shifted_in) {
 void Panel::ShiftUp(ShiftFill fill) { ShiftRows(true, fill); }
 
 void Panel::ShiftDown(ShiftFill fill) { ShiftRows(false, fill); }
-
-/*
- * The column a shift to the left or right takes in for `fill`: none lit, the
- * column at the edge it leaves, which falls out, or the one at the edge it
- * comes in at, as it is.
- */
-Byte Panel::GetFill(ShiftFill fill, uint8_t rotated_column,
-                    uint8_t kept_column) {
-  if (fill == ShiftFill::kRotate) {
-    return GetLine(rotated_column, 0, true);
-  }
-  if (fill == ShiftFill::kKeep) {
-    return GetLine(kept_column, 0, true);
-  }
-  return Byte{};
-}
-
-/*
- * Shifts every column by a bit, up or down: the row that falls out at one edge
- * comes in at the other for kRotate, and the row at the edge that is left keeps
- * its dot for kKeep.
- */
-void Panel::ShiftRows(bool up, ShiftFill fill) {
-  uint8_t const columns{GetNumberOfColumns()};
-  uint8_t const top{0};
-  uint8_t const bottom{kRowNumberOfModule - 1};
-
-  for (uint8_t column{0}; column < columns; column++) {
-    Byte const value{GetLine(column, 0, true)};
-    uint8_t const fill_row{up ? bottom : top};
-    bool fill_dot{false};
-    if (fill == ShiftFill::kRotate) {
-      fill_dot = ReadBit(value, up ? top : bottom);
-    } else if (fill == ShiftFill::kKeep) {
-      fill_dot = ReadBit(value, fill_row);
-    }
-    Byte const shifted{up ? (value >> 1u) : (value << 1u)};
-    SetLine(column, 0, true, WriteBit(shifted, fill_row, fill_dot));
-  }
-}
-
-void Panel::SetModuleType(ModuleType module_type) {
-  ChangeMapping(matrix_orientation_, module_type);
-}
-
-void Panel::SetMatrixOrientation(MatrixOrientation matrix_orientation) {
-  ChangeMapping(matrix_orientation, module_type_);
-}
-
-/*
- * Maps the panel anew, to a matrix orientation and a module type, so that the
- * viewer sees the same picture, rewriting the buffer a pair of modules at a
- * time: the viewer's modules m and n - 1 - m lie in the buffer's modules m and
- * n - 1 - m whatever the mapping, as the matrix orientation only swaps them and
- * the module type rearranges each in its place. So the pair is read in the old
- * mapping and written in the new without touching any other module, and 16
- * bytes do for any chain, where a copy of the whole picture would need its
- * length at compile time.
- */
-void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
-                          ModuleType module_type) {
-  MatrixOrientation const old_matrix_orientation{matrix_orientation_};
-  ModuleType const old_module_type{module_type_};
-
-  uint8_t const modules{GetNumberOfModules()};
-  // a module in the middle of an odd chain pairs with itself
-  auto const pairs{static_cast<uint8_t>((modules + 1) / 2)};
-
-  for (uint8_t left{0}; left < pairs; left++) {
-    auto const right{static_cast<uint8_t>(modules - 1 - left)};
-    uint8_t const left_column{
-        static_cast<uint8_t>(left * kColumnNumberOfModule)};
-    uint8_t const right_column{
-        static_cast<uint8_t>(right * kColumnNumberOfModule)};
-    /*
-     * T-17: the columns are kept as numbers, not as Byte: avr-gcc 7.3 walks an
-     * array of a class by a 16-bit index rather than a pointer, 80 bytes of
-     * flash more for this function on the Uno. The array does not leave it.
-     * T-13: not initialized, as the loop below fills every element before one
-     * is read; cleared first, it made every example 10 to 12 bytes larger.
-     */
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
-    array<uint8_t, 2 * kColumnNumberOfModule> pair;
-
-    matrix_orientation_ = old_matrix_orientation;
-    module_type_ = old_module_type;
-    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
-      pair[column] = GetLine(left_column + column, 0, true).ToInteger();
-      pair[kColumnNumberOfModule + column] =
-          GetLine(right_column + column, 0, true).ToInteger();
-    }
-    matrix_orientation_ = matrix_orientation;
-    module_type_ = module_type;
-    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
-      SetLine(left_column + column, 0, true, Byte{pair[column]});
-      SetLine(right_column + column, 0, true,
-              Byte{pair[kColumnNumberOfModule + column]});
-    }
-  }
-}
 
 // Returns `input` with its bits in the opposite order: the halves swapped, then
 // the pairs in each half, then the bits in each pair.
@@ -535,6 +427,114 @@ void Panel::SetLine(uint8_t column, uint8_t row, bool vertical, Byte value) {
     BufferDot const buffer_dot{ConvertDotToBuffer(
         vertical ? column : (column + dot), vertical ? (row + dot) : row)};
     wired_.StoreBit(buffer_dot.column, buffer_dot.bit, ReadBit(value, dot));
+  }
+}
+
+void Panel::SetDotAt(int16_t column, int16_t row, bool value) {
+  if (HasDot(column, row)) {
+    BufferDot const buffer_dot{ConvertDotToBuffer(static_cast<uint8_t>(column),
+                                                  static_cast<uint8_t>(row))};
+    wired_.StoreBit(buffer_dot.column, buffer_dot.bit, value);
+  }
+}
+
+// SetDot() for a dot whose coordinates were added up past what an int16_t
+// holds.
+void Panel::SetFarDot(int32_t column, int32_t row, bool value) {
+  if (HasDot(column, row)) {
+    SetDotAt(static_cast<int16_t>(column), static_cast<int16_t>(row), value);
+  }
+}
+
+/*
+ * Maps the panel anew, to a matrix orientation and a module type, so that the
+ * viewer sees the same picture, rewriting the buffer a pair of modules at a
+ * time: the viewer's modules m and n - 1 - m lie in the buffer's modules m and
+ * n - 1 - m whatever the mapping, as the matrix orientation only swaps them and
+ * the module type rearranges each in its place. So the pair is read in the old
+ * mapping and written in the new without touching any other module, and 16
+ * bytes do for any chain, where a copy of the whole picture would need its
+ * length at compile time.
+ */
+void Panel::ChangeMapping(MatrixOrientation matrix_orientation,
+                          ModuleType module_type) {
+  MatrixOrientation const old_matrix_orientation{matrix_orientation_};
+  ModuleType const old_module_type{module_type_};
+
+  uint8_t const modules{GetNumberOfModules()};
+  // a module in the middle of an odd chain pairs with itself
+  auto const pairs{static_cast<uint8_t>((modules + 1) / 2)};
+
+  for (uint8_t left{0}; left < pairs; left++) {
+    auto const right{static_cast<uint8_t>(modules - 1 - left)};
+    uint8_t const left_column{
+        static_cast<uint8_t>(left * kColumnNumberOfModule)};
+    uint8_t const right_column{
+        static_cast<uint8_t>(right * kColumnNumberOfModule)};
+    /*
+     * T-17: the columns are kept as numbers, not as Byte: avr-gcc 7.3 walks an
+     * array of a class by a 16-bit index rather than a pointer, 80 bytes of
+     * flash more for this function on the Uno. The array does not leave it.
+     * T-13: not initialized, as the loop below fills every element before one
+     * is read; cleared first, it made every example 10 to 12 bytes larger.
+     */
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
+    array<uint8_t, 2 * kColumnNumberOfModule> pair;
+
+    matrix_orientation_ = old_matrix_orientation;
+    module_type_ = old_module_type;
+    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
+      pair[column] = GetLine(left_column + column, 0, true).ToInteger();
+      pair[kColumnNumberOfModule + column] =
+          GetLine(right_column + column, 0, true).ToInteger();
+    }
+    matrix_orientation_ = matrix_orientation;
+    module_type_ = module_type;
+    for (uint8_t column{0}; column < kColumnNumberOfModule; column++) {
+      SetLine(left_column + column, 0, true, Byte{pair[column]});
+      SetLine(right_column + column, 0, true,
+              Byte{pair[kColumnNumberOfModule + column]});
+    }
+  }
+}
+
+/*
+ * The column a shift to the left or right takes in for `fill`: none lit, the
+ * column at the edge it leaves, which falls out, or the one at the edge it
+ * comes in at, as it is.
+ */
+Byte Panel::GetFill(ShiftFill fill, uint8_t rotated_column,
+                    uint8_t kept_column) {
+  if (fill == ShiftFill::kRotate) {
+    return GetLine(rotated_column, 0, true);
+  }
+  if (fill == ShiftFill::kKeep) {
+    return GetLine(kept_column, 0, true);
+  }
+  return Byte{};
+}
+
+/*
+ * Shifts every column by a bit, up or down: the row that falls out at one edge
+ * comes in at the other for kRotate, and the row at the edge that is left keeps
+ * its dot for kKeep.
+ */
+void Panel::ShiftRows(bool up, ShiftFill fill) {
+  uint8_t const columns{GetNumberOfColumns()};
+  uint8_t const top{0};
+  uint8_t const bottom{kRowNumberOfModule - 1};
+
+  for (uint8_t column{0}; column < columns; column++) {
+    Byte const value{GetLine(column, 0, true)};
+    uint8_t const fill_row{up ? bottom : top};
+    bool fill_dot{false};
+    if (fill == ShiftFill::kRotate) {
+      fill_dot = ReadBit(value, up ? top : bottom);
+    } else if (fill == ShiftFill::kKeep) {
+      fill_dot = ReadBit(value, fill_row);
+    }
+    Byte const shifted{up ? (value >> 1u) : (value << 1u)};
+    SetLine(column, 0, true, WriteBit(shifted, fill_row, fill_dot));
   }
 }
 

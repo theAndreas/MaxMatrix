@@ -1257,6 +1257,20 @@ name, are declared `extern` in their header and defined once (M-4); and the bloc
 says what RAM it takes on the Uno, 43 bytes with bit banging and 39 with SPI, besides its buffer
 (M-6).
 
+As reviewed for the chapter Files on 2026-11-18, its review parts F-1 to F-3 and F-8 to F-15.
+Decided the same day: `Batch` gets a header of its own, `MaxMatrixBatch.h` with the library's
+prefix, as a file at the root of `src/` has; `MatrixOf` and its buffer stay beside `Matrix`, a
+Matrix with its buffer, as a header of their own would make an include cycle with
+`MaxMatrix.h`, which has to export them (F-14); the small value types, the coordinates and the
+pins, stay with the class they serve as its family. `test/` is split by what it tests, and the
+examples check `Init()` (F-13, F-15), each in a pull request of its own. As built for the rest:
+the bodies of the facade of more than one statement are defined in `MaxMatrix.cpp` (F-2), but
+`DrawLine()` and `Clear()`, which avr-gcc 7.3 inlines only from the header, 46 and 24 bytes of
+flash otherwise; every `.cpp` defines its members in the order its header declares them, which
+the order of C-2 had undone in eight (F-11); and the test support's constants are `constexpr`
+rather than `static` (F-9). Every example the same size. Nothing else: every file starts with its
+copyright and licence, the sources are ASCII, and no header includes itself round about.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

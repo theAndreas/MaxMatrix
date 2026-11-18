@@ -125,20 +125,6 @@ Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
   return CommandState::kDone;
 }
 
-// Passes a command NAME=VALUE on by its name, which ends where `value` starts.
-Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
-  if (0 == strcmp_P(line_.data(), PSTR("text"))) {
-    return ExecuteText(matrix, value);
-  }
-  if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
-    return ExecuteTextShift(matrix, value);
-  }
-  if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
-    return ExecuteDot(matrix, value);
-  }
-  return ExecuteSetting(matrix, value);
-}
-
 // Returns the position of the first `c` in the line from `from` on, or that of
 // the line's null character if there is none. The line always ends with one,
 // as Feed() puts it there.
@@ -153,6 +139,20 @@ uint8_t Command::Find(uint8_t from, char c) const {
     position++;
   }
   return position;
+}
+
+// Passes a command NAME=VALUE on by its name, which ends where `value` starts.
+Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
+  if (0 == strcmp_P(line_.data(), PSTR("text"))) {
+    return ExecuteText(matrix, value);
+  }
+  if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
+    return ExecuteTextShift(matrix, value);
+  }
+  if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
+    return ExecuteDot(matrix, value);
+  }
+  return ExecuteSetting(matrix, value);
 }
 
 // textShift=TEXT copies the text out of the line buffer first: the shift reads

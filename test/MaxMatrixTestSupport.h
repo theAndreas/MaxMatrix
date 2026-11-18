@@ -35,26 +35,26 @@
 #include "MaxMatrix.h"  // IWYU pragma: export
 #undef private
 
-static uint8_t const kDataInPin{11};
-static uint8_t const kChipSelectPin{10};
-static uint8_t const kClockPin{13};
+constexpr uint8_t kDataInPin{11};
+constexpr uint8_t kChipSelectPin{10};
+constexpr uint8_t kClockPin{13};
 /* the chain of the examples; the tests of other lengths make their own */
-static uint8_t const kNumberOfModules{4};
-static uint8_t const kNumberOfColumns{kNumberOfModules *
-                                      max_matrix::kColumnNumberOfModule};
+constexpr uint8_t kNumberOfModules{4};
+constexpr uint8_t kNumberOfColumns{kNumberOfModules *
+                                   max_matrix::kColumnNumberOfModule};
 /* a row of the whole panel, one byte per module */
 using PanelRow = max_matrix::array<max_matrix::Byte, kNumberOfModules>;
 
 /* an array that is no font, for SetFont() */
-static constexpr auto kNoFont PROGMEM{
+constexpr auto kNoFont PROGMEM{
     max_matrix::make_array<uint8_t>('G', 1, 32, 126, 8)};
 
 /* every error by name, in the order of the enum */
-static std::array<char const*, 8> const kErrorNames{
+constexpr std::array<char const*, 8> kErrorNames{
     {"Error::kOk", "Error::kOutOfRange", "Error::kUnknownChar",
      "Error::kNoText", "Error::kNotANumber", "Error::kUnknownCommand",
      "Error::kLineTooLong", "Error::kNotAFont"}};
-static uint8_t const kNumberOfErrors{kErrorNames.size()};
+constexpr uint8_t kNumberOfErrors{kErrorNames.size()};
 
 /* GoogleTest finds what prints and compares a type of the library by ADL, so
  * these lie in its namespace; every test file sees them, as GoogleTest would
@@ -92,7 +92,7 @@ std::string Text(__FlashStringHelper const* text);
  * library, which prints. With it off the list stays empty, so that a test can
  * expect a report in every variant. */
 using Report = std::pair<std::string, max_matrix::Error>;
-static bool const kDevErrorDetect{(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)};
+constexpr bool kDevErrorDetect{(MAXMATRIX_DEV_ERROR_DETECT == STD_ON)};
 extern std::vector<Report> reports;
 
 /* GoogleTest prints a vector element by element, where a failed memcmp only
@@ -156,12 +156,12 @@ class MaxMatrixTest : public ::testing::Test {
     return mock::frames - frames_before;
   }
 };
-static std::array<max_matrix::MatrixOrientation, 2> const kMatrixOrientations{
+constexpr std::array<max_matrix::MatrixOrientation, 2> kMatrixOrientations{
     {max_matrix::MatrixOrientation::k0, max_matrix::MatrixOrientation::k180}};
 
 /* all eight, in the order of the model's kMax7219Wirings, which
  * MaxMatrixModuleTest checks */
-static std::array<max_matrix::ModuleType, 8> const kModuleTypes{
+constexpr std::array<max_matrix::ModuleType, 8> kModuleTypes{
     {max_matrix::ModuleType::kDr0Cr0Rr0, max_matrix::ModuleType::kDr0Cr0Rr1,
      max_matrix::ModuleType::kDr0Cr1Rr0, max_matrix::ModuleType::kDr0Cr1Rr1,
      max_matrix::ModuleType::kDr1Cr0Rr0, max_matrix::ModuleType::kDr1Cr0Rr1,
