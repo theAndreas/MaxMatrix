@@ -521,7 +521,8 @@ objects, the default pulled `Serial` into a sketch that defines its own report, 
 on the Uno.
 
 Host code whose failures no sketch sees, the simulator and `DocuPictures`, returns `bool`, `true`
-for success: each of its functions fails for one reason, which its `\return` names beside `false`.
+for success, against E-1 of CodingStyle.md, which asks for an error type: each of its functions
+fails for one reason, which its `\return` names beside `false`.
 `Error` has no words for a port that is taken, and `std::optional` is C++17, while the
 simulator is built as `gnu++11` with the library. A function that finds or reads something
 returns it, and whether it found it, in a small struct of its own, as `SimulatorFoundText` or

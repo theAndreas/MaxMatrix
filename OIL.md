@@ -1321,6 +1321,13 @@ handing the status of `SetIntensity()` to `Discard()` (#139): with the check of 
 cost up to 82 bytes of flash with `MAXMATRIX_DEV_ERROR_DETECT` in every example that never sets
 the intensity, against 10 in `Basics`, which does.
 
+As built for the rest of the chapter Errors (E-3): `test/compile_fail/` proves that `MatrixOf`
+with no module or more than 31, a `Status` or a `Result` taken for a `bool`, arithmetic on a
+`Byte`, a bare number for a `Byte` or for the `X` of a column, and a copy of a `Matrix` or a
+`Batch` fail when compiling; each case was seen to fail its test once its safeguard was taken
+out, as it then compiled, or failed with another message. And AGENTS.md names E-1 where the host
+code returns a `bool` rather than an error type.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
