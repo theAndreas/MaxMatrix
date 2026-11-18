@@ -90,9 +90,10 @@ class Matrix {
    * \brief Makes a matrix on the chain at these pins, in the buffer given, and
    *        empties it.
    *
-   * Nothing is sent until Init(). MatrixOf brings the buffer itself and
-   * checks the number of modules when the sketch is compiled; this is for a
-   * chain whose length is known only at run time, or a buffer that lies
+   * Nothing is sent until an Init() succeeds: what is drawn before only
+   * changes the buffer, which Init() clears. MatrixOf brings the buffer itself
+   * and checks the number of modules when the sketch is compiled; this is for
+   * a chain whose length is known only at run time, or a buffer that lies
    * elsewhere. The length of the buffer says how many modules the chain has.
    *
    * \code{.cpp}
@@ -520,8 +521,9 @@ class Matrix {
    * with auto update off, as after power-up the LEDs show anything.
    *
    * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
-   *         `NUM_DIGITAL_PINS` or above; then nothing is sent, and a matrix set
-   *         up before keeps its state and drives the pins it had.
+   *         `NUM_DIGITAL_PINS` or above; then nothing is sent, a matrix set up
+   *         before keeps its state and drives the pins it had, and one never
+   *         set up sends nothing until an Init() succeeds.
    */
   Status Init();
 
@@ -649,7 +651,8 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
   /*!
    * \brief Makes the matrix on the chain at these pins.
    *
-   * Nothing is sent until Init().
+   * Nothing is sent until an Init() succeeds: what is drawn before only
+   * changes the buffer, which Init() clears.
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.

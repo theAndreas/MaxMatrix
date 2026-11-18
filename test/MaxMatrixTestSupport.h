@@ -135,7 +135,8 @@ class MaxMatrixTest : public ::testing::Test {
     EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_))
         << "display differs from matrix_buffer_";
     EXPECT_EQ(mock::errors, 0) << "a transfer outside a frame, or a port "
-                                  "written with the interrupts on";
+                                  "written with the interrupts on or none "
+                                  "of the board's";
     EXPECT_EQ(SREG, 0x80) << "the interrupts left off";
   }
 

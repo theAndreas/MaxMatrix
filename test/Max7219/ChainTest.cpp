@@ -19,7 +19,10 @@ using max_matrix::DataInPin;
 using max_matrix::Error;
 using max_matrix::MatrixOf;
 using max_matrix::ModuleType;
+using max_matrix::Point;
 using max_matrix::State;
+using max_matrix::X;
+using max_matrix::Y;
 
 namespace {
 
@@ -123,4 +126,24 @@ TEST_F(MaxMatrixTest, FailedInitKeepsThePinsItHad) {
   EXPECT_EQ(error, Error::kOutOfRange);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
   EXPECT_NE(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
+}
+
+/* a matrix whose Init() failed sent what it drew to a chain that was never set
+ * up: with SPI, the Uno waited for ever on a byte before SPI.begin(), and bit
+ * banging wrote the register of the core's NOT_A_PORT, address 0, the register
+ * r0 */
+TEST_F(MaxMatrixTest, NothingIsSentBeforeInitSucceeded) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  MatrixOf<kNumberOfModules> matrix{DataInPin{kBeyondPin},
+                                    ChipSelectPin{kChipSelectPin},
+                                    ClockPin{kClockPin}};
+  Error const error{matrix.Init().GetError()};
+
+  matrix.SetDot(Point{X{0}, Y{0}}, true);
+  matrix.SetIntensity(1);
+  matrix.Update();
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+  EXPECT_EQ(mock::frames, 0);
+  EXPECT_EQ(mock::errors, 0);
 }
