@@ -481,6 +481,14 @@ be lost, and the `Status` a part below the facade passes on. A setter's `Status`
 to tell, and the examples do. Where the library drops a marked result on purpose, it hands it to
 `Discard()` with the reason beside it.
 
+An example checks the results it gets (F-15), but drops a setter's: `Init()` fails on a pin the
+board lacks, which a user who copies an example and changes its pins can hit, so every example
+lights the board's LED then and draws nothing, at 166 to 188 bytes of flash with bit banging for
+`pinMode()` and `digitalWrite()` of the core, which the SPI library links already, 12 to 30
+there; a setter fails only on a value the example itself wrote, which a run of every example in
+simavr would show, as its panel would differ, and a check would cost flash for an error no run
+can meet.
+
 The host code marks alike what it computes or finds, as `ControlCommand::MakeText()` or
 `SimulatorWebSocket::EncodeFrame()`, and leaves unmarked what only says whether an action
 worked, as `Send()` or `Begin()`. It drops no result without `Discard()` and its reason, marked

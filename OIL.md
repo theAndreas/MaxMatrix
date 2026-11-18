@@ -1276,6 +1276,13 @@ control program and the model side by side, keeps the library's; the simulator's
 `test/Simulator/`, the control program's in `test/Control/`, and the model's test beside the
 model in `test/model/`. `control/` stays one folder of fifteen, as it holds one program.
 
+As built for F-15: every example checks `Init()`, which fails on a pin the board lacks, as a
+user who copies an example may set one; it then lights the board's LED and draws nothing, at 166
+to 188 bytes of flash with bit banging for the core's `pinMode()` and `digitalWrite()`, 12 to 30
+with SPI, whose library links them already, as decided on 2026-11-18 over a matrix that only
+stays dark, as it would with a wiring fault. The examples still drop what a setter returns, why
+is in AGENTS.md.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

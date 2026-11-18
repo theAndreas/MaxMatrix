@@ -28,7 +28,13 @@ max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
 char const kText[] = "Hello World!   ";
 
 void setup() {
-  matrix.Init();
+  // A pin the board lacks fails: the LED on the board says so, and loop()
+  // draws nothing, as the matrix is not set up.
+  if (!matrix.Init().IsOk()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    return;
+  }
   /* the common 4-in-1 FC-16 boards; the README lists the other modules */
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   matrix.SetIntensity(2);
@@ -37,6 +43,9 @@ void setup() {
 }
 
 void loop() {
+  if (matrix.GetState() == max_matrix::State::kNone) {
+    return;
+  }
   /* takes a step only every kShiftIntervalMs, so it can be called on every
    * loop() */
   matrix.ShiftTask();
