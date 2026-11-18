@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1310,6 +1310,16 @@ that says what happens otherwise, as Documentation.md asks, rather than a half s
 SerialControl calls it on every `loop()`; and `Command` passes the status of `SetIntensity()` on
 rather than dropping it (E-1), which costs SerialControl 2 bytes of flash with
 `MAXMATRIX_DEV_ERROR_DETECT` and nothing otherwise.
+
+As built for the settings of the chapter Errors (E-1, E-2): `SetIntensity()`, `SetShutdown()` and
+`SetDisplayTest()` return `Error::kNotSetUp` before an `Init()` has succeeded and change nothing,
+as decided on 2026-11-18, rather than a success, or nothing, for a setting that `Init()` then
+overwrote unseen; the two that returned `void` return a `Status`, and their `\pre Init()` is gone.
+An `intensity=` line on such a matrix is answered `error: not set up`, as `Command` passes the
+status on since #140. `Init()` writes its intensity through `RegisterWrite()` now rather than
+handing the status of `SetIntensity()` to `Discard()` (#139): with the check of the state, that
+cost up to 82 bytes of flash with `MAXMATRIX_DEV_ERROR_DETECT` in every example that never sets
+the intensity, against 10 in `Basics`, which does.
 
 ### 42 A newer avr-gcc as a cross-check
 

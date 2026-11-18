@@ -288,8 +288,8 @@ class Matrix {
    * Sent at once, whatever auto update is.
    *
    * \param[in] intensity The intensity, 0 to 15.
-   * \return Error::kOk, or Error::kOutOfRange above 15; the intensity then
-   *         stays as it was.
+   * \return Error::kOk; Error::kOutOfRange above 15; or Error::kNotSetUp before
+   *         an Init() has succeeded. The intensity stays as it was on an error.
    */
   Status SetIntensity(uint8_t intensity);
 
@@ -302,9 +302,10 @@ class Matrix {
    * update is.
    *
    * \param[in] shutdown True to turn the LEDs off, false to turn them on again.
-   * \pre Init().
+   * \return Error::kOk, or Error::kNotSetUp before an Init() has succeeded;
+   *         nothing changes then.
    */
-  void SetShutdown(bool shutdown);
+  Status SetShutdown(bool shutdown);
 
   /*!
    * \brief Lights every LED at full brightness, or shows the picture again.
@@ -316,9 +317,10 @@ class Matrix {
    *
    * \param[in] display_test True to light every LED, false to show the picture
    *                         again.
-   * \pre Init().
+   * \return Error::kOk, or Error::kNotSetUp before an Init() has succeeded;
+   *         nothing changes then.
    */
-  void SetDisplayTest(bool display_test);
+  Status SetDisplayTest(bool display_test);
 
   /*! \copydoc internal::Panel::SetColumn(X, Byte) */
   void SetColumn(X x, Byte value);

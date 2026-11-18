@@ -140,7 +140,9 @@ TEST_F(MaxMatrixTest, NothingIsSentBeforeInitSucceeded) {
   Error const error{matrix.Init().GetError()};
 
   matrix.SetDot(Point{X{0}, Y{0}}, true);
-  matrix.SetIntensity(1);
+  /* a frame for every module at once, as SetIntensity() sent one before it
+   * refused a matrix not set up itself */
+  matrix.RegisterWrite(max_matrix::max7219::Register::kIntensity, 1);
   matrix.Update();
 
   EXPECT_EQ(error, Error::kOutOfRange);

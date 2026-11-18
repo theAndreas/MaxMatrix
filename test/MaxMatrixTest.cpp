@@ -54,6 +54,24 @@ TEST_F(MaxMatrixTest, ShiftNeedsInit) {
   EXPECT_EQ(matrix.GetState(), State::kNone);
 }
 
+/* a setting sent before Init() had succeeded reported success, or nothing, and
+ * Init() then sent its own; the setting was lost unseen */
+TEST_F(MaxMatrixTest, SettingsNeedInit) {
+  MatrixOf<kNumberOfModules> matrix{DataInPin{kDataInPin},
+                                    ChipSelectPin{kChipSelectPin},
+                                    ClockPin{kClockPin}};
+  int32_t const frames_before{mock::frames};
+
+  Error const intensity_error{matrix.SetIntensity(1).GetError()};
+  Error const shutdown_error{matrix.SetShutdown(true).GetError()};
+  Error const display_test_error{matrix.SetDisplayTest(true).GetError()};
+
+  EXPECT_EQ(intensity_error, Error::kNotSetUp);
+  EXPECT_EQ(shutdown_error, Error::kNotSetUp);
+  EXPECT_EQ(display_test_error, Error::kNotSetUp);
+  EXPECT_EQ(mock::frames, frames_before);
+}
+
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
   EXPECT_EQ(
       matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue).GetError(),

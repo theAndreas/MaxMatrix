@@ -63,7 +63,8 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
  * failed reports it once, under its own name. The command reports nothing of
  * its own, as a wrong line is no mistake of the sketch and its answer says what
  * was wrong; only a line that fails in a function of Matrix, text= with a
- * char the font lacks, is reported by that function. */
+ * char the font lacks or intensity= before Init(), is reported by that
+ * function. */
 TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
   struct Case {
     char const* name;
@@ -71,7 +72,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     Error expected;
     char const* api;
   };
-  std::array<Case, 29> const cases{{
+  std::array<Case, 33> const cases{{
       {"Init with a pin beyond the board",
        [](Matrix& m) {
          m.SetChipSelectPin(NUM_DIGITAL_PINS);
@@ -179,6 +180,38 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
          return fresh.SetTextWithShift("Hi").GetError();
        },
        Error::kNotSetUp, "SetTextWithShift"},
+      {"SetIntensity before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return fresh.SetIntensity(1).GetError();
+       },
+       Error::kNotSetUp, "SetIntensity"},
+      {"SetShutdown before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return fresh.SetShutdown(true).GetError();
+       },
+       Error::kNotSetUp, "SetShutdown"},
+      {"SetDisplayTest before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return fresh.SetDisplayTest(true).GetError();
+       },
+       Error::kNotSetUp, "SetDisplayTest"},
+      {"intensity= before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return FeedText(fresh, "intensity=5\n");
+       },
+       Error::kNotSetUp, "SetIntensity"},
       {"number empty", [](Matrix& m) { return FeedText(m, "space=\n"); },
        Error::kNotANumber, nullptr},
       {"number with a letter",
