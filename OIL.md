@@ -1271,6 +1271,11 @@ the order of C-2 had undone in eight (F-11); and the test support's constants ar
 rather than `static` (F-9). Every example the same size. Nothing else: every file starts with its
 copyright and licence, the sources are ASCII, and no header includes itself round about.
 
+As built for F-13: `test/`, of fifteen files that tested the library, the simulator, the
+control program and the model side by side, keeps the library's; the simulator's tests lie in
+`test/Simulator/`, the control program's in `test/Control/`, and the model's test beside the
+model in `test/model/`. `control/` stays one folder of fifteen, as it holds one program.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

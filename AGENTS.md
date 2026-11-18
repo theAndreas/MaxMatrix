@@ -202,6 +202,9 @@ exception goes at the end of a list, with its reason.
   the library are a file per header, in folders as in `src/` (`test/Command/CommandTest.cpp`),
   so that clang-tidy reads them side by side; what they share, the fixtures `MaxMatrixTest`
   and `MaxMatrixMappingTest`, `Display()` and the reports, is in `MaxMatrixTestSupport.h`.
+  The tests of what is not the library lie in folders of their own (F-13): the simulator's in
+  `test/Simulator/`, the control program's in `test/Control/`, and the model's beside it in
+  `test/model/`.
   `test/compile_warn/` holds what has to make the compiler warn, a dropped result of a getter,
   compiled under `compile_warn/` in gnu++11 and C++17 and left out by clang-tidy.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
