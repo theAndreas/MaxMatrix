@@ -30,16 +30,17 @@ static char const kErrorTextNotANumber[] PROGMEM = "not a number";
 static char const kErrorTextUnknownCommand[] PROGMEM = "unknown command";
 static char const kErrorTextLineTooLong[] PROGMEM = "line too long";
 static char const kErrorTextNotAFont[] PROGMEM = "not a font";
+static char const kErrorTextNotSetUp[] PROGMEM = "not set up";
 static char const kErrorTextUnknownError[] PROGMEM = "unknown error";
 
 /* in the order of Error */
 static constexpr auto kErrorTexts PROGMEM{make_array<char const*>(
     kErrorTextOk, kErrorTextOutOfRange, kErrorTextUnknownChar, kErrorTextNoText,
     kErrorTextNotANumber, kErrorTextUnknownCommand, kErrorTextLineTooLong,
-    kErrorTextNotAFont)};
+    kErrorTextNotAFont, kErrorTextNotSetUp)};
 
 static_assert(kErrorTexts.size() ==
-                  (static_cast<uint8_t>(Error::kNotAFont) + 1),
+                  (static_cast<uint8_t>(Error::kNotSetUp) + 1),
               "every error needs a text");
 
 __FlashStringHelper const* Status::GetErrorText() const {

@@ -91,23 +91,28 @@ void Matrix::DrawBitmap(Point top_left, uint8_t height,
 }
 
 Status Matrix::SetCharWithShift(char c) {
-  Status status{
-      MAXMATRIX_REPORT_ERROR("SetCharWithShift", text_.SetCharWithShift(c))};
-
+  // Before Init() the state says that the chain is not set up; a shift would
+  // overwrite it, and Init() end the shift unseen.
+  Status status{Error::kNotSetUp};
+  if (state_ != State::kNone) {
+    status = text_.SetCharWithShift(c);
+  }
   if (status.IsOk()) {
     StartShift(State::kCharShift);
   }
-  return status;
+  return MAXMATRIX_REPORT_ERROR("SetCharWithShift", status);
 }
 
 Status Matrix::SetTextWithShift(span<char const> text, bool repeat) {
-  Status status{MAXMATRIX_REPORT_ERROR("SetTextWithShift",
-                                       text_.SetTextWithShift(text, repeat))};
-
+  // As in SetCharWithShift().
+  Status status{Error::kNotSetUp};
+  if (state_ != State::kNone) {
+    status = text_.SetTextWithShift(text, repeat);
+  }
   if (status.IsOk()) {
     StartShift(State::kStringShift);
   }
-  return status;
+  return MAXMATRIX_REPORT_ERROR("SetTextWithShift", status);
 }
 
 void Matrix::StopShift() {

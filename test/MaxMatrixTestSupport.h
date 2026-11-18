@@ -50,10 +50,10 @@ constexpr auto kNoFont PROGMEM{
     max_matrix::make_array<uint8_t>('G', 1, 32, 126, 8)};
 
 /* every error by name, in the order of the enum */
-constexpr std::array<char const*, 8> kErrorNames{
+constexpr std::array<char const*, 9> kErrorNames{
     {"Error::kOk", "Error::kOutOfRange", "Error::kUnknownChar",
      "Error::kNoText", "Error::kNotANumber", "Error::kUnknownCommand",
-     "Error::kLineTooLong", "Error::kNotAFont"}};
+     "Error::kLineTooLong", "Error::kNotAFont", "Error::kNotSetUp"}};
 constexpr uint8_t kNumberOfErrors{kErrorNames.size()};
 
 /* GoogleTest finds what prints and compares a type of the library by ADL, so

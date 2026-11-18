@@ -14,10 +14,14 @@
 #include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
+using max_matrix::ChipSelectPin;
+using max_matrix::ClockPin;
 using max_matrix::Command;
 using max_matrix::CommandState;
+using max_matrix::DataInPin;
 using max_matrix::Error;
 using max_matrix::Matrix;
+using max_matrix::MatrixOf;
 using max_matrix::Module;
 using max_matrix::Point;
 using max_matrix::Result;
@@ -67,7 +71,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     Error expected;
     char const* api;
   };
-  std::array<Case, 27> const cases{{
+  std::array<Case, 29> const cases{{
       {"Init with a pin beyond the board",
        [](Matrix& m) {
          m.SetChipSelectPin(NUM_DIGITAL_PINS);
@@ -159,6 +163,22 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"SetTextWithShift empty span repeating",
        [](Matrix& m) { return m.SetTextWithShift({}, true).GetError(); },
        Error::kNoText, "SetTextWithShift"},
+      {"SetCharWithShift before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return fresh.SetCharWithShift('A').GetError();
+       },
+       Error::kNotSetUp, "SetCharWithShift"},
+      {"SetTextWithShift before Init",
+       [](Matrix&) {
+         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
+         return fresh.SetTextWithShift("Hi").GetError();
+       },
+       Error::kNotSetUp, "SetTextWithShift"},
       {"number empty", [](Matrix& m) { return FeedText(m, "space=\n"); },
        Error::kNotANumber, nullptr},
       {"number with a letter",
@@ -204,9 +224,9 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
  * the enum gets one as well; the texts lie in a table of their own, so one
  * moved by a place would give every error after it the text of the next */
 TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
-  std::array<char const*, 8> const texts{
+  std::array<char const*, 9> const texts{
       {"ok", "out of range", "unknown char", "no text", "not a number",
-       "unknown command", "line too long", "not a font"}};
+       "unknown command", "line too long", "not a font", "not set up"}};
   ASSERT_EQ(texts.size(), kNumberOfErrors);
 
   for (uint8_t error{0}; error < kNumberOfErrors; error++) {

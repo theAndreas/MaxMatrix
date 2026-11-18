@@ -14,9 +14,13 @@
 #include "MaxMatrixTestSupport.h"
 
 using max_matrix::Batch;
+using max_matrix::ChipSelectPin;
+using max_matrix::ClockPin;
+using max_matrix::DataInPin;
 using max_matrix::Error;
 using max_matrix::MatrixOf;
 using max_matrix::Point;
+using max_matrix::State;
 using max_matrix::X;
 using max_matrix::Y;
 
@@ -32,6 +36,22 @@ TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
     EXPECT_EQ(chip.decode_mode, max_matrix::max7219::kDecodeModeNoDecode);
     EXPECT_EQ(chip.intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
   }
+}
+
+/* a shift started before Init() had succeeded set its state, so that GetState()
+ * no longer said that the chain was not set up, and Init() then ended the shift
+ * unseen */
+TEST_F(MaxMatrixTest, ShiftNeedsInit) {
+  MatrixOf<kNumberOfModules> matrix{DataInPin{kDataInPin},
+                                    ChipSelectPin{kChipSelectPin},
+                                    ClockPin{kClockPin}};
+
+  Error const char_error{matrix.SetCharWithShift('A').GetError()};
+  Error const text_error{matrix.SetTextWithShift("Hi").GetError()};
+
+  EXPECT_EQ(char_error, Error::kNotSetUp);
+  EXPECT_EQ(text_error, Error::kNotSetUp);
+  EXPECT_EQ(matrix.GetState(), State::kNone);
 }
 
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {

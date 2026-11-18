@@ -189,7 +189,8 @@ max_matrix::Status status = matrix.SetText(text);
 if(status == max_matrix::Error::kUnknownChar) { /* the font lacks a char of Text */ }
 ```
 
-The errors are `max_matrix::Error::kOutOfRange`, `max_matrix::Error::kUnknownChar` and `max_matrix::Error::kNoText`, and from
+The errors are `max_matrix::Error::kOutOfRange`, `max_matrix::Error::kUnknownChar`, `max_matrix::Error::kNoText` and
+`max_matrix::Error::kNotSetUp`, a shift started before `Init()` has succeeded, and from
 `max_matrix::Command` also `max_matrix::Error::kNotANumber`, `max_matrix::Error::kUnknownCommand` and `max_matrix::Error::kLineTooLong`;
 `max_matrix::Error::kOk` means none. A status is not a `bool`: write `Status.IsOk()`, not `if(Status)`.
 `Serial.println(Status.GetErrorText())` prints the error in words, such as `out of range`; the texts lie in flash,
@@ -209,7 +210,7 @@ void max_matrix::ReportError(__FlashStringHelper const* api, max_matrix::Error e
 }
 ```
 
-Switched off, as it is by default, the reports cost nothing. Switched on, `Basics` grows by 1154 bytes of flash and
+Switched off, as it is by default, the reports cost nothing. Switched on, `Basics` grows by 1168 bytes of flash and
 179 of RAM, most of it `Serial`; with a report of its own, by little more than the names of the functions it calls.
 In SerialControl a `text=` with a char the font lacks is then reported as well, in a line before its answer.
 
