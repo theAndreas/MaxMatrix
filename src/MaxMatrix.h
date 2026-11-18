@@ -27,6 +27,7 @@
 #include "Font/Font.h"               // IWYU pragma: export
 #include "Matrix/Panel.h"            // IWYU pragma: export
 #include "Max7219/Chain.h"           // IWYU pragma: export
+#include "MaxMatrixBatch.h"          // IWYU pragma: export
 #include "MaxMatrixConfig.h"         // IWYU pragma: export
 #include "MaxMatrixError.h"          // IWYU pragma: export
 #include "MaxMatrixStandardTypes.h"  // IWYU pragma: export
@@ -318,16 +319,10 @@ class Matrix {
   void SetDisplayTest(bool display_test);
 
   /*! \copydoc internal::Panel::SetColumn(X, Byte) */
-  void SetColumn(X x, Byte value) {
-    panel_.SetColumn(x, value);
-    UpdateIfAuto();
-  }
+  void SetColumn(X x, Byte value);
 
   /*! \copydoc internal::Panel::SetColumn(Module, uint8_t, Byte) */
-  void SetColumn(Module module, uint8_t column, Byte value) {
-    panel_.SetColumn(module, column, value);
-    UpdateIfAuto();
-  }
+  void SetColumn(Module module, uint8_t column, Byte value);
 
   /*!
    * \brief Sets a row of the matrix, one byte per module.
@@ -339,23 +334,16 @@ class Matrix {
    * \param[in] values The row, bit 7 of each byte the leftmost column of its
    *                   module.
    */
-  void SetRow(Y y, span<Byte const> values) {
-    panel_.SetRow(y, values);
-    UpdateIfAuto();
-  }
+  void SetRow(Y y, span<Byte const> values);
 
   /*! \copydoc internal::Panel::SetRow(Module, uint8_t, Byte) */
-  void SetRow(Module module, uint8_t row, Byte value) {
-    panel_.SetRow(module, row, value);
-    UpdateIfAuto();
-  }
+  void SetRow(Module module, uint8_t row, Byte value);
 
   /*! \copydoc internal::Panel::SetDot(Point, bool) */
-  void SetDot(Point dot, bool value) {
-    panel_.SetDot(dot, value);
-    UpdateIfAuto();
-  }
+  void SetDot(Point dot, bool value);
 
+  // F-2: in the header, as avr-gcc 7.3 inlines it only from there; defined in
+  // the .cpp, it made Shapes 46 bytes of flash larger.
   /*! \copydoc internal::Panel::DrawLine(Point, Point, bool) */
   void DrawLine(Point from, Point to, bool value) {
     panel_.DrawLine(from, to, value);
@@ -363,22 +351,13 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::DrawRect(Point, Point, bool) */
-  void DrawRect(Point corner, Point opposite_corner, bool value) {
-    panel_.DrawRect(corner, opposite_corner, value);
-    UpdateIfAuto();
-  }
+  void DrawRect(Point corner, Point opposite_corner, bool value);
 
   /*! \copydoc internal::Panel::FillRect(Point, Point, bool) */
-  void FillRect(Point corner, Point opposite_corner, bool value) {
-    panel_.FillRect(corner, opposite_corner, value);
-    UpdateIfAuto();
-  }
+  void FillRect(Point corner, Point opposite_corner, bool value);
 
   /*! \copydoc internal::Panel::DrawCircle(Point, int16_t, bool) */
-  void DrawCircle(Point centre, int16_t radius, bool value) {
-    panel_.DrawCircle(centre, radius, value);
-    UpdateIfAuto();
-  }
+  void DrawCircle(Point centre, int16_t radius, bool value);
 
   /*!
    * \brief Draws a picture from flash, 8 rows high, with its top left corner at
@@ -403,10 +382,7 @@ class Matrix {
 
   /*! \copydoc internal::Panel::DrawBitmap(Point, uint8_t,
    * span<uint8_t const>) */
-  void DrawBitmap(Point top_left, uint8_t height, span<uint8_t const> bitmap) {
-    panel_.DrawBitmap(top_left, height, bitmap);
-    UpdateIfAuto();
-  }
+  void DrawBitmap(Point top_left, uint8_t height, span<uint8_t const> bitmap);
 
   /*!
    * \brief Draws a char with its top left corner at a dot.
@@ -527,23 +503,14 @@ class Matrix {
    * \param[in] top_left The top left corner; it may lie off the matrix.
    * \param[in] sprite The sprite.
    */
-  void SetSprite(Point top_left, Sprite const& sprite) {
-    max_matrix::internal::Text::SetSprite(panel_, top_left, sprite);
-    UpdateIfAuto();
-  }
+  void SetSprite(Point top_left, Sprite const& sprite);
 
   /*! \copydoc internal::Panel::SetModuleType(ModuleType) */
-  void SetModuleType(ModuleType module_type) {
-    panel_.SetModuleType(module_type);
-    UpdateIfAuto();
-  }
+  void SetModuleType(ModuleType module_type);
 
   /*! \copydoc internal::Panel::SetMatrixOrientation(MatrixOrientation)
    */
-  void SetMatrixOrientation(MatrixOrientation matrix_orientation) {
-    panel_.SetMatrixOrientation(matrix_orientation);
-    UpdateIfAuto();
-  }
+  void SetMatrixOrientation(MatrixOrientation matrix_orientation);
 
   /*!
    * \brief Sets the chain up: the pins, every register of every MAX7219, and
@@ -579,6 +546,8 @@ class Matrix {
    */
   void Update() { panel_.GetWired().Send(); }
 
+  // F-2: in the header, as for DrawLine(); defined in the .cpp, it made
+  // SerialControl 24 bytes of flash larger.
   /*! \brief Turns every LED off. */
   void Clear() {
     panel_.GetWired().Clear();
@@ -598,55 +567,28 @@ class Matrix {
   }
 
   /*! \copydoc internal::Panel::ShiftLeft(ShiftFill) */
-  void ShiftLeft(ShiftFill fill = ShiftFill::kZero) {
-    panel_.ShiftLeft(fill);
-    UpdateIfAuto();
-  }
+  void ShiftLeft(ShiftFill fill = ShiftFill::kZero);
 
   /*! \copydoc internal::Panel::ShiftLeft(Byte) */
-  Byte ShiftLeft(Byte shifted_in) {
-    Byte const shifted_out{panel_.ShiftLeft(shifted_in)};
-    UpdateIfAuto();
-    return shifted_out;
-  }
+  Byte ShiftLeft(Byte shifted_in);
 
   /*! \copydoc internal::Panel::ShiftRight(ShiftFill) */
-  void ShiftRight(ShiftFill fill = ShiftFill::kZero) {
-    panel_.ShiftRight(fill);
-    UpdateIfAuto();
-  }
+  void ShiftRight(ShiftFill fill = ShiftFill::kZero);
 
   /*! \copydoc internal::Panel::ShiftRight(Byte) */
-  Byte ShiftRight(Byte shifted_in) {
-    Byte const shifted_out{panel_.ShiftRight(shifted_in)};
-    UpdateIfAuto();
-    return shifted_out;
-  }
+  Byte ShiftRight(Byte shifted_in);
 
   /*! \copydoc internal::Panel::ShiftUp(ShiftFill) */
-  void ShiftUp(ShiftFill fill = ShiftFill::kZero) {
-    panel_.ShiftUp(fill);
-    UpdateIfAuto();
-  }
+  void ShiftUp(ShiftFill fill = ShiftFill::kZero);
 
   /*! \copydoc internal::Panel::ShiftDown(ShiftFill) */
-  void ShiftDown(ShiftFill fill = ShiftFill::kZero) {
-    panel_.ShiftDown(fill);
-    UpdateIfAuto();
-  }
+  void ShiftDown(ShiftFill fill = ShiftFill::kZero);
 
  private:
   // Sends what changed, if auto update is on; every public function that draws
   // ends with it.
-  void UpdateIfAuto() {
-    if (auto_update_) {
-      Update();
-    }
-  }
-  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status) {
-    UpdateIfAuto();
-    return status;
-  }
+  void UpdateIfAuto();
+  MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status);
   void StartShift(State shift_state);
 
   internal::Panel panel_;
@@ -655,64 +597,6 @@ class Matrix {
   bool auto_update_{true};
   uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
   uint32_t last_shift_{0};
-};
-
-/*!
- * \brief Holds the sending back for as long as it exists, as `std::lock_guard`
- *        holds a mutex.
- *
- * The constructor turns auto update off, the destructor puts back what was
- * there before. So the picture is sent at the end of the block, also on a
- * `return` or `break` out of it, and of nested ones only the outermost sends.
- *
- * \code{.cpp}
- * {
- *     max_matrix::Batch batch(matrix);
- *     matrix.Clear();
- *     matrix.SetText("Hi");
- * }  // sent here, at once
- * \endcode
- *
- * \warning It has to be a named variable: an unnamed `Batch{matrix};` is
- *          destroyed at once and holds nothing back.
- *
- * A picture built over several calls of `loop()` does not fit into a block;
- * that is what Matrix::SetAutoUpdate() and Matrix::Update() are for.
- */
-class Batch {
- public:
-  /*!
-   * \brief Turns auto update of `matrix` off until the end of the block.
-   *
-   * \param[in,out] matrix The matrix; it has to outlive the batch.
-   */
-  explicit Batch(Matrix& matrix)
-      : matrix_{matrix}, previous_auto_update_{matrix.GetAutoUpdate()} {
-    matrix.SetAutoUpdate(false);
-  }
-
-  /*! \brief Puts auto update back as it was, which sends the picture if it was
-   * on. */
-  ~Batch() { matrix_.get().SetAutoUpdate(previous_auto_update_); }
-
-  /*! \brief No batch without the matrix it holds back. */
-  Batch() = delete;
-
-  /*! \brief Not copyable: a copy would put auto update back twice. */
-  Batch(Batch const&) = delete;
-
-  /*! \brief Not assignable, as it is not copyable. */
-  Batch& operator=(Batch const&) = delete;
-
-  /*! \brief Not movable: the moved one would put auto update back as well. */
-  Batch(Batch&&) = delete;
-
-  /*! \brief Not movable, as it is not copyable. */
-  Batch& operator=(Batch&&) = delete;
-
- private:
-  internal::reference_wrapper<Matrix> matrix_;
-  bool previous_auto_update_;
 };
 
 namespace internal {

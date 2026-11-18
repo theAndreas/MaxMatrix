@@ -206,31 +206,6 @@ bool ControlSerialPort::Open(std::string const& name, uint32_t baud_rate) {
   return opened;
 }
 
-// Takes the open port for itself and sets it up as Open() says. Returns false
-// if it is taken or does not take the baud rate. FN-11: not const, as it
-// changes the port this object stands for, through its descriptor.
-// NOLINTNEXTLINE(readability-make-member-function-const)
-bool ControlSerialPort::Configure(uint32_t baud_rate) {
-  /* the modem lines ignored, and receiving on */
-  constexpr tcflag_t kLocalReceive{CLOCAL | CREAD};
-  /* two stop bits and the hardware handshake, both off for SerialControl */
-  constexpr tcflag_t kTwoStopsHandshake{CSTOPB | CRTSCTS};
-  termios settings{};
-
-  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
-  bool const taken{ioctl(descriptor_, TIOCEXCL) == 0};
-  bool const read{taken && (tcgetattr(descriptor_, &settings) == 0)};
-  cfmakeraw(&settings);
-  max_matrix::Bit<tcflag_t>::SetBits(settings.c_cflag, kLocalReceive);
-  max_matrix::Bit<tcflag_t>::ClearBits(settings.c_cflag, kTwoStopsHandshake);
-  settings.c_cc[VMIN] = 1;
-  settings.c_cc[VTIME] = 0;
-  // glibc's cfsetspeed() takes a rate as its number as well as its B constant,
-  // so no table maps one to the other.
-  bool const rate_set{read && (cfsetspeed(&settings, baud_rate) == 0)};
-  return rate_set && (tcsetattr(descriptor_, TCSANOW, &settings) == 0);
-}
-
 std::vector<std::string> ControlSerialPort::List() {
   std::vector<std::string> ports;
   std::array<char const*, 2> const patterns{{"/dev/ttyACM*", "/dev/ttyUSB*"}};
@@ -300,6 +275,31 @@ void ControlSerialPort::Close() {
     max_matrix::Discard(close(descriptor_));
   }
   descriptor_ = -1;
+}
+
+// Takes the open port for itself and sets it up as Open() says. Returns false
+// if it is taken or does not take the baud rate. FN-11: not const, as it
+// changes the port this object stands for, through its descriptor.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+bool ControlSerialPort::Configure(uint32_t baud_rate) {
+  /* the modem lines ignored, and receiving on */
+  constexpr tcflag_t kLocalReceive{CLOCAL | CREAD};
+  /* two stop bits and the hardware handshake, both off for SerialControl */
+  constexpr tcflag_t kTwoStopsHandshake{CSTOPB | CRTSCTS};
+  termios settings{};
+
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): POSIX's ioctl()
+  bool const taken{ioctl(descriptor_, TIOCEXCL) == 0};
+  bool const read{taken && (tcgetattr(descriptor_, &settings) == 0)};
+  cfmakeraw(&settings);
+  max_matrix::Bit<tcflag_t>::SetBits(settings.c_cflag, kLocalReceive);
+  max_matrix::Bit<tcflag_t>::ClearBits(settings.c_cflag, kTwoStopsHandshake);
+  settings.c_cc[VMIN] = 1;
+  settings.c_cc[VTIME] = 0;
+  // glibc's cfsetspeed() takes a rate as its number as well as its B constant,
+  // so no table maps one to the other.
+  bool const rate_set{read && (cfsetspeed(&settings, baud_rate) == 0)};
+  return rate_set && (tcsetattr(descriptor_, TCSANOW, &settings) == 0);
 }
 
 #endif

@@ -91,44 +91,6 @@ bool SimulatorAvr::Load(char const* elf_file) {
   return true;
 }
 
-// The pins the library drives and the SPI's output go to the model.
-void SimulatorAvr::ConnectPins() {
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kDataInBit), OnDataIn,
-      this);
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kClockBit), OnClock,
-      this);
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kChipSelectBit),
-      OnChipSelect, this);
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), OnSpiByte,
-      this);
-}
-
-// The UART is Serial: what the sketch sends goes to the mock, and simavr says
-// when its receive buffer has room. It would print every line on the console
-// itself, between the panel and the command line.
-void SimulatorAvr::ConnectUart() {
-  uint32_t flags{0};
-  // Without the flags, simavr also prints the sketch's Serial on the console,
-  // between the panel and the command line; the run is right all the same.
-  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags));
-  max_matrix::Bit<uint32_t>::ClearBits(
-      flags, static_cast<uint32_t>(AVR_UART_FLAG_STDIO));
-  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags));
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUTPUT),
-      OnSerialByte, this);
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XON),
-      OnReceiveReady, this);
-  avr_irq_register_notify(
-      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XOFF),
-      OnReceiveFull, this);
-}
-
 bool SimulatorAvr::Run(uint32_t milliseconds) {
   avr_cycle_count_t const end{ConvertToCycles(milliseconds)};
 
@@ -165,6 +127,44 @@ void SimulatorAvr::TakeByte(uint8_t value) {
   } else {
     mock::frame.push_back(value);
   }
+}
+
+// The pins the library drives and the SPI's output go to the model.
+void SimulatorAvr::ConnectPins() {
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kDataInBit), OnDataIn,
+      this);
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kClockBit), OnClock,
+      this);
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_IOPORT_GETIRQ(kPort), kChipSelectBit),
+      OnChipSelect, this);
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_SPI_GETIRQ(0), SPI_IRQ_OUTPUT), OnSpiByte,
+      this);
+}
+
+// The UART is Serial: what the sketch sends goes to the mock, and simavr says
+// when its receive buffer has room. It would print every line on the console
+// itself, between the panel and the command line.
+void SimulatorAvr::ConnectUart() {
+  uint32_t flags{0};
+  // Without the flags, simavr also prints the sketch's Serial on the console,
+  // between the panel and the command line; the run is right all the same.
+  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_GET_FLAGS(kUart), &flags));
+  max_matrix::Bit<uint32_t>::ClearBits(
+      flags, static_cast<uint32_t>(AVR_UART_FLAG_STDIO));
+  max_matrix::Discard(avr_ioctl(avr_, AVR_IOCTL_UART_SET_FLAGS(kUart), &flags));
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUTPUT),
+      OnSerialByte, this);
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XON),
+      OnReceiveReady, this);
+  avr_irq_register_notify(
+      avr_io_getirq(avr_, AVR_IOCTL_UART_GETIRQ(kUart), UART_IRQ_OUT_XOFF),
+      OnReceiveFull, this);
 }
 
 // DIN changed: `irq` is the pin, `value` its level, `object` the SimulatorAvr.

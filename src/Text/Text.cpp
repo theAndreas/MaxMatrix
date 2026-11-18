@@ -25,16 +25,6 @@ namespace internal {
 
 Text::Text() = default;
 
-/*
- * In the .cpp rather than inline in the header: avr-gcc 7.3 crashes on the
- * header alone, as tools/self_contained_headers.py compiles it, with -Os,
- * -Wnonnull and -fsyntax-only, when the span of the default font is made
- * inline there.
- */
-span<uint8_t const> Text::DefaultFont() {
-  return span<uint8_t const>{kDefaultFont};
-}
-
 Status Text::SetFont(span<uint8_t const> font) {
   Status const status{Font::CheckFont(font)};
 
@@ -101,6 +91,11 @@ Status Text::SetTextWithShift(span<char const> text, bool repeat) {
   return Error::kOk;
 }
 
+void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
+  /* every byte value is a valid number of spaces, so it cannot fail */
+  space_between_chars_ = space_between_chars;
+}
+
 void Text::SetSprite(Panel& panel, Point top_left, Sprite const& sprite) {
   int16_t const x{top_left.x.number};
   int16_t const y{top_left.y.number};
@@ -122,11 +117,6 @@ void Text::SetGlyph(Panel& panel, Point top_left, Glyph const& glyph) {
   panel.DrawBitmap(top_left, glyph.height, glyph.columns);
 }
 
-void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
-  /* every byte value is a valid number of spaces, so it cannot fail */
-  space_between_chars_ = space_between_chars;
-}
-
 bool Text::CharShiftTask(Panel& panel) {
   // An empty column comes in, by the column rather than ShiftFill, so
   // that a sketch that only shifts text does not link the other fills.
@@ -146,6 +136,23 @@ bool Text::CharShiftTask(Panel& panel) {
     /* if sprite and spaces are completed task has finished */
     sprite_shift_counter_ = kShiftIdle;
     return false;
+  }
+  return true;
+}
+
+bool Text::StringShiftTask(Panel& panel) {
+  /* has char shift task finished shifting sprite or char */
+  if (sprite_shift_counter_ == kShiftIdle) {
+    ReadNextChar();
+    if (sprite_shift_counter_ == kShiftStart) {
+      CharShiftTask(panel);
+    } else { /* end of string reached, task has finished */
+      panel.ShiftLeft(Byte{});
+      return false;
+    }
+  } else {
+    /* go on shifting Sprite; the end of a char is not the end of the string */
+    CharShiftTask(panel);
   }
   return true;
 }
@@ -178,21 +185,14 @@ void Text::ReadNextChar() {
   }
 }
 
-bool Text::StringShiftTask(Panel& panel) {
-  /* has char shift task finished shifting sprite or char */
-  if (sprite_shift_counter_ == kShiftIdle) {
-    ReadNextChar();
-    if (sprite_shift_counter_ == kShiftStart) {
-      CharShiftTask(panel);
-    } else { /* end of string reached, task has finished */
-      panel.ShiftLeft(Byte{});
-      return false;
-    }
-  } else {
-    /* go on shifting Sprite; the end of a char is not the end of the string */
-    CharShiftTask(panel);
-  }
-  return true;
+/*
+ * In the .cpp rather than inline in the header: avr-gcc 7.3 crashes on the
+ * header alone, as tools/self_contained_headers.py compiles it, with -Os,
+ * -Wnonnull and -fsyntax-only, when the span of the default font is made
+ * inline there.
+ */
+span<uint8_t const> Text::DefaultFont() {
+  return span<uint8_t const>{kDefaultFont};
 }
 
 }  // namespace internal

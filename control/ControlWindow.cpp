@@ -150,6 +150,21 @@ void ControlWindow::MakeMenu() {
   Bind(wxEVT_MENU, &ControlWindow::OnAbout, this, wxID_ABOUT);
 }
 
+// The whole panel as the matrix shows it, to click on; Clear below it turns
+// every LED off.
+wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
+  auto* const panel{new wxPanel(parent)};
+  auto* const box{new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix")};
+
+  dots_ = new ControlDotPanel(
+      box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) {
+        Broadcast(ControlCommand::MakeDot(column, row, lit));
+      });
+  box->Add(dots_, 0, wxALL, FromDIP(kBorder));
+  panel->SetSizer(box);
+  return panel;
+}
+
 /*
  * The text and how it is shown: the field with the bytes it may still take, the
  * brightness and the speed as sliders, and beside them whether it shifts, the
@@ -229,21 +244,6 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
   speed_->Bind(wxEVT_SLIDER, &ControlWindow::OnSpeed, this);
   space_->Bind(wxEVT_SPINCTRL, &ControlWindow::OnSpace, this);
   return page;
-}
-
-// The whole panel as the matrix shows it, to click on; Clear below it turns
-// every LED off.
-wxWindow* ControlWindow::MakeMatrix(wxWindow* parent) {
-  auto* const panel{new wxPanel(parent)};
-  auto* const box{new wxStaticBoxSizer(wxVERTICAL, panel, "Matrix")};
-
-  dots_ = new ControlDotPanel(
-      box->GetStaticBox(), [this](uint8_t column, uint8_t row, bool lit) {
-        Broadcast(ControlCommand::MakeDot(column, row, lit));
-      });
-  box->Add(dots_, 0, wxALL, FromDIP(kBorder));
-  panel->SetSizer(box);
-  return panel;
 }
 
 /*
@@ -461,6 +461,22 @@ void ControlWindow::BroadcastSetting(std::string const& line) {
   Broadcast(line);
 }
 
+/*
+ * Sends `link` the intensity, speed and space the window shows: its
+ * SerialControl has just started with the ones it was built with, or the
+ * simulator's has been set by another program before.
+ */
+void ControlWindow::SendSettings(ControlLink& link, char const* name) {
+  std::array<std::string, 3> const lines{
+      {GetIntensityLine(), GetSpeedLine(), GetSpaceLine()}};
+
+  for (std::string const& line : lines) {
+    Log(wxString(name) + ": > " + ConvertToText(line) + "\n");
+    // as in Broadcast()
+    max_matrix::Discard(link.Send(line));
+  }
+}
+
 // The line for the text in the field, standing or shifting in as Shift says.
 std::string ControlWindow::GetTextLine() const {
   return ControlCommand::MakeText(std::string(text_->GetValue().ToUTF8()),
@@ -479,22 +495,6 @@ std::string ControlWindow::GetSpeedLine() const {
 
 std::string ControlWindow::GetSpaceLine() const {
   return ControlCommand::MakeSpace(static_cast<uint8_t>(space_->GetValue()));
-}
-
-/*
- * Sends `link` the intensity, speed and space the window shows: its
- * SerialControl has just started with the ones it was built with, or the
- * simulator's has been set by another program before.
- */
-void ControlWindow::SendSettings(ControlLink& link, char const* name) {
-  std::array<std::string, 3> const lines{
-      {GetIntensityLine(), GetSpeedLine(), GetSpaceLine()}};
-
-  for (std::string const& line : lines) {
-    Log(wxString(name) + ": > " + ConvertToText(line) + "\n");
-    // as in Broadcast()
-    max_matrix::Discard(link.Send(line));
-  }
 }
 
 /*
