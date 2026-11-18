@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1392,6 +1392,15 @@ matrix, whose cases depended on their order; the text of every error is a `TEST_
 that a `static_assert` holds as long as the enum, and the text of a `Result` and of a byte off
 the enum are tests of their own; the tests on the fixture take the file's name; and every test
 is arranged, acted and asserted in paragraphs.
+
+As built for `test/MaxMatrixTest.cpp` (TS-5, 9, 10, 13, 14, 17): the tests of `Batch` have a file
+of their own, `test/MaxMatrixBatchTest.cpp`; a test that drew in both modes, those of the
+shutdown and of the display test, and the tests of the pace of a shift are split into one
+behaviour each, the pace's on a fixture that starts the shift; what a test saw inside a block is
+asserted after it; a register of every chip is compared with a vector written down rather than
+looped over; the tests of a matrix not set up share a fixture of their own rather than making
+one beside the fixture's; and a test that leaves the LEDs other than the buffer, as one in
+shutdown, puts them back at its end, with the reason.
 
 ### 42 A newer avr-gcc as a cross-check
 

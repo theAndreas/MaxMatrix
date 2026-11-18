@@ -85,6 +85,14 @@ Max7219 const& ChipOfModule(size_t module) {
   return mock::chain.chips[mock::chain.chips.size() - 1 - module];
 }
 
+std::vector<uint8_t> ChipValues(uint8_t Max7219::* value) {
+  std::vector<uint8_t> values;
+  for (size_t module{0}; module < kNumberOfModules; module++) {
+    values.push_back(ChipOfModule(module).*value);
+  }
+  return values;
+}
+
 std::vector<uint8_t> Display() {
   std::vector<uint8_t> columns;
   for (size_t module{0}; module < mock::chain.chips.size(); module++) {

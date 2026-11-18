@@ -96,6 +96,10 @@ std::vector<uint8_t> Bytes(max_matrix::span<max_matrix::Byte const> data);
  * the far end of the chain */
 Max7219 const& ChipOfModule(size_t module);
 
+/* one register of every chip, module 0 first, so that a test compares them all
+ * with what it writes down */
+std::vector<uint8_t> ChipValues(uint8_t Max7219::* value);
+
 /* what the chain shows, laid out like the buffer: a column of a module is a
  * digit, a row a segment */
 std::vector<uint8_t> Display();
