@@ -107,8 +107,9 @@ class Matrix {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
-   *                    1 to `kMaxNumberOfModules`; it has to live as long as
-   *                    the matrix.
+   *                    1 to `kMaxNumberOfModules`.
+   * \pre `buffer` lives as long as the matrix; otherwise the matrix writes
+   *      memory that is no longer the buffer, which is undefined.
    */
   Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
          ClockPin clock_pin, span<Byte> buffer);
@@ -441,12 +442,14 @@ class Matrix {
    * shifts until StopShift() or the next shift starts.
    *
    * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
-   *                 character or the end of the span, as for SetText(). It has
-   *                 to live until the text stands, or as long as it repeats.
+   *                 character or the end of the span, as for SetText().
    * \param[in] repeat True to start over after the last char, without end.
    * \return Error::kOk; Error::kNotSetUp before an Init() has succeeded; or
    *         Error::kNoText if `text` is an empty span. Nothing starts on an
    *         error.
+   * \pre `text` lives until the text stands, or as long as it repeats;
+   *      otherwise ShiftTask() reads memory that is no longer the text, which
+   *      is undefined.
    */
   Status SetTextWithShift(span<char const> text, bool repeat = false);
 
@@ -489,10 +492,12 @@ class Matrix {
    * fonts, is passed with its length, `{font, size}`. A font in RAM, without
    * `PROGMEM`, fails as well, almost always, as the Uno reads it from flash.
    *
-   * \param[in] font The font, in flash; it has to live as long as it is set, as
-   *                 a `PROGMEM` array does.
+   * \param[in] font The font, in flash.
    * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
    *         it; the font then stays as it was.
+   * \pre `font` lives as long as it is set, as a `PROGMEM` array does;
+   *      otherwise every char is drawn from memory that is no longer the font,
+   *      which is undefined.
    */
   Status SetFont(span<uint8_t const> font) {
     return MAXMATRIX_REPORT_ERROR("SetFont", text_.SetFont(font));
@@ -533,13 +538,12 @@ class Matrix {
    * \brief Shifts a text or a char one column further, if the shift interval
    *        has passed.
    *
-   * Call it on every `loop()` until GetState() is State::kReady again.
+   * Call it on every `loop()` until GetState() is State::kReady again, or on
+   * every `loop()` at all: without a shift, it changes nothing.
    * It takes a step only when the shift interval has passed since the last one,
    * and with an interval of 0 on every call. A call that comes late takes one
    * step, not the ones it missed: catching up would make the text jump after
    * `loop()` was held up.
-   *
-   * \pre SetCharWithShift() or SetTextWithShift() started a shift.
    */
   void ShiftTask();
 

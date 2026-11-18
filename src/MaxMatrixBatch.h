@@ -42,7 +42,9 @@ class Batch {
   /*!
    * \brief Turns auto update of `matrix` off until the end of the block.
    *
-   * \param[in,out] matrix The matrix; it has to outlive the batch.
+   * \param[in,out] matrix The matrix.
+   * \pre `matrix` outlives the batch; otherwise the end of the block writes to
+   *      an object that is gone, which is undefined.
    */
   explicit Batch(Matrix& matrix);
 

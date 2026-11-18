@@ -53,6 +53,8 @@ class Text {
    * \param[in] font The font, in flash, in the format Font describes.
    * \return Error::kOk, or Error::kNotAFont if Font::CheckFont() does not take
    *         it; the font then stays as it was.
+   * \pre `font` lives as long as it is set; otherwise every char is drawn from
+   *      memory that is no longer the font, which is undefined.
    */
   MAXMATRIX_NODISCARD Status SetFont(span<uint8_t const> font);
 
@@ -97,13 +99,14 @@ class Text {
    *        at the right edge, or over and over.
    *
    * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
-   *                 character or the end of the span. It is kept as a span, so
-   *                 it has to live until the text stands, or as long as it
-   *                 starts over.
+   *                 character or the end of the span; it is kept as a span.
    * \param[in] repeat True to start over with the first char after the last,
    *                   without end.
    * \return Error::kOk, or Error::kNoText if `text` is an empty span; nothing
    *         starts then.
+   * \pre `text` lives until the text stands, or as long as it starts over;
+   *      otherwise a step reads memory that is no longer the text, which is
+   *      undefined.
    */
   MAXMATRIX_NODISCARD Status SetTextWithShift(span<char const> text,
                                               bool repeat);

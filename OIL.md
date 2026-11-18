@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1302,6 +1302,14 @@ the space and the interval beside their members, and the two switches unless `ST
 `SetIntensity()`, which can no longer fail there, to `Discard()` with that reason, rather than
 writing the register itself, which made `Basics` 14 bytes larger, as its own call of
 `SetIntensity()` no longer shares the function.
+
+As built for the preconditions of the chapter Errors (E-2): what a sketch has to keep alive, the
+buffer of a `Matrix`, the text that shifts, the font and the matrix of a `Batch`, is a `\pre`
+that says what happens otherwise, as Documentation.md asks, rather than a half sentence of a
+`\param`; `ShiftTask()` names no precondition, as without a shift it changes nothing, and
+SerialControl calls it on every `loop()`; and `Command` passes the status of `SetIntensity()` on
+rather than dropping it (E-1), which costs SerialControl 2 bytes of flash with
+`MAXMATRIX_DEV_ERROR_DETECT` and nothing otherwise.
 
 ### 42 A newer avr-gcc as a cross-check
 
