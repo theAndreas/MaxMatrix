@@ -767,5 +767,42 @@ TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
             }));
 }
 
+/* a bitmap higher than a module read bits beyond its byte, which turned the
+ * dots below its eighth row off or, from bit 32 on, shifted further than C++
+ * defines; it is drawn eight rows high, and the rows below stay as they are */
+class BitmapHeightTest : public MaxMatrixTest,
+                         public ::testing::WithParamInterface<uint8_t> {};
+
+TEST_P(BitmapHeightTest, BitmapHigherThanAModuleIsDrawnEightHigh) {
+  constexpr auto kTopDot PROGMEM{make_array<uint8_t>(0x01)};
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+
+  matrix_.DrawBitmap(Point{X{0}, Y{-1}}, GetParam(), kTopDot);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       "################################",
+                                   }));
+}
+
+INSTANTIATE_TEST_SUITE_P(Heights, BitmapHeightTest,
+                         ::testing::Values(uint8_t{9}, uint8_t{255}));
+
+TEST_F(MaxMatrixTest, BitmapOfNoRowDrawsNothing) {
+  constexpr auto kDarkColumn PROGMEM{make_array<uint8_t>(0x00)};
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+
+  matrix_.DrawBitmap(Point{X{0}, Y{0}}, 0, kDarkColumn);
+
+  EXPECT_EQ(ShownPicture(matrix_),
+            Picture([](int16_t, int16_t) { return true; }));
+}
+
 }  // namespace
 }  // namespace max_matrix

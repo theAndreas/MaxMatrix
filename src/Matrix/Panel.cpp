@@ -289,11 +289,14 @@ void Panel::DrawBitmap(Point top_left, uint8_t height,
 void Panel::DrawColumn(Point top, uint8_t height, Byte value) {
   int16_t const x{top.x.number};
   int16_t const y{top.y.number};
+  // A byte has no more rows: a height beyond them read bits past it.
+  uint8_t const rows{(height > kRowNumberOfModule) ? kRowNumberOfModule
+                                                   : height};
 
-  if ((height == kRowNumberOfModule) && (y == 0)) {
+  if ((rows == kRowNumberOfModule) && (y == 0)) {
     SetColumn(X{x}, value);
   } else if ((y > -kRowNumberOfModule) && (y < kRowNumberOfModule)) {
-    for (uint8_t row{0}; row < height; row++) {
+    for (uint8_t row{0}; row < rows; row++) {
       SetDot(Point{X{x}, Y{static_cast<int16_t>(y + row)}},
              ReadBit(value, row));
     }

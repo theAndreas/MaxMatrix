@@ -1360,6 +1360,12 @@ a shift tell its steps by the columns at the right edge of the panel rather than
 counter, and still fail when a step comes a millisecond late; and the test of which frame a
 changed column of the buffer turns into is a test of `internal::Wired`, made in the test.
 
+As built for the drawing out of range (TS-25), as decided on 2026-11-18: a bitmap, a glyph or a
+sprite higher than a module is drawn eight rows high, and a sprite wider than its columns as
+wide as they, rather than reading bits past a byte, which turned the row below the eighth off and
+from bit 32 on was undefined, or columns past the sprite's array; a height or width of 0 draws
+nothing. The reference says so where it names the ranges.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

@@ -380,7 +380,8 @@ class Panel {
    * columns were once given, does not compile: the bitmap brings its width.
    *
    * \param[in] top_left The top left corner; it may lie off the panel.
-   * \param[in] height The rows of the picture, 1 to 8.
+   * \param[in] height The rows of the picture, 1 to 8; more count as 8, and 0
+   *                   draws nothing.
    * \param[in] bitmap The columns, in `PROGMEM`; as many as it holds.
    */
   void DrawBitmap(Point top_left, uint8_t height, span<uint8_t const> bitmap);
@@ -392,7 +393,8 @@ class Panel {
    * are.
    *
    * \param[in] top The dot of bit 0; it may lie off the panel.
-   * \param[in] height The rows to draw, 1 to 8.
+   * \param[in] height The rows to draw, 1 to 8; more count as 8, and 0 draws
+   *                   nothing.
    * \param[in] value The column, bit 0 at `top`.
    */
   void DrawColumn(Point top, uint8_t height, Byte value);
