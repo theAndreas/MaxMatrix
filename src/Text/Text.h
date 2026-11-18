@@ -170,8 +170,8 @@ class Text {
    */
 
   /*
-   * The columns of a char shifted in so far, its space included: kShiftIdle
-   * while no char is shifting, and kShiftStart when one begins. A count rather
+   * The step of a char under way, from kShiftStart, one per column of the char
+   * and of its space: kShiftIdle while no char is shifting. A count rather
    * than a state, so the two values are constants, not an enum.
    */
   static constexpr uint16_t kShiftIdle{0};

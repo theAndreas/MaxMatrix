@@ -1402,6 +1402,18 @@ looped over; the tests of a matrix not set up share a fixture of their own rathe
 one beside the fixture's; and a test that leaves the LEDs other than the buffer, as one in
 shutdown, puts them back at its end, with the reason.
 
+As built for the end of a shift (TS-4), as decided on 2026-11-19: a shifting char brings one
+column per step, its glyph and the space behind it, and no more, and a text ends once the space
+behind its last char has come in, in a call that shifts nothing, as one more caller of the
+function that reads the next char made avr-gcc keep it out of line, 46 to 64 bytes of flash; as
+built, the examples that shift text are 14 to 20 bytes smaller instead. The first step of a char
+had brought two of its columns at once, against the interval the reference gives per column, the
+step that ended a char one more empty column, and the end of a text another; the reference had
+promised that the last char stands at the right edge. The test of the chain lengths found it, as
+it was the first to write the end of a shift down rather than see that something was lit. The
+tests that pinned the old steps, the pace of a shift among them, and the panels of `ScrollText`
+and `Messages` at their time in simavr, each one column behind, follow.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

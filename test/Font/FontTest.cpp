@@ -222,7 +222,7 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
   for (uint8_t column{0}; column < 8; column++) {
     EXPECT_EQ(
         matrix_
-            .GetColumn(X{static_cast<int16_t>(kNumberOfColumns - 10 + column)})
+            .GetColumn(X{static_cast<int16_t>(kNumberOfColumns - 9 + column)})
             .GetValue()
             .ToInteger(),
         Bit<uint8_t>::ToMask(column))
