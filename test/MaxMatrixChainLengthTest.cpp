@@ -15,19 +15,7 @@
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::Byte;
-using max_matrix::Command;
-using max_matrix::Error;
-using max_matrix::Matrix;
-using max_matrix::MatrixOrientation;
-using max_matrix::Module;
-using max_matrix::ModuleType;
-using max_matrix::Point;
-using max_matrix::ShiftFill;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
-
+namespace max_matrix {
 namespace {
 
 /* Chains of other lengths than the examples\', in every orientation: one
@@ -41,14 +29,13 @@ class MaxMatrixChainLengthTest
     : public ::testing::TestWithParam<ChainParameter> {
  protected:
   uint8_t number_of_modules_{std::get<0>(GetParam())};
-  uint8_t number_of_columns_{static_cast<uint8_t>(
-      number_of_modules_ * max_matrix::kColumnNumberOfModule)};
+  uint8_t number_of_columns_{
+      static_cast<uint8_t>(number_of_modules_ * kColumnNumberOfModule)};
   std::vector<Byte> buffer_ =
-      std::vector<Byte>(max_matrix::BufferSize(number_of_modules_), Byte{0xAA});
-  Matrix matrix_{max_matrix::DataInPin{kDataInPin},
-                 max_matrix::ChipSelectPin{kChipSelectPin},
-                 max_matrix::ClockPin{kClockPin},
-                 max_matrix::span<Byte>{buffer_.data(), buffer_.size()}};
+      std::vector<Byte>(BufferSize(number_of_modules_), Byte{0xAA});
+  Matrix matrix_{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                 ClockPin{kClockPin},
+                 span<Byte>{buffer_.data(), buffer_.size()}};
 
   void SetUp() override {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, number_of_modules_);
@@ -108,8 +95,8 @@ TEST_P(MaxMatrixChainLengthTest, DotsRoundTrip) {
 /* the mapping changes a pair of modules at a time, m and n - 1 - m; the picture
  * has to stay for every pair */
 TEST_P(MaxMatrixChainLengthTest, PictureStaysWhenTheMappingChanges) {
-  for (MatrixOrientation matrix_orientation : kMatrixOrientations) {
-    for (ModuleType module_type : kModuleTypes) {
+  for (MatrixOrientation const matrix_orientation : kMatrixOrientations) {
+    for (ModuleType const module_type : kModuleTypes) {
       matrix_.SetMatrixOrientation(std::get<1>(GetParam()));
       matrix_.SetModuleType(std::get<2>(GetParam()));
       matrix_.Clear();
@@ -156,11 +143,11 @@ TEST_P(MaxMatrixChainLengthTest, ShiftsMoveThePicture) {
  * chain is taken up to the chain, one shorter is refused by GetRow() and drawn
  * as far as it reaches by SetRow() */
 TEST_P(MaxMatrixChainLengthTest, RowsTakeAByteForEveryModule) {
-  max_matrix::array<Byte, 6> const values{
+  array<Byte, 6> const values{
       {Byte{0x81}, Byte{0x42}, Byte{0x24}, Byte{0x18}, Byte{0xF0}, Byte{0x0F}}};
-  max_matrix::array<Byte, 6> read{};
-  max_matrix::array<Byte, 1> read_one{};
-  max_matrix::array<Byte, 1> const one{{Byte{0xFF}}};
+  array<Byte, 6> read{};
+  array<Byte, 1> read_one{};
+  array<Byte, 1> const one{{Byte{0xFF}}};
 
   matrix_.SetRow(Y{2}, values);
   ASSERT_EQ(matrix_.GetRow(Y{2}, read).GetError(), Error::kOk);
@@ -203,3 +190,4 @@ TEST_P(MaxMatrixChainLengthTest, TextShiftsAndPictureAnswersEveryColumn) {
 }
 
 }  // namespace
+}  // namespace max_matrix

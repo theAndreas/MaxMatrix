@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1340,6 +1340,18 @@ glyphs of a test named `ue` and `o`. As built: `Element` and `Size`, `Referred`,
 live a few lines, as the matrix `m` of a lambda, or are the domain's or another's, as SHA-1's
 `a` to `e` of RFC 3174, wxWidgets' `dc` and the `Ms` of a time in milliseconds; and `c` stays
 for a char, as common as `i` for an index.
+
+As reviewed for the chapter Tests on 2026-11-18, the rules of `docs/Testing.md` that review
+checks. Decided the same day: the tests reach the library through its API only, as TS-8 asks,
+rather than through `#define private public`, which AGENTS.md had laid down; they lie in the
+library's namespace, as TS-6 asks, rather than naming what they use with using-declarations;
+`Command`, the library's one reader of outside input, gets a fuzzer (TS-28), the simulator's and
+the control program's readers none, as they read only from loopback or a board of one's own; and
+the tests of the TCP ports and the pseudo terminal keep their real time, which a socket needs,
+named as a departure from TS-18. As built for TS-6: the ten files of tests of the library that
+lay outside it, nine of them with using-declarations, lie in `namespace max_matrix { namespace {
+... } }`, and a test's own alias `Module` for a module type and a mounting, which hid
+`max_matrix::Module` there, is `ModuleCase`.
 
 ### 42 A newer avr-gcc as a cross-check
 

@@ -13,21 +13,23 @@
 #include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 
+namespace max_matrix {
+namespace {
+
 /* a changed column of a module goes out in one frame with the same column of
  * every other module */
 TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
   uint8_t const module{kNumberOfModules - 2};
   int32_t const frames_before{mock::frames};
 
-  matrix_.panel_.wired_.StoreBit(
-      (module * max_matrix::kColumnNumberOfModule) + 3, 1, true);
+  matrix_.panel_.wired_.StoreBit((module * kColumnNumberOfModule) + 3, 1, true);
   matrix_.Update();
   EXPECT_EQ(mock::frames - frames_before, 1);
   ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (uint8_t i{0}; i < kNumberOfModules; i++) {
     SCOPED_TRACE(::testing::Message() << "Module " << static_cast<uint16_t>(i));
     EXPECT_EQ(mock::last_frame[size_t{2} * i],
-              static_cast<uint8_t>(max_matrix::max7219::Register::kDigit3));
+              static_cast<uint8_t>(max7219::Register::kDigit3));
     EXPECT_EQ(mock::last_frame[(size_t{2} * i) + 1],
               (i == module) ? 0x02 : 0x00);
   }
@@ -52,7 +54,10 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {
   int32_t const frames_before{mock::frames};
 
   matrix_.SetText("Hi!");
-  matrix_.SetDot(max_matrix::Point{max_matrix::X{0}, max_matrix::Y{0}},
+  matrix_.SetDot(Point{X{0}, Y{0}},
                  ReadBit(matrix_.panel_.wired_.GetColumn(0), 0));
   EXPECT_EQ(mock::frames, frames_before);
 }
+
+}  // namespace
+}  // namespace max_matrix

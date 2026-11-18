@@ -13,17 +13,7 @@
 #include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::ChipSelectPin;
-using max_matrix::ClockPin;
-using max_matrix::DataInPin;
-using max_matrix::Error;
-using max_matrix::MatrixOf;
-using max_matrix::ModuleType;
-using max_matrix::Point;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
-
+namespace max_matrix {
 namespace {
 
 uint8_t const kLastPin{NUM_DIGITAL_PINS - 1};
@@ -46,8 +36,6 @@ class ChainLastPinTest : public ChainPinTest {};
 std::string PinCaseName(::testing::TestParamInfo<PinCase> const& param_info) {
   return param_info.param.name;
 }
-
-}  // namespace
 
 /* chip select was not an output in SPI mode, and the SPI transaction was never
  * ended */
@@ -142,10 +130,13 @@ TEST_F(MaxMatrixTest, NothingIsSentBeforeInitSucceeded) {
   matrix.SetDot(Point{X{0}, Y{0}}, true);
   /* a frame for every module at once, as SetIntensity() sent one before it
    * refused a matrix not set up itself */
-  matrix.RegisterWrite(max_matrix::max7219::Register::kIntensity, 1);
+  matrix.RegisterWrite(max7219::Register::kIntensity, 1);
   matrix.Update();
 
   EXPECT_EQ(error, Error::kOutOfRange);
   EXPECT_EQ(mock::frames, 0);
   EXPECT_EQ(mock::errors, 0);
 }
+
+}  // namespace
+}  // namespace max_matrix

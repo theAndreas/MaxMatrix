@@ -13,15 +13,7 @@
 
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::Command;
-using max_matrix::CommandState;
-using max_matrix::Error;
-using max_matrix::Point;
-using max_matrix::Result;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
-
+namespace max_matrix {
 namespace {
 
 class MaxMatrixCommandTest : public MaxMatrixTest {
@@ -220,3 +212,4 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
 }
 
 }  // namespace
+}  // namespace max_matrix

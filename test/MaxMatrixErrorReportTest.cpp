@@ -11,10 +11,7 @@
 #include "Arduino.h"
 #include "MaxMatrix.h"
 
-using max_matrix::Error;
-using max_matrix::MatrixOf;
-using max_matrix::X;
-
+namespace max_matrix {
 namespace {
 
 constexpr uint8_t kDataInPin{11};
@@ -25,10 +22,9 @@ constexpr uint8_t kNumberOfModules{4};
 /* a call that fails prints its name and the error on Serial */
 TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  MatrixOf<kNumberOfModules> const matrix{
-      max_matrix::DataInPin{kDataInPin},
-      max_matrix::ChipSelectPin{kChipSelectPin},
-      max_matrix::ClockPin{kClockPin}};
+  MatrixOf<kNumberOfModules> const matrix{DataInPin{kDataInPin},
+                                          ChipSelectPin{kChipSelectPin},
+                                          ClockPin{kClockPin}};
   mock::serial_output.clear();
 
   EXPECT_EQ(matrix.GetColumn(X{-1}).GetError(), Error::kOutOfRange);
@@ -37,3 +33,4 @@ TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {
 }
 
 }  // namespace
+}  // namespace max_matrix

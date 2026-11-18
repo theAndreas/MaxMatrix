@@ -331,10 +331,11 @@ Google's names, as in Utl and Wordclock, so that every project names alike; clan
   `MAXMATRIX_SRC_MATRIX_PANEL_H_`.
 - The library lies in the namespace `max_matrix` (F-9 of `docs/CodingStyle.md`), so its names
   carry no prefix: `max_matrix::Matrix`, `max_matrix::Font`. What a sketch does not use, the
-  parts below the facade, lies in `max_matrix::internal`. A test or a program on the host
-  names what it uses with a using-declaration (`using max_matrix::Error;`), never with
-  `using namespace`. The simulator is linked with the sketch and has no namespace yet, so its
-  classes start with `Simulator`.
+  parts below the facade, lies in `max_matrix::internal`. A test of the library lies in the
+  namespace `max_matrix` and an anonymous one inside it, as TS-6 of `docs/Testing.md` asks; a
+  program on the host names what it uses with a using-declaration (`using max_matrix::Error;`),
+  never with `using namespace`. The simulator is linked with the sketch and has no namespace
+  yet, so its classes start with `Simulator`.
 - `Byte` stands in for `std::byte`, and is named `Byte` against the names of
   `docs/CodingStyle.md`, which give such a type the standard's name: a `max_matrix::byte` would
   meet Arduino's `byte` in a sketch that is `using namespace max_matrix` (OIL 41).
