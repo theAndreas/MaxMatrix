@@ -95,6 +95,9 @@ Status Chain::Init(uint8_t number_of_modules) {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Chain::WriteRegisterAll(max7219::Register address, uint8_t value,
                              uint8_t number_of_modules) {
+  if (!IsSetUp()) {
+    return;
+  }
   StartTransmission();
   for (uint8_t module{0}; module < number_of_modules; module++) {
     Transfer(address, value);
@@ -104,6 +107,9 @@ void Chain::WriteRegisterAll(max7219::Register address, uint8_t value,
 
 void Chain::WriteRegisterEach(max7219::Register address,
                               span<Byte const> buffer, uint8_t column) {
+  if (!IsSetUp()) {
+    return;
+  }
   // A byte, as the buffer of at most kMaxNumberOfModules modules is: the index
   // then steps on in 8 bits, where the Uno would compute a size_t in 16.
   auto const columns{static_cast<uint8_t>(buffer.size())};

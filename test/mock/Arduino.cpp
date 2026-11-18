@@ -26,6 +26,9 @@ std::string serial_input;
 std::string serial_output;
 void (*tick)() = NULL;
 bool spi_used;
+/* SPI.begin() was called: before it, the Uno waits for ever for a byte to go
+ * out, as the SPI is off */
+static bool spi_begun;
 /* the bits of the byte that is being clocked in, and how many there are */
 static uint8_t bits;
 static uint8_t bit_count;
@@ -60,6 +63,7 @@ void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
   frame.clear();
   last_frame.clear();
   spi_used = false;
+  spi_begun = false;
   serial_input.clear();
   serial_output.clear();
   chain.Reset(number_of_chips);
@@ -110,8 +114,12 @@ void SetPin(uint8_t pin, uint8_t level) {
   }
 }
 
-static PortRegister port_registers[kNumberOfPins / 8] = {{0}, {1}, {2}, {3},
-                                                         {4}, {5}, {6}, {7}};
+/* the core's NOT_A_PORT, whose register is address 0 on the Uno, the register
+ * r0 */
+static uint8_t const kNotAPort = 0;
+
+static PortRegister port_registers[kNumberOfPins / 8 + 1] = {
+    {kNotAPort}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}};
 
 /* every pin of the port in mask goes to level, one after the other from bit 0,
  * as one write sets them at once; with the interrupts on, an interrupt that
@@ -119,8 +127,12 @@ static PortRegister port_registers[kNumberOfPins / 8] = {{0}, {1}, {2}, {3},
  */
 static void WritePort(uint8_t port, uint8_t mask, uint8_t level) {
   if ((SREG & 0x80) != 0) errors++;
+  if (port == kNotAPort) {
+    errors++;
+    return;
+  }
   for (uint8_t bit = 0; bit < 8; bit++) {
-    uint8_t const pin = static_cast<uint8_t>(port * 8 + bit);
+    uint8_t const pin = static_cast<uint8_t>((port - 1) * 8 + bit);
     if ((mask & (1u << bit)) != 0 && pin_level[pin] != level)
       SetPin(pin, level);
   }
@@ -139,7 +151,9 @@ PortRegister& PortRegister::operator&=(uint8_t mask) {
 
 uint8_t SREG = 0x80;
 
-uint8_t digitalPinToPort(uint8_t pin) { return static_cast<uint8_t>(pin / 8); }
+uint8_t digitalPinToPort(uint8_t pin) {
+  return static_cast<uint8_t>(pin / 8 + 1);
+}
 
 uint8_t digitalPinToBitMask(uint8_t pin) {
   return static_cast<uint8_t>(1u << (pin % 8));
@@ -197,6 +211,8 @@ size_t Print::println() { return write("\r\n"); }
 
 SPIClass SPI;
 
+void SPIClass::begin() { mock::spi_begun = true; }
+
 void SPIClass::beginTransaction(SPISettings) {
   if (mock::transaction_open) mock::errors++;
   mock::transaction_open = true;
@@ -209,7 +225,7 @@ void SPIClass::endTransaction() {
 }
 
 uint8_t SPIClass::transfer(uint8_t value) {
-  if (!mock::transaction_open) mock::errors++;
+  if (!mock::transaction_open || !mock::spi_begun) mock::errors++;
   mock::Transfer(value);
   return 0;
 }

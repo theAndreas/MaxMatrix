@@ -19,7 +19,7 @@ class SPISettings {
 
 class SPIClass {
  public:
-  void begin() {}
+  void begin();
   void beginTransaction(SPISettings);
   void endTransaction();
   uint8_t transfer(uint8_t value);

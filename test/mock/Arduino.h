@@ -9,8 +9,9 @@
  * rising clock shifts the level of data in into the chain, as SimulatorAvr does
  * for the real binary. The mock records what the library sends within a frame
  * and counts every bit or SPI byte outside one, outside an SPI transaction, or
- * on a pin that is no output, a frame that ends within a byte, and a port
- * written with the interrupts on, as an error. Every bit and every rising chip
+ * on a pin that is no output, an SPI byte before SPI.begin(), a frame that
+ * ends within a byte, and a port written with the interrupts on or written
+ * that is none of the board's, as an error. Every bit and every rising chip
  * select also go to the MAX7219 model in Max7219.h, mock::chain. */
 #ifndef MAXMATRIX_TEST_MOCK_ARDUINO_H_
 #define MAXMATRIX_TEST_MOCK_ARDUINO_H_
@@ -126,8 +127,9 @@ class PortRegister {
 }  // namespace mock
 
 /* The ports of the AVR core, by which the library bit bangs: a pin is bit pin %
- * 8 of port pin / 8 here, so that the pins 10, 11 and 13 of the examples share
- * a port, as they share PORTB on the Uno. */
+ * 8 of port pin / 8 + 1 here, so that the pins 10, 11 and 13 of the examples
+ * share a port, as they share PORTB on the Uno, and port 0 is none, the core's
+ * NOT_A_PORT. */
 uint8_t digitalPinToPort(uint8_t pin);
 uint8_t digitalPinToBitMask(uint8_t pin);
 mock::PortRegister* portOutputRegister(uint8_t port);

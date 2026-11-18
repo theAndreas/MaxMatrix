@@ -172,7 +172,8 @@ namespace internal {
 class Chain {
  public:
   /*!
-   * \brief Makes the chain at these pins; nothing is sent until Init().
+   * \brief Makes the chain at these pins; nothing is sent until an Init()
+   *        succeeds.
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
@@ -233,7 +234,8 @@ class Chain {
   /*!
    * \brief Writes the same register of every MAX7219, with the same value.
    *
-   * One frame, with the same address and value for every module.
+   * One frame, with the same address and value for every module; none
+   * before an Init() has succeeded.
    *
    * \param[in] address The register.
    * \param[in] value The value.
@@ -246,8 +248,9 @@ class Chain {
    * \brief Writes the same register of every MAX7219, each with its own value:
    *        one column of every module, straight from the matrix buffer.
    *
-   * One frame, with the same address and one value per module. The values of
-   * a column lie a module's columns apart in the buffer.
+   * One frame, with the same address and one value per module; none before
+   * an Init() has succeeded. The values of a column lie a module's columns
+   * apart in the buffer.
    *
    * \param[in] address The register.
    * \param[in] buffer The matrix buffer, `BufferSize()` of the modules in the
@@ -283,6 +286,11 @@ class Chain {
   // Whether each of the three pins is one of the board's, which Init() checks
   // before it takes them.
   MAXMATRIX_NODISCARD bool HasBoardPins() const;
+  // Whether an Init() has succeeded: until then chip select has no bit, and a
+  // frame would write the core's NOT_A_PORT, address 0, or with SPI wait for
+  // ever for a byte before SPI.begin(). A bit of its own would cost a byte of
+  // RAM.
+  MAXMATRIX_NODISCARD bool IsSetUp() const { return chip_select_.mask != 0u; }
 
   uint8_t data_in_pin_;
   uint8_t chip_select_pin_;
