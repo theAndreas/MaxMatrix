@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1320,6 +1320,13 @@ status on since #140. `Init()` writes its intensity through `RegisterWrite()` no
 handing the status of `SetIntensity()` to `Discard()` (#139): with the check of the state, that
 cost up to 82 bytes of flash with `MAXMATRIX_DEV_ERROR_DETECT` in every example that never sets
 the intensity, against 10 in `Basics`, which does.
+
+As built for the rest of the chapter Errors (E-3): `test/compile_fail/` proves that `MatrixOf`
+with no module or more than 31, a `Status` or a `Result` taken for a `bool`, arithmetic on a
+`Byte`, a bare number for a `Byte` or for the `X` of a column, and a copy of a `Matrix` or a
+`Batch` fail when compiling; each case was seen to fail its test once its safeguard was taken
+out, as it then compiled, or failed with another message. And AGENTS.md names E-1 where the host
+code returns a `bool` rather than an error type.
 
 ### 42 A newer avr-gcc as a cross-check
 
