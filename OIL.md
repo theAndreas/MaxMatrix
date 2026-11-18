@@ -1414,6 +1414,17 @@ it was the first to write the end of a shift down rather than see that something
 tests that pinned the old steps, the pace of a shift among them, and the panels of `ScrollText`
 and `Messages` at their time in simavr, each one column behind, follow.
 
+As built for the tests of the chain lengths (TS-5, 9, 13, 14): `test/MaxMatrixChainLengthTest.cpp`
+tested the facade without a header of its own, and its tests lie in `test/MaxMatrixTest.cpp` now,
+one behaviour each. A shift and a text are compared with the columns written down rather than seen
+to light something, and a text ends with the space behind its last char on every length, as on the
+four modules of the examples. What held for one module and not for more by an `if` is a suite for
+each, and the change of the mapping, which looped over every mapping to change to, takes it as a
+parameter, from every mapping to every other. The behaviours run on one module type, as only the
+matrix orientation reckons with the length of the chain and `MaxMatrixMappingTest` tries every
+module type: on all eight, the chain lengths took 74 seconds under the sanitizers on 16 cores
+rather than the 37 they take now, against 19 for all the other tests.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

@@ -106,7 +106,6 @@ set(MaxMatrixTestSources
     test/MaxMatrixTestSupport.cpp
     test/MaxMatrixTest.cpp
     test/MaxMatrixBatchTest.cpp
-    test/MaxMatrixChainLengthTest.cpp
     test/MaxMatrixErrorTest.cpp
     test/Command/CommandTest.cpp
     test/Font/FontTest.cpp
