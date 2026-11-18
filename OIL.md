@@ -1353,6 +1353,13 @@ lay outside it, nine of them with using-declarations, lie in `namespace max_matr
 ... } }`, and a test's own alias `Module` for a module type and a mounting, which hid
 `max_matrix::Module` there, is `ModuleCase`.
 
+As built for TS-8: `#define private public` is gone from the test support. The fixture owns its
+buffer and hands it to a `Matrix`, as a sketch may, so that the check after every test, and
+the tests that compare the buffer, read it without a private member; the tests of the pace of
+a shift tell its steps by the columns at the right edge of the panel rather than by the text's
+counter, and still fail when a step comes a millisecond late; and the test of which frame a
+changed column of the buffer turns into is a test of `internal::Wired`, made in the test.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
