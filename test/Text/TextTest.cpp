@@ -13,12 +13,8 @@
 #include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::Error;
-using max_matrix::Point;
-using max_matrix::Sprite;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
+namespace max_matrix {
+namespace {
 
 /* SetTextWithShift() took a char*, though the shift only reads the text, so
  * that a sketch could not make its text const */
@@ -89,6 +85,7 @@ TEST_F(MaxMatrixTest, StopShiftHoldsThePicture) {
   matrix_.StopShift();
   EXPECT_EQ(matrix_.GetState(), State::kReady) << "stopped twice";
 }
+
 /* StopShift() ends a char that shifts in as well as a text */
 TEST_F(MaxMatrixTest, StopShiftEndsAShiftingChar) {
   ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);
@@ -138,7 +135,7 @@ TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
  * "Hi!!" are drawn and shifted as "Hi" */
 TEST_F(MaxMatrixTest, TextEndsAtTheEndOfItsSpanWithoutANullCharacter) {
   char const longer[] = "Hi!!";
-  max_matrix::span<char const> const unterminated{longer, 2};
+  span<char const> const unterminated{longer, 2};
 
   ASSERT_EQ(matrix_.SetText("Hi").GetError(), Error::kOk);
   std::vector<std::string> const expected{ShownPicture(matrix_)};
@@ -151,3 +148,6 @@ TEST_F(MaxMatrixTest, TextEndsAtTheEndOfItsSpanWithoutANullCharacter) {
   EXPECT_EQ(ShiftWholeText(unterminated), frames);
   EXPECT_EQ(shift_calls_, calls);
 }
+
+}  // namespace
+}  // namespace max_matrix

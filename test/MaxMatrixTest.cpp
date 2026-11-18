@@ -13,27 +13,18 @@
 #include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::Batch;
-using max_matrix::ChipSelectPin;
-using max_matrix::ClockPin;
-using max_matrix::DataInPin;
-using max_matrix::Error;
-using max_matrix::MatrixOf;
-using max_matrix::Point;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
+namespace max_matrix {
+namespace {
 
 TEST_F(MaxMatrixTest, InitConfiguresEveryChip) {
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
     SCOPED_TRACE(::testing::Message()
                  << "Module " << static_cast<uint16_t>(module));
     Max7219 const& chip{ChipOfModule(module)};
-    EXPECT_EQ(chip.shutdown, max_matrix::max7219::kShutdownModeNormalOperation);
-    EXPECT_EQ(chip.display_test,
-              max_matrix::max7219::kDisplayTestNormalOperation);
-    EXPECT_EQ(chip.scan_limit, max_matrix::max7219::kScanLimitDisplayDigit0To7);
-    EXPECT_EQ(chip.decode_mode, max_matrix::max7219::kDecodeModeNoDecode);
+    EXPECT_EQ(chip.shutdown, max7219::kShutdownModeNormalOperation);
+    EXPECT_EQ(chip.display_test, max7219::kDisplayTestNormalOperation);
+    EXPECT_EQ(chip.scan_limit, max7219::kScanLimitDisplayDigit0To7);
+    EXPECT_EQ(chip.decode_mode, max7219::kDecodeModeNoDecode);
     EXPECT_EQ(chip.intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
   }
 }
@@ -73,15 +64,14 @@ TEST_F(MaxMatrixTest, SettingsNeedInit) {
 }
 
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
-  EXPECT_EQ(
-      matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue).GetError(),
-      Error::kOk);
+  EXPECT_EQ(matrix_.SetIntensity(max7219::kIntensityMaxValue).GetError(),
+            Error::kOk);
   for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    EXPECT_EQ(ChipOfModule(module).intensity,
-              max_matrix::max7219::kIntensityMaxValue)
+    EXPECT_EQ(ChipOfModule(module).intensity, max7219::kIntensityMaxValue)
         << "Module " << static_cast<uint16_t>(module);
   }
 }
+
 /* the same drawing in both modes: a frame for every call that changed
  * something, or none until Update(), which sends each changed column of a
  * module once */
@@ -91,8 +81,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
 
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
-        Point{X{column},
-              Y{static_cast<int16_t>(column % max_matrix::kRowNumberOfModule)}},
+        Point{X{column}, Y{static_cast<int16_t>(column % kRowNumberOfModule)}},
         true);
   }
   EXPECT_EQ(mock::frames - frames_before, kNumberOfColumns);
@@ -103,8 +92,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
   frames_before = mock::frames;
   for (uint8_t column{0}; column < kNumberOfColumns; column++) {
     matrix_.SetDot(
-        Point{X{column},
-              Y{static_cast<int16_t>(column % max_matrix::kRowNumberOfModule)}},
+        Point{X{column}, Y{static_cast<int16_t>(column % kRowNumberOfModule)}},
         true);
   }
   EXPECT_EQ(mock::frames, frames_before);
@@ -112,7 +100,7 @@ TEST_F(MaxMatrixTest, DrawingInBothModes) {
       << "shown before Update()";
 
   matrix_.Update();
-  EXPECT_EQ(mock::frames - frames_before, max_matrix::kColumnNumberOfModule);
+  EXPECT_EQ(mock::frames - frames_before, kColumnNumberOfModule);
   EXPECT_EQ(Display(), drawn);
 }
 
@@ -129,11 +117,11 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch batch{matrix_};
+    Batch const batch{matrix_};
     for (uint8_t column{0}; column < kNumberOfColumns; column++) {
       matrix_.SetDot(
-          Point{X{column}, Y{static_cast<int16_t>(
-                               column % max_matrix::kRowNumberOfModule)}},
+          Point{X{column},
+                Y{static_cast<int16_t>(column % kRowNumberOfModule)}},
           true);
     }
     EXPECT_FALSE(matrix_.GetAutoUpdate());
@@ -142,7 +130,7 @@ TEST_F(MaxMatrixTest, BatchSendsAtTheEndOfTheBlock) {
         << "shown inside the block";
   }
   EXPECT_TRUE(matrix_.GetAutoUpdate());
-  EXPECT_EQ(mock::frames - frames_before, max_matrix::kColumnNumberOfModule);
+  EXPECT_EQ(mock::frames - frames_before, kColumnNumberOfModule);
 }
 
 /* the inner batch puts back the state it found, which the outer one had turned
@@ -151,9 +139,9 @@ TEST_F(MaxMatrixTest, NestedBatchesSendAtTheOutermost) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch outer{matrix_};
+    Batch const outer{matrix_};
     {
-      Batch inner{matrix_};
+      Batch const inner{matrix_};
       matrix_.SetDot(Point{X{1}, Y{1}}, true);
     }
     EXPECT_EQ(mock::frames, frames_before)
@@ -169,7 +157,7 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
   int32_t const frames_before{mock::frames};
 
   {
-    Batch batch{matrix_};
+    Batch const batch{matrix_};
     matrix_.SetDot(Point{X{1}, Y{1}}, true);
   }
   EXPECT_FALSE(matrix_.GetAutoUpdate());
@@ -178,10 +166,9 @@ TEST_F(MaxMatrixTest, BatchKeepsAutoUpdateOff) {
 }
 
 TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue) {
-  MatrixOf<kNumberOfModules> const fresh{
-      max_matrix::DataInPin{kDataInPin},
-      max_matrix::ChipSelectPin{kChipSelectPin},
-      max_matrix::ClockPin{kClockPin}};
+  MatrixOf<kNumberOfModules> const fresh{DataInPin{kDataInPin},
+                                         ChipSelectPin{kChipSelectPin},
+                                         ClockPin{kClockPin}};
 
   EXPECT_EQ(fresh.GetShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
 }
@@ -257,6 +244,7 @@ TEST_F(MaxMatrixTest, NewShiftStartsAtOnce) {
   matrix_.ShiftTask();
   EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1);
 }
+
 /* shutdown darkens every module and loses nothing: a dot drawn meanwhile shows
  * once it ends, at the intensity set before */
 TEST_F(MaxMatrixTest, ShutdownKeepsThePicture) {
@@ -294,3 +282,6 @@ TEST_F(MaxMatrixTest, DisplayTestLightsEveryLed) {
   matrix_.SetShutdown(false);
   EXPECT_EQ(Display(), shown);
 }
+
+}  // namespace
+}  // namespace max_matrix

@@ -17,34 +17,23 @@
 #include "MaxMatrixTestSupport.h"
 #include "Utility/Bit.h"
 
-using max_matrix::Bit;
-using max_matrix::DecodedChar;
-using max_matrix::Error;
-using max_matrix::Font;
-using max_matrix::Glyph;
-using max_matrix::kDefaultFont;
-using max_matrix::Point;
-using max_matrix::Result;
-using max_matrix::span;
-using max_matrix::State;
-using max_matrix::X;
-using max_matrix::Y;
+namespace max_matrix {
+namespace {
 
 /* fonts in the format of MD_MAX72XX for the tests of SetFont(): the digits 0
  * and 1, 7 rows high, with a 2 of width 0 that the font lacks, in version 1 and
  * in version 2; and a char of 8 columns. kNoFont, which the tests of errors
  * use as well, lies in MaxMatrixTestSupport.h */
-static constexpr auto kDigitFont PROGMEM{max_matrix::make_array<uint8_t>(
+constexpr auto kDigitFont PROGMEM{make_array<uint8_t>(
     'F', 1, '0', '2', 7, 3, B00111110, B01000001, B00111110,  // 0
     2, B01000010, B01111111,                                  // 1
     0)};  // 2, not in the font
-static constexpr auto kDigitFontVersion2 PROGMEM{
-    max_matrix::make_array<uint8_t>('F', 2, 0, '0', 0, '1', 7, 3, B00111110,
-                                    B01000001, B00111110,       // 0
-                                    2, B01000010, B01111111)};  // 1
-static constexpr auto kWideFont PROGMEM{max_matrix::make_array<uint8_t>(
-    'F', 1, 'W', 'W', 8, 8, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
-    0x80)};  // W, a diagonal
+constexpr auto kDigitFontVersion2 PROGMEM{make_array<uint8_t>(
+    'F', 2, 0, '0', 0, '1', 7, 3, B00111110, B01000001, B00111110,  // 0
+    2, B01000010, B01111111)};                                      // 1
+constexpr auto kWideFont PROGMEM{
+    make_array<uint8_t>('F', 1, 'W', 'W', 8, 8, 0x01, 0x02, 0x04, 0x08, 0x10,
+                        0x20, 0x40, 0x80)};  // W, a diagonal
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */
 TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
   std::vector<uint8_t> utf8;
@@ -147,6 +136,7 @@ TEST_F(MaxMatrixTest, UnknownChars) {
   EXPECT_EQ(shift_calls_, calls);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
 }
+
 /* the default font, converted from the table of sprites the library had: every
  * ASCII char from the space to the tilde, no char between the tilde and the
  * degree sign, and 8 rows high */
@@ -243,13 +233,13 @@ TEST_F(MaxMatrixTest, CharWiderThanASpriteIsDrawnWhole) {
 /* only what starts as a font is taken, and the font set before stays */
 TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
   static constexpr auto kVersion3 PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 3, 32, 32, 8, 1, 0)};
+      make_array<uint8_t>('F', 3, 32, 32, 8, 1, 0)};
   static constexpr auto kNoHeight PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, 32, 32, 0, 1, 0)};
+      make_array<uint8_t>('F', 1, 32, 32, 0, 1, 0)};
   static constexpr auto kTooHigh PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, 32, 32, 9, 1, 0)};
+      make_array<uint8_t>('F', 1, 32, 32, 9, 1, 0)};
   static constexpr auto kLastBeforeFirst PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, 33, 32, 8, 1, 0)};
+      make_array<uint8_t>('F', 1, 33, 32, 8, 1, 0)};
   struct BadFont {
     uint8_t const* font;
     size_t size;
@@ -278,17 +268,17 @@ TEST_F(MaxMatrixTest, SetFontRefusesWhatIsNoFont) {
  * chars have to fill the array exactly, from a header that fits into it. */
 TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
   static constexpr auto kLastBeyondTheEnd PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, '0', '1', 7, 1, 0x7F)};
+      make_array<uint8_t>('F', 1, '0', '1', 7, 1, 0x7F)};
   static constexpr auto kByteAfterTheLast PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F, 0)};
+      make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F, 0)};
   static constexpr auto kWidthBeyondTheEnd PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 3, 0x7F)};
+      make_array<uint8_t>('F', 1, '0', '0', 7, 3, 0x7F)};
   static constexpr auto kShortHeader PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, '0', '0')};
+      make_array<uint8_t>('F', 1, '0', '0')};
   static constexpr auto kShortHeaderVersion2 PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 2, 0, '0', 0, '0')};
+      make_array<uint8_t>('F', 2, 0, '0', 0, '0')};
   static constexpr auto kOneChar PROGMEM{
-      max_matrix::make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F)};
+      make_array<uint8_t>('F', 1, '0', '0', 7, 1, 0x7F)};
 
   ASSERT_EQ(matrix_.SetFont(kDigitFont).GetError(), Error::kOk);
   EXPECT_EQ(matrix_.SetFont(kLastBeyondTheEnd).GetError(), Error::kNotAFont);
@@ -310,3 +300,6 @@ TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
       Error::kOk);
   EXPECT_EQ(matrix_.GetFont().data(), kDigitFontVersion2.data());
 }
+
+}  // namespace
+}  // namespace max_matrix

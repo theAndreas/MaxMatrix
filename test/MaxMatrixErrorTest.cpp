@@ -14,22 +14,7 @@
 #include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
-using max_matrix::ChipSelectPin;
-using max_matrix::ClockPin;
-using max_matrix::Command;
-using max_matrix::CommandState;
-using max_matrix::DataInPin;
-using max_matrix::Error;
-using max_matrix::Matrix;
-using max_matrix::MatrixOf;
-using max_matrix::Module;
-using max_matrix::Point;
-using max_matrix::Result;
-using max_matrix::State;
-using max_matrix::Status;
-using max_matrix::X;
-using max_matrix::Y;
-
+namespace max_matrix {
 namespace {
 
 /* a whole line to a command of its own, and why it failed */
@@ -43,13 +28,13 @@ Error FeedText(Matrix& matrix, std::string const& text) {
   }
   return result.GetError();
 }
+
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
   std::vector<uint8_t> const before{
       Bytes(matrix_.panel_.wired_.matrix_buffer_)};
   int32_t const frames_before{mock::frames};
 
-  EXPECT_EQ(matrix_.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
-                .GetError(),
+  EXPECT_EQ(matrix_.SetIntensity(max7219::kIntensityMaxValue + 1).GetError(),
             Error::kOutOfRange);
   EXPECT_EQ(Bytes(matrix_.panel_.wired_.matrix_buffer_), before);
   EXPECT_EQ(mock::frames, frames_before);
@@ -94,8 +79,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetColumn"},
       {"GetColumn off its module",
        [](Matrix& m) {
-         return m.GetColumn(Module{0}, max_matrix::kColumnNumberOfModule)
-             .GetError();
+         return m.GetColumn(Module{0}, kColumnNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetColumn"},
       {"GetRow above",
@@ -107,7 +91,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
       {"GetRow below",
        [](Matrix& m) {
          PanelRow row;
-         return m.GetRow(Y{max_matrix::kRowNumberOfModule}, row).GetError();
+         return m.GetRow(Y{kRowNumberOfModule}, row).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetRow no module",
@@ -117,7 +101,7 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetRow"},
       {"GetRow off its module",
        [](Matrix& m) {
-         return m.GetRow(Module{0}, max_matrix::kRowNumberOfModule).GetError();
+         return m.GetRow(Module{0}, kRowNumberOfModule).GetError();
        },
        Error::kOutOfRange, "GetRow"},
       {"GetDot left",
@@ -133,16 +117,14 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
        Error::kOutOfRange, "GetDot"},
       {"GetDot below",
        [](Matrix& m) {
-         return m.GetDot(Point{X{0}, Y{max_matrix::kRowNumberOfModule}})
-             .GetError();
+         return m.GetDot(Point{X{0}, Y{kRowNumberOfModule}}).GetError();
        },
        Error::kOutOfRange, "GetDot"},
       {"SetFont", [](Matrix& m) { return m.SetFont(kNoFont).GetError(); },
        Error::kNotAFont, "SetFont"},
       {"SetIntensity",
        [](Matrix& m) {
-         return m.SetIntensity(max_matrix::max7219::kIntensityMaxValue + 1)
-             .GetError();
+         return m.SetIntensity(max7219::kIntensityMaxValue + 1).GetError();
        },
        Error::kOutOfRange, "SetIntensity"},
       {"SetChar",
@@ -299,9 +281,11 @@ TEST(MaxMatrixErrorTest, StatusAndResultAreConstexpr) {
  * function of its own and tested here */
 TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError) {
   mock::serial_output.clear();
-  max_matrix::PrintError(F("SetText"), Error::kUnknownChar);
+  PrintError(F("SetText"), Error::kUnknownChar);
   EXPECT_EQ(mock::serial_output, "MaxMatrix SetText: unknown char\r\n");
 }
+
 #endif
 
 }  // namespace
+}  // namespace max_matrix

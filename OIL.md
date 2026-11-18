@@ -1341,6 +1341,18 @@ live a few lines, as the matrix `m` of a lambda, or are the domain's or another'
 `a` to `e` of RFC 3174, wxWidgets' `dc` and the `Ms` of a time in milliseconds; and `c` stays
 for a char, as common as `i` for an index.
 
+As reviewed for the chapter Tests on 2026-11-18, the rules of `docs/Testing.md` that review
+checks. Decided the same day: the tests reach the library through its API only, as TS-8 asks,
+rather than through `#define private public`, which AGENTS.md had laid down; they lie in the
+library's namespace, as TS-6 asks, rather than naming what they use with using-declarations;
+`Command`, the library's one reader of outside input, gets a fuzzer (TS-28), the simulator's and
+the control program's readers none, as they read only from loopback or a board of one's own; and
+the tests of the TCP ports and the pseudo terminal keep their real time, which a socket needs,
+named as a departure from TS-18. As built for TS-6: the ten files of tests of the library that
+lay outside it, nine of them with using-declarations, lie in `namespace max_matrix { namespace {
+... } }`, and a test's own alias `Module` for a module type and a mounting, which hid
+`max_matrix::Module` there, is `ModuleCase`.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
