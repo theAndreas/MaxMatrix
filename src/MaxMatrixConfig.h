@@ -28,26 +28,30 @@
 
 /*!
  * \brief `STD_ON` sends through the hardware SPI, whose pins are fixed;
- *        `STD_OFF` bit bangs on any three pins.
+ *        `STD_OFF` bit bangs on any three pins. Any other value fails when
+ *        compiling.
  */
 #ifndef MAXMATRIX_USE_SPI
 #define MAXMATRIX_USE_SPI STD_OFF
 #endif
 
-/*! \brief The SPI clock in Hz; the MAX7219 takes 10 MHz at most. */
+/*! \brief The SPI clock in Hz; the MAX7219 takes 10 MHz at most, and a value
+ * beyond fails when compiling. */
 #ifndef MAXMATRIX_SPI_CLOCK_SPEED
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_SPI_CLOCK_SPEED 10000000
 #endif
 
 /*! \brief The empty columns between two chars of a text, until
- * Matrix::SetSpaceBetweenChars(). */
+ * Matrix::SetSpaceBetweenChars(), 0 to 255; a value beyond fails when
+ * compiling. */
 #ifndef MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE 1
 #endif
 
-/*! \brief The intensity Matrix::Init() sets, 0 to 15. */
+/*! \brief The intensity Matrix::Init() sets, 0 to 15; a value beyond fails
+ * when compiling. */
 #ifndef MAXMATRIX_INTENSITY_INIT_VALUE
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
 #define MAXMATRIX_INTENSITY_INIT_VALUE 5
@@ -62,7 +66,8 @@
 
 /*!
  * \brief The milliseconds per column of a shifting text, until
- *        Matrix::SetShiftInterval(); 0 for a step on every call.
+ *        Matrix::SetShiftInterval(); 0 for a step on every call, up to 65535; a
+ *        value beyond fails when compiling.
  */
 #ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
@@ -75,6 +80,14 @@
 #ifndef MAXMATRIX_DEV_ERROR_DETECT
 #define MAXMATRIX_DEV_ERROR_DETECT STD_OFF
 #endif
+
+// E-2: #if takes any other value for STD_OFF, and the sketch would not get
+// what it switched on.
+static_assert((MAXMATRIX_USE_SPI == STD_ON) || (MAXMATRIX_USE_SPI == STD_OFF),
+              "MAXMATRIX_USE_SPI is STD_ON or STD_OFF");
+static_assert((MAXMATRIX_DEV_ERROR_DETECT == STD_ON) ||
+                  (MAXMATRIX_DEV_ERROR_DETECT == STD_OFF),
+              "MAXMATRIX_DEV_ERROR_DETECT is STD_ON or STD_OFF");
 
 namespace max_matrix {
 
