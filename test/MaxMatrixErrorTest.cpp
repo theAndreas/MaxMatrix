@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <array>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -29,15 +30,49 @@ Error FeedText(Matrix& matrix, std::string const& text) {
   return result.GetError();
 }
 
-TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
-  std::vector<uint8_t> const before{Bytes(buffer_)};
+/* The tests on the fixture take the name of the file, as TS-7 asks. */
+class MaxMatrixErrorTest : public MaxMatrixTest {};
+
+TEST_F(MaxMatrixErrorTest, OutOfRangeChangesNothing) {
   int32_t const frames_before{mock::frames};
 
-  EXPECT_EQ(matrix_.SetIntensity(max7219::kIntensityMaxValue + 1).GetError(),
-            Error::kOutOfRange);
-  EXPECT_EQ(Bytes(buffer_), before);
+  Error const error{
+      matrix_.SetIntensity(max7219::kIntensityMaxValue + 1).GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+  EXPECT_EQ(Bytes(buffer_), std::vector<uint8_t>(kNumberOfColumns, 0));
   EXPECT_EQ(mock::frames, frames_before);
 }
+
+/* a way a call can fail, with the reason it gives and the function of Matrix
+ * that reports it, if any */
+struct ErrorCase {
+  char const* name;
+  Error (*call)(Matrix&);
+  Error expected;
+  char const* api;
+};
+
+void PrintTo(ErrorCase const& error_case, std::ostream* out) {
+  *out << error_case.name;
+}
+
+std::string ErrorCaseName(::testing::TestParamInfo<ErrorCase> const& info) {
+  return info.param.name;
+}
+
+/* what MAXMATRIX_DEV_ERROR_DETECT reports of a case: its function once, or
+ * nothing without the switch */
+std::vector<Report> ReportsOf(ErrorCase const& error_case) {
+  std::vector<Report> expected;
+  if (kDevErrorDetect && (error_case.api != nullptr)) {
+    expected.emplace_back(error_case.api, error_case.expected);
+  }
+  return expected;
+}
+
+class ErrorCaseTest : public MaxMatrixTest,
+                      public ::testing::WithParamInterface<ErrorCase> {};
 
 /* every way a call can fail, with the reason it gives: with stdReturnType a
  * test stayed green when another check than the one meant failed. A failing
@@ -49,222 +84,272 @@ TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
  * was wrong; only a line that fails in a function of Matrix, text= with a
  * char the font lacks or intensity= before Init(), is reported by that
  * function. */
-TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
-  struct Case {
-    char const* name;
-    Error (*call)(Matrix&);
-    Error expected;
-    char const* api;
-  };
-  std::array<Case, 34> const cases{{
-      {"Init with a pin beyond the board",
-       [](Matrix& m) {
-         m.SetChipSelectPin(NUM_DIGITAL_PINS);
-         Error const error{m.Init().GetError()};
-         m.SetChipSelectPin(kChipSelectPin);
-         return error;
-       },
-       Error::kOutOfRange, "Init"},
-      {"Init with a buffer that is no chain",
-       [](Matrix&) {
-         Matrix fresh{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
-                      ClockPin{kClockPin}, span<Byte>{}};
-         return fresh.Init().GetError();
-       },
-       Error::kOutOfRange, "Init"},
-      {"GetColumn left",
-       [](Matrix& m) { return m.GetColumn(X{-1}).GetError(); },
-       Error::kOutOfRange, "GetColumn"},
-      {"GetColumn right",
-       [](Matrix& m) { return m.GetColumn(X{kNumberOfColumns}).GetError(); },
-       Error::kOutOfRange, "GetColumn"},
-      {"GetColumn no module",
-       [](Matrix& m) {
-         return m.GetColumn(Module{kNumberOfModules}, 0).GetError();
-       },
-       Error::kOutOfRange, "GetColumn"},
-      {"GetColumn off its module",
-       [](Matrix& m) {
-         return m.GetColumn(Module{0}, kColumnNumberOfModule).GetError();
-       },
-       Error::kOutOfRange, "GetColumn"},
-      {"GetRow above",
-       [](Matrix& m) {
-         PanelRow row;
-         return m.GetRow(Y{-1}, row).GetError();
-       },
-       Error::kOutOfRange, "GetRow"},
-      {"GetRow below",
-       [](Matrix& m) {
-         PanelRow row;
-         return m.GetRow(Y{kRowNumberOfModule}, row).GetError();
-       },
-       Error::kOutOfRange, "GetRow"},
-      {"GetRow no module",
-       [](Matrix& m) {
-         return m.GetRow(Module{kNumberOfModules}, 0).GetError();
-       },
-       Error::kOutOfRange, "GetRow"},
-      {"GetRow off its module",
-       [](Matrix& m) {
-         return m.GetRow(Module{0}, kRowNumberOfModule).GetError();
-       },
-       Error::kOutOfRange, "GetRow"},
-      {"GetDot left",
-       [](Matrix& m) { return m.GetDot(Point{X{-1}, Y{0}}).GetError(); },
-       Error::kOutOfRange, "GetDot"},
-      {"GetDot right",
-       [](Matrix& m) {
-         return m.GetDot(Point{X{kNumberOfColumns}, Y{0}}).GetError();
-       },
-       Error::kOutOfRange, "GetDot"},
-      {"GetDot above",
-       [](Matrix& m) { return m.GetDot(Point{X{0}, Y{-1}}).GetError(); },
-       Error::kOutOfRange, "GetDot"},
-      {"GetDot below",
-       [](Matrix& m) {
-         return m.GetDot(Point{X{0}, Y{kRowNumberOfModule}}).GetError();
-       },
-       Error::kOutOfRange, "GetDot"},
-      {"SetFont", [](Matrix& m) { return m.SetFont(kNoFont).GetError(); },
-       Error::kNotAFont, "SetFont"},
-      {"SetIntensity",
-       [](Matrix& m) {
-         return m.SetIntensity(max7219::kIntensityMaxValue + 1).GetError();
-       },
-       Error::kOutOfRange, "SetIntensity"},
-      {"SetChar",
-       [](Matrix& m) {
-         return m.SetChar(Point{X{0}, Y{0}}, '\x01').GetError();
-       },
-       Error::kUnknownChar, "SetChar"},
-      {"SetText unknown char",
-       [](Matrix& m) { return m.SetText("\x01").GetError(); },
-       Error::kUnknownChar, "SetText"},
-      {"SetText empty span", [](Matrix& m) { return m.SetText({}).GetError(); },
-       Error::kNoText, "SetText"},
-      {"SetCharWithShift",
-       [](Matrix& m) { return m.SetCharWithShift('\x01').GetError(); },
-       Error::kUnknownChar, "SetCharWithShift"},
-      {"SetTextWithShift empty span",
-       [](Matrix& m) { return m.SetTextWithShift({}).GetError(); },
-       Error::kNoText, "SetTextWithShift"},
-      {"SetTextWithShift empty span repeating",
-       [](Matrix& m) { return m.SetTextWithShift({}, true).GetError(); },
-       Error::kNoText, "SetTextWithShift"},
-      {"SetCharWithShift before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return fresh.SetCharWithShift('A').GetError();
-       },
-       Error::kNotSetUp, "SetCharWithShift"},
-      {"SetTextWithShift before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return fresh.SetTextWithShift("Hi").GetError();
-       },
-       Error::kNotSetUp, "SetTextWithShift"},
-      {"SetIntensity before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return fresh.SetIntensity(1).GetError();
-       },
-       Error::kNotSetUp, "SetIntensity"},
-      {"SetShutdown before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return fresh.SetShutdown(true).GetError();
-       },
-       Error::kNotSetUp, "SetShutdown"},
-      {"SetDisplayTest before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return fresh.SetDisplayTest(true).GetError();
-       },
-       Error::kNotSetUp, "SetDisplayTest"},
-      {"intensity= before Init",
-       [](Matrix&) {
-         MatrixOf<kNumberOfModules> fresh{DataInPin{kDataInPin},
-                                          ChipSelectPin{kChipSelectPin},
-                                          ClockPin{kClockPin}};
-         return FeedText(fresh, "intensity=5\n");
-       },
-       Error::kNotSetUp, "SetIntensity"},
-      {"number empty", [](Matrix& m) { return FeedText(m, "space=\n"); },
-       Error::kNotANumber, nullptr},
-      {"number with a letter",
-       [](Matrix& m) { return FeedText(m, "space=12a\n"); }, Error::kNotANumber,
-       nullptr},
-      {"number too large", [](Matrix& m) { return FeedText(m, "space=256\n"); },
-       Error::kOutOfRange, nullptr},
-      {"number too large, then a letter",
-       [](Matrix& m) { return FeedText(m, "space=999x\n"); },
-       Error::kNotANumber, nullptr},
-      {"unknown command", [](Matrix& m) { return FeedText(m, "blink\n"); },
-       Error::kUnknownCommand, nullptr},
-      {"line too long",
-       [](Matrix& m) {
-         return FeedText(
-             m,
-             "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
-       },
-       Error::kLineTooLong, nullptr},
-  }};
+TEST_P(ErrorCaseTest, FailsWithItsReasonAndChangesNothing) {
+  int32_t const frames_before{mock::frames};
 
-  for (auto const& test_case : cases) {
-    matrix_.Clear();
-    int32_t const frames_before{mock::frames};
-    uint8_t const intensity_before{ChipOfModule(0).intensity};
-    reports.clear();
-    EXPECT_EQ(test_case.call(matrix_), test_case.expected) << test_case.name;
-    EXPECT_EQ(ShownPicture(matrix_),
-              Picture([](int16_t, int16_t) { return false; }))
-        << test_case.name;
-    EXPECT_EQ(mock::frames, frames_before) << test_case.name;
-    EXPECT_EQ(ChipOfModule(0).intensity, intensity_before) << test_case.name;
-    EXPECT_EQ(matrix_.GetState(), State::kReady) << test_case.name;
-    std::vector<Report> expected;
-    if (kDevErrorDetect && (test_case.api != nullptr)) {
-      expected.emplace_back(test_case.api, test_case.expected);
-    }
-    EXPECT_EQ(reports, expected) << test_case.name;
-  }
+  Error const error{GetParam().call(matrix_)};
+
+  EXPECT_EQ(error, GetParam().expected);
+  EXPECT_EQ(ShownPicture(matrix_),
+            Picture([](int16_t, int16_t) { return false; }));
+  EXPECT_EQ(mock::frames, frames_before);
+  EXPECT_EQ(ChipOfModule(0).intensity, MAXMATRIX_INTENSITY_INIT_VALUE);
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+  EXPECT_EQ(reports, ReportsOf(GetParam()));
 }
 
-/* every error has its text, as SerialControl answers with it, and a byte off
- * the enum gets one as well; the texts lie in a table of their own, so one
- * moved by a place would give every error after it the text of the next */
-TEST(MaxMatrixErrorTest, EveryErrorHasItsText) {
-  std::array<char const*, 9> const texts{
-      {"ok", "out of range", "unknown char", "no text", "not a number",
-       "unknown command", "line too long", "not a font", "not set up"}};
-  ASSERT_EQ(texts.size(), kNumberOfErrors);
+INSTANTIATE_TEST_SUITE_P(
+    EveryError, ErrorCaseTest,
+    ::testing::Values(
+        ErrorCase{"InitWithAPinBeyondTheBoard",
+                  [](Matrix& m) {
+                    m.SetChipSelectPin(NUM_DIGITAL_PINS);
+                    Error const error{m.Init().GetError()};
+                    m.SetChipSelectPin(kChipSelectPin);
+                    return error;
+                  },
+                  Error::kOutOfRange, "Init"},
+        ErrorCase{"InitWithABufferThatIsNoChain",
+                  [](Matrix&) {
+                    Matrix fresh{DataInPin{kDataInPin},
+                                 ChipSelectPin{kChipSelectPin},
+                                 ClockPin{kClockPin}, span<Byte>{}};
+                    return fresh.Init().GetError();
+                  },
+                  Error::kOutOfRange, "Init"},
+        ErrorCase{"GetColumnLeft",
+                  [](Matrix& m) { return m.GetColumn(X{-1}).GetError(); },
+                  Error::kOutOfRange, "GetColumn"},
+        ErrorCase{"GetColumnRight",
+                  [](Matrix& m) {
+                    return m.GetColumn(X{kNumberOfColumns}).GetError();
+                  },
+                  Error::kOutOfRange, "GetColumn"},
+        ErrorCase{"GetColumnNoModule",
+                  [](Matrix& m) {
+                    return m.GetColumn(Module{kNumberOfModules}, 0).GetError();
+                  },
+                  Error::kOutOfRange, "GetColumn"},
+        ErrorCase{
+            "GetColumnOffItsModule",
+            [](Matrix& m) {
+              return m.GetColumn(Module{0}, kColumnNumberOfModule).GetError();
+            },
+            Error::kOutOfRange, "GetColumn"},
+        ErrorCase{"GetRowAbove",
+                  [](Matrix& m) {
+                    PanelRow row;
+                    return m.GetRow(Y{-1}, row).GetError();
+                  },
+                  Error::kOutOfRange, "GetRow"},
+        ErrorCase{"GetRowBelow",
+                  [](Matrix& m) {
+                    PanelRow row;
+                    return m.GetRow(Y{kRowNumberOfModule}, row).GetError();
+                  },
+                  Error::kOutOfRange, "GetRow"},
+        ErrorCase{"GetRowNoModule",
+                  [](Matrix& m) {
+                    return m.GetRow(Module{kNumberOfModules}, 0).GetError();
+                  },
+                  Error::kOutOfRange, "GetRow"},
+        ErrorCase{"GetRowOffItsModule",
+                  [](Matrix& m) {
+                    return m.GetRow(Module{0}, kRowNumberOfModule).GetError();
+                  },
+                  Error::kOutOfRange, "GetRow"},
+        ErrorCase{
+            "GetDotLeft",
+            [](Matrix& m) { return m.GetDot(Point{X{-1}, Y{0}}).GetError(); },
+            Error::kOutOfRange, "GetDot"},
+        ErrorCase{
+            "GetDotRight",
+            [](Matrix& m) {
+              return m.GetDot(Point{X{kNumberOfColumns}, Y{0}}).GetError();
+            },
+            Error::kOutOfRange, "GetDot"},
+        ErrorCase{
+            "GetDotAbove",
+            [](Matrix& m) { return m.GetDot(Point{X{0}, Y{-1}}).GetError(); },
+            Error::kOutOfRange, "GetDot"},
+        ErrorCase{
+            "GetDotBelow",
+            [](Matrix& m) {
+              return m.GetDot(Point{X{0}, Y{kRowNumberOfModule}}).GetError();
+            },
+            Error::kOutOfRange, "GetDot"},
+        ErrorCase{"SetFont",
+                  [](Matrix& m) { return m.SetFont(kNoFont).GetError(); },
+                  Error::kNotAFont, "SetFont"},
+        ErrorCase{
+            "SetIntensity",
+            [](Matrix& m) {
+              return m.SetIntensity(max7219::kIntensityMaxValue + 1).GetError();
+            },
+            Error::kOutOfRange, "SetIntensity"},
+        ErrorCase{"SetChar",
+                  [](Matrix& m) {
+                    return m.SetChar(Point{X{0}, Y{0}}, '\x01').GetError();
+                  },
+                  Error::kUnknownChar, "SetChar"},
+        ErrorCase{"SetTextUnknownChar",
+                  [](Matrix& m) { return m.SetText("\x01").GetError(); },
+                  Error::kUnknownChar, "SetText"},
+        ErrorCase{"SetTextEmptySpan",
+                  [](Matrix& m) { return m.SetText({}).GetError(); },
+                  Error::kNoText, "SetText"},
+        ErrorCase{
+            "SetCharWithShift",
+            [](Matrix& m) { return m.SetCharWithShift('\x01').GetError(); },
+            Error::kUnknownChar, "SetCharWithShift"},
+        ErrorCase{"SetTextWithShiftEmptySpan",
+                  [](Matrix& m) { return m.SetTextWithShift({}).GetError(); },
+                  Error::kNoText, "SetTextWithShift"},
+        ErrorCase{
+            "SetTextWithShiftEmptySpanRepeating",
+            [](Matrix& m) { return m.SetTextWithShift({}, true).GetError(); },
+            Error::kNoText, "SetTextWithShift"},
+        ErrorCase{"SetCharWithShiftBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetCharWithShift('A').GetError();
+                  },
+                  Error::kNotSetUp, "SetCharWithShift"},
+        ErrorCase{"SetTextWithShiftBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetTextWithShift("Hi").GetError();
+                  },
+                  Error::kNotSetUp, "SetTextWithShift"},
+        ErrorCase{"SetIntensityBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetIntensity(1).GetError();
+                  },
+                  Error::kNotSetUp, "SetIntensity"},
+        ErrorCase{"SetShutdownBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetShutdown(true).GetError();
+                  },
+                  Error::kNotSetUp, "SetShutdown"},
+        ErrorCase{"SetDisplayTestBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetDisplayTest(true).GetError();
+                  },
+                  Error::kNotSetUp, "SetDisplayTest"},
+        ErrorCase{"IntensityLineBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return FeedText(fresh, "intensity=5\n");
+                  },
+                  Error::kNotSetUp, "SetIntensity"},
+        ErrorCase{"NumberEmpty",
+                  [](Matrix& m) { return FeedText(m, "space=\n"); },
+                  Error::kNotANumber, nullptr},
+        ErrorCase{"NumberWithALetter",
+                  [](Matrix& m) { return FeedText(m, "space=12a\n"); },
+                  Error::kNotANumber, nullptr},
+        ErrorCase{"NumberTooLarge",
+                  [](Matrix& m) { return FeedText(m, "space=256\n"); },
+                  Error::kOutOfRange, nullptr},
+        ErrorCase{"NumberTooLargeThenALetter",
+                  [](Matrix& m) { return FeedText(m, "space=999x\n"); },
+                  Error::kNotANumber, nullptr},
+        ErrorCase{"UnknownCommand",
+                  [](Matrix& m) { return FeedText(m, "blink\n"); },
+                  Error::kUnknownCommand, nullptr},
+        ErrorCase{"LineTooLong",
+                  [](Matrix& m) {
+                    return FeedText(
+                        m, "text=" +
+                               std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') +
+                               "\n");
+                  },
+                  Error::kLineTooLong, nullptr}),
+    ErrorCaseName);
 
-  for (uint8_t error{0}; error < kNumberOfErrors; error++) {
-    EXPECT_EQ(Text(Status(static_cast<Error>(error)).GetErrorText()),
-              texts[error])
-        << kErrorNames[error];
-  }
-  EXPECT_EQ(Text(Result<uint8_t>(Error::kUnknownChar).GetErrorText()),
-            "unknown char");
-  /* a new error that kErrorNames lacks has a text of its own here, and fails */
-  EXPECT_EQ(Text(Status(static_cast<Error>(kNumberOfErrors)).GetErrorText()),
-            "unknown error");
+/* an error and its text, as SerialControl answers with it */
+struct TextCase {
+  char const* name;
+  Error error;
+  char const* text;
+};
+
+void PrintTo(TextCase const& text_case, std::ostream* out) {
+  *out << text_case.name;
+}
+
+std::string TextCaseName(::testing::TestParamInfo<TextCase> const& info) {
+  return info.param.name;
+}
+
+constexpr std::array<TextCase, 9> kTextCases{{
+    {"Ok", Error::kOk, "ok"},
+    {"OutOfRange", Error::kOutOfRange, "out of range"},
+    {"UnknownChar", Error::kUnknownChar, "unknown char"},
+    {"NoText", Error::kNoText, "no text"},
+    {"NotANumber", Error::kNotANumber, "not a number"},
+    {"UnknownCommand", Error::kUnknownCommand, "unknown command"},
+    {"LineTooLong", Error::kLineTooLong, "line too long"},
+    {"NotAFont", Error::kNotAFont, "not a font"},
+    {"NotSetUp", Error::kNotSetUp, "not set up"},
+}};
+// a new error that kErrorNames has needs its text here as well
+static_assert(kTextCases.size() == kNumberOfErrors, "every error has a case");
+
+class ErrorTextTest : public ::testing::TestWithParam<TextCase> {};
+
+/* every error has its text; the texts lie in a table of their own, so one moved
+ * by a place would give every error after it the text of the next */
+TEST_P(ErrorTextTest, ErrorHasItsText) {
+  Status const status{GetParam().error};
+
+  std::string const text{Text(status.GetErrorText())};
+
+  EXPECT_EQ(text, GetParam().text);
+}
+
+INSTANTIATE_TEST_SUITE_P(EveryError, ErrorTextTest,
+                         ::testing::ValuesIn(kTextCases), TextCaseName);
+
+TEST_F(MaxMatrixErrorTest, ResultHasTheTextOfItsError) {
+  Result<uint8_t> const result{Error::kUnknownChar};
+
+  std::string const text{Text(result.GetErrorText())};
+
+  EXPECT_EQ(text, "unknown char");
+}
+
+/* a byte off the enum, as a new error without its text in the table, gets a
+ * text of its own */
+TEST_F(MaxMatrixErrorTest, ErrorOffTheEnumHasATextToo) {
+  // TS-25: the byte off the enum is the argument outside the contract this test
+  // is of.
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+  Status const status{static_cast<Error>(kNumberOfErrors)};
+
+  std::string const text{Text(status.GetErrorText())};
+
+  EXPECT_EQ(text, "unknown error");
 }
 
 /* a status and a result known when compiling are constants, as FN-9 asks of
  * whatever can be constexpr; neither was */
-TEST(MaxMatrixErrorTest, StatusAndResultAreConstexpr) {
+TEST_F(MaxMatrixErrorTest, StatusAndResultAreConstexpr) {
   constexpr Status kFailed{Error::kOutOfRange};
   constexpr Result<uint8_t> kValue{uint8_t{7}};
   constexpr Result<uint8_t> kNone{Error::kUnknownChar};
@@ -285,9 +370,11 @@ TEST(MaxMatrixErrorTest, StatusAndResultAreConstexpr) {
 #if (MAXMATRIX_DEV_ERROR_DETECT == STD_ON)
 /* the default report prints what the tests record instead, so the printing is a
  * function of its own and tested here */
-TEST(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError) {
+TEST_F(MaxMatrixErrorTest, PrintedReportNamesFunctionAndError) {
   mock::serial_output.clear();
+
   PrintError(F("SetText"), Error::kUnknownChar);
+
   EXPECT_EQ(mock::serial_output, "MaxMatrix SetText: unknown char\r\n");
 }
 

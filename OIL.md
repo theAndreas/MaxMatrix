@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1385,6 +1385,13 @@ that runs (TS-26); the chars `SetText()` draws before one the font lacks, and th
 pins, `BufferSize()`, `IsEndOfText()`, `span`, a group of `Bit` and the conversion of
 `reference_wrapper` when compiling (TS-16); the first and last port and the edges of the
 WebSocket's 16-bit length; and an `array` of no element as a case of `test/compile_fail/`.
+
+As built for `test/MaxMatrixErrorTest.cpp` (TS-5, 9, 10, 14, 17): the 34 ways to fail are a
+`TEST_P` with a name each, every one on a fixture of its own, rather than a loop over one
+matrix, whose cases depended on their order; the text of every error is a `TEST_P` over a table
+that a `static_assert` holds as long as the enum, and the text of a `Result` and of a byte off
+the enum are tests of their own; the tests on the fixture take the file's name; and every test
+is arranged, acted and asserted in paragraphs.
 
 ### 42 A newer avr-gcc as a cross-check
 
