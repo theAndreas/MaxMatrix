@@ -15,11 +15,11 @@ namespace {
  * control program, which lasts until Ctrl+C, then ran no cycle any more, and
  * the AVR stood still */
 TEST(SimulatorAvrTest, CyclesGoOnPastSeventyOneMinutes) {
+  static_assert(SimulatorAvr::ConvertToCycles(1) == 16000u,
+                "made when compiling");
   uint32_t const past_the_wrap{4294968u};
 
-  EXPECT_EQ(SimulatorAvr::ConvertToCycles(1), 16000u);
-  EXPECT_EQ(SimulatorAvr::ConvertToCycles(past_the_wrap),
-            uint64_t{past_the_wrap} * 16000u);
+  EXPECT_EQ(SimulatorAvr::ConvertToCycles(past_the_wrap), 68719488000u);
   EXPECT_GT(SimulatorAvr::ConvertToCycles(past_the_wrap),
             SimulatorAvr::ConvertToCycles(past_the_wrap - 1));
 }

@@ -140,6 +140,26 @@ TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthFrom126Bytes) {
   EXPECT_EQ(frame.substr(4), std::string(300, 'x'));
 }
 
+TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthAt126Bytes) {
+  std::string const frame{
+      SimulatorWebSocket::EncodeFrame(std::string(126, 'x'))};
+
+  ASSERT_EQ(frame.size(), 4u + 126u);
+  EXPECT_EQ(static_cast<uint8_t>(frame[1]), 126);
+  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 0x00u);
+  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 0x7Eu);
+}
+
+TEST(SimulatorWebSocketTest, EncodeUsesThe16BitLengthUpTo65535Bytes) {
+  std::string const frame{
+      SimulatorWebSocket::EncodeFrame(std::string(65535, 'x'))};
+
+  ASSERT_EQ(frame.size(), 4u + 65535u);
+  EXPECT_EQ(static_cast<uint8_t>(frame[1]), 126);
+  EXPECT_EQ(static_cast<uint8_t>(frame[2]), 0xFFu);
+  EXPECT_EQ(static_cast<uint8_t>(frame[3]), 0xFFu);
+}
+
 TEST(SimulatorWebSocketTest, DecodeUnmasksWhatABrowserSends) {
   std::string buffer = ClientFrame("wiring GENERIC");
 

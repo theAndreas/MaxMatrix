@@ -62,6 +62,19 @@ TEST(SimulatorTest, PortOutOfRangeIsRefused) {
   EXPECT_FALSE(Parse(options, {"--port", "0"}));
 }
 
+TEST(SimulatorTest, LeastPortIsTaken) {
+  SimulatorOptions options;
+
+  ASSERT_TRUE(Parse(options, {"--port", "1"}));
+  EXPECT_EQ(options.GetPort(), 1);
+}
+
+TEST(SimulatorTest, PortOneBeyondTheGreatestIsRefused) {
+  SimulatorOptions options;
+
+  EXPECT_FALSE(Parse(options, {"--port", "65536"}));
+}
+
 TEST(SimulatorTest, PortThatIsNoNumberIsRefused) {
   SimulatorOptions options;
 

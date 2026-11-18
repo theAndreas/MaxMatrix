@@ -138,5 +138,13 @@ TEST_F(MaxMatrixTest, NothingIsSentBeforeInitSucceeded) {
   EXPECT_EQ(mock::errors, 0);
 }
 
+TEST_F(MaxMatrixTest, PinsAreMadeWhenCompiling) {
+  static_assert(DataInPin{11}.number == 11, "data in");
+  static_assert(ChipSelectPin{10}.number == 10, "chip select");
+  static_assert(ClockPin{13}.number == 13, "clock");
+
+  EXPECT_EQ(ClockPin{13}.number, 13);
+}
+
 }  // namespace
 }  // namespace max_matrix

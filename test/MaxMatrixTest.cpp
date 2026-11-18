@@ -358,5 +358,175 @@ TEST(MatrixTest, InitTakesTheLongestChain) {
   EXPECT_EQ(mock::errors, 0);
 }
 
+/* Init() again clears what was drawn, as the first clears what the power-up
+ * left (TS-26) */
+TEST_F(MaxMatrixTest, InitAgainClearsThePanel) {
+  matrix_.SetDot(Point{X{3}, Y{2}}, true);
+
+  Error const error{matrix_.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
+}
+
+/* Init() during a shift ends it, as it clears the panel the shift draws on */
+TEST_F(MaxMatrixTest, InitEndsARunningShift) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  Error const error{matrix_.Init().GetError()};
+  matrix_.ShiftTask();
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
+}
+
+/* what is drawn before Init() only changes the buffer, which Init() clears */
+TEST(MatrixTest, InitClearsWhatWasDrawnBefore) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  array<Byte, BufferSize(kNumberOfModules)> buffer{};
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, buffer};
+  matrix.SetDot(Point{X{3}, Y{2}}, true);
+
+  Error const error{matrix.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_FALSE(matrix.GetDot(Point{X{3}, Y{2}}).GetValue());
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
+}
+
+TEST(MatrixTest, ShiftTaskBeforeInitDoesNothing) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  array<Byte, BufferSize(kNumberOfModules)> buffer{};
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, buffer};
+
+  matrix.ShiftTask();
+
+  EXPECT_EQ(matrix.GetState(), State::kNone);
+  EXPECT_EQ(mock::frames, 0);
+}
+
+TEST(MatrixTest, StopShiftBeforeInitLeavesTheMatrixNotSetUp) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  array<Byte, BufferSize(kNumberOfModules)> buffer{};
+  Matrix matrix{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                ClockPin{kClockPin}, buffer};
+
+  matrix.StopShift();
+
+  EXPECT_EQ(matrix.GetState(), State::kNone);
+}
+
+TEST_F(MaxMatrixTest, ShiftTaskWithoutAShiftSendsNothing) {
+  matrix_.SetText("Hi");
+  int32_t const frames_before{mock::frames};
+
+  matrix_.ShiftTask();
+
+  EXPECT_EQ(mock::frames, frames_before);
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+}
+
+TEST_F(MaxMatrixTest, StopShiftWithoutAShiftDoesNothing) {
+  matrix_.SetText("Hi");
+  int32_t const frames_before{mock::frames};
+
+  matrix_.StopShift();
+
+  EXPECT_EQ(mock::frames, frames_before);
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+}
+
+/* with auto update on, every call has sent its result already */
+TEST_F(MaxMatrixTest, UpdateWithNothingChangedSendsNothing) {
+  matrix_.SetText("Hi");
+  int32_t const frames_before{mock::frames};
+
+  matrix_.Update();
+
+  EXPECT_EQ(mock::frames, frames_before);
+}
+
+TEST_F(MaxMatrixTest, CharShiftTakesOverFromARunningText) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  Error const error{matrix_.SetCharWithShift('#').GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(matrix_.GetState(), State::kCharShift);
+}
+
+TEST_F(MaxMatrixTest, TextShiftTakesOverFromARunningChar) {
+  ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  Error const error{matrix_.SetTextWithShift("Hi").GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(matrix_.GetState(), State::kStringShift);
+}
+
+/* a shift that fails to start leaves the one that runs, as nothing starts on
+ * an error */
+TEST_F(MaxMatrixTest, CharShiftThatFailsLeavesTheRunningText) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  Error const error{matrix_.SetCharWithShift('\x01').GetError()};
+
+  EXPECT_EQ(error, Error::kUnknownChar);
+  EXPECT_EQ(matrix_.GetState(), State::kStringShift);
+}
+
+TEST_F(MaxMatrixTest, TextShiftThatFailsLeavesTheRunningChar) {
+  ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  Error const error{matrix_.SetTextWithShift({}).GetError()};
+
+  EXPECT_EQ(error, Error::kNoText);
+  EXPECT_EQ(matrix_.GetState(), State::kCharShift);
+}
+
+/* the interval is counted across the overflow of millis() after 49.7 days: a
+ * step 50 ms after 0xFFFFFFF0 comes at 0x22, and none at 0xFFFFFFFF, where a
+ * comparison with the sum, which wraps first, takes one (H-2) */
+TEST_F(MaxMatrixTest, ShiftIntervalSpansTheOverflowOfTheClock) {
+  mock::SetMillis(0xFFFFFFF0u);
+  matrix_.SetShiftInterval(50);
+  ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
+  matrix_.ShiftTask();
+
+  mock::SetMillis(0xFFFFFFFFu);
+  matrix_.ShiftTask();
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}))
+      << "a step before the clock wrapped";
+  mock::SetMillis(0x21u);
+  matrix_.ShiftTask();
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}))
+      << "a step before the interval had passed";
+  mock::SetMillis(0x22u);
+  matrix_.ShiftTask();
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+}
+
+TEST_F(MaxMatrixTest, IntensityTakesItsLeastValue) {
+  Error const error{matrix_.SetIntensity(0).GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+  EXPECT_EQ(ChipOfModule(0).intensity, 0);
+}
+
+TEST(MatrixTest, BufferSizeIsMadeWhenCompiling) {
+  static_assert(BufferSize(1) == 8, "a byte per column");
+  static_assert(BufferSize(kMaxNumberOfModules) == 248, "of the longest chain");
+
+  EXPECT_EQ(BufferSize(4), 32u);
+}
+
 }  // namespace
 }  // namespace max_matrix

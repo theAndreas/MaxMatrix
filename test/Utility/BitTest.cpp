@@ -54,6 +54,9 @@ TEST(BitTest, ReadsAGroupInPlace) {
 }
 
 TEST(BitTest, ReadsAGroupShiftedDownFromItsPosition) {
+  static_assert(Bits::ReadBitGroup(0xD5u, 0x07u, 4) == 0x05u,
+                "made when compiling");
+
   // a field of three bits at bit 4, as a datasheet writes it
   EXPECT_EQ(Bits::ReadBitGroup(0xD5u, 0x07u, 4), 0x05u);
   EXPECT_EQ(WordBits::ReadBitGroup(0x12345678u, 0xFFu, 24), 0x12u);

@@ -301,5 +301,16 @@ TEST_F(MaxMatrixTest, SetFontRefusesAFontThatDoesNotFillItsArray) {
   EXPECT_EQ(matrix_.GetFont().data(), kDigitFontVersion2.data());
 }
 
+constexpr char kHi[] = "Hi";
+
+TEST_F(MaxMatrixTest, EndOfTextIsFoundWhenCompiling) {
+  static_assert(!internal::IsEndOfText(kHi, 1), "within the text");
+  static_assert(internal::IsEndOfText(kHi, 2), "at its null character");
+  static_assert(internal::IsEndOfText(span<char const>{kHi, 1}, 1),
+                "at the end of its span");
+
+  EXPECT_TRUE(internal::IsEndOfText(kHi, 2));
+}
+
 }  // namespace
 }  // namespace max_matrix

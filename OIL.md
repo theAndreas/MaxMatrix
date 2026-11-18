@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1372,6 +1372,19 @@ bytes each, as it refuses a pin the board lacks, and sends nothing; one longer t
 wrapped the count of the columns, one that is no multiple of eight left columns no module has,
 and an empty one was a chain of none. `MatrixOf` was checked when compiling already. The
 longest chain, of 31 modules, has a test of its own.
+
+As built for the gaps the review of the chapter Tests found, tests only, each of what the
+reference promises: the pace of a shift across the overflow of the clock (H-2), with a call
+before the overflow, where a comparison with the sum would step at once; `Init()` again, `Init()`
+during a shift, which ends it, as the reference now says, and drawing before `Init()`;
+`ShiftTask()` and `StopShift()` before `Init()` and without a shift; `Update()` with nothing to
+send; a shift that takes over from another, and one that fails to start and leaves the one
+that runs (TS-26); the chars `SetText()` draws before one the font lacks, and the row
+`GetRow()` leaves on an error (TS-25); the least and greatest values of the settings and of
+`Command`, and a line one char too long (TS-15); the constructors of the coordinates and the
+pins, `BufferSize()`, `IsEndOfText()`, `span`, a group of `Bit` and the conversion of
+`reference_wrapper` when compiling (TS-16); the first and last port and the edges of the
+WebSocket's 16-bit length; and an `array` of no element as a case of `test/compile_fail/`.
 
 ### 42 A newer avr-gcc as a cross-check
 

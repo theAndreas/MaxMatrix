@@ -37,7 +37,11 @@ TEST(ReferenceWrapperTest, IsMadeWhenCompiling) {
   static int16_t const kValue{5};
   static constexpr reference_wrapper<int16_t const> kReference{kValue};
 
+  constexpr auto kAddressOf{[](int16_t const& object) { return &object; }};
+
   static_assert(&kReference.get() == &kValue, "made when compiling");
+  static_assert(kAddressOf(kReference) == &kValue,
+                "passes as the object when compiling");
   EXPECT_EQ(kReference.get(), 5);
 }
 
