@@ -38,10 +38,10 @@ std::array<Max7219Wiring, 8> const kMax7219Wirings{{
     {"DR1CR1RR1", true, true, true},
 }};
 
-Max7219Wiring const kMaX7219WiringGeneric{kMax7219Wirings[2]};
-Max7219Wiring const kMaX7219WiringFC16{kMax7219Wirings[4]};
-Max7219Wiring const kMaX7219WiringParola{kMax7219Wirings[6]};
-Max7219Wiring const kMaX7219WiringIcstation{kMax7219Wirings[7]};
+Max7219Wiring const kMax7219WiringGeneric{kMax7219Wirings[2]};
+Max7219Wiring const kMax7219WiringFc16{kMax7219Wirings[4]};
+Max7219Wiring const kMax7219WiringParola{kMax7219Wirings[6]};
+Max7219Wiring const kMax7219WiringIcstation{kMax7219Wirings[7]};
 
 /* the datasheet's power-up state: control registers reset, which means shut
  * down, one digit scanned, no decode and minimum intensity; the digit registers

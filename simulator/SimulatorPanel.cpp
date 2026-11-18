@@ -33,10 +33,10 @@ struct NamedWiring {
 };
 
 constexpr std::array<NamedWiring, 4> kNamedWirings{{
-    {"FC16", &kMaX7219WiringFC16},
-    {"GENERIC", &kMaX7219WiringGeneric},
-    {"PAROLA", &kMaX7219WiringParola},
-    {"ICSTATION", &kMaX7219WiringIcstation},
+    {"FC16", &kMax7219WiringFc16},
+    {"GENERIC", &kMax7219WiringGeneric},
+    {"PAROLA", &kMax7219WiringParola},
+    {"ICSTATION", &kMax7219WiringIcstation},
 }};
 
 }  // namespace

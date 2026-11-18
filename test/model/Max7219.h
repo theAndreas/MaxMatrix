@@ -52,10 +52,10 @@ struct Max7219Wiring {
 };
 
 /* the four MD_MAX72XX has names for */
-extern Max7219Wiring const kMaX7219WiringFC16;
-extern Max7219Wiring const kMaX7219WiringGeneric;
-extern Max7219Wiring const kMaX7219WiringParola;
-extern Max7219Wiring const kMaX7219WiringIcstation;
+extern Max7219Wiring const kMax7219WiringFc16;
+extern Max7219Wiring const kMax7219WiringGeneric;
+extern Max7219Wiring const kMax7219WiringParola;
+extern Max7219Wiring const kMax7219WiringIcstation;
 
 /* all eight, DR0CR0RR0 to DR1CR1RR1 */
 extern std::array<Max7219Wiring, 8> const kMax7219Wirings;

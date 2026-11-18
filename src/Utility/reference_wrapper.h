@@ -16,18 +16,19 @@ namespace max_matrix {
 namespace internal {
 
 /*!
- * \brief A reference to a `T` that is never null and owns nothing.
+ * \brief A reference to a `Referred` that is never null and owns nothing.
  *
  * It is meant for a member that refers to an object another owns, as
- * CodingStyle.md FN-15 asks: a `T&` member takes the assignment from the class,
- * and a `T*` leaves open whether it may be null. Inside it is a pointer, 2
- * bytes on the Uno.
+ * CodingStyle.md FN-15 asks: a `Referred&` member takes the assignment from the
+ * class, and a `Referred*` leaves open whether it may be null. Inside it is a
+ * pointer, 2 bytes on the Uno.
  *
  * It binds an lvalue only, never a temporary, which would be gone before the
  * first use. Assigning one rebinds it, as in the standard; to write through
  * it, use get().
  *
- * \tparam T The type referred to, `const` for a reference that cannot write.
+ * \tparam Referred The type referred to, `const` for a reference that cannot
+ *                  write.
  *
  * \stddiff No `operator()`, no constructor from a reference_wrapper of another
  *          type, and no `ref()` or `cref()`: nothing in the library needs them.
@@ -39,10 +40,10 @@ namespace internal {
  * MaxMatrix depends on neither the ETL nor Utl, whose utl::reference_wrapper
  * this follows (OIL 28, 41).
  */
-template <typename T>
+template <typename Referred>
 class reference_wrapper {
  public:
-  using type = T; /*!< The type referred to. */
+  using type = Referred; /*!< The type referred to. */
 
   /*!
    * \brief Makes a reference to `object`.
@@ -52,29 +53,31 @@ class reference_wrapper {
    *
    * \param[in] object The object, an lvalue.
    */
-  constexpr reference_wrapper(T& object)  // NOLINT(runtime/explicit): as std
-      : pointer_{&object} {}
+  // NOLINTNEXTLINE(runtime/explicit): as std
+  constexpr reference_wrapper(Referred& object) : pointer_{&object} {}
 
   /*!
    * \brief Deleted: a temporary would be gone before the first use.
    *
-   * \note Deleted rather than left out, so that a reference to `T const` cannot
-   *       bind a temporary through the `T const&` of the constructor above.
+   * \note Deleted rather than left out, so that a reference to `Referred const`
+   *       cannot bind a temporary through the `Referred const&` of the
+   *       constructor above.
    */
-  reference_wrapper(T&&) = delete;  // NOLINT(runtime/explicit): never called
+  // NOLINTNEXTLINE(runtime/explicit): never called
+  reference_wrapper(Referred&&) = delete;
 
   /*! \brief Returns the object referred to. */
-  MAXMATRIX_NODISCARD constexpr T& get() const { return *pointer_; }
+  MAXMATRIX_NODISCARD constexpr Referred& get() const { return *pointer_; }
 
   /*!
-   * \brief Returns the object referred to, so that it passes as a `T&`.
+   * \brief Returns the object referred to, so that it passes as a `Referred&`.
    *
-   * Implicit, as in the standard, for a function that takes a `T&`.
+   * Implicit, as in the standard, for a function that takes a `Referred&`.
    */
-  constexpr operator T&() const { return *pointer_; }
+  constexpr operator Referred&() const { return *pointer_; }
 
  private:
-  T* pointer_;
+  Referred* pointer_;
 };
 
 }  // namespace internal
