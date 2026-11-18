@@ -173,9 +173,19 @@ TEST_F(MaxMatrixTest, ShiftIntervalStartsAtTheConfiguredValue) {
   EXPECT_EQ(fresh.GetShiftInterval(), MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
 }
 
-/* The tests below count the steps of a shifting char in sprite_shift_counter_,
- * which CharShiftTask() moves on by one per step, and hold the clock, so that a
- * step 50 ms on does not depend on how fast the host is. */
+/* The tests below tell the steps of a shifting char by the three columns at
+ * the right edge of the panel, where '#' brings 0x14, 0x3E, 0x14 and 0x3E, the
+ * first when the shift starts and one more per step, and hold the clock, so
+ * that a step 50 ms on does not depend on how fast the host is. Up to three
+ * steps, each leaves the edge another picture. */
+std::vector<uint8_t> RightEdge(Matrix const& matrix, uint8_t width = 3) {
+  std::vector<uint8_t> columns;
+  for (auto x{static_cast<int16_t>(kNumberOfColumns - width)};
+       x < kNumberOfColumns; x++) {
+    columns.push_back(matrix.GetColumn(X{x}).GetValue().ToInteger());
+  }
+  return columns;
+}
 
 /* the first step comes at once, every further one an interval after the step
  * before */
@@ -183,18 +193,17 @@ TEST_F(MaxMatrixTest, ShiftWaitsForTheInterval) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(50);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
-  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1)
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}))
       << "no first step at once";
   mock::SetMillis(1049);
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1)
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}))
       << "a step before the interval had passed";
   mock::SetMillis(1050);
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 2);
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
 }
 
 /* a call after loop() was held up takes one step, not the ones it missed, and
@@ -203,46 +212,45 @@ TEST_F(MaxMatrixTest, LateShiftDoesNotCatchUp) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(50);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
-  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
   matrix_.ShiftTask();
   mock::SetMillis(1180);
   matrix_.ShiftTask();
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 2);
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
   mock::SetMillis(1229);
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 2);
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
   mock::SetMillis(1230);
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 3);
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x3E, 0x14, 0x3E}));
 }
 
 TEST_F(MaxMatrixTest, ShiftIntervalZeroStepsOnEveryCall) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(0);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
-  uint16_t const start{matrix_.text_.sprite_shift_counter_};
 
-  for (uint8_t call{0}; call < 3; call++) {
-    matrix_.ShiftTask();
-  }
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 3);
+  matrix_.ShiftTask();
+  matrix_.ShiftTask();
+  matrix_.ShiftTask();
+
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x3E, 0x14, 0x3E}));
 }
 
 /* a new char or text starts at once, however recently the one before took a
- * step */
+ * step: '+' brings 0x08, 0x08 and 0x3E */
 TEST_F(MaxMatrixTest, NewShiftStartsAtOnce) {
   mock::SetMillis(1000);
   matrix_.SetShiftInterval(50);
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
   matrix_.ShiftTask();
-
   mock::SetMillis(1010);
   ASSERT_EQ(matrix_.SetCharWithShift('+').GetError(), Error::kOk);
-  uint16_t const start{matrix_.text_.sprite_shift_counter_};
+
   matrix_.ShiftTask();
-  EXPECT_EQ(matrix_.text_.sprite_shift_counter_, start + 1);
+
+  EXPECT_EQ(RightEdge(matrix_, 2), (std::vector<uint8_t>{0x08, 0x08}));
 }
 
 /* shutdown darkens every module and loses nothing: a dot drawn meanwhile shows

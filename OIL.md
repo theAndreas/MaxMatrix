@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1352,6 +1352,13 @@ named as a departure from TS-18. As built for TS-6: the ten files of tests of th
 lay outside it, nine of them with using-declarations, lie in `namespace max_matrix { namespace {
 ... } }`, and a test's own alias `Module` for a module type and a mounting, which hid
 `max_matrix::Module` there, is `ModuleCase`.
+
+As built for TS-8: `#define private public` is gone from the test support. The fixture owns its
+buffer and hands it to a `Matrix`, as a sketch may, so that the check after every test, and
+the tests that compare the buffer, read it without a private member; the tests of the pace of
+a shift tell its steps by the columns at the right edge of the panel rather than by the text's
+counter, and still fail when a step comes a millisecond late; and the test of which frame a
+changed column of the buffer turns into is a test of `internal::Wired`, made in the test.
 
 ### 42 A newer avr-gcc as a cross-check
 

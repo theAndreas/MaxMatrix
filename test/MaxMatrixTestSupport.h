@@ -22,18 +22,7 @@
 #include <vector>
 
 #include "Arduino.h"
-
-/* The parts of the library and the matrix buffer are private members of
- * Matrix, and some of what is tested here has no public path:
- * internal::Wired::setColumnOnAllModules is only reached through Clear(), which
- * zeroes the buffer afterwards and so hides a wrong index. Included after
- * GoogleTest and the standard headers, which must not see it - defined above
- * them, it rewrites their classes too. */
-// What it redefines is a keyword, not a name of ours.
-// NOLINTNEXTLINE(readability-identifier-naming)
-#define private public
 #include "MaxMatrix.h"  // IWYU pragma: export
-#undef private
 
 constexpr uint8_t kDataInPin{11};
 constexpr uint8_t kChipSelectPin{10};
@@ -107,16 +96,20 @@ std::vector<uint8_t> Bytes(max_matrix::span<max_matrix::Byte const> data);
  * the far end of the chain */
 Max7219 const& ChipOfModule(size_t module);
 
-/* what the chain shows, laid out like matrix_buffer_: a column of a module is a
+/* what the chain shows, laid out like the buffer: a column of a module is a
  * digit, a row a segment */
 std::vector<uint8_t> Display();
 
 class MaxMatrixTest : public ::testing::Test {
  protected:
-  max_matrix::MatrixOf<kNumberOfModules> matrix_{
-      max_matrix::DataInPin{kDataInPin},
-      max_matrix::ChipSelectPin{kChipSelectPin},
-      max_matrix::ClockPin{kClockPin}};
+  /* the buffer is the fixture's, handed to the matrix as a sketch may hand
+   * its own, so that a test sees what the matrix holds through the API alone
+   * (TS-8) */
+  max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(kNumberOfModules)>
+      buffer_{};
+  max_matrix::Matrix matrix_{max_matrix::DataInPin{kDataInPin},
+                             max_matrix::ChipSelectPin{kChipSelectPin},
+                             max_matrix::ClockPin{kClockPin}, buffer_};
 
   void SetUp() override {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
@@ -132,8 +125,7 @@ class MaxMatrixTest : public ::testing::Test {
    * buffer that drifts from the display makes them lie; and every bit went out
    * within a frame, with the interrupts off, which are on again afterwards */
   void TearDown() override {
-    EXPECT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_))
-        << "display differs from matrix_buffer_";
+    EXPECT_EQ(Display(), Bytes(buffer_)) << "display differs from the buffer";
     EXPECT_EQ(mock::errors, 0) << "a transfer outside a frame, or a port "
                                   "written with the interrupts on or none "
                                   "of the board's";

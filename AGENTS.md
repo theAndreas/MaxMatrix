@@ -553,9 +553,7 @@ Every file includes what it uses (F-5, `misc-include-cleaner`), the C library's 
 `<stdint.h>`, as avr-gcc has no `<cstdint>`. `MaxMatrix.h` exports the headers whose names a
 sketch uses, with `// IWYU pragma: export`, so that a sketch includes it alone and, of avr-libc,
 what it uses itself, as `<avr/pgmspace.h>`; a new public header is exported there as well.
-`MaxMatrixTestSupport.h` exports `MaxMatrix.h` to the tests, which must see the library after
-`#define private public`: a test that included `"Font/Font.h"` itself would have it sorted
-before the define, and lose its private members.
+`MaxMatrixTestSupport.h` exports `MaxMatrix.h` to the tests of the facade.
 
 #### Comments
 
@@ -615,7 +613,8 @@ Every bit and every rising chip select also drive `mock::chain`, a model of the 
 (`test/model/Max7219.h`): it shifts like the hardware and each chip latches its register on the
 rising edge, so a frame that is too short or a wrong address shows on the model's LEDs.
 `Display()` in the tests reads them back laid out like `matrix_buffer_`, and every library test
-ends by checking that the two agree. A test of what is lit asks the model, not the buffer. The
+ends by checking that they agree with the buffer, which the fixture owns and hands to its
+`Matrix`, as a sketch may. A test of what is lit asks the model, not the buffer. The
 model has its own tests against the datasheet, run once under the `model/` prefix.
 
 `mock::chain.IsLit()` goes one step further, to the LEDs as the viewer sees them: given one of
@@ -682,12 +681,11 @@ has been looked at.
 tests before committing; a test that stays green then does not test the bug. The comment above
 the test names the bug it guards against.
 
-The tests reach private members through `#define private public`, because some of what they
-check has no public path — which frame a change to one buffer column turns into, for instance,
-is checked by storing the bit with `internal::Wired::StoreBit()`, so that the test names the
-buffer column itself rather than reaching it through an orientation. The parts are private
-members of `Matrix`, so a test reaches the buffer as `matrix_.panel_.wired_.matrix_buffer_`. 
-The define comes after the GoogleTest and standard headers, which it would rewrite as well.
+A test reaches the library through its API only, as TS-8 of `docs/Testing.md` asks, never
+through a private member: the fixture's buffer is its own, as a sketch's may be, and a step of a
+shift shows on the panel. What only a part below the facade can show is tested on that part
+itself, made in the test, as `WiredTest` stores a bit with `internal::Wired::StoreBit()`, so that
+it names the buffer column rather than reaching it through an orientation.
 
 #### Hardware
 

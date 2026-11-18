@@ -30,13 +30,12 @@ Error FeedText(Matrix& matrix, std::string const& text) {
 }
 
 TEST_F(MaxMatrixTest, OutOfRangeChangesNothing) {
-  std::vector<uint8_t> const before{
-      Bytes(matrix_.panel_.wired_.matrix_buffer_)};
+  std::vector<uint8_t> const before{Bytes(buffer_)};
   int32_t const frames_before{mock::frames};
 
   EXPECT_EQ(matrix_.SetIntensity(max7219::kIntensityMaxValue + 1).GetError(),
             Error::kOutOfRange);
-  EXPECT_EQ(Bytes(matrix_.panel_.wired_.matrix_buffer_), before);
+  EXPECT_EQ(Bytes(buffer_), before);
   EXPECT_EQ(mock::frames, frames_before);
 }
 

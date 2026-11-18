@@ -68,8 +68,7 @@ TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
   for (uint16_t step{0}; (step < 1000) && (matrix_.GetState() != State::kReady);
        step++) {
     matrix_.ShiftTask();
-    ASSERT_EQ(Display(), Bytes(matrix_.panel_.wired_.matrix_buffer_))
-        << "after step " << step;
+    ASSERT_EQ(Display(), Bytes(buffer_)) << "after step " << step;
   }
 }
 

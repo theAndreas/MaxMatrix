@@ -3,6 +3,8 @@
 
 /* The buffer as wired: which columns go out, and when nothing has to. */
 
+#include "Matrix/Wired.h"
+
 #include <gtest/gtest.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -17,13 +19,20 @@ namespace max_matrix {
 namespace {
 
 /* a changed column of a module goes out in one frame with the same column of
- * every other module */
-TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
+ * every other module; a test of internal::Wired itself, which names the buffer
+ * column as wired rather than reaching it through an orientation */
+TEST(WiredTest, ChangedColumnIsSentForEveryModule) {
+  mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+  array<Byte, BufferSize(kNumberOfModules)> buffer{};
+  internal::Wired wired{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}, buffer};
+  ASSERT_TRUE(wired.GetChain().Init(kNumberOfModules).IsOk());
+  wired.Send();
   uint8_t const module{kNumberOfModules - 2};
   int32_t const frames_before{mock::frames};
 
-  matrix_.panel_.wired_.StoreBit((module * kColumnNumberOfModule) + 3, 1, true);
-  matrix_.Update();
+  wired.StoreBit((module * kColumnNumberOfModule) + 3, 1, true);
+  wired.Send();
   EXPECT_EQ(mock::frames - frames_before, 1);
   ASSERT_EQ(mock::last_frame.size(), 2u * kNumberOfModules);
   for (uint8_t i{0}; i < kNumberOfModules; i++) {
@@ -33,6 +42,7 @@ TEST_F(MaxMatrixTest, ChangedColumnIsSentForEveryModule) {
     EXPECT_EQ(mock::last_frame[(size_t{2} * i) + 1],
               (i == module) ? 0x02 : 0x00);
   }
+  EXPECT_EQ(mock::errors, 0);
 }
 
 /* Clear() has to reach LEDs the buffer knows nothing of: after power-up the
@@ -55,7 +65,7 @@ TEST_F(MaxMatrixTest, DrawingWhatIsShownSendsNothing) {
 
   matrix_.SetText("Hi!");
   matrix_.SetDot(Point{X{0}, Y{0}},
-                 ReadBit(matrix_.panel_.wired_.GetColumn(0), 0));
+                 matrix_.GetDot(Point{X{0}, Y{0}}).GetValue());
   EXPECT_EQ(mock::frames, frames_before);
 }
 

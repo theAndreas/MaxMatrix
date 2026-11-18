@@ -42,10 +42,10 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC3\x84\xC3\xB6\xC3\xBC!").GetError(),
             Error::kOk);
-  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
+  utf8 = Bytes(buffer_);
   matrix_.Clear();
   EXPECT_EQ(matrix_.SetText("\xC4\xF6\xFC!").GetError(), Error::kOk);
-  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
+  latin1 = Bytes(buffer_);
   EXPECT_EQ(utf8, latin1);
 
   char const shift_utf8[] =
@@ -56,9 +56,9 @@ TEST_F(MaxMatrixTest, UmlautsFromUtf8AndLatin1Match) {
       "e \xC4";
   ShiftWholeText(shift_utf8);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
-  utf8 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
+  utf8 = Bytes(buffer_);
   ShiftWholeText(shift_latin1);
-  latin1 = Bytes(matrix_.panel_.wired_.matrix_buffer_);
+  latin1 = Bytes(buffer_);
   EXPECT_EQ(utf8, latin1);
 }
 
