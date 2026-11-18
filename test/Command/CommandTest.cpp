@@ -211,5 +211,36 @@ TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   EXPECT_EQ(answer.text, expected + "\r\n");
 }
 
+TEST_F(MaxMatrixCommandTest, LineOneCharTooLongIsRefused) {
+  std::string const text =
+      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 4, 'x') + "\n";
+
+  EXPECT_EQ(FeedLine(text), Error::kLineTooLong);
+}
+
+TEST_F(MaxMatrixCommandTest, IntensityTakesItsGreatestValue) {
+  EXPECT_EQ(FeedLine("intensity=15\n"), CommandState::kDone);
+
+  EXPECT_EQ(ChipOfModule(0).intensity, 15);
+}
+
+TEST_F(MaxMatrixCommandTest, SpaceTakesItsGreatestValue) {
+  EXPECT_EQ(FeedLine("space=255\n"), CommandState::kDone);
+
+  EXPECT_EQ(matrix_.GetSpaceBetweenChars(), 255);
+}
+
+TEST_F(MaxMatrixCommandTest, SpeedTakesItsGreatestValue) {
+  EXPECT_EQ(FeedLine("speed=65535\n"), CommandState::kDone);
+
+  EXPECT_EQ(matrix_.GetShiftInterval(), 65535);
+}
+
+TEST_F(MaxMatrixCommandTest, SetDotTakesTheLastDot) {
+  EXPECT_EQ(FeedLine("setDot=31,7,1\n"), CommandState::kDone);
+
+  EXPECT_TRUE(matrix_.GetDot(Point{X{31}, Y{7}}).GetValue());
+}
+
 }  // namespace
 }  // namespace max_matrix

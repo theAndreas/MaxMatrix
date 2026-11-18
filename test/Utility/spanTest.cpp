@@ -101,5 +101,54 @@ TEST(SpanTest, GivesItsFirstElements) {
   EXPECT_EQ(first.data(), all.data());
 }
 
+constexpr array<uint8_t, 3> kThree{{1, 2, 3}};
+
+TEST(SpanTest, ReachesItsElementsWhenCompiling) {
+  static_assert(span<uint8_t const>{kThree}.size() == 3, "its size");
+  static_assert(span<uint8_t const>{kThree}.data() == kThree.data(),
+                "its elements");
+  static_assert(span<uint8_t const>{kThree}[2] == 3, "an element");
+  static_assert(span<uint8_t const>{kThree}.first(2).size() == 2,
+                "its first elements");
+  static_assert(span<uint8_t const>{kThree}.subspan(1)[0] == 2,
+                "from an offset");
+
+  EXPECT_EQ(span<uint8_t const>{kThree}.size(), 3u);
+}
+
+TEST(SpanTest, FirstOfNoElementIsEmpty) {
+  span<uint8_t const> const all{kThree};
+
+  span<uint8_t const> const none{all.first(0)};
+
+  EXPECT_EQ(none.size(), 0u);
+}
+
+TEST(SpanTest, FirstOfAllElementsIsTheWhole) {
+  span<uint8_t const> const all{kThree};
+
+  span<uint8_t const> const whole{all.first(3)};
+
+  EXPECT_EQ(whole.size(), 3u);
+  EXPECT_EQ(whole.data(), kThree.data());
+}
+
+TEST(SpanTest, SubspanFromTheStartIsTheWhole) {
+  span<uint8_t const> const all{kThree};
+
+  span<uint8_t const> const whole{all.subspan(0)};
+
+  EXPECT_EQ(whole.size(), 3u);
+  EXPECT_EQ(whole.data(), kThree.data());
+}
+
+TEST(SpanTest, SubspanFromTheEndIsEmpty) {
+  span<uint8_t const> const all{kThree};
+
+  span<uint8_t const> const none{all.subspan(3)};
+
+  EXPECT_EQ(none.size(), 0u);
+}
+
 }  // namespace
 }  // namespace max_matrix

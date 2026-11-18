@@ -528,7 +528,8 @@ class Matrix {
    *        every LED off.
    *
    * The intensity is set to its start value. The cleared matrix is sent even
-   * with auto update off, as after power-up the LEDs show anything.
+   * with auto update off, as after power-up the LEDs show anything. A shift
+   * that runs ends, as the panel it draws on is cleared.
    *
    * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
    *         `NUM_DIGITAL_PINS` or above, or the buffer is no chain of 1 to

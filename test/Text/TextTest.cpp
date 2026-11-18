@@ -198,5 +198,42 @@ TEST_F(MaxMatrixTest, TextEndsAtTheEndOfItsSpanWithoutANullCharacter) {
   EXPECT_EQ(shift_calls_, calls);
 }
 
+/* a text with a char the font lacks draws the chars before it, as SetText()
+ * promises: the I of 0x41, 0x7F, 0x41 */
+TEST_F(MaxMatrixTest, TextWithAnUnknownCharDrawsTheCharsBeforeIt) {
+  Error const error{matrix_.SetText("I\x01").GetError()};
+
+  EXPECT_EQ(error, Error::kUnknownChar);
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "###.............................",
+                                       ".#..............................",
+                                       ".#..............................",
+                                       ".#..............................",
+                                       ".#..............................",
+                                       ".#..............................",
+                                       "###.............................",
+                                       "................................",
+                                   }));
+}
+
+/* no space between chars sets them side by side: the I of 0x41, 0x7F, 0x41
+ * twice */
+TEST_F(MaxMatrixTest, NoSpaceBetweenCharsSetsThemSideBySide) {
+  matrix_.SetSpaceBetweenChars(0);
+
+  ASSERT_EQ(matrix_.SetText("II").GetError(), Error::kOk);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "######..........................",
+                                       ".#..#...........................",
+                                       ".#..#...........................",
+                                       ".#..#...........................",
+                                       ".#..#...........................",
+                                       ".#..#...........................",
+                                       "######..........................",
+                                       "................................",
+                                   }));
+}
+
 }  // namespace
 }  // namespace max_matrix

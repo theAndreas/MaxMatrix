@@ -804,5 +804,32 @@ TEST_F(MaxMatrixTest, BitmapOfNoRowDrawsNothing) {
             Picture([](int16_t, int16_t) { return true; }));
 }
 
+TEST_F(MaxMatrixTest, GetRowOffThePanelLeavesTheValues) {
+  PanelRow row{{Byte{0xA5}, Byte{0xA5}, Byte{0xA5}, Byte{0xA5}}};
+
+  Error const error{matrix_.GetRow(Y{kRowNumberOfModule}, row).GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+  EXPECT_EQ(Bytes(row), (std::vector<uint8_t>{0xA5, 0xA5, 0xA5, 0xA5}));
+}
+
+TEST_F(MaxMatrixTest, GetRowIntoTooFewBytesLeavesThem) {
+  array<Byte, kNumberOfModules - 1> row{{Byte{0xA5}, Byte{0xA5}, Byte{0xA5}}};
+
+  Error const error{matrix_.GetRow(Y{0}, row).GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+  EXPECT_EQ(Bytes(row), (std::vector<uint8_t>{0xA5, 0xA5, 0xA5}));
+}
+
+TEST_F(MaxMatrixTest, CoordinatesAreMadeWhenCompiling) {
+  static_assert(X{3}.number == 3, "a column");
+  static_assert(Y{-2}.number == -2, "a row");
+  static_assert(Point{X{3}, Y{2}}.y.number == 2, "a dot");
+  static_assert(Module{1}.number == 1, "a module");
+
+  EXPECT_EQ((Point{X{3}, Y{2}}).x.number, 3);
+}
+
 }  // namespace
 }  // namespace max_matrix
