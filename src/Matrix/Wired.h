@@ -66,6 +66,12 @@ class Wired {
   }
 
   /*!
+   * \brief Returns whether the buffer is that of a chain: 1 to
+   *        `kMaxNumberOfModules` modules, eight bytes each.
+   */
+  MAXMATRIX_NODISCARD bool HoldsAChain() const;
+
+  /*!
    * \brief Returns a column of the buffer, unchecked.
    *
    * For Panel, whose coordinates are checked and mapped already.

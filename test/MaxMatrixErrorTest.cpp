@@ -56,13 +56,20 @@ TEST_F(MaxMatrixTest, EveryErrorSaysWhy) {
     Error expected;
     char const* api;
   };
-  std::array<Case, 33> const cases{{
+  std::array<Case, 34> const cases{{
       {"Init with a pin beyond the board",
        [](Matrix& m) {
          m.SetChipSelectPin(NUM_DIGITAL_PINS);
          Error const error{m.Init().GetError()};
          m.SetChipSelectPin(kChipSelectPin);
          return error;
+       },
+       Error::kOutOfRange, "Init"},
+      {"Init with a buffer that is no chain",
+       [](Matrix&) {
+         Matrix fresh{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                      ClockPin{kClockPin}, span<Byte>{}};
+         return fresh.Init().GetError();
        },
        Error::kOutOfRange, "Init"},
       {"GetColumn left",

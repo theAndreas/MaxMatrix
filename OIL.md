@@ -1366,6 +1366,13 @@ wide as they, rather than reading bits past a byte, which turned the row below t
 from bit 32 on was undefined, or columns past the sprite's array; a height or width of 0 draws
 nothing. The reference says so where it names the ranges.
 
+As built for the buffer handed to a `Matrix` (TS-25), as decided on 2026-11-18: `Init()` refuses
+with `Error::kOutOfRange` a buffer that is no chain of 1 to `kMaxNumberOfModules` modules, eight
+bytes each, as it refuses a pin the board lacks, and sends nothing; one longer than 255 bytes
+wrapped the count of the columns, one that is no multiple of eight left columns no module has,
+and an empty one was a chain of none. `MatrixOf` was checked when compiling already. The
+longest chain, of 31 modules, has a test of its own.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

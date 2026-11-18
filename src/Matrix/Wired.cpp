@@ -35,12 +35,30 @@ max7219::Register GetDigitRegister(uint8_t column) {
   return static_cast<max7219::Register>(digit0 + column);
 }
 
+// memset() takes no null pointer, not even for no byte, and an empty span,
+// which Init() refuses, has one.
+void Zero(span<Byte> buffer) {
+  if (buffer.size() != 0u) {
+    memset(buffer.data(), 0, buffer.size());
+  }
+}
+
 }  // namespace
 
 Wired::Wired(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin, span<Byte> buffer)
     : chain_{data_in_pin, chip_select_pin, clock_pin}, matrix_buffer_{buffer} {
-  memset(matrix_buffer_.data(), 0, matrix_buffer_.size());
+  Zero(matrix_buffer_);
+}
+
+// From the size of the buffer, as the count of its columns wraps beyond a
+// byte.
+bool Wired::HoldsAChain() const {
+  size_t const length{matrix_buffer_.size()};
+  bool const whole_modules{(length % kColumnNumberOfModule) == 0u};
+  bool const in_range{(length >= BufferSize(1)) &&
+                      (length <= BufferSize(kMaxNumberOfModules))};
+  return whole_modules && in_range;
 }
 
 void Wired::StoreBit(uint8_t column, uint8_t bit, bool value) {
@@ -55,7 +73,7 @@ void Wired::StoreBit(uint8_t column, uint8_t bit, bool value) {
 }
 
 void Wired::Clear() {
-  memset(matrix_buffer_.data(), 0, matrix_buffer_.size());
+  Zero(matrix_buffer_);
   changed_columns_ = kAllColumnsChanged;
 }
 

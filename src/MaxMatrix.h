@@ -107,7 +107,8 @@ class Matrix {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
-   *                    1 to `kMaxNumberOfModules`.
+   *                    1 to `kMaxNumberOfModules`; Init() refuses any other
+   *                    length.
    * \pre `buffer` lives as long as the matrix; otherwise the matrix writes
    *      memory that is no longer the buffer, which is undefined.
    */
@@ -530,8 +531,9 @@ class Matrix {
    * with auto update off, as after power-up the LEDs show anything.
    *
    * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
-   *         `NUM_DIGITAL_PINS` or above; then nothing is sent, a matrix set up
-   *         before keeps its state and drives the pins it had, and one never
+   *         `NUM_DIGITAL_PINS` or above, or the buffer is no chain of 1 to
+   *         `kMaxNumberOfModules` modules; then nothing is sent, a matrix set
+   *         up before keeps its state and drives the pins it had, and one never
    *         set up sends nothing until an Init() succeeds.
    */
   Status Init();
