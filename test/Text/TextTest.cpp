@@ -130,6 +130,55 @@ TEST_F(MaxMatrixTest, SpriteDrawsItsWidthAndHeightFromItsCorner) {
             }));
 }
 
+/* a sprite wider than its columns read past its array; it is drawn as wide as
+ * its columns, and the column beside them stays as it is */
+TEST_F(MaxMatrixTest, SpriteWiderThanItsColumnsIsDrawnAsWideAsThey) {
+  Sprite const too_wide{
+      kSpriteMaxWidth + 1, 8, {{0x01, 0x01, 0x01, 0x01, 0x01}}};
+  matrix_.SetColumn(X{5}, Byte{0xFF});
+
+  matrix_.SetSprite(Point{X{0}, Y{0}}, too_wide);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "######..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                   }));
+}
+
+/* a sprite higher than a module read bits beyond its bytes, as a bitmap did */
+TEST_F(MaxMatrixTest, SpriteHigherThanAModuleIsDrawnEightHigh) {
+  Sprite const too_high{1, 9, {{0x01, 0x00, 0x00, 0x00, 0x00}}};
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+
+  matrix_.SetSprite(Point{X{0}, Y{-1}}, too_high);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       ".###############################",
+                                       "################################",
+                                   }));
+}
+
+TEST_F(MaxMatrixTest, SpriteOfNoColumnDrawsNothing) {
+  Sprite const empty{0, 8, {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}};
+
+  matrix_.SetSprite(Point{X{0}, Y{0}}, empty);
+
+  EXPECT_EQ(ShownPicture(matrix_),
+            Picture([](int16_t, int16_t) { return false; }));
+}
+
 /* a text ends at the end of its span when no null character comes first, so
  * that a buffer without one is not read past its end: the first two chars of
  * "Hi!!" are drawn and shifted as "Hi" */

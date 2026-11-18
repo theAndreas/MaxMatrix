@@ -105,8 +105,10 @@ void Text::SetSprite(Panel& panel, Point top_left, Sprite const& sprite) {
   if (x >= panel.GetNumberOfColumns()) {
     return;
   }
-  for (uint8_t sprite_column{0}; sprite_column < sprite.width;
-       sprite_column++) {
+  // A width beyond its columns read past them.
+  uint8_t const width{(sprite.width > kSpriteMaxWidth) ? kSpriteMaxWidth
+                                                       : sprite.width};
+  for (uint8_t sprite_column{0}; sprite_column < width; sprite_column++) {
     X const column{static_cast<int16_t>(x + sprite_column)};
     panel.DrawColumn(Point{column, Y{y}}, sprite.height,
                      Byte{sprite.columns[sprite_column]});

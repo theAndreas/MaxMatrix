@@ -36,8 +36,11 @@ constexpr uint16_t kDefaultFontSize{614};
  * A char of a font is a Glyph instead.
  */
 struct Sprite {
-  uint8_t width;  /*!< The columns it takes, 1 to kSpriteMaxWidth. */
-  uint8_t height; /*!< The rows it takes, 1 to 8. */
+  /*! The columns it takes, 1 to kSpriteMaxWidth; more count as
+   * kSpriteMaxWidth, and 0 draws nothing. */
+  uint8_t width;
+  /*! The rows it takes, 1 to 8; more count as 8, and 0 draws nothing. */
+  uint8_t height;
   /*! Its columns, the leftmost first, bit 0 the top row; those beyond `width`
    * are not drawn. */
   array<uint8_t, kSpriteMaxWidth> columns;
