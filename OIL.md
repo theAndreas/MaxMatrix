@@ -1303,6 +1303,14 @@ the space and the interval beside their members, and the two switches unless `ST
 writing the register itself, which made `Basics` 14 bytes larger, as its own call of
 `SetIntensity()` no longer shares the function.
 
+As built for the preconditions of the chapter Errors (E-2): what a sketch has to keep alive, the
+buffer of a `Matrix`, the text that shifts, the font and the matrix of a `Batch`, is a `\pre`
+that says what happens otherwise, as Documentation.md asks, rather than a half sentence of a
+`\param`; `ShiftTask()` names no precondition, as without a shift it changes nothing, and
+SerialControl calls it on every `loop()`; and `Command` passes the status of `SetIntensity()` on
+rather than dropping it (E-1), which costs SerialControl 2 bytes of flash with
+`MAXMATRIX_DEV_ERROR_DETECT` and nothing otherwise.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

@@ -227,6 +227,7 @@ Status Command::ExecuteDot(Matrix& matrix, uint8_t value) {
 // space=COLUMNS.
 Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
   char const* const name{line_.data()};
+  Status status{Error::kOk};
 
   if (0 == strcmp_P(name, PSTR("intensity"))) {
     Result<uint16_t> const number{
@@ -234,8 +235,9 @@ Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
     if (!number.IsOk()) {
       return number.GetError();
     }
-    // ConvertToNumber() held it to the intensity's 15.
-    matrix.SetIntensity(static_cast<uint8_t>(number.GetValue()));
+    // ConvertToNumber() held it to the intensity's 15; the status is passed
+    // on all the same, rather than dropped, should the matrix refuse it.
+    status = matrix.SetIntensity(static_cast<uint8_t>(number.GetValue()));
   } else if (0 == strcmp_P(name, PSTR("speed"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxInterval)};
     if (!number.IsOk()) {
@@ -252,7 +254,7 @@ Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
   } else {
     return Error::kUnknownCommand;
   }
-  return Error::kOk;
+  return status;
 }
 
 /*

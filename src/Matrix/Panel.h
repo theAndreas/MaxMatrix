@@ -176,8 +176,9 @@ class Panel {
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
    * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
-   *                    1 to `kMaxNumberOfModules`; it has to live as long as
-   *                    the panel.
+   *                    1 to `kMaxNumberOfModules`.
+   * \pre `buffer` lives as long as the panel; otherwise the panel writes memory
+   *      that is no longer the buffer, which is undefined.
    */
   Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
         ClockPin clock_pin, span<Byte> buffer);
