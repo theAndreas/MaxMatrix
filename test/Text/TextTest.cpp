@@ -29,7 +29,7 @@ TEST_F(MaxMatrixTest, TextShiftFinishes) {
  * item 31): once the picture before it has left the panel, every picture comes
  * again one pass of the text later, with no column between its end and its
  * start, and the shift does not end. A pass is what the text takes when it does
- * not repeat, less the last step, which only shifts the panel once more. */
+ * not repeat, less the last call, which only finds its end. */
 TEST_F(MaxMatrixTest, RepeatingTextStartsOver) {
   char const text[] = "Hi \xC4\x01 ";
   std::vector<std::vector<std::string>> pictures;
@@ -233,6 +233,40 @@ TEST_F(MaxMatrixTest, NoSpaceBetweenCharsSetsThemSideBySide) {
                                        "######..........................",
                                        "................................",
                                    }));
+}
+
+/* the first step of a char brought two of its columns at once, though the
+ * interval is the time per column: '#' brings 0x14 first */
+TEST_F(MaxMatrixTest, CharShiftBringsOneColumnPerStep) {
+  ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
+
+  matrix_.ShiftTask();
+
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
+}
+
+/* a char shifts in with the space behind it, and no more: each char brought
+ * one more empty column, as the step that ended it shifted as well; '#' is
+ * 0x14, 0x3E, 0x14, 0x3E, 0x14 */
+TEST_F(MaxMatrixTest, CharShiftEndsWithTheSpaceBehindIt) {
+  ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
+
+  ShiftUntilReady(matrix_);
+
+  EXPECT_EQ(RightEdge(matrix_, 6),
+            (std::vector<uint8_t>{0x14, 0x3E, 0x14, 0x3E, 0x14, 0x00}));
+}
+
+/* a text ends with the space behind its last char: the end of a text brought
+ * one more empty column; "Hi" is 7F 08 08 7F, the space, 44 7D 40 */
+TEST_F(MaxMatrixTest, TextShiftEndsWithTheSpaceBehindItsLastChar) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
+
+  ShiftUntilReady(matrix_);
+
+  EXPECT_EQ(RightEdge(matrix_, 9),
+            (std::vector<uint8_t>{0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D,
+                                  0x40, 0x00}));
 }
 
 }  // namespace

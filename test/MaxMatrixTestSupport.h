@@ -205,6 +205,14 @@ std::vector<std::string> Picture(DotType dot,
 /* the picture as the library reports it, through GetDot */
 std::vector<std::string> ShownPicture(max_matrix::Matrix& matrix);
 
+/* the columns at the right edge of the panel, as numbers, where a char that
+ * shifts in shows what it has brought so far */
+std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
+                               uint8_t width = 3);
+
+/* steps the shift running now until it is done, at most 1000 steps */
+void ShiftUntilReady(max_matrix::Matrix& matrix);
+
 /* draws Pattern() on the whole panel, dot by dot */
 void DrawPattern(max_matrix::Matrix& matrix);
 

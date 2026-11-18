@@ -123,40 +123,40 @@ bool Text::CharShiftTask(Panel& panel) {
   // An empty column comes in, by the column rather than ShiftFill, so
   // that a sketch that only shifts text does not link the other fills.
   panel.ShiftLeft(Byte{});
-  sprite_shift_counter_++;
+  uint16_t const step{sprite_shift_counter_};
+  auto const width{static_cast<uint16_t>(glyph_.columns.size())};
 
-  /* the step after the char and the spaces behind it have come in */
-  auto const done{
-      static_cast<uint16_t>(glyph_.columns.size() + space_between_chars_ + 1)};
-
-  /* if sprite is completed set only spaces */
-  if (sprite_shift_counter_ <= glyph_.columns.size()) {
-    X const left{static_cast<int16_t>(panel.GetNumberOfColumns() -
-                                      sprite_shift_counter_)};
+  if (step <= width) {
+    X const left{static_cast<int16_t>(panel.GetNumberOfColumns() - step)};
     SetGlyph(panel, Point{left, Y{0}}, glyph_);
-  } else if (sprite_shift_counter_ == done) {
-    /* if sprite and spaces are completed task has finished */
-    sprite_shift_counter_ = kShiftIdle;
-    return false;
   }
-  return true;
+  // Done with the step that brings the last column of its space: one more
+  // brought an empty column no char asked for.
+  auto const last_step{static_cast<uint16_t>(width + space_between_chars_)};
+  bool const going_on{step < last_step};
+  sprite_shift_counter_ =
+      going_on ? static_cast<uint16_t>(step + 1u) : kShiftIdle;
+  return going_on;
 }
 
+/*
+ * The next char is read once the one before has come in, in the call after the
+ * step that brought its space; at the end of the text that call shifts
+ * nothing. Read in the step that ends a char instead, the text ended without
+ * that call, but avr-gcc kept ReadNextChar() out of line for its second caller,
+ * 46 to 64 bytes of flash in the examples that shift text.
+ */
 bool Text::StringShiftTask(Panel& panel) {
-  /* has char shift task finished shifting sprite or char */
   if (sprite_shift_counter_ == kShiftIdle) {
     ReadNextChar();
-    if (sprite_shift_counter_ == kShiftStart) {
-      CharShiftTask(panel);
-    } else { /* end of string reached, task has finished */
-      panel.ShiftLeft(Byte{});
-      return false;
-    }
-  } else {
-    /* go on shifting Sprite; the end of a char is not the end of the string */
-    CharShiftTask(panel);
   }
-  return true;
+  bool const going_on{sprite_shift_counter_ != kShiftIdle};
+  if (going_on) {
+    // Whether the char has come in shows in the counter, which the next
+    // call reads.
+    Discard(CharShiftTask(panel));
+  }
+  return going_on;
 }
 
 /*

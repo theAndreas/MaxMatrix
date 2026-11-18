@@ -405,11 +405,12 @@ class Matrix {
   }
 
   /*!
-   * \brief Starts shifting a char in from the right, until it stands at the
-   *        right edge.
+   * \brief Starts shifting a char in from the right, until it and the space
+   *        behind it have come in.
    *
-   * ShiftTask() takes the steps; GetState() is State::kCharShift until
-   * the char stands.
+   * ShiftTask() takes the steps, one column each; GetState() is
+   * State::kCharShift until the char stands, the space behind it at the
+   * right edge, so that a char shifted in after it keeps its distance.
    *
    * \param[in] c The char, latin-1.
    * \return Error::kOk; Error::kNotSetUp before an Init() has succeeded; or
@@ -436,13 +437,13 @@ class Matrix {
   }
 
   /*!
-   * \brief Starts shifting a text in from the right, until its last char stands
-   *        at the right edge, or over and over.
+   * \brief Starts shifting a text in from the right, until its last char and
+   *        the space behind it have come in, or over and over.
    *
-   * ShiftTask() takes the steps; GetState() is State::kStringShift
-   * until the text stands. A text that repeats goes on with its first char
-   * right after its last, so a few spaces at its end keep the two apart; it
-   * shifts until StopShift() or the next shift starts.
+   * ShiftTask() takes the steps, one column each; GetState() is
+   * State::kStringShift until the text stands. A text that repeats goes on with
+   * its first char right after its last, so a few spaces at its end keep the
+   * two apart; it shifts until StopShift() or the next shift starts.
    *
    * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
    *                 character or the end of the span, as for SetText().

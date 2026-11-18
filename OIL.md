@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1401,6 +1401,18 @@ asserted after it; a register of every chip is compared with a vector written do
 looped over; the tests of a matrix not set up share a fixture of their own rather than making
 one beside the fixture's; and a test that leaves the LEDs other than the buffer, as one in
 shutdown, puts them back at its end, with the reason.
+
+As built for the end of a shift (TS-4), as decided on 2026-11-19: a shifting char brings one
+column per step, its glyph and the space behind it, and no more, and a text ends once the space
+behind its last char has come in, in a call that shifts nothing, as one more caller of the
+function that reads the next char made avr-gcc keep it out of line, 46 to 64 bytes of flash; as
+built, the examples that shift text are 14 to 20 bytes smaller instead. The first step of a char
+had brought two of its columns at once, against the interval the reference gives per column, the
+step that ended a char one more empty column, and the end of a text another; the reference had
+promised that the last char stands at the right edge. The test of the chain lengths found it, as
+it was the first to write the end of a shift down rather than see that something was lit. The
+tests that pinned the old steps, the pace of a shift among them, and the panels of `ScrollText`
+and `Messages` at their time in simavr, each one column behind, follow.
 
 ### 42 A newer avr-gcc as a cross-check
 

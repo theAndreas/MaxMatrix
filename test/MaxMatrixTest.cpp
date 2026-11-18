@@ -159,19 +159,9 @@ TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn) {
 }
 
 /* The tests below tell the steps of a shifting char by the three columns at
- * the right edge of the panel, where '#' brings 0x14, 0x3E, 0x14 and 0x3E, the
- * first when the shift starts and one more per step, and hold the clock, so
- * that a step 50 ms on does not depend on how fast the host is. Up to three
- * steps, each leaves the edge another picture. */
-std::vector<uint8_t> RightEdge(Matrix const& matrix, uint8_t width = 3) {
-  std::vector<uint8_t> columns;
-  for (auto x{static_cast<int16_t>(kNumberOfColumns - width)};
-       x < kNumberOfColumns; x++) {
-    columns.push_back(matrix.GetColumn(X{x}).GetValue().ToInteger());
-  }
-  return columns;
-}
-
+ * the right edge of the panel, where '#' brings 0x14, 0x3E and 0x14, one per
+ * step, and hold the clock, so that a step 50 ms on does not depend on how
+ * fast the host is. Up to three steps, each leaves the edge another picture. */
 /* a char shifting in at 50 ms per step, its shift started at `start` */
 class ShiftPaceTest : public MaxMatrixTest {
  protected:
@@ -187,7 +177,7 @@ TEST_F(ShiftPaceTest, FirstStepComesAtOnce) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }
 
 TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassed) {
@@ -197,7 +187,7 @@ TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassed) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }
 
 TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassed) {
@@ -207,7 +197,7 @@ TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassed) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
 }
 
 /* a call after loop() was held up takes one step, not the ones it missed */
@@ -219,7 +209,7 @@ TEST_F(ShiftPaceTest, LateCallTakesOneStep) {
   matrix_.ShiftTask();
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
 }
 
 /* the interval counts from a late step, not from when it was due */
@@ -232,7 +222,7 @@ TEST_F(ShiftPaceTest, NoStepAnIntervalAfterTheMissedOne) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
 }
 
 TEST_F(ShiftPaceTest, StepAnIntervalAfterTheLateOne) {
@@ -244,7 +234,7 @@ TEST_F(ShiftPaceTest, StepAnIntervalAfterTheLateOne) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x3E, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
 }
 
 TEST_F(ShiftPaceTest, IntervalZeroStepsOnEveryCall) {
@@ -255,11 +245,11 @@ TEST_F(ShiftPaceTest, IntervalZeroStepsOnEveryCall) {
   matrix_.ShiftTask();
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x3E, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
 }
 
 /* a new char or text starts at once, however recently the one before took a
- * step: '+' brings 0x08, 0x08 and 0x3E */
+ * step: '+' brings 0x08 first, beside the 0x14 of '#' */
 TEST_F(ShiftPaceTest, NewShiftStartsAtOnce) {
   StartShift(1000);
   matrix_.ShiftTask();
@@ -268,7 +258,7 @@ TEST_F(ShiftPaceTest, NewShiftStartsAtOnce) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_, 2), (std::vector<uint8_t>{0x08, 0x08}));
+  EXPECT_EQ(RightEdge(matrix_, 2), (std::vector<uint8_t>{0x14, 0x08}));
 }
 
 /* the interval is counted across the overflow of millis() after 49.7 days: a
@@ -281,7 +271,7 @@ TEST_F(ShiftPaceTest, NoStepJustBeforeTheClockWraps) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }
 
 TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassedAcrossTheWrap) {
@@ -291,7 +281,7 @@ TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassedAcrossTheWrap) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }
 
 TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassedAcrossTheWrap) {
@@ -301,7 +291,7 @@ TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassedAcrossTheWrap) {
 
   matrix_.ShiftTask();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
 }
 
 TEST_F(MaxMatrixTest, ShutdownDarkensEveryModule) {

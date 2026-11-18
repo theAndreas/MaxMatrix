@@ -120,6 +120,25 @@ std::vector<std::string> ShownPicture(Matrix& matrix) {
       matrix.GetNumberOfColumns());
 }
 
+std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
+                               uint8_t width) {
+  std::vector<uint8_t> columns;
+  int16_t const right{matrix.GetNumberOfColumns()};
+  for (auto x{static_cast<int16_t>(right - width)}; x < right; x++) {
+    columns.push_back(
+        matrix.GetColumn(max_matrix::X{x}).GetValue().ToInteger());
+  }
+  return columns;
+}
+
+void ShiftUntilReady(max_matrix::Matrix& matrix) {
+  for (uint16_t step{0};
+       (step < 1000) && (matrix.GetState() != max_matrix::State::kReady);
+       step++) {
+    matrix.ShiftTask();
+  }
+}
+
 void DrawPattern(Matrix& matrix) {
   for (uint8_t x{0}; x < matrix.GetNumberOfColumns(); x++) {
     for (uint8_t y{0}; y < max_matrix::kRowNumberOfModule; y++) {
