@@ -91,9 +91,9 @@ TEST_F(MaxMatrixTest, EveryCharBeyondAsciiHasItsOwnGlyph) {
   }
 
   /* the sprite of the U umlaut used to be a copy of the O */
-  Glyph const ue{Font::GetGlyph(kDefaultFont, '\xDC').GetValue()};
-  Glyph const o{Font::GetGlyph(kDefaultFont, 'O').GetValue()};
-  EXPECT_NE(Bytes(ue.columns), Bytes(o.columns));
+  Glyph const u_umlaut{Font::GetGlyph(kDefaultFont, '\xDC').GetValue()};
+  Glyph const letter_o{Font::GetGlyph(kDefaultFont, 'O').GetValue()};
+  EXPECT_NE(Bytes(u_umlaut.columns), Bytes(letter_o.columns));
 }
 
 /* Bug: the font had no sharp s and no degree sign, so SetText() failed on

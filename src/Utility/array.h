@@ -17,7 +17,7 @@
 namespace max_matrix {
 
 /*!
- * \brief A C array of `N` elements that knows its size.
+ * \brief A C array of `Size` elements that knows its size.
  *
  * \code{.cpp}
  * max_matrix::array<uint8_t, 3> const rows{{0x18, 0x3C, 0x18}};
@@ -27,8 +27,8 @@ namespace max_matrix {
  * made as a C array is, and can lie in `PROGMEM` as one. A table in `PROGMEM`
  * is made with make_array(), which counts its values.
  *
- * \tparam T The type of the elements.
- * \tparam N The number of elements, at least 1.
+ * \tparam Element The type of the elements.
+ * \tparam Size The number of elements, at least 1.
  *
  * \stddiff Only size(), the index operator and data(): nothing in the library
  *          needs more yet. No array of no elements.
@@ -38,13 +38,13 @@ namespace max_matrix {
  * MaxMatrix depends on neither the ETL nor Utl, whose utl::array this follows
  * (OIL 28, 41).
  */
-template <typename T, size_t N>
+template <typename Element, size_t Size>
 struct array {
   // A C array of no elements is ill-formed.
-  static_assert(N > 0, "max_matrix::array needs at least one element");
+  static_assert(Size > 0, "max_matrix::array needs at least one element");
 
-  using value_type = T;     /*!< The type of an element. */
-  using size_type = size_t; /*!< The type of a size and an index. */
+  using value_type = Element; /*!< The type of an element. */
+  using size_type = size_t;   /*!< The type of a size and an index. */
 
   /*!
    * \brief The elements.
@@ -52,28 +52,29 @@ struct array {
    * Public, so that the array is an aggregate; use the index operator rather
    * than this member.
    */
-  T elements[N];  // NOLINT(modernize-avoid-c-arrays): T-20, what it wraps
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, what it wraps
+  Element elements[Size];
 
-  /*! \brief Returns the number of elements, `N`. */
-  MAXMATRIX_NODISCARD constexpr size_type size() const { return N; }
+  /*! \brief Returns the number of elements, `Size`. */
+  MAXMATRIX_NODISCARD constexpr size_type size() const { return Size; }
 
   /*!
    * \brief Returns the element at `index`, unchecked.
    *
-   * \param[in] index The position, from 0; below `N`.
+   * \param[in] index The position, from 0; below `Size`.
    */
-  T& operator[](size_type index) { return elements[index]; }
+  Element& operator[](size_type index) { return elements[index]; }
 
   /*! \copydoc operator[](size_type) */
-  constexpr T const& operator[](size_type index) const {
+  constexpr Element const& operator[](size_type index) const {
     return elements[index];
   }
 
   /*! \brief Returns the address of the first element, as a C array gives it. */
-  MAXMATRIX_NODISCARD T* data() { return elements; }
+  MAXMATRIX_NODISCARD Element* data() { return elements; }
 
   /*! \copydoc data() */
-  MAXMATRIX_NODISCARD constexpr T const* data() const { return elements; }
+  MAXMATRIX_NODISCARD constexpr Element const* data() const { return elements; }
 };
 
 namespace internal {
@@ -84,8 +85,8 @@ namespace internal {
  * A value that does not fit calls it, and a call of a function that is not
  * `constexpr` ends the evaluation when compiling with an error.
  */
-template <typename T>
-T ValueOutOfRange();
+template <typename Element>
+Element ValueOutOfRange();
 
 /*!
  * \brief Returns whether `value` is below 0, without comparing a type that has
@@ -99,22 +100,22 @@ constexpr bool IsNegative(Value value) {
 }
 
 /*!
- * \brief Declared only: in a `decltype`, a value of type `T`, where nothing is
- *        evaluated, as `std::declval()`, which avr-gcc lacks.
+ * \brief Declared only: in a `decltype`, a value of type `Declared`, where
+ *        nothing is evaluated, as `std::declval()`, which avr-gcc lacks.
  */
-template <typename T>
-T&& DeclVal();
+template <typename Declared>
+Declared&& DeclVal();
 
 /*!
  * \brief Converts a value of make_array() that would narrow, a number, into an
  *        element.
  *
- * \tparam T The type of the elements.
+ * \tparam Element The type of the elements.
  * \tparam Value The type of the value, as written.
- * \tparam Braced `T`, if a `T` is made of a `Value` in braces, which refuse
- *                narrowing; then the specialization below applies.
+ * \tparam Braced `Element`, if an `Element` is made of a `Value` in braces,
+ *                which refuse narrowing; then the specialization below applies.
  */
-template <typename T, typename Value, typename Braced = T>
+template <typename Element, typename Value, typename Braced = Element>
 struct ArrayElement {
   /*!
    * \brief Returns whether `value` is the same as an element as it was.
@@ -122,8 +123,8 @@ struct ArrayElement {
    * \param[in] value The value.
    */
   static constexpr bool Fits(Value value) {
-    return (static_cast<Value>(static_cast<T>(value)) == value) &&
-           (IsNegative(value) == IsNegative(static_cast<T>(value)));
+    return (static_cast<Value>(static_cast<Element>(value)) == value) &&
+           (IsNegative(value) == IsNegative(static_cast<Element>(value)));
   }
 
   /*!
@@ -132,8 +133,9 @@ struct ArrayElement {
    *
    * \param[in] value The value.
    */
-  static constexpr T Of(Value value) {
-    return Fits(value) ? static_cast<T>(value) : ValueOutOfRange<T>();
+  static constexpr Element Of(Value value) {
+    return Fits(value) ? static_cast<Element>(value)
+                       : ValueOutOfRange<Element>();
   }
 };
 
@@ -142,20 +144,21 @@ struct ArrayElement {
  *        of the type, a smaller number, or a `char*` for a `char const*`, which
  *        the range check could not cast back.
  */
-template <typename T, typename Value>
-struct ArrayElement<T, Value, decltype(T{DeclVal<Value>()})> {
+template <typename Element, typename Value>
+struct ArrayElement<Element, Value, decltype(Element{DeclVal<Value>()})> {
   /*!
    * \brief Returns `value` as an element.
    *
    * \param[in] value The value.
    */
-  static constexpr T Of(Value const& value) { return value; }
+  static constexpr Element Of(Value const& value) { return value; }
 };
 
 }  // namespace internal
 
 /*!
- * \brief Returns an array of `T` of its values, with the size taken from them.
+ * \brief Returns an array of `Element` of its values, with the size taken from
+ *        them.
  *
  * What C++17 deduces from `std::array a{...}`, and gnu++11 cannot. A font or a
  * bitmap in `PROGMEM` is written so, its values as MD_MAX72XX writes them:
@@ -165,25 +168,26 @@ struct ArrayElement<T, Value, decltype(T{DeclVal<Value>()})> {
  *     max_matrix::make_array<uint8_t>(0x0C, 0x1E, 0x3C, 0x1E, 0x0C)};
  * \endcode
  *
- * A value that does not fit `T`, as 256 or -1 for a `uint8_t`, stops the build
- * with an error that names `ValueOutOfRange`, also in a sketch, which Arduino
- * compiles with `-Wno-error=narrowing`, so that braces would only warn.
+ * A value that does not fit `Element`, as 256 or -1 for a `uint8_t`, stops the
+ * build with an error that names `ValueOutOfRange`, also in a sketch, which
+ * Arduino compiles with `-Wno-error=narrowing`, so that braces would only warn.
  *
  * \note For values known when compiling, as a table in `PROGMEM` has to be
  *       made: made at start-up, it would be written to flash, which avr-gcc
  *       refuses.
  *
- * \tparam T The type of the elements.
- * \param[in] values The elements, each what becomes a `T` without narrowing, as
- *                   a `char*` for a `char const*`, or a number that fits one.
+ * \tparam Element The type of the elements.
+ * \param[in] values The elements, each what becomes an `Element` without
+ *                   narrowing, as a `char*` for a `char const*`, or a number
+ *                   that fits one.
  *
- * \stddiff `std::experimental::make_array<T>()` refuses a number of another
- *          type even where it fits, so that every value of a font would have to
- *          be written as a `uint8_t`. `T` cannot be left out.
+ * \stddiff `std::experimental::make_array<Element>()` refuses a number of
+ *          another type even where it fits, so that every value of a font would
+ *          have to be written as a `uint8_t`. `Element` cannot be left out.
  */
-template <typename T, typename... Values>
-constexpr array<T, sizeof...(Values)> make_array(Values... values) {
-  return {{internal::ArrayElement<T, Values>::Of(values)...}};
+template <typename Element, typename... Values>
+constexpr array<Element, sizeof...(Values)> make_array(Values... values) {
+  return {{internal::ArrayElement<Element, Values>::Of(values)...}};
 }
 
 }  // namespace max_matrix

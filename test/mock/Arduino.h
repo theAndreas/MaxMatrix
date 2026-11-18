@@ -103,15 +103,15 @@ extern HardwareSerial Serial;
 namespace mock {
 
 /* bitSet() of the core, without its narrowing */
-template <typename T>
-T& BitSet(T& value, uint8_t bit) {
-  return value = static_cast<T>(value | (1UL << bit));
+template <typename Integer>
+Integer& BitSet(Integer& value, uint8_t bit) {
+  return value = static_cast<Integer>(value | (1UL << bit));
 }
 
 /* bitClear() of the core, without its narrowing */
-template <typename T>
-T& BitClear(T& value, uint8_t bit) {
-  return value = static_cast<T>(value & ~(1UL << bit));
+template <typename Integer>
+Integer& BitClear(Integer& value, uint8_t bit) {
+  return value = static_cast<Integer>(value & ~(1UL << bit));
 }
 
 /* A port register as the library writes it, by |= and &= with the mask of a

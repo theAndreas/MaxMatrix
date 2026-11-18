@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1327,6 +1327,19 @@ with no module or more than 31, a `Status` or a `Result` taken for a `bool`, ari
 `Batch` fail when compiling; each case was seen to fail its test once its safeguard was taken
 out, as it then compiled, or failed with another message. And AGENTS.md names E-1 where the host
 code returns a `bool` rather than an error type.
+
+As reviewed for the chapter Names on 2026-11-18, its two parts that review checks, the names that
+say what a thing is and the template parameters, by a scan of every name of the code against
+common short forms and of every part of a name of up to four letters. Found: template parameters
+of a single letter, `T` and `N` of `array`, `span`, `reference_wrapper` and the mock's
+`BitSet()`; the wirings of the model, `kMaX7219WiringFC16` and three more, which spelt the chip
+otherwise than their type `Max7219Wiring` and FC16 otherwise than `ModuleType::kFc16`; and two
+glyphs of a test named `ue` and `o`. As built: `Element` and `Size`, `Referred`, `Declared` for
+`DeclVal()`, `Source` and `Target` where a span converts, and `Integer`, as `Bit` names it;
+`kMax7219WiringFc16` and the rest; `u_umlaut` and `letter_o`. Nothing else: the short names left
+live a few lines, as the matrix `m` of a lambda, or are the domain's or another's, as SHA-1's
+`a` to `e` of RFC 3174, wxWidgets' `dc` and the `Ms` of a time in milliseconds; and `c` stays
+for a char, as common as `i` for an index.
 
 ### 42 A newer avr-gcc as a cross-check
 

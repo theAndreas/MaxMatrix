@@ -161,10 +161,10 @@ struct ModuleName {
 };
 
 constexpr std::array<ModuleName, 4> kModuleNames{{
-    {&kMaX7219WiringFC16, "FC-16"},
-    {&kMaX7219WiringGeneric, "Generic"},
-    {&kMaX7219WiringParola, "Parola"},
-    {&kMaX7219WiringIcstation, "ICStation"},
+    {&kMax7219WiringFc16, "FC-16"},
+    {&kMax7219WiringGeneric, "Generic"},
+    {&kMax7219WiringParola, "Parola"},
+    {&kMax7219WiringIcstation, "ICStation"},
 }};
 
 /* something for every dot of the panel, as [x][y] */

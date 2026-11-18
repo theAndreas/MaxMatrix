@@ -360,11 +360,11 @@ INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest,
                          ModuleName);
 
 TEST_F(MaxMatrixTest, NamedModuleTypesAreTheirWirings) {
-  EXPECT_EQ(ModuleTypeName(ModuleType::kFc16), kMaX7219WiringFC16.name);
-  EXPECT_EQ(ModuleTypeName(ModuleType::kGeneric), kMaX7219WiringGeneric.name);
-  EXPECT_EQ(ModuleTypeName(ModuleType::kParola), kMaX7219WiringParola.name);
+  EXPECT_EQ(ModuleTypeName(ModuleType::kFc16), kMax7219WiringFc16.name);
+  EXPECT_EQ(ModuleTypeName(ModuleType::kGeneric), kMax7219WiringGeneric.name);
+  EXPECT_EQ(ModuleTypeName(ModuleType::kParola), kMax7219WiringParola.name);
   EXPECT_EQ(ModuleTypeName(ModuleType::kIcstation),
-            kMaX7219WiringIcstation.name);
+            kMax7219WiringIcstation.name);
 }
 
 /* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a

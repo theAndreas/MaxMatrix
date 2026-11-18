@@ -213,10 +213,10 @@ TEST(Max7219Test, EveryWiringLightsEveryLedOnce) {
  * column 0 on the right */
 TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
   std::array<std::pair<Max7219Wiring const*, Led>, 4> const expected{{
-      {&kMaX7219WiringFC16, Led(7, 0)},
-      {&kMaX7219WiringGeneric, Led(7, 7)},
-      {&kMaX7219WiringParola, Led(0, 0)},
-      {&kMaX7219WiringIcstation, Led(0, 7)},
+      {&kMax7219WiringFc16, Led(7, 0)},
+      {&kMax7219WiringGeneric, Led(7, 7)},
+      {&kMax7219WiringParola, Led(0, 0)},
+      {&kMax7219WiringIcstation, Led(0, 7)},
   }};
 
   for (auto const& test_case : expected) {
@@ -231,13 +231,13 @@ TEST(Max7219Test, NamedWiringsMatchMdMax72xx) {
 TEST(Max7219Test, ChainRunsFromRightToLeft) {
   Max7219Chain chain{ChainWithOneSegment(2, 0, 0, 0)};
 
-  std::vector<Led> leds = LitLeds(chain, kMaX7219WiringFC16);
+  std::vector<Led> leds = LitLeds(chain, kMax7219WiringFc16);
   ASSERT_EQ(leds.size(), 1u);
   EXPECT_EQ(leds[0], Led(15, 0));
 
   /* upside down, the chain starts on the left and the LED is in the opposite
    * corner of its module */
-  leds = LitLeds(chain, kMaX7219WiringFC16, true);
+  leds = LitLeds(chain, kMax7219WiringFc16, true);
   ASSERT_EQ(leds.size(), 1u);
   EXPECT_EQ(leds[0], Led(0, 7));
 
