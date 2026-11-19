@@ -136,6 +136,8 @@ void SimulatorWeb::Command(SimulatorPanel& panel, std::string const& message) {
     panel.SetUpsideDown(true);
   } else if (message == kCommandUpright) {
     panel.SetUpsideDown(false);
+  } else {
+    // a message the page does not send is ignored; the panel is sent again
   }
   panel.RequestDraw();
 }

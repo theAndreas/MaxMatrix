@@ -73,6 +73,8 @@ void SimulatorFrontEnd::Follow(SimulatorPanel& panel, uint32_t now) {
       web_.Send(panel);
     } else if (terminal_on_) {
       SimulatorTerminal::Draw(panel);
+    } else {
+      // neither draws while the run lasts: --for prints the panel at its end
     }
     panel.SetDrawn(now);
   }

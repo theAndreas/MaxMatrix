@@ -61,7 +61,9 @@ jobs:
   tests:
     name: Host tests
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    # three builds and three runs of every test, by GCC, under the sanitizers and with
+    # coverage, which grow with the tests a project has
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 

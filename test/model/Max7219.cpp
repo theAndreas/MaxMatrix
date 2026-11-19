@@ -72,6 +72,8 @@ void Max7219::Latch(uint8_t address, uint8_t data) {
     shutdown = Bits::ReadBitGroup(data, kSwitchBit);
   } else if (address == 0x0F) {
     display_test = Bits::ReadBitGroup(data, kSwitchBit);
+  } else {
+    // the no-op, 0x00, and the addresses the chip has no register at
   }
 }
 

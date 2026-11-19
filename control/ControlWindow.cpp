@@ -405,6 +405,8 @@ void ControlWindow::OnListPorts(wxCommandEvent& /* event */) {
     serial_port_name_->SetValue(typed);
   } else if (serial_port_name_->GetCount() > 0) {
     serial_port_name_->SetSelection(0);
+  } else {
+    // no port to choose: the field stays empty
   }
 }
 

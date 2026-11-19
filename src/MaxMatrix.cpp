@@ -33,6 +33,8 @@ Status Matrix::SetIntensity(uint8_t intensity) {
   } else if (state_ != State::kNone) {
     RegisterWrite(max7219::Register::kIntensity, intensity);
     status = Error::kOk;
+  } else {
+    // not set up: nothing is sent, and the status says so
   }
   return MAXMATRIX_REPORT_ERROR("SetIntensity", status);
 }

@@ -52,6 +52,8 @@ class ControlStream {
         sent += static_cast<size_t>(written);
       } else if (!full || !wait_writable()) {
         return false;
+      } else {
+        // the other end was full and can take more now: send the rest
       }
     }
     return true;
