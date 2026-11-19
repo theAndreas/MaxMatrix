@@ -530,7 +530,7 @@ void ControlWindow::Follow(ControlLink& link, char const* name) {
 
 // The board while it is ready, as that is what the window is for; the simulator
 // otherwise.
-ControlLink* ControlWindow::GetShownLink() {
+ControlLink* ControlWindow::GetShownLink() & {
   if (board_link_.IsReady()) {
     return &board_link_;
   }

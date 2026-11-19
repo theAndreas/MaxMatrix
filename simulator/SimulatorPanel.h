@@ -44,9 +44,12 @@ class SimulatorPanel {
   SimulatorPanel();
 
   /*! \brief Returns the name of the chosen wiring. */
-  MAXMATRIX_NODISCARD std::string const& GetWiringName() const {
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const& {
     return wiring_name_;
   }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const&& = delete;
 
   /*! \brief Returns whether the board is mounted upside down. */
   MAXMATRIX_NODISCARD bool IsUpsideDown() const { return upside_down_; }

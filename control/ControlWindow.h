@@ -81,7 +81,7 @@ class ControlWindow : public wxFrame {
   MAXMATRIX_NODISCARD std::string GetSpeedLine() const;
   MAXMATRIX_NODISCARD std::string GetSpaceLine() const;
   void Follow(ControlLink& link, char const* name);
-  MAXMATRIX_NODISCARD ControlLink* GetShownLink();
+  MAXMATRIX_NODISCARD ControlLink* GetShownLink() &;
   void ShowState();
   void ShowBytesLeft();
   void Log(wxString const& text);

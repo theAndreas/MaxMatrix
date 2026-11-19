@@ -110,9 +110,12 @@ class ControlLink {
    * \return One byte per column as the viewer sees it, from the left, bit 0 the
    *         top row; empty until the first answer after Begin().
    */
-  MAXMATRIX_NODISCARD std::vector<uint8_t> const& GetPicture() const {
+  MAXMATRIX_NODISCARD std::vector<uint8_t> const& GetPicture() const& {
     return picture_;
   }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD std::vector<uint8_t> const& GetPicture() const&& = delete;
 
   /*!
    * \brief Reads what has arrived and cuts it into lines.

@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1560,6 +1560,13 @@ run of digits too long for a `uint64_t` stops counting rather than wrapping roun
 WebSocket lowers a header's name, and the control program decodes a hex digit, by comparing chars
 rather than by `<cctype>`, which depends on the locale. `vfprintf()` of simavr's log and `exit()`
 at the end of `--for` keep a `NOLINT`, as does the fuzzer's `abort()` (TS-29).
+
+As built for C-16 (6.8.4): the index operator and `data()` of `array`, the panel's `GetWired()`,
+the wired buffer's `GetChain()`, and in the host code the link's picture, the options' and the
+panel's names and the window's shown link are `&`-qualified, their `const` overload `const&` with
+a `const&&` overload deleted, so that a call on a temporary, whose reference would dangle, does
+not compile; `test/compile_fail/` holds the element of a temporary array. `span` keeps its index
+operator, a view of what another owns. No example changes in size.
 
 ### 42 A newer avr-gcc as a cross-check
 

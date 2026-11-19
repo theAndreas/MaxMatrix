@@ -48,10 +48,13 @@ class Wired {
         ClockPin clock_pin, span<Byte> buffer);
 
   /*! \brief Returns the chain the matrix sends to. */
-  Chain& GetChain() { return chain_; }
+  Chain& GetChain() & { return chain_; }
 
-  /*! \copydoc GetChain() */
-  MAXMATRIX_NODISCARD Chain const& GetChain() const { return chain_; }
+  /*! \copydoc GetChain() & */
+  MAXMATRIX_NODISCARD Chain const& GetChain() const& { return chain_; }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD Chain const& GetChain() const&& = delete;
 
   /*! \brief Returns the columns of the chain, eight per module. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfColumns() const {
