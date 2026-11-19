@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1485,6 +1485,14 @@ through the matrix take the file's name; a test of a transfer that checked chip 
 transaction and the path at once, and the tests of a pin beyond the board or at its edge, are a
 test for each behaviour; and what a matrix draws after a failed `Init()` is written down. The
 fixture's `ShiftWholeText()`, which no test calls any more, is gone.
+
+As built for the tests of `Utility/` and of the report of `MAXMATRIX_DEV_ERROR_DETECT` (TS-9,
+10): they were close to the rules already, as they test functions of values with the values
+written down. A test of several operators or functions at once, `&`, `|` and `~`, `<<` and `>>`,
+`==` and `!=`, a bit set, cleared or kept, `ShiftUp()` and `ShiftDown()`, `SetBits()` and
+`ClearBits()`, is a test for each; a test that acted again after it had asserted, a span or a
+reference written through, the report checked beside its call, acts first; and the empty end of
+`subspan()`, a test of its own already, is no longer checked beside its middle.
 
 ### 42 A newer avr-gcc as a cross-check
 

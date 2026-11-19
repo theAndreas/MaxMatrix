@@ -27,8 +27,9 @@ TEST(MaxMatrixErrorReportTest, DefaultReportPrintsOnSerial) {
                                           ClockPin{kClockPin}};
   mock::serial_output.clear();
 
-  EXPECT_EQ(matrix.GetColumn(X{-1}).GetError(), Error::kOutOfRange);
+  Error const error{matrix.GetColumn(X{-1}).GetError()};
 
+  ASSERT_EQ(error, Error::kOutOfRange);
   EXPECT_EQ(mock::serial_output, "MaxMatrix GetColumn: out of range\r\n");
 }
 

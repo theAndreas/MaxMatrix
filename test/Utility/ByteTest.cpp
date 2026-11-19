@@ -26,36 +26,52 @@ TEST(ByteTest, IsZeroWhenMadeWithoutAValue) {
   EXPECT_EQ(value.ToInteger(), 0);
 }
 
-TEST(ByteTest, ComparesByItsBits) {
+TEST(ByteTest, IsEqualToAByteOfTheSameBits) {
   static_assert(Byte{0x3C} == Byte{0x3C}, "made when compiling");
-  static_assert(Byte{0x3C} != Byte{0x3D}, "made when compiling");
 
   EXPECT_TRUE(Byte{0x3C} == Byte{0x3C});
   EXPECT_FALSE(Byte{0x3C} == Byte{0x3D});
+}
+
+TEST(ByteTest, IsUnequalToAByteOfOtherBits) {
+  static_assert(Byte{0x3C} != Byte{0x3D}, "made when compiling");
+
   EXPECT_TRUE(Byte{0x3C} != Byte{0x3D});
   EXPECT_FALSE(Byte{0x3C} != Byte{0x3C});
 }
 
-TEST(ByteTest, CombinesBitsWithAndOrAndNot) {
-  static_assert((Byte{0xF0} & Byte{0x3C}) == Byte{0x30}, "and");
-  static_assert((Byte{0xF0} | Byte{0x0C}) == Byte{0xFC}, "or");
-  static_assert(~Byte{0xF0} == Byte{0x0F}, "not");
+TEST(ByteTest, AndKeepsTheBitsBothHave) {
+  static_assert((Byte{0xF0} & Byte{0x3C}) == Byte{0x30}, "made when compiling");
 
   EXPECT_EQ(Byte{0xF0} & Byte{0x3C}, Byte{0x30});
+}
+
+TEST(ByteTest, OrKeepsTheBitsEitherHas) {
+  static_assert((Byte{0xF0} | Byte{0x0C}) == Byte{0xFC}, "made when compiling");
+
   EXPECT_EQ(Byte{0xF0} | Byte{0x0C}, Byte{0xFC});
+}
+
+TEST(ByteTest, NotTurnsEveryBit) {
+  static_assert(~Byte{0xF0} == Byte{0x0F}, "made when compiling");
+
   EXPECT_EQ(~Byte{0xF0}, Byte{0x0F});
   EXPECT_EQ(~Byte{0x00}, Byte{0xFF});
 }
 
-TEST(ByteTest, ShiftsItsBitsOutAtTheEdges) {
-  static_assert((Byte{0x81} << 1u) == Byte{0x02}, "left");
-  static_assert((Byte{0x81} >> 1u) == Byte{0x40}, "right");
+TEST(ByteTest, ShiftsLeftWithTheTopBitOut) {
+  static_assert((Byte{0x81} << 1u) == Byte{0x02}, "made when compiling");
 
   EXPECT_EQ(Byte{0x81} << 1u, Byte{0x02});
-  EXPECT_EQ(Byte{0x81} >> 1u, Byte{0x40});
   EXPECT_EQ(Byte{0x01} << 7u, Byte{0x80});
-  EXPECT_EQ(Byte{0x80} >> 7u, Byte{0x01});
   EXPECT_EQ(Byte{0xFF} << 0u, Byte{0xFF});
+}
+
+TEST(ByteTest, ShiftsRightWithTheBottomBitOut) {
+  static_assert((Byte{0x81} >> 1u) == Byte{0x40}, "made when compiling");
+
+  EXPECT_EQ(Byte{0x81} >> 1u, Byte{0x40});
+  EXPECT_EQ(Byte{0x80} >> 7u, Byte{0x01});
 }
 
 TEST(ByteTest, ReadsEachBit) {
@@ -67,14 +83,23 @@ TEST(ByteTest, ReadsEachBit) {
   EXPECT_FALSE(ReadBit(Byte{0x7F}, 7));
 }
 
-TEST(ByteTest, WritesOneBitAndKeepsTheOthers) {
-  static_assert(WriteBit(Byte{0x00}, 7, true) == Byte{0x80}, "set");
-  static_assert(WriteBit(Byte{0xFF}, 0, false) == Byte{0xFE}, "clear");
+TEST(ByteTest, WriteBitSetsOneBit) {
+  static_assert(WriteBit(Byte{0x00}, 7, true) == Byte{0x80},
+                "made when compiling");
 
   EXPECT_EQ(WriteBit(Byte{0x00}, 0, true), Byte{0x01});
   EXPECT_EQ(WriteBit(Byte{0x00}, 7, true), Byte{0x80});
+}
+
+TEST(ByteTest, WriteBitClearsOneBit) {
+  static_assert(WriteBit(Byte{0xFF}, 0, false) == Byte{0xFE},
+                "made when compiling");
+
   EXPECT_EQ(WriteBit(Byte{0xFF}, 0, false), Byte{0xFE});
   EXPECT_EQ(WriteBit(Byte{0xFF}, 7, false), Byte{0x7F});
+}
+
+TEST(ByteTest, WriteBitOfTheValueItHasChangesNothing) {
   EXPECT_EQ(WriteBit(Byte{0x5A}, 1, true), Byte{0x5A});
   EXPECT_EQ(WriteBit(Byte{0x5A}, 0, false), Byte{0x5A});
 }
