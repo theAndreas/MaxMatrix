@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1467,6 +1467,16 @@ chain lengths run from every mapping to every other on one, three and six module
 run here on four as well. Every behaviour that
 reckons with the mapping runs in all sixteen, as the loops of the old tests did: the run under the
 sanitizers on 16 cores went from 70 to 98 seconds for it, as decided on 2026-11-19.
+
+As built for the second half of `test/Matrix/PanelTest.cpp`, the shapes and bitmaps (TS-7, 9,
+13, 14), as decided on 2026-11-19: a line is checked against the ideal line and a rectangle
+against its sides rather than against a picture written down, as they test what a line and a
+rectangle are and not how the code draws them, which TS-13 is about, and a line or a rectangle
+worked out by hand where it runs as far as an `int16_t` reaches would be the likelier mistake;
+each line, both ways round, and each rectangle by each pair of corners is a named case of a table
+rather than a loop. A circle, a bitmap and a shape turned off are pictures written down, a test
+each, where the old tests drew them by a lambda as the code draws them; and what lies far off the
+panel is a table of named places.
 
 ### 42 A newer avr-gcc as a cross-check
 
