@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1433,6 +1433,17 @@ the end and the picture it holds, its stop twice being a test of the facade alre
 picture and the text a span cuts short are written down rather than drawn by a lambda as the
 code draws them, the text drawn and the text shifted each a test; and a test that steps a shift
 calls a helper rather than a loop of its own, which counts the steps where a test needs them.
+
+As built for `test/Font/FontTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name; a
+test that looped over chars, fonts or columns is a table of named cases, the chars beyond ASCII,
+the sharp s and the degree sign drawn, every code of the default font from the space to the degree
+sign, and the fonts `SetFont()` refuses, the refusals for a font that does not fill its array among
+them; the columns a font draws are written down, read by a helper at the left edge as at the right;
+the tests that compared a text with unknown chars with one without, frames and calls, write down
+the columns of "ab" and its steps instead; and a test of several behaviours, a font that is set,
+drawn, lacks a char, and is set back, is a test for each. The cases of the default font are 432 of
+the 642 tests the file runs in its three variants, five seconds of the nine it takes under the
+sanitizers on 16 cores.
 
 ### 42 A newer avr-gcc as a cross-check
 
