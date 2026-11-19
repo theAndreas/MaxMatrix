@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1453,6 +1453,20 @@ than loops; and what `text=` and `textShift=` show, and the answer to `picture`,
 rather than compared with the same text drawn again or put together column by column. The helper
 that feeds a line and the name of a case of a table lie in the test support now, as the tests of
 the chain lengths and of fonts use them as well.
+
+As built for the first half of `test/Matrix/PanelTest.cpp`, the dots, rows, columns, shifts and
+mappings (TS-7, 9, 10, 13, 14): its tests take the file's name, and `MaxMatrixModuleTest` is
+`PanelModuleTest`; a row, a column, a char at an edge and the columns shifted through the panel
+are written down, a picture or its columns, rather than drawn by a lambda as the code draws them;
+the twelve shifts are a table of named cases in every mapping, each moving three dots whose places
+are written down; what was checked at every step of a shift or every row is checked at one, the
+edges where there are two; the calls that send at most eight frames are a table as well, on a
+module type with digits as columns and one with digits as rows, as only that bit of the mapping
+changes how many columns a call touches; and the change of the mapping, which the tests of the
+chain lengths run from every mapping to every other on one, three and six modules, is no longer
+run here on four as well. Every behaviour that
+reckons with the mapping runs in all sixteen, as the loops of the old tests did: the run under the
+sanitizers on 16 cores went from 70 to 98 seconds for it, as decided on 2026-11-19.
 
 ### 42 A newer avr-gcc as a cross-check
 

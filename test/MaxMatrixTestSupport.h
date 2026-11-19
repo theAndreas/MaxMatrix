@@ -157,7 +157,7 @@ constexpr std::array<max_matrix::MatrixOrientation, 2> kMatrixOrientations{
     {max_matrix::MatrixOrientation::k0, max_matrix::MatrixOrientation::k180}};
 
 /* all eight, in the order of the model's kMax7219Wirings, which
- * MaxMatrixModuleTest checks */
+ * PanelModuleTest checks */
 constexpr std::array<max_matrix::ModuleType, 8> kModuleTypes{
     {max_matrix::ModuleType::kDr0Cr0Rr0, max_matrix::ModuleType::kDr0Cr0Rr1,
      max_matrix::ModuleType::kDr0Cr1Rr0, max_matrix::ModuleType::kDr0Cr1Rr1,
@@ -167,6 +167,12 @@ constexpr std::array<max_matrix::ModuleType, 8> kModuleTypes{
 /* the name of a module type as the model names its wiring, DR0CR0RR0 to
  * DR1CR1RR1 */
 std::string ModuleTypeName(max_matrix::ModuleType module_type);
+
+/* the name of a mapping, its matrix orientation and its module type, as
+ * 180_FC16
+ */
+std::string MappingName(max_matrix::MatrixOrientation matrix_orientation,
+                        max_matrix::ModuleType module_type);
 
 using MappingPair =
     std::tuple<max_matrix::MatrixOrientation, max_matrix::ModuleType>;

@@ -620,7 +620,7 @@ model has its own tests against the datasheet, run once under the `model/` prefi
 
 `mock::chain.IsLit()` goes one step further, to the LEDs as the viewer sees them: given one of
 the eight module wirings MD_MAX72XX names (`DR0CR0RR0` to `DR1CR1RR1`, `FC16`, `GENERIC`, …)
-and whether the board is mounted upside down. `MaxMatrixModuleTest` pins that every module
+and whether the board is mounted upside down. `PanelModuleTest` pins that every module
 type shows the picture upright on the wiring of its name, and the named four on the wirings
 MD_MAX72XX gives those names; the README's table says the same and changes with it.
 

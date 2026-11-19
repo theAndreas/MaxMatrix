@@ -20,8 +20,8 @@
 
 #include "Arduino.h"
 #include "Max7219.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixTestSupport.h"
-#include "Utility/Bit.h"
 
 namespace max_matrix {
 namespace {
@@ -30,105 +30,150 @@ namespace {
 constexpr auto kBitmap PROGMEM{
     make_array<uint8_t>(0x01, 0x82, 0xFF, 0x00, 0x3C)};
 
-std::string MappingName(::testing::TestParamInfo<MappingPair> const& info) {
-  return std::string("matrix") +
-         ((std::get<0>(info.param) == MatrixOrientation::k180) ? "180" : "0") +
-         "_" + ModuleTypeName(std::get<1>(info.param));
+/* The tests on the fixture take the name of the file, as TS-7 asks. */
+class PanelTest : public MaxMatrixTest {};
+
+std::string MappingPairName(::testing::TestParamInfo<MappingPair> const& info) {
+  return MappingName(std::get<0>(info.param), std::get<1>(info.param));
 }
 
+/* MaxMatrixMappingTest is the facade in every mapping; the tests of Command
+ * use it as well */
 INSTANTIATE_TEST_SUITE_P(
     AllMappings, MaxMatrixMappingTest,
     ::testing::Combine(::testing::ValuesIn(kMatrixOrientations),
                        ::testing::ValuesIn(kModuleTypes)),
-    MappingName);
-/* the bit position used to run on across modules, so only module 0 got its row
- */
-TEST_P(MaxMatrixMappingTest, RowRoundTrip) {
-  PanelRow in;
-  PanelRow out;
-  for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    in[module] = Byte{
-        Bit<uint8_t>::ToggleBits(0xA5u, static_cast<uint8_t>(module * 0x3Cu))};
-  }
+    MappingPairName);
 
-  for (uint8_t row{0}; row < kRowNumberOfModule; row++) {
-    SCOPED_TRACE(::testing::Message() << "Row " << static_cast<uint16_t>(row));
-    matrix_.SetRow(Y{row}, in);
-    EXPECT_EQ(matrix_.GetRow(Y{row}, out).GetError(), Error::kOk);
-    EXPECT_EQ(Bytes(out), Bytes(in));
-  }
+/* the dots lit, and every other dark */
+std::vector<std::string> Dots(std::vector<Point> const& dots) {
+  return Picture([&dots](int16_t x, int16_t y) {
+    return std::any_of(dots.begin(), dots.end(), [x, y](Point const& dot) {
+      return (dot.x.number == x) && (dot.y.number == y);
+    });
+  });
+}
+
+/* a row of the whole panel, a byte per module: A5, 99, DD and 11 differ in
+ * every module, so that a row that reached module 0 alone shows */
+constexpr PanelRow kRow{{Byte{0xA5}, Byte{0x99}, Byte{0xDD}, Byte{0x11}}};
+
+/* Bug: the bit position used to run on across modules, so only module 0 got its
+ * row */
+TEST_P(MaxMatrixMappingTest, TopRowRoundTrips) {
+  PanelRow read{};
+  matrix_.SetRow(Y{0}, kRow);
+
+  ASSERT_EQ(matrix_.GetRow(Y{0}, read).GetError(), Error::kOk);
+
+  EXPECT_EQ(Bytes(read), (std::vector<uint8_t>{0xA5, 0x99, 0xDD, 0x11}));
+}
+
+TEST_P(MaxMatrixMappingTest, BottomRowRoundTrips) {
+  PanelRow read{};
+  matrix_.SetRow(Y{7}, kRow);
+
+  ASSERT_EQ(matrix_.GetRow(Y{7}, read).GetError(), Error::kOk);
+
+  EXPECT_EQ(Bytes(read), (std::vector<uint8_t>{0xA5, 0x99, 0xDD, 0x11}));
 }
 
 /* the display has to follow the buffer during the shift too, not only once the
- * text has left it */
+ * text has left it: seven steps are inside the second char of "Hi" */
 TEST_P(MaxMatrixMappingTest, DisplayFollowsTheShift) {
-  char const text[] = "Hi \xC4!";
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
 
-  matrix_.SetTextWithShift(text);
-  for (uint16_t step{0}; (step < 1000) && (matrix_.GetState() != State::kReady);
-       step++) {
-    matrix_.ShiftTask();
-    ASSERT_EQ(Display(), Bytes(buffer_)) << "after step " << step;
-  }
+  ShiftSteps(matrix_, 7);
+
+  EXPECT_EQ(Display(), Bytes(buffer_));
 }
+
+/* a call that draws, for the frames it sends */
+struct DrawCall {
+  char const* name;
+  void (*draw)(Matrix&);
+};
+
+constexpr std::array<DrawCall, 11> kDrawCalls{{
+    {"SetText", [](Matrix& m) { m.SetText("Hi!"); }},
+    {"SetCharOffTheTopRow",
+     [](Matrix& m) { m.SetChar(Point{X{9}, Y{1}}, 'A'); }},
+    {"SetRow",
+     [](Matrix& m) {
+       PanelRow const row{{Byte{0xFF}, Byte{0x0F}, Byte{0xF0}, Byte{0x3C}}};
+       m.SetRow(Y{5}, row);
+     }},
+    {"SetColumn", [](Matrix& m) { m.SetColumn(X{17}, Byte{0x5A}); }},
+    {"ShiftUpRotating", [](Matrix& m) { m.ShiftUp(ShiftFill::kRotate); }},
+    {"ShiftLeftAColumn", [](Matrix& m) { m.ShiftLeft(Byte{0x3C}); }},
+    {"Clear", [](Matrix& m) { m.Clear(); }},
+    {"DrawLine",
+     [](Matrix& m) {
+       m.DrawLine(Point{X{0}, Y{7}}, Point{X{31}, Y{0}}, true);
+     }},
+    {"FillRect",
+     [](Matrix& m) {
+       m.FillRect(Point{X{-1}, Y{-1}}, Point{X{32}, Y{8}}, true);
+     }},
+    {"DrawCircle",
+     [](Matrix& m) { m.DrawCircle(Point{X{15}, Y{3}}, 9, true); }},
+    {"DrawBitmap", [](Matrix& m) { m.DrawBitmap(Point{X{3}, Y{1}}, kBitmap); }},
+}};
 
 /* Whatever a call draws, it sends one frame per changed column of a module at
  * most. Every dot and column used to be a frame of its own: SetText("Hi!") on
- * FC-16 modules sent 64, and each step of a shifting text nine. */
-TEST_P(MaxMatrixMappingTest, NoCallSendsMoreThanEightFrames) {
-  struct Call {
-    char const* name;
-    void (*draw)(Matrix&);
-  };
-  std::array<Call, 11> const calls{{
-      {"SetText", [](Matrix& m) { m.SetText("Hi!"); }},
-      {"SetChar off the top row",
-       [](Matrix& m) { m.SetChar(Point{X{9}, Y{1}}, 'A'); }},
-      {"SetRow",
-       [](Matrix& m) {
-         PanelRow const row{Byte{0xFF}, Byte{0x0F}, Byte{0xF0}, Byte{0x3C}};
-         m.SetRow(Y{5}, row);
-       }},
-      {"SetColumn", [](Matrix& m) { m.SetColumn(X{17}, Byte{0x5A}); }},
-      {"ShiftUp", [](Matrix& m) { m.ShiftUp(ShiftFill::kRotate); }},
-      {"ShiftLeft a column", [](Matrix& m) { m.ShiftLeft(Byte{0x3C}); }},
-      {"clear", [](Matrix& m) { m.Clear(); }},
-      {"DrawLine",
-       [](Matrix& m) {
-         m.DrawLine(Point{X{0}, Y{7}}, Point{X{31}, Y{0}}, true);
-       }},
-      {"FillRect",
-       [](Matrix& m) {
-         m.FillRect(Point{X{-1}, Y{-1}}, Point{X{32}, Y{8}}, true);
-       }},
-      {"DrawCircle",
-       [](Matrix& m) { m.DrawCircle(Point{X{15}, Y{3}}, 9, true); }},
-      {"DrawBitmap",
-       [](Matrix& m) { m.DrawBitmap(Point{X{3}, Y{1}}, kBitmap); }},
-  }};
-  char const text[] = "Hi \xC4!";
+ * FC-16 modules sent 64, and each step of a shifting text nine. The calls run
+ * on a module type with digits as columns and on one with digits as rows,
+ * where a column of the viewer is a row of the wiring; the other bits of the
+ * mapping turn a module or the panel and change no count of columns. */
+using FrameCase = std::tuple<ModuleType, DrawCall>;
 
-  for (auto const& call : calls) {
-    int32_t const frames_before{mock::frames};
-    call.draw(matrix_);
-    EXPECT_LE(mock::frames - frames_before, kColumnNumberOfModule) << call.name;
+class FrameCountTest : public PanelTest,
+                       public ::testing::WithParamInterface<FrameCase> {
+ protected:
+  void SetUp() override {
+    PanelTest::SetUp();
+    matrix_.SetModuleType(std::get<0>(GetParam()));
   }
-  matrix_.SetTextWithShift(text);
-  for (uint16_t step{0}; (step < 1000) && (matrix_.GetState() != State::kReady);
-       step++) {
-    int32_t const frames_before{mock::frames};
-    matrix_.ShiftTask();
-    ASSERT_LE(mock::frames - frames_before, kColumnNumberOfModule)
-        << "shift step " << step;
-  }
+};
+
+std::string FrameCaseName(::testing::TestParamInfo<FrameCase> const& info) {
+  return ModuleTypeName(std::get<0>(info.param)) + "_" +
+         std::get<1>(info.param).name;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Calls, FrameCountTest,
+    ::testing::Combine(::testing::Values(ModuleType::kDr0Cr0Rr1,
+                                         ModuleType::kDr1Cr0Rr1),
+                       ::testing::ValuesIn(kDrawCalls)),
+    FrameCaseName);
+
+TEST_P(FrameCountTest, CallSendsAtMostEightFrames) {
+  int32_t const frames_before{mock::frames};
+
+  std::get<1>(GetParam()).draw(matrix_);
+
+  EXPECT_LE(mock::frames - frames_before, 8);
+}
+
+TEST_P(MaxMatrixMappingTest, ShiftStepSendsAtMostEightFrames) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
+  ShiftSteps(matrix_, 6);
+  int32_t const frames_before{mock::frames};
+
+  matrix_.ShiftTask();
+
+  EXPECT_LE(mock::frames - frames_before, 8);
 }
 
 /* what reads the picture changes nothing, so a function handed the matrix only
- * to look at it takes it as Matrix const& (FN-11); the getters were not const
- */
-TEST_F(MaxMatrixTest, PictureIsReadThroughAConstMatrix) {
-  PanelRow row;
+ * to look at it takes it as Matrix const& (FN-11); the getters were not const:
+ * the dot at 3, 2 is 04 in its column and 10 in its row of module 0 */
+TEST_F(PanelTest, PictureIsReadThroughAConstMatrix) {
+  PanelRow row{};
   matrix_.SetDot(Point{X{3}, Y{2}}, true);
+
   Matrix const& seen{matrix_};
 
   EXPECT_TRUE(seen.GetDot(Point{X{3}, Y{2}}).GetValue());
@@ -139,187 +184,281 @@ TEST_F(MaxMatrixTest, PictureIsReadThroughAConstMatrix) {
   EXPECT_EQ(row[0], Byte{0x10});
 }
 
-/* a column of a module is the column of the panel that many modules in */
-TEST_F(MaxMatrixTest, ColumnOfAModuleIsAColumnOfThePanel) {
+/* a column of a module is the column of the panel that many modules in: column
+ * 2 of module 1 is column 10, A3 its rows 0, 1, 5 and 7 */
+TEST_F(PanelTest, ColumnOfAModuleIsAColumnOfThePanel) {
   matrix_.SetColumn(Module{1}, 2, Byte{0xA3});
 
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return (x == 10) && bitRead(0xA3, y);
-            }));
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "..........#.....................",
+                                       "..........#.....................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "..........#.....................",
+                                       "................................",
+                                       "..........#.....................",
+                                   }));
+}
+
+TEST_F(PanelTest, ColumnOfAModuleIsReadBack) {
+  matrix_.SetColumn(X{10}, Byte{0xA3});
+
   Result<Byte> const value{matrix_.GetColumn(Module{1}, 2)};
+
   EXPECT_EQ(value.GetError(), Error::kOk);
   EXPECT_EQ(value.GetValue(), Byte{0xA3});
 }
 
-/* rows and columns are two views of one picture: in orientation 180 SetColumn
- * turned the whole panel while SetRow turned each module */
-TEST_P(MaxMatrixMappingTest, RowsAndColumnsAgree) {
-  PanelRow row;
-  for (uint8_t module{0}; module < kNumberOfModules; module++) {
-    row[module] = Byte{
-        Bit<uint8_t>::ToggleBits(0x81u, static_cast<uint8_t>(module * 0x16u))};
-  }
+/* Rows and columns are two views of one picture: in orientation 180 SetColumn
+ * turned the whole panel while SetRow turned each module. A row of a module has
+ * its bit 7 at the left: 81, 97, AD and C3 are #......#, #..#.###, #.#.##.#
+ * and ##....## */
+TEST_P(MaxMatrixMappingTest, RowIsDrawnAsTheViewerSeesIt) {
+  PanelRow const row{{Byte{0x81}, Byte{0x97}, Byte{0xAD}, Byte{0xC3}}};
 
   matrix_.SetRow(Y{2}, row);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&row](int16_t x, int16_t y) {
-              return (y == 2) &&
-                     ReadBit(
-                         row[static_cast<size_t>(x / kColumnNumberOfModule)],
-                         static_cast<uint8_t>(7 - (x % kColumnNumberOfModule)));
-            }));
 
-  matrix_.Clear();
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "................................",
+                                       "................................",
+                                       "#......##..#.####.#.##.###....##",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                   }));
+}
+
+/* a column has its bit 0 at the top: A3 is rows 0, 1, 5 and 7 */
+TEST_P(MaxMatrixMappingTest, ColumnIsDrawnAsTheViewerSeesIt) {
   matrix_.SetColumn(X{5}, Byte{0xA3});
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return (x == 5) && bitRead(0xA3, y);
-            }));
-  for (uint8_t y{0}; y < kRowNumberOfModule; y++) {
-    Result<Byte> const value{matrix_.GetRow(Module{0}, y)};
-    EXPECT_EQ(value.GetError(), Error::kOk);
-    EXPECT_EQ(value.GetValue().ToInteger(),
-              bitRead(0xA3, y) ? Bit<uint8_t>::ToMask(7u - 5u) : 0u)
-        << "Row " << static_cast<uint16_t>(y);
-  }
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       ".....#..........................",
+                                       ".....#..........................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       ".....#..........................",
+                                       "................................",
+                                       ".....#..........................",
+                                   }));
 }
 
-/* every shift moves the whole picture by one dot as the viewer sees it, across
- * the modules, and fills the edge it leaves as it is told: with nothing, with
- * what fell out at the other edge, or with what the edge held */
-TEST_P(MaxMatrixMappingTest, ShiftsMoveThePicture) {
-  struct Shift {
-    char const* name;
-    void (*shift)(Matrix&);
-    int16_t source_x, source_y;
-    ShiftFill fill;
-  };
-  std::array<Shift, 12> const cases{{
-      {"ShiftLeft", [](Matrix& m) { m.ShiftLeft(); }, 1, 0, ShiftFill::kZero},
-      {"ShiftLeft rotating", [](Matrix& m) { m.ShiftLeft(ShiftFill::kRotate); },
-       1, 0, ShiftFill::kRotate},
-      {"ShiftLeft keeping", [](Matrix& m) { m.ShiftLeft(ShiftFill::kKeep); }, 1,
-       0, ShiftFill::kKeep},
-      {"ShiftRight", [](Matrix& m) { m.ShiftRight(); }, -1, 0,
-       ShiftFill::kZero},
-      {"ShiftRight rotating",
-       [](Matrix& m) { m.ShiftRight(ShiftFill::kRotate); }, -1, 0,
-       ShiftFill::kRotate},
-      {"ShiftRight keeping", [](Matrix& m) { m.ShiftRight(ShiftFill::kKeep); },
-       -1, 0, ShiftFill::kKeep},
-      {"ShiftUp", [](Matrix& m) { m.ShiftUp(); }, 0, 1, ShiftFill::kZero},
-      {"ShiftUp rotating", [](Matrix& m) { m.ShiftUp(ShiftFill::kRotate); }, 0,
-       1, ShiftFill::kRotate},
-      {"ShiftUp keeping", [](Matrix& m) { m.ShiftUp(ShiftFill::kKeep); }, 0, 1,
-       ShiftFill::kKeep},
-      {"ShiftDown", [](Matrix& m) { m.ShiftDown(); }, 0, -1, ShiftFill::kZero},
-      {"ShiftDown rotating", [](Matrix& m) { m.ShiftDown(ShiftFill::kRotate); },
-       0, -1, ShiftFill::kRotate},
-      {"ShiftDown keeping", [](Matrix& m) { m.ShiftDown(ShiftFill::kKeep); }, 0,
-       -1, ShiftFill::kKeep},
-  }};
-  int16_t const width{kNumberOfColumns};
-  int16_t const height{kRowNumberOfModule};
+/* column 5 is bit 2 of a row of module 0, as its bit 7 is at the left */
+TEST_P(MaxMatrixMappingTest, RowOfAModuleCrossingALitColumnHasItsBit) {
+  matrix_.SetColumn(X{5}, Byte{0xA3});
 
-  for (auto const& test_case : cases) {
-    matrix_.Clear();
-    DrawPattern(matrix_);
-    test_case.shift(matrix_);
-    EXPECT_EQ(
-        ShownPicture(matrix_), Picture([&test_case](int16_t x, int16_t y) {
-          int16_t const source_x{static_cast<int16_t>(x + test_case.source_x)};
-          int16_t const source_y{static_cast<int16_t>(y + test_case.source_y)};
-          bool const inside = (source_x >= 0) && (source_x < width) &&
-                              (source_y >= 0) && (source_y < height);
-          if (inside) return Pattern(source_x, source_y);
-          if (test_case.fill == ShiftFill::kRotate)
-            return Pattern(static_cast<int16_t>((source_x + width) % width),
-                           static_cast<int16_t>((source_y + height) % height));
-          if (test_case.fill == ShiftFill::kKeep) return Pattern(x, y);
-          return false;
-        }))
-        << test_case.name;
-  }
+  Result<Byte> const value{matrix_.GetRow(Module{0}, 0)};
+
+  EXPECT_EQ(value.GetError(), Error::kOk);
+  EXPECT_EQ(value.GetValue(), Byte{0x04});
 }
 
-/* a column given to ShiftLeft() or ShiftRight() comes in at the edge the shift
+TEST_P(MaxMatrixMappingTest, RowOfAModuleCrossingADarkDotOfAColumnIsDark) {
+  matrix_.SetColumn(X{5}, Byte{0xA3});
+
+  Result<Byte> const value{matrix_.GetRow(Module{0}, 2)};
+
+  EXPECT_EQ(value.GetError(), Error::kOk);
+  EXPECT_EQ(value.GetValue(), Byte{0x00});
+}
+
+/* A shift and the dots it leaves of 0, 0, of 5, 3 and of 31, 7: it moves the
+ * whole picture by one dot as the viewer sees it, across the modules, and fills
+ * the edge it leaves as it is told, with nothing, with what fell out at the
+ * other edge, or with what the edge held. */
+struct ShiftCase {
+  char const* name;
+  void (*shift)(Matrix&);
+  std::array<Point, 3> dots;
+};
+
+/* where a shift leaves two dots, the third lies off the panel, where no picture
+ * shows it */
+constexpr Point kNoDot{X{-1}, Y{-1}};
+
+constexpr std::array<ShiftCase, 12> kShiftCases{{
+    {"ShiftLeft",
+     [](Matrix& m) { m.ShiftLeft(); },
+     {{Point{X{4}, Y{3}}, Point{X{30}, Y{7}}, kNoDot}}},
+    {"ShiftLeftRotating",
+     [](Matrix& m) { m.ShiftLeft(ShiftFill::kRotate); },
+     {{Point{X{4}, Y{3}}, Point{X{30}, Y{7}}, Point{X{31}, Y{0}}}}},
+    {"ShiftLeftKeeping",
+     [](Matrix& m) { m.ShiftLeft(ShiftFill::kKeep); },
+     {{Point{X{4}, Y{3}}, Point{X{30}, Y{7}}, Point{X{31}, Y{7}}}}},
+    {"ShiftRight",
+     [](Matrix& m) { m.ShiftRight(); },
+     {{Point{X{1}, Y{0}}, Point{X{6}, Y{3}}, kNoDot}}},
+    {"ShiftRightRotating",
+     [](Matrix& m) { m.ShiftRight(ShiftFill::kRotate); },
+     {{Point{X{1}, Y{0}}, Point{X{6}, Y{3}}, Point{X{0}, Y{7}}}}},
+    {"ShiftRightKeeping",
+     [](Matrix& m) { m.ShiftRight(ShiftFill::kKeep); },
+     {{Point{X{1}, Y{0}}, Point{X{6}, Y{3}}, Point{X{0}, Y{0}}}}},
+    {"ShiftUp",
+     [](Matrix& m) { m.ShiftUp(); },
+     {{Point{X{5}, Y{2}}, Point{X{31}, Y{6}}, kNoDot}}},
+    {"ShiftUpRotating",
+     [](Matrix& m) { m.ShiftUp(ShiftFill::kRotate); },
+     {{Point{X{5}, Y{2}}, Point{X{31}, Y{6}}, Point{X{0}, Y{7}}}}},
+    {"ShiftUpKeeping",
+     [](Matrix& m) { m.ShiftUp(ShiftFill::kKeep); },
+     {{Point{X{5}, Y{2}}, Point{X{31}, Y{6}}, Point{X{31}, Y{7}}}}},
+    {"ShiftDown",
+     [](Matrix& m) { m.ShiftDown(); },
+     {{Point{X{0}, Y{1}}, Point{X{5}, Y{4}}, kNoDot}}},
+    {"ShiftDownRotating",
+     [](Matrix& m) { m.ShiftDown(ShiftFill::kRotate); },
+     {{Point{X{0}, Y{1}}, Point{X{5}, Y{4}}, Point{X{31}, Y{0}}}}},
+    {"ShiftDownKeeping",
+     [](Matrix& m) { m.ShiftDown(ShiftFill::kKeep); },
+     {{Point{X{0}, Y{1}}, Point{X{5}, Y{4}}, Point{X{0}, Y{0}}}}},
+}};
+
+using ShiftParameter = std::tuple<MatrixOrientation, ModuleType, ShiftCase>;
+
+class ShiftTest : public PanelTest,
+                  public ::testing::WithParamInterface<ShiftParameter> {
+ protected:
+  void SetUp() override {
+    PanelTest::SetUp();
+    matrix_.SetMatrixOrientation(std::get<0>(GetParam()));
+    matrix_.SetModuleType(std::get<1>(GetParam()));
+  }
+
+  MAXMATRIX_NODISCARD static std::vector<std::string> Expected() {
+    std::array<Point, 3> const& dots{std::get<2>(GetParam()).dots};
+    return Dots({dots[0], dots[1], dots[2]});
+  }
+};
+
+std::string ShiftName(::testing::TestParamInfo<ShiftParameter> const& info) {
+  return MappingName(std::get<0>(info.param), std::get<1>(info.param)) + "_" +
+         std::get<2>(info.param).name;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Shifts, ShiftTest,
+    ::testing::Combine(::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::ValuesIn(kModuleTypes),
+                       ::testing::ValuesIn(kShiftCases)),
+    ShiftName);
+
+TEST_P(ShiftTest, MovesThePicture) {
+  matrix_.SetDot(Point{X{0}, Y{0}}, true);
+  matrix_.SetDot(Point{X{5}, Y{3}}, true);
+  matrix_.SetDot(Point{X{31}, Y{7}}, true);
+
+  std::get<2>(GetParam()).shift(matrix_);
+
+  EXPECT_EQ(ShownPicture(matrix_), Expected());
+}
+
+/* A column given to ShiftLeft() or ShiftRight() comes in at the edge the shift
  * leaves, and the one that falls out at the other edge comes back, both bit 0
- * at the top; a literal is a column, not a fill */
-TEST_P(MaxMatrixMappingTest, ShiftTakesAColumnInAndGivesOneOut) {
-  DrawPattern(matrix_);
-  std::vector<std::string> const before = ShownPicture(matrix_);
-  Byte const leftmost{matrix_.GetColumn(X{0}).GetValue()};
+ * at the top; a literal is a column, not a fill. 5A is rows 1, 3, 4 and 6, A5
+ * rows 0, 2, 5 and 7. */
+TEST_P(MaxMatrixMappingTest, ShiftLeftGivesTheLeftColumnOut) {
+  matrix_.SetColumn(X{0}, Byte{0x5A});
 
-  EXPECT_EQ(matrix_.ShiftLeft(Byte{0xA5}), leftmost);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return (x == (kNumberOfColumns - 1)) ? (bitRead(0xA5, y) != 0)
-                                                   : Pattern(x + 1, y);
-            }))
-      << "left";
+  Byte const out{matrix_.ShiftLeft(Byte{0xA5})};
 
-  EXPECT_EQ(matrix_.ShiftRight(leftmost), Byte{0xA5});
-  EXPECT_EQ(ShownPicture(matrix_), before) << "right, back to where it was";
+  EXPECT_EQ(out, Byte{0x5A});
 }
 
-/* columns fed one by one make a band longer than the panel, and come out at the
- * other edge in the order they went in: what a sketch passes on to a second
- * matrix */
-TEST_F(MaxMatrixTest, ShiftedColumnsMakeABand) {
-  std::vector<uint8_t> band;
-  band.reserve(size_t{3} * kNumberOfColumns);
-  for (uint16_t index{0}; index < (3 * kNumberOfColumns); index++) {
-    band.push_back(static_cast<uint8_t>((index * 37) + 11));
-  }
+TEST_P(MaxMatrixMappingTest, ShiftLeftTakesTheColumnInAtTheRight) {
+  matrix_.SetDot(Point{X{5}, Y{3}}, true);
+
+  matrix_.ShiftLeft(Byte{0xA5});
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "...............................#",
+                                       "................................",
+                                       "...............................#",
+                                       "....#...........................",
+                                       "................................",
+                                       "...............................#",
+                                       "................................",
+                                       "...............................#",
+                                   }));
+}
+
+TEST_P(MaxMatrixMappingTest, ShiftRightGivesTheRightColumnOut) {
+  matrix_.SetColumn(X{31}, Byte{0x5A});
+
+  Byte const out{matrix_.ShiftRight(Byte{0xA5})};
+
+  EXPECT_EQ(out, Byte{0x5A});
+}
+
+TEST_P(MaxMatrixMappingTest, ShiftRightTakesTheColumnInAtTheLeft) {
+  matrix_.SetDot(Point{X{5}, Y{3}}, true);
+
+  matrix_.ShiftRight(Byte{0xA5});
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "#...............................",
+                                       "................................",
+                                       "#...............................",
+                                       "......#.........................",
+                                       "................................",
+                                       "#...............................",
+                                       "................................",
+                                       "#...............................",
+                                   }));
+}
+
+/* shifts each of `columns` in at the right and returns what came out at the
+ * left, in their order */
+std::vector<uint8_t> ShiftInAtTheRight(Matrix& matrix,
+                                       std::vector<uint8_t> const& columns) {
   std::vector<uint8_t> out;
-  out.reserve(band.size());
-
-  for (uint8_t const column : band) {
-    out.push_back(matrix_.ShiftLeft(Byte{column}).ToInteger());
+  out.reserve(columns.size());
+  for (uint8_t const column : columns) {
+    out.push_back(matrix.ShiftLeft(Byte{column}).ToInteger());
   }
-  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
-    EXPECT_EQ(matrix_.GetColumn(X{column}).GetValue().ToInteger(),
-              band[band.size() - kNumberOfColumns + column])
-        << "column " << static_cast<uint16_t>(column);
-  }
-  EXPECT_EQ(std::vector<uint8_t>(out.begin(), out.begin() + kNumberOfColumns),
-            std::vector<uint8_t>(kNumberOfColumns, 0x00))
-      << "the empty panel first";
-  EXPECT_EQ(std::vector<uint8_t>(out.begin() + kNumberOfColumns, out.end()),
-            std::vector<uint8_t>(band.begin(), band.end() - kNumberOfColumns))
-      << "then the band, in its order";
+  return out;
 }
 
-/* changing the orientation or the module type rewrites the buffer along, so the
- * viewer still sees the same picture; changing the module orientation to or
- * from 180 turned each module while SetColumn had turned the whole panel */
-TEST_P(MaxMatrixMappingTest, PictureStaysWhenTheMappingChanges) {
-  for (MatrixOrientation const matrix_orientation : kMatrixOrientations) {
-    for (ModuleType const module_type : kModuleTypes) {
-      matrix_.SetMatrixOrientation(std::get<0>(GetParam()));
-      matrix_.SetModuleType(std::get<1>(GetParam()));
-      matrix_.Clear();
-      DrawPattern(matrix_);
-      matrix_.SetMatrixOrientation(matrix_orientation);
-      matrix_.SetModuleType(module_type);
-      EXPECT_EQ(ShownPicture(matrix_), Picture(Pattern))
-          << "to matrix " << static_cast<uint16_t>(matrix_orientation) << ", "
-          << ModuleTypeName(module_type);
-    }
-  }
+/* Columns fed one by one make a band longer than the panel, and come out at the
+ * other edge in the order they went in: what a sketch passes on to a second
+ * matrix. The band is 32 columns, 01 to 20, and three more. */
+std::vector<uint8_t> const kBand{
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
+    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+    0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20};
+
+TEST_F(PanelTest, ColumnsShiftedInStandInTheirOrder) {
+  ShiftInAtTheRight(matrix_, kBand);
+
+  EXPECT_EQ(LeftEdge(matrix_, 32), kBand);
 }
 
-TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
-  for (uint8_t column{0}; column < kNumberOfColumns; column++) {
-    for (uint8_t row{0}; row < kRowNumberOfModule; row++) {
-      SCOPED_TRACE(::testing::Message()
-                   << "Column " << static_cast<uint16_t>(column) << ", Row "
-                   << static_cast<uint16_t>(row));
-      bool const expected{Bit<uint32_t>::ReadBit((column * 3u) + row, 0)};
-      Point const dot{X{column}, Y{row}};
-      matrix_.SetDot(dot, expected);
-      Result<bool> const value{matrix_.GetDot(dot)};
-      EXPECT_EQ(value.GetError(), Error::kOk);
-      EXPECT_EQ(value.GetValue(), expected);
-    }
-  }
+TEST_F(PanelTest, ColumnsShiftedInPushTheEmptyPanelOut) {
+  std::vector<uint8_t> const out{ShiftInAtTheRight(matrix_, kBand)};
+
+  EXPECT_EQ(out, std::vector<uint8_t>(32));
+}
+
+TEST_F(PanelTest, ColumnsShiftedOnComeOutInTheirOrder) {
+  ShiftInAtTheRight(matrix_, kBand);
+
+  std::vector<uint8_t> const out{
+      ShiftInAtTheRight(matrix_, std::vector<uint8_t>{0x21, 0x22, 0x23})};
+
+  EXPECT_EQ(out, (std::vector<uint8_t>{0x01, 0x02, 0x03}));
+}
+
+/* every dot set is read back as it was set, on a pattern with no symmetry a
+ * wrong mapping could hide behind */
+TEST_P(MaxMatrixMappingTest, DotsRoundTrip) {
+  DrawPattern(matrix_);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture(Pattern));
 }
 
 /* Every module type shows the picture upright on the wiring of the model it is
@@ -329,20 +468,20 @@ TEST_P(MaxMatrixMappingTest, DotRoundTrip) {
  * the named four have to be the wirings MD_MAX72XX gives those names. */
 using ModuleCase = std::tuple<ModuleType, bool>;
 
-class MaxMatrixModuleTest : public MaxMatrixTest,
-                            public ::testing::WithParamInterface<ModuleCase> {};
+class PanelModuleTest : public PanelTest,
+                        public ::testing::WithParamInterface<ModuleCase> {};
 
 std::string ModuleName(::testing::TestParamInfo<ModuleCase> const& info) {
   return ModuleTypeName(std::get<0>(info.param)) +
          (std::get<1>(info.param) ? "_upside_down" : "");
 }
 
-INSTANTIATE_TEST_SUITE_P(Modules, MaxMatrixModuleTest,
+INSTANTIATE_TEST_SUITE_P(Modules, PanelModuleTest,
                          ::testing::Combine(::testing::ValuesIn(kModuleTypes),
                                             ::testing::Bool()),
                          ModuleName);
 
-TEST_F(MaxMatrixTest, NamedModuleTypesAreTheirWirings) {
+TEST_F(PanelTest, NamedModuleTypesAreTheirWirings) {
   EXPECT_EQ(ModuleTypeName(ModuleType::kFc16), kMax7219WiringFc16.name);
   EXPECT_EQ(ModuleTypeName(ModuleType::kGeneric), kMax7219WiringGeneric.name);
   EXPECT_EQ(ModuleTypeName(ModuleType::kParola), kMax7219WiringParola.name);
@@ -350,129 +489,110 @@ TEST_F(MaxMatrixTest, NamedModuleTypesAreTheirWirings) {
             kMax7219WiringIcstation.name);
 }
 
+/* the LEDs as the viewer sees them on `wiring`, mounted upside down or not */
+std::vector<std::string> LitPicture(Max7219Wiring const& wiring,
+                                    bool upside_down) {
+  return Picture([&wiring, upside_down](int16_t x, int16_t y) {
+    return mock::chain.IsLit(wiring, static_cast<uint16_t>(x),
+                             static_cast<uint8_t>(y), upside_down);
+  });
+}
+
 /* a dot set at X, Y is lit at X, Y of the panel; the pattern has no symmetry a
  * wrong mapping could hide behind */
-TEST_P(MaxMatrixModuleTest, DotsAppearWhereTheyAreSet) {
+TEST_P(PanelModuleTest, DotsAppearWhereTheyAreSet) {
   ModuleType const module_type{std::get<0>(GetParam())};
   bool const upside_down{std::get<1>(GetParam())};
-  Max7219Wiring const& wiring{
-      kMax7219Wirings[static_cast<uint8_t>(module_type)]};
-  auto const pattern{[](uint16_t x, uint8_t y) {
-    return (((x * x) + (3 * y) + (x * y)) % 3) == 0;
-  }};
-
   matrix_.SetMatrixOrientation(upside_down ? MatrixOrientation::k180
                                            : MatrixOrientation::k0);
   matrix_.SetModuleType(module_type);
-  for (uint8_t x{0}; x < kNumberOfColumns; x++) {
-    for (uint8_t y{0}; y < kRowNumberOfModule; y++) {
-      matrix_.SetDot(Point{X{x}, Y{y}}, pattern(x, y));
-    }
-  }
-  for (uint16_t x{0}; x < kNumberOfColumns; x++) {
-    for (uint8_t y{0}; y < kRowNumberOfModule; y++) {
-      EXPECT_EQ(mock::chain.IsLit(wiring, x, y, upside_down), pattern(x, y))
-          << "X " << x << ", Y " << y;
-    }
-  }
+
+  DrawPattern(matrix_);
+
+  EXPECT_EQ(LitPicture(kMax7219Wirings[static_cast<uint8_t>(module_type)],
+                       upside_down),
+            Picture(Pattern));
 }
 
-/* drawing off the panel leaves the panel as it was and sends nothing; column 8
- * of module 0 used to be checked against the panel alone, which would have
- * drawn it on module 1 */
-TEST_F(MaxMatrixTest, DrawingOffThePanelIsLeftOut) {
-  PanelRow const row{Byte{0xFF}, Byte{0xFF}, Byte{0xFF}, Byte{0xFF}};
-  struct OffPanel {
-    char const* name;
-    void (*draw)(Matrix&, PanelRow const&);
-  };
-  std::array<OffPanel, 12> const cases{{
-      {"SetDot left",
-       [](Matrix& m, PanelRow const&) { m.SetDot(Point{X{-1}, Y{0}}, true); }},
-      {"SetDot right",
-       [](Matrix& m, PanelRow const&) {
-         m.SetDot(Point{X{kNumberOfColumns}, Y{0}}, true);
-       }},
-      {"SetDot above",
-       [](Matrix& m, PanelRow const&) { m.SetDot(Point{X{0}, Y{-1}}, true); }},
-      {"SetDot below",
-       [](Matrix& m, PanelRow const&) {
-         m.SetDot(Point{X{0}, Y{kRowNumberOfModule}}, true);
-       }},
-      {"SetColumn left",
-       [](Matrix& m, PanelRow const&) { m.SetColumn(X{-1}, Byte{0xFF}); }},
-      {"SetColumn right",
-       [](Matrix& m, PanelRow const&) {
-         m.SetColumn(X{kNumberOfColumns}, Byte{0xFF});
-       }},
-      {"SetColumn no module",
-       [](Matrix& m, PanelRow const&) {
-         m.SetColumn(Module{kNumberOfModules}, 0, Byte{0xFF});
-       }},
-      {"SetColumn off its module",
-       [](Matrix& m, PanelRow const&) {
-         m.SetColumn(Module{0}, kColumnNumberOfModule, Byte{0xFF});
-       }},
-      {"SetRow above",
-       [](Matrix& m, PanelRow const& r) { m.SetRow(Y{-1}, r); }},
-      {"SetRow below",
-       [](Matrix& m, PanelRow const& r) {
-         m.SetRow(Y{kRowNumberOfModule}, r);
-       }},
-      {"SetRow no module",
-       [](Matrix& m, PanelRow const&) {
-         m.SetRow(Module{kNumberOfModules}, 0, Byte{0xFF});
-       }},
-      {"SetRow off its module",
-       [](Matrix& m, PanelRow const&) {
-         m.SetRow(Module{0}, kRowNumberOfModule, Byte{0xFF});
-       }},
-  }};
+/* Drawing off the panel leaves the panel as it was, sends nothing and reports
+ * nothing; column 8 of module 0 used to be checked against the panel alone,
+ * which would have drawn it on module 1. */
+struct OffPanel {
+  char const* name;
+  void (*draw)(Matrix&);
+};
 
-  for (auto const& test_case : cases) {
-    matrix_.Clear();
-    int32_t const frames_before{mock::frames};
-    test_case.draw(matrix_, row);
-    EXPECT_EQ(ShownPicture(matrix_),
-              Picture([](int16_t, int16_t) { return false; }))
-        << test_case.name;
-    EXPECT_EQ(mock::frames, frames_before) << test_case.name;
-    EXPECT_TRUE(reports.empty()) << test_case.name << " reported an error";
-  }
+constexpr std::array<OffPanel, 12> kOffPanel{{
+    {"SetDotLeft", [](Matrix& m) { m.SetDot(Point{X{-1}, Y{0}}, true); }},
+    {"SetDotRight", [](Matrix& m) { m.SetDot(Point{X{32}, Y{0}}, true); }},
+    {"SetDotAbove", [](Matrix& m) { m.SetDot(Point{X{0}, Y{-1}}, true); }},
+    {"SetDotBelow", [](Matrix& m) { m.SetDot(Point{X{0}, Y{8}}, true); }},
+    {"SetColumnLeft", [](Matrix& m) { m.SetColumn(X{-1}, Byte{0xFF}); }},
+    {"SetColumnRight", [](Matrix& m) { m.SetColumn(X{32}, Byte{0xFF}); }},
+    {"SetColumnOfNoModule",
+     [](Matrix& m) { m.SetColumn(Module{4}, 0, Byte{0xFF}); }},
+    {"SetColumnOffItsModule",
+     [](Matrix& m) { m.SetColumn(Module{0}, 8, Byte{0xFF}); }},
+    {"SetRowAbove", [](Matrix& m) { m.SetRow(Y{-1}, kRow); }},
+    {"SetRowBelow", [](Matrix& m) { m.SetRow(Y{8}, kRow); }},
+    {"SetRowOfNoModule", [](Matrix& m) { m.SetRow(Module{4}, 0, Byte{0xFF}); }},
+    {"SetRowOffItsModule",
+     [](Matrix& m) { m.SetRow(Module{0}, 8, Byte{0xFF}); }},
+}};
+
+class OffPanelTest : public PanelTest,
+                     public ::testing::WithParamInterface<OffPanel> {};
+
+INSTANTIATE_TEST_SUITE_P(Calls, OffPanelTest, ::testing::ValuesIn(kOffPanel),
+                         CaseName<OffPanel>);
+
+TEST_P(OffPanelTest, LeavesThePanelDark) {
+  GetParam().draw(matrix_);
+
+  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns));
 }
 
-/* a char partly off the panel shows the part on it, through either path of
+TEST_P(OffPanelTest, SendsNothing) {
+  int32_t const frames_before{mock::frames};
+
+  GetParam().draw(matrix_);
+
+  EXPECT_EQ(mock::frames, frames_before);
+}
+
+TEST_P(OffPanelTest, ReportsNothing) {
+  GetParam().draw(matrix_);
+
+  EXPECT_TRUE(reports.empty());
+}
+
+/* A char partly off the panel shows the part on it, through either path of
  * SetSprite(): whole columns for a char at the top, single dots for one moved
- * down */
-TEST_P(MaxMatrixMappingTest, CharPartlyOffThePanelShowsThePartOnIt) {
-  Result<Glyph> const glyph{Font::GetGlyph(kDefaultFont, 'A')};
-  ASSERT_EQ(glyph.GetError(), Error::kOk);
-  auto const width{static_cast<int16_t>(glyph.GetValue().columns.size())};
-  int16_t const height{glyph.GetValue().height};
-  span<uint8_t const> const columns{glyph.GetValue().columns};
-  struct Place {
-    int16_t x, y;
-  };
-  std::array<Place, 4> const places{{{-2, 0},
-                                     {kNumberOfColumns - 2, 0},
-                                     {-2, -3},
-                                     {kNumberOfColumns - 2, 5}}};
+ * down. The A is 7E 11 11 7E. */
+TEST_P(MaxMatrixMappingTest, CharOffTheLeftEdgeShowsItsRightColumns) {
+  ASSERT_EQ(matrix_.SetChar(Point{X{-2}, Y{0}}, 'A').GetError(), Error::kOk);
 
-  for (auto const& place : places) {
-    matrix_.Clear();
-    ASSERT_EQ(matrix_.SetChar(Point{X{place.x}, Y{place.y}}, 'A').GetError(),
-              Error::kOk);
-    EXPECT_EQ(ShownPicture(matrix_),
-              Picture([columns, &place, width, height](int16_t x, int16_t y) {
-                int16_t const sprite_x{static_cast<int16_t>(x - place.x)};
-                int16_t const sprite_y{static_cast<int16_t>(y - place.y)};
-                return (sprite_x >= 0) && (sprite_x < width) &&
-                       (sprite_y >= 0) && (sprite_y < height) &&
-                       bitRead(columns[static_cast<size_t>(sprite_x)],
-                               sprite_y);
-              }))
-        << "X " << place.x << ", Y " << place.y;
-  }
+  EXPECT_EQ(LeftEdge(matrix_, 3), (std::vector<uint8_t>{0x11, 0x7E, 0x00}));
+}
+
+TEST_P(MaxMatrixMappingTest, CharOffTheRightEdgeShowsItsLeftColumns) {
+  ASSERT_EQ(matrix_.SetChar(Point{X{30}, Y{0}}, 'A').GetError(), Error::kOk);
+
+  EXPECT_EQ(RightEdge(matrix_, 3), (std::vector<uint8_t>{0x00, 0x7E, 0x11}));
+}
+
+/* three rows up, 11 7E are 02 0F */
+TEST_P(MaxMatrixMappingTest, CharOffTheTopLeftCornerShowsItsLowerRight) {
+  ASSERT_EQ(matrix_.SetChar(Point{X{-2}, Y{-3}}, 'A').GetError(), Error::kOk);
+
+  EXPECT_EQ(LeftEdge(matrix_, 3), (std::vector<uint8_t>{0x02, 0x0F, 0x00}));
+}
+
+/* five rows down, 7E 11 are C0 20 */
+TEST_P(MaxMatrixMappingTest, CharOffTheBottomRightCornerShowsItsUpperLeft) {
+  ASSERT_EQ(matrix_.SetChar(Point{X{30}, Y{5}}, 'A').GetError(), Error::kOk);
+
+  EXPECT_EQ(RightEdge(matrix_, 3), (std::vector<uint8_t>{0x00, 0xC0, 0x20}));
 }
 
 /* a line from (x0, y0) to (x1, y1) */
@@ -804,7 +924,7 @@ TEST_F(MaxMatrixTest, BitmapOfNoRowDrawsNothing) {
             Picture([](int16_t, int16_t) { return true; }));
 }
 
-TEST_F(MaxMatrixTest, GetRowOffThePanelLeavesTheValues) {
+TEST_F(PanelTest, GetRowOffThePanelLeavesTheValues) {
   PanelRow row{{Byte{0xA5}, Byte{0xA5}, Byte{0xA5}, Byte{0xA5}}};
 
   Error const error{matrix_.GetRow(Y{kRowNumberOfModule}, row).GetError()};
@@ -813,7 +933,7 @@ TEST_F(MaxMatrixTest, GetRowOffThePanelLeavesTheValues) {
   EXPECT_EQ(Bytes(row), (std::vector<uint8_t>{0xA5, 0xA5, 0xA5, 0xA5}));
 }
 
-TEST_F(MaxMatrixTest, GetRowIntoTooFewBytesLeavesThem) {
+TEST_F(PanelTest, GetRowIntoTooFewBytesLeavesThem) {
   array<Byte, kNumberOfModules - 1> row{{Byte{0xA5}, Byte{0xA5}, Byte{0xA5}}};
 
   Error const error{matrix_.GetRow(Y{0}, row).GetError()};
@@ -822,7 +942,7 @@ TEST_F(MaxMatrixTest, GetRowIntoTooFewBytesLeavesThem) {
   EXPECT_EQ(Bytes(row), (std::vector<uint8_t>{0xA5, 0xA5, 0xA5}));
 }
 
-TEST_F(MaxMatrixTest, CoordinatesAreMadeWhenCompiling) {
+TEST_F(PanelTest, CoordinatesAreMadeWhenCompiling) {
   static_assert(X{3}.number == 3, "a column");
   static_assert(Y{-2}.number == -2, "a row");
   static_assert(Point{X{3}, Y{2}}.y.number == 2, "a dot");

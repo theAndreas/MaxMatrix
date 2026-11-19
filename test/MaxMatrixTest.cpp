@@ -640,13 +640,6 @@ class ChainFixture : public ::testing::TestWithParam<Parameter> {
 using ChainParameter = std::tuple<uint8_t, MatrixOrientation, ModuleType>;
 using ChainLengthTest = ChainFixture<ChainParameter>;
 
-std::string MappingName(MatrixOrientation matrix_orientation,
-                        ModuleType module_type) {
-  return std::string((matrix_orientation == MatrixOrientation::k180) ? "180"
-                                                                     : "0") +
-         "_" + ModuleTypeName(module_type);
-}
-
 std::string ChainName(::testing::TestParamInfo<ChainParameter> const& info) {
   return std::to_string(std::get<0>(info.param)) + "modules_matrix" +
          MappingName(std::get<1>(info.param), std::get<2>(info.param));
