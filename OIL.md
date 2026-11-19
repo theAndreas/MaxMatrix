@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1549,6 +1549,17 @@ the Uno, whose `int` has 16 bits (5.13.4), a string of the simulator no longer t
 `log()` (5.10.1), `mock::tick` takes `Tick` by its address (7.11.3), and `ShiftTask()` takes its
 step on its own rather than as the right side of a `&&` that may skip it (8.14.1), which made
 Messages, ScrollText and SerialControl 4 to 6 bytes of flash smaller.
+
+As built for the functions of the C library (21.2.2, 24.5.1, 30.0.1, 18.5.2), with the template's
+v0.15.0, whose `bugprone-unsafe-functions` reports them by name: `Command` copies the whole line
+for `textShift=` and starts the shift at its text, rather than `strcpy()` the text alone, 8 bytes
+more of flash in SerialControl, where a loop over the text cost 24; it compares a command's name
+with a text in flash through one function, whose `strcmp_P()` keeps a `NOLINT`. The simulator reads
+the digits of `--port`, `--tcp` and `--for` itself, which takes no sign any longer, as `+80`, and a
+run of digits too long for a `uint64_t` stops counting rather than wrapping round into range; the
+WebSocket lowers a header's name, and the control program decodes a hex digit, by comparing chars
+rather than by `<cctype>`, which depends on the locale. `vfprintf()` of simavr's log and `exit()`
+at the end of `--for` keep a `NOLINT`, as does the fuzzer's `abort()` (TS-29).
 
 ### 42 A newer avr-gcc as a cross-check
 
