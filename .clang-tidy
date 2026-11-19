@@ -67,9 +67,10 @@ Checks: >
 #   performance- checks that are on, with defaults of their own; the options below are set for
 #   those.
 # cppcoreguidelines-explicit-constructor, google-explicit-constructor,
-#   misc-explicit-constructor: cpplint checks the same rule as runtime/explicit, and the
-#   implicit constructors that are meant carry their NOLINT there; two tools would want two
-#   per line.
+#   misc-explicit-constructor: cpplint checks the same rule for a constructor as
+#   runtime/explicit, and the implicit constructors that are meant carry their NOLINT there;
+#   two tools would want two per line. A conversion operator, which cpplint leaves out, is
+#   reviewed (CodingStyle C-4).
 # cppcoreguidelines-missing-std-forward, -rvalue-reference-param-not-moved: they want
 #   std::forward and std::move, which avr-gcc does not have without a standard library; a
 #   static_cast<T&&> is what both are, and the checks do not know it.

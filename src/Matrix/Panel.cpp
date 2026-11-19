@@ -293,13 +293,17 @@ void Panel::DrawColumn(Point top, uint8_t height, Byte value) {
   uint8_t const rows{(height > kRowNumberOfModule) ? kRowNumberOfModule
                                                    : height};
 
+  int16_t const module_rows{kRowNumberOfModule};
+
   if ((rows == kRowNumberOfModule) && (y == 0)) {
     SetColumn(X{x}, value);
-  } else if ((y > -kRowNumberOfModule) && (y < kRowNumberOfModule)) {
+  } else if ((y > -module_rows) && (y < module_rows)) {
     for (uint8_t row{0}; row < rows; row++) {
       SetDot(Point{X{x}, Y{static_cast<int16_t>(y + row)}},
              ReadBit(value, row));
     }
+  } else {
+    // the column lies wholly above or below the panel
   }
 }
 
@@ -535,6 +539,8 @@ void Panel::ShiftRows(bool up, ShiftFill fill) {
       fill_dot = ReadBit(value, up ? top : bottom);
     } else if (fill == ShiftFill::kKeep) {
       fill_dot = ReadBit(value, fill_row);
+    } else {
+      // kZero: the row at the edge that is left goes dark
     }
     Byte const shifted{up ? (value >> 1u) : (value << 1u)};
     SetLine(column, 0, true, WriteBit(shifted, fill_row, fill_dot));

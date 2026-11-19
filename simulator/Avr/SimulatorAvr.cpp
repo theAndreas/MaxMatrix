@@ -220,6 +220,8 @@ void SimulatorAvr::OnChipSelect(avr_irq_t* irq, uint32_t value, void* object) {
     mock::chain.Latch();
     mock::last_frame = mock::frame;
     mock::frames++;
+  } else {
+    // chip select kept its level: no frame starts or ends
   }
   simulator->chip_select_ = high;
 }

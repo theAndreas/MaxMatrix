@@ -361,6 +361,8 @@ uint32_t SimulatorWebSocket::MixSha1(uint8_t round, uint32_t b, uint32_t c,
     uint32_t const b_and_c{WordBits::ReadBitGroup(b, c)};
     uint32_t const either{WordBits::ReadBitGroup(d, WordBits::Combine(b, c))};
     mixed = WordBits::Combine(b_and_c, either);
+  } else {
+    /* Parity, stages 1 and 3: b, c and d toggled together, as mixed is */
   }
   return mixed + kRoundConstants[stage];
 }

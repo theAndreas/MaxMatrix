@@ -96,6 +96,8 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
     answer.println(result.GetErrorText());
   } else if (result.GetValue() == CommandState::kDone) {
     answer.println(F("ok"));
+  } else {
+    // kAnswered: picture has answered with the picture, in place of ok
   }
   return result;
 }
