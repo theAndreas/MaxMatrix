@@ -161,8 +161,11 @@ std::string MappingName(max_matrix::MatrixOrientation matrix_orientation,
 using MappingPair =
     std::tuple<max_matrix::MatrixOrientation, max_matrix::ModuleType>;
 
+/* the name of a case of MaxMatrixMappingTest, as 180_FC16 */
+std::string MappingPairName(::testing::TestParamInfo<MappingPair> const& info);
+
 /* every test of this fixture runs in all sixteen combinations of matrix
- * orientation and module type */
+ * orientation and module type, in each binary that instantiates it */
 class MaxMatrixMappingTest : public MaxMatrixTest,
                              public ::testing::WithParamInterface<MappingPair> {
  protected:

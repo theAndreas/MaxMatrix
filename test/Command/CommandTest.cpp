@@ -265,6 +265,14 @@ TEST_F(CommandTest, PictureWithAValueIsUnknown) {
   EXPECT_EQ(result, Error::kUnknownCommand);
 }
 
+/* MaxMatrixMappingTest is the facade in every mapping; the tests of the panel
+ * instantiate it in their binary as well */
+INSTANTIATE_TEST_SUITE_P(
+    AllMappings, MaxMatrixMappingTest,
+    ::testing::Combine(::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::ValuesIn(kModuleTypes)),
+    MappingPairName);
+
 /* picture answers with the panel as the viewer sees it, so that a program draws
  * it without knowing the orientations; one dot in a column of every module,
  * each in another row: columns 0, 9, 16 and 31 are 01, 02, 10 and 80 */

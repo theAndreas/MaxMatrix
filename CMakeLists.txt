@@ -104,26 +104,21 @@ else()
     message(STATUS "node not found: the test simulator/page is left out")
 endif()
 
-# One library and one test binary per variant: the two transfer paths are separate code, and the reports of
-# MAXMATRIX_DEV_ERROR_DETECT are compiled in only where it is on.
-# The tests of the library, a file per header as in src/ (TS-5 of docs/Testing.md), so that clang-tidy reads
-# them side by side; what they share is in MaxMatrixTestSupport.
-set(MaxMatrixTestSources
-    test/MaxMatrixTestSupport.cpp
-    test/MaxMatrixTest.cpp
-    test/MaxMatrixBatchTest.cpp
-    test/MaxMatrixErrorTest.cpp
-    test/Command/CommandTest.cpp
-    test/Font/FontTest.cpp
-    test/Matrix/PanelTest.cpp
-    test/Matrix/WiredTest.cpp
-    test/Max7219/ChainTest.cpp
-    test/Text/TextTest.cpp
-    test/Utility/BitTest.cpp
-    test/Utility/ByteTest.cpp
-    test/Utility/arrayTest.cpp
-    test/Utility/reference_wrapperTest.cpp
-    test/Utility/spanTest.cpp)
+# One library per variant: the two transfer paths are separate code, and the reports of MAXMATRIX_DEV_ERROR_DETECT
+# are compiled in only where it is on.
+# The tests of the library, a file per header as in src/ (TS-5 of docs/Testing.md), so that clang-tidy reads them side
+# by side; what they share is in MaxMatrixTestSupport. A binary per folder of test/ and variant: ctest runs every test as
+# a process of its own, and each process registers every test of its binary before it runs one, which under the
+# sanitizers took 121 ms with the 2031 tests of a variant in one binary, against 14 ms for the 41 of the model's.
+set(MaxMatrixTestFolders Facade Command Font Matrix Max7219 Text Utility)
+set(MaxMatrixFacadeTests test/MaxMatrixTest.cpp test/MaxMatrixBatchTest.cpp test/MaxMatrixErrorTest.cpp)
+set(MaxMatrixCommandTests test/Command/CommandTest.cpp)
+set(MaxMatrixFontTests test/Font/FontTest.cpp)
+set(MaxMatrixMatrixTests test/Matrix/PanelTest.cpp test/Matrix/WiredTest.cpp)
+set(MaxMatrixMax7219Tests test/Max7219/ChainTest.cpp)
+set(MaxMatrixTextTests test/Text/TextTest.cpp)
+set(MaxMatrixUtilityTests test/Utility/BitTest.cpp test/Utility/ByteTest.cpp test/Utility/arrayTest.cpp
+                          test/Utility/reference_wrapperTest.cpp test/Utility/spanTest.cpp)
 
 function(add_maxmatrix_variant Variant)
     add_library(MaxMatrix-${Variant} STATIC ${LibrarySources})
@@ -131,13 +126,21 @@ function(add_maxmatrix_variant Variant)
     target_compile_definitions(MaxMatrix-${Variant} PUBLIC ${ARGN})
     target_link_libraries(MaxMatrix-${Variant} PUBLIC ArduinoMock)
 
-    add_executable(MaxMatrixTest-${Variant} ${MaxMatrixTestSources})
-    set_target_properties(MaxMatrixTest-${Variant} PROPERTIES CXX_STANDARD 17)
+    # The support once per variant, its objects linked into every binary, the report of the det variant among them.
+    add_library(MaxMatrixTestSupport-${Variant} OBJECT test/MaxMatrixTestSupport.cpp)
+    set_target_properties(MaxMatrixTestSupport-${Variant} PROPERTIES CXX_STANDARD 17)
     # MaxMatrixTestSupport.h for the tests in the folders below test/, by its name, as src/ is
-    target_include_directories(MaxMatrixTest-${Variant} PRIVATE ${PROJECT_SOURCE_DIR}/test)
-    target_link_libraries(MaxMatrixTest-${Variant} PRIVATE MaxMatrix-${Variant} GTest::gtest_main)
-    # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
-    gtest_discover_tests(MaxMatrixTest-${Variant} TEST_PREFIX "${Variant}/" NO_PRETTY_VALUES)
+    target_include_directories(MaxMatrixTestSupport-${Variant} PUBLIC ${PROJECT_SOURCE_DIR}/test)
+    target_link_libraries(MaxMatrixTestSupport-${Variant} PUBLIC MaxMatrix-${Variant} GTest::gtest)
+
+    foreach(Folder ${MaxMatrixTestFolders})
+        set(Test MaxMatrixTest-${Variant}-${Folder})
+        add_executable(${Test} ${MaxMatrix${Folder}Tests})
+        set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
+        target_link_libraries(${Test} PRIVATE MaxMatrixTestSupport-${Variant} GTest::gtest_main)
+        # NO_PRETTY_VALUES keeps the names the tests give their parameters - /90 rather than the enum's /1.
+        gtest_discover_tests(${Test} TEST_PREFIX "${Variant}/" NO_PRETTY_VALUES)
+    endforeach()
 endfunction()
 
 # The examples and the simulator for a variant of the library.
