@@ -88,7 +88,9 @@ foreach(Test ControlCommandTest ControlLinkTest ControlPortTest)
     add_executable(${Test} test/Control/${Test}.cpp)
     set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
     target_link_libraries(${Test} PRIVATE Control SimulatorHosts GTest::gtest_main)
-    gtest_discover_tests(${Test} TEST_PREFIX "control/" PROPERTIES RESOURCE_LOCK ${Test})
+    # test/ for CaseName.h, which names the cases of a table
+    target_include_directories(${Test} PRIVATE test)
+    gtest_discover_tests(${Test} TEST_PREFIX "control/" NO_PRETTY_VALUES PROPERTIES RESOURCE_LOCK ${Test})
 endforeach()
 
 # The script of the simulator's page, against stand-ins for the DOM, the WebSocket and a board on Web Serial. Node is no

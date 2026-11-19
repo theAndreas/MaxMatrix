@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1505,6 +1505,15 @@ what it tests goes to `Discard()`, with the reason. `CaseName()`, which names th
 lies in `test/CaseName.h` now, for the tests of the host code as well, and ctest names their cases
 by it rather than by their bytes. `SimulatorAvrTest` and `SimulatorWebHostTest` were as the rules
 ask already, the real time of the latter as TS-18 allows the tests of a port.
+
+As built for the tests of the control program (TS-9, 10, 13, 14, 17): the lines of the commands
+and the lines that are no answer to `picture` are tables of named cases; a test of several
+behaviours, the bytes that fit or are left, the line breaks a text may not hold, the picture
+decoded, waiting for `ready`, a port that is gone, asking for the picture at its interval and
+after its timeout, a picture dropped after a command, opening, writing and reading a serial or a
+TCP port, is a test for each; the tests of the link share a fixture of the port, the link and the
+lines it read, and those of a port that is gone one of their own; and the picture, the interval of
+50 ms and the timeout of a second are written down rather than computed from the constants.
 
 ### 42 A newer avr-gcc as a cross-check
 

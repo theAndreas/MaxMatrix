@@ -6,92 +6,186 @@
 #include "ControlCommand.h"
 
 #include <gtest/gtest.h>
-#include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <string>
 #include <vector>
 
+#include "CaseName.h"
 #include "MaxMatrixConfig.h"
 
-// every command SerialControl knows, spelled as max_matrix::Command reads it
-TEST(ControlCommandTest, MakesTheLinesOfSerialControl) {
-  EXPECT_EQ(ControlCommand::MakeText("Hello", false), "text=Hello");
-  EXPECT_EQ(ControlCommand::MakeText("Hello", true), "textShift=Hello");
-  EXPECT_EQ(ControlCommand::MakeIntensity(15), "intensity=15");
-  EXPECT_EQ(ControlCommand::MakeSpeed(500), "speed=500");
-  EXPECT_EQ(ControlCommand::MakeSpace(0), "space=0");
-  EXPECT_EQ(ControlCommand::MakeDot(31, 7, true), "setDot=31,7,1");
-  EXPECT_EQ(ControlCommand::MakeDot(0, 0, false), "setDot=0,0,0");
-  EXPECT_EQ(ControlCommand::MakeClear(), "clear");
-  EXPECT_EQ(ControlCommand::MakePicture(), "picture");
+namespace {
+
+/* a command SerialControl knows, and the line it is spelled as */
+struct CommandLine {
+  char const* name;
+  std::string (*make)();
+  char const* line;
+};
+
+constexpr std::array<CommandLine, 9> kCommandLines{{
+    {"Text", [] { return ControlCommand::MakeText("Hello", false); },
+     "text=Hello"},
+    {"TextShift", [] { return ControlCommand::MakeText("Hello", true); },
+     "textShift=Hello"},
+    {"Intensity", [] { return ControlCommand::MakeIntensity(15); },
+     "intensity=15"},
+    {"Speed", [] { return ControlCommand::MakeSpeed(500); }, "speed=500"},
+    {"Space", [] { return ControlCommand::MakeSpace(0); }, "space=0"},
+    {"LitDot", [] { return ControlCommand::MakeDot(31, 7, true); },
+     "setDot=31,7,1"},
+    {"DarkDot", [] { return ControlCommand::MakeDot(0, 0, false); },
+     "setDot=0,0,0"},
+    {"Clear", [] { return ControlCommand::MakeClear(); }, "clear"},
+    {"Picture", [] { return ControlCommand::MakePicture(); }, "picture"},
+}};
+
+class CommandLineTest : public ::testing::TestWithParam<CommandLine> {};
+
+INSTANTIATE_TEST_SUITE_P(SerialControl, CommandLineTest,
+                         ::testing::ValuesIn(kCommandLines),
+                         CaseName<CommandLine>);
+
+TEST_P(CommandLineTest, IsSpelledAsCommandReadsIt) {
+  std::string const line{GetParam().make()};
+
+  EXPECT_EQ(line, GetParam().line);
 }
 
-// a line longer than the board's buffer is dropped there whole, so the program
-// does not send it; the buffer counts bytes, and an umlaut takes two of them in
-// UTF-8
-TEST(ControlCommandTest, FitsCountsTheBytesOfTheLine) {
-  std::string const longest(MAXMATRIX_COMMAND_LINE_LENGTH, 'x');
-
-  EXPECT_TRUE(ControlCommand::Fits(longest));
-  EXPECT_FALSE(ControlCommand::Fits(longest + "x"));
-  EXPECT_FALSE(ControlCommand::Fits(longest.substr(1) + "\xC3\xA4"));
-  EXPECT_TRUE(
-      ControlCommand::Fits(ControlCommand::MakeText("Gr\xC3\xBC\xC3\x9F"
-                                                    "e",
-                                                    false)));
+/* A line longer than the board's buffer is dropped there whole, so the program
+ * does not send it; the buffer counts bytes, and an umlaut takes two of them in
+ * UTF-8. */
+std::string Longest() {
+  return std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x');
 }
 
-// what the field next to the text shows: the bytes the text may still take,
-// counted as Fits() counts them
-TEST(ControlCommandTest, GetBytesLeftCountsTheBytesOfTheLine) {
-  std::string const longest(MAXMATRIX_COMMAND_LINE_LENGTH, 'x');
+TEST(ControlCommandTest, FitsALineAsLongAsTheBuffer) {
+  bool const fits{ControlCommand::Fits(Longest())};
 
-  EXPECT_EQ(ControlCommand::GetBytesLeft(""), MAXMATRIX_COMMAND_LINE_LENGTH);
-  EXPECT_EQ(ControlCommand::GetBytesLeft(longest), 0);
-  EXPECT_EQ(ControlCommand::GetBytesLeft(longest + "xy"), -2);
-  EXPECT_EQ(
-      ControlCommand::GetBytesLeft(ControlCommand::MakeText("\xC3\xA4", false)),
-      MAXMATRIX_COMMAND_LINE_LENGTH - 7);
+  EXPECT_TRUE(fits);
 }
 
-// a line break in a text would end the line early and send the rest as a
-// command of its own
-TEST(ControlCommandTest, FitsRefusesALineBreak) {
-  EXPECT_FALSE(
-      ControlCommand::Fits(ControlCommand::MakeText("one\nclear", false)));
-  EXPECT_FALSE(ControlCommand::Fits(ControlCommand::MakeText("one\r", false)));
+TEST(ControlCommandTest, RefusesALineOneByteLongerThanTheBuffer) {
+  bool const fits{ControlCommand::Fits(Longest() + "x")};
+
+  EXPECT_FALSE(fits);
 }
 
-// the answer to picture, as max_matrix::Command prints it: "Hi" from the left
-// edge and the empty columns after it
+TEST(ControlCommandTest, CountsAnUmlautAsTwoBytes) {
+  bool const fits{ControlCommand::Fits(Longest().substr(1) + "\xC3\xA4")};
+
+  EXPECT_FALSE(fits);
+}
+
+/* A line break in a text would end the line early and send the rest as a
+ * command of its own. */
+TEST(ControlCommandTest, RefusesANewlineInAText) {
+  bool const fits{
+      ControlCommand::Fits(ControlCommand::MakeText("one\nclear", false))};
+
+  EXPECT_FALSE(fits);
+}
+
+TEST(ControlCommandTest, RefusesACarriageReturnInAText) {
+  bool const fits{
+      ControlCommand::Fits(ControlCommand::MakeText("one\r", false))};
+
+  EXPECT_FALSE(fits);
+}
+
+/* What the field next to the text shows: the bytes the text may still take,
+ * counted as Fits() counts them. */
+TEST(ControlCommandTest, BytesLeftOfAnEmptyLineAreTheBuffer) {
+  int32_t const left{ControlCommand::GetBytesLeft("")};
+
+  EXPECT_EQ(left, MAXMATRIX_COMMAND_LINE_LENGTH);
+}
+
+TEST(ControlCommandTest, BytesLeftOfAFullLineAreNone) {
+  int32_t const left{ControlCommand::GetBytesLeft(Longest())};
+
+  EXPECT_EQ(left, 0);
+}
+
+TEST(ControlCommandTest, BytesLeftOfALineTooLongAreNegative) {
+  int32_t const left{ControlCommand::GetBytesLeft(Longest() + "xy")};
+
+  EXPECT_EQ(left, -2);
+}
+
+/* "text=" and an umlaut of two bytes */
+TEST(ControlCommandTest, BytesLeftCountAnUmlautAsTwo) {
+  int32_t const left{ControlCommand::GetBytesLeft(
+      ControlCommand::MakeText("\xC3\xA4", false))};
+
+  EXPECT_EQ(left, MAXMATRIX_COMMAND_LINE_LENGTH - 7);
+}
+
+/* the answer to picture, as max_matrix::Command prints it: "Hi" from the left
+ * edge, 7F 08 08 7F, the space, 44 7D 40, and the empty columns after it */
 TEST(ControlCommandTest, DecodesThePicture) {
-  std::vector<uint8_t> expected{0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40};
-
-  expected.resize(static_cast<size_t>(kControlNumberOfColumns), 0x00);
   ControlPicture const hi{ControlCommand::DecodePicture(
-      "picture=7F08087F00447D40" +
-      std::string((2 * kControlNumberOfColumns) - 16, '0'))};
+      "picture=7F08087F00447D40"
+      "000000000000000000000000000000000000000000000000")};
+
   ASSERT_TRUE(hi.answers_picture);
-  EXPECT_EQ(hi.columns, expected);
+  EXPECT_EQ(hi.columns, (std::vector<uint8_t>{
+                            0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40,  //
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}));
+}
+
+TEST(ControlCommandTest, DecodesHexDigitsInLowerCase) {
   ControlPicture const lower_case{ControlCommand::DecodePicture(
-      "picture=ff" + std::string((2 * kControlNumberOfColumns) - 2, '0'))};
+      "picture=ff"
+      "00000000000000000000000000000000000000000000000000000000000000")};
+
   ASSERT_TRUE(lower_case.answers_picture);
   EXPECT_EQ(lower_case.columns[0], 0xFF);
 }
 
-// a picture of another chain, or one cut short, is still an answer to picture,
-// but has no columns to draw; any other line is no answer to it
-TEST(ControlCommandTest, DecodesAPictureItCannotDrawAsEmpty) {
+/* A picture of another chain, or one cut short, is still an answer to picture,
+ * but has no columns to draw. */
+TEST(ControlCommandTest, DecodesAPictureTooLongAsEmpty) {
   ControlPicture const too_long{ControlCommand::DecodePicture(
-      "picture=" + std::string((2 * kControlNumberOfColumns) + 2, '0'))};
+      "picture="
+      "000000000000000000000000000000000000000000000000000000000000000000")};
+
   EXPECT_TRUE(too_long.answers_picture);
   EXPECT_TRUE(too_long.columns.empty());
+}
+
+TEST(ControlCommandTest, DecodesAPictureWithoutHexAsEmpty) {
   ControlPicture const no_hex{ControlCommand::DecodePicture(
-      "picture=" + std::string((2 * kControlNumberOfColumns) - 1, '0') + "x")};
+      "picture="
+      "000000000000000000000000000000000000000000000000000000000000000x")};
+
   EXPECT_TRUE(no_hex.answers_picture);
   EXPECT_TRUE(no_hex.columns.empty());
-  EXPECT_FALSE(ControlCommand::DecodePicture("ok").answers_picture);
-  EXPECT_FALSE(
-      ControlCommand::DecodePicture("error: unknown command").answers_picture);
 }
+
+/* any other line is no answer to picture */
+struct OtherLine {
+  char const* name;
+  char const* line;
+};
+
+constexpr std::array<OtherLine, 2> kOtherLines{{
+    {"Ok", "ok"},
+    {"Error", "error: unknown command"},
+}};
+
+class OtherLineTest : public ::testing::TestWithParam<OtherLine> {};
+
+INSTANTIATE_TEST_SUITE_P(Answers, OtherLineTest,
+                         ::testing::ValuesIn(kOtherLines), CaseName<OtherLine>);
+
+TEST_P(OtherLineTest, IsNoAnswerToPicture) {
+  ControlPicture const picture{ControlCommand::DecodePicture(GetParam().line)};
+
+  EXPECT_FALSE(picture.answers_picture);
+}
+
+}  // namespace

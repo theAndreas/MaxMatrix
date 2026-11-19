@@ -6,7 +6,7 @@
 #include "ControlLink.h"
 
 #include <gtest/gtest.h>
-#include <stddef.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>
@@ -49,107 +49,161 @@ class FakePort : public ControlPort {
   void Close() override { open = false; }
 };
 
-// Calls Task() and appends the lines it read to `lines`, as the window logs
-// them one after another; returns whether the port is still open.
-bool TaskInto(ControlLink& link, std::vector<std::string>& lines) {
-  ControlLinkLines const read{link.Task()};
+/* A link over a port that is a string each way, and the lines it has read. */
+class ControlLinkTest : public ::testing::Test {
+ protected:
+  FakePort port_;
+  ControlLink link_{port_};
+  std::vector<std::string> lines_;
 
-  lines.insert(lines.end(), read.lines.begin(), read.lines.end());
-  return read.open;
+  // Calls Task() and appends the lines it read to lines_, as the window logs
+  // them one after another; returns whether the port is still open.
+  bool Task() {
+    ControlLinkLines const read{link_.Task()};
+
+    lines_.insert(lines_.end(), read.lines.begin(), read.lines.end());
+    return read.open;
+  }
+};
+
+/* Opening the port resets an Uno, and a line sent before SerialControl has
+ * started is lost; the link holds back until the sketch says ready. */
+TEST_F(ControlLinkTest, IsNotReadyOnABoardBeforeItSaysSo) {
+  link_.Begin(true);
+
+  EXPECT_FALSE(link_.IsReady());
 }
 
-// opening the port resets an Uno, and a line sent before SerialControl has
-// started is lost; the link holds back until the sketch says ready
-TEST(ControlLinkTest, WaitsForReadyOnABoard) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+TEST_F(ControlLinkTest, SendsNothingToABoardBeforeItIsReady) {
+  link_.Begin(true);
 
-  link.Begin(true);
-  EXPECT_FALSE(link.IsReady());
-  EXPECT_FALSE(link.Send("text=Hi"));
-  EXPECT_EQ(port.written, "");
+  bool const sent{link_.Send("text=Hi")};
 
-  port.incoming = "ready\r\n";
-  EXPECT_TRUE(TaskInto(link, lines));
-  EXPECT_TRUE(link.IsReady());
-  EXPECT_TRUE(link.Send("text=Hi"));
-  EXPECT_EQ(port.written, "text=Hi\n");
+  EXPECT_FALSE(sent);
+  EXPECT_EQ(port_.written, "");
 }
 
-// the simulator's sketch said ready long before the program connected; waiting
-// for it would wait for ever
-TEST(ControlLinkTest, IsReadyAtOnceWithTheSimulator) {
-  FakePort port;
-  ControlLink link{port};
+TEST_F(ControlLinkTest, IsReadyOnceTheBoardSaysSo) {
+  link_.Begin(true);
+  port_.incoming = "ready\r\n";
 
-  link.Begin(false);
-  EXPECT_TRUE(link.IsReady());
-  EXPECT_TRUE(link.Send("clear"));
-  EXPECT_EQ(port.written, "clear\n");
+  ASSERT_TRUE(Task());
+
+  EXPECT_TRUE(link_.IsReady());
 }
 
-// a serial port delivers a line in pieces; the link gives whole lines, without
-// the \r\n of println()
-TEST(ControlLinkTest, CutsWhatArrivesIntoLines) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+TEST_F(ControlLinkTest, SendsALineOnceTheBoardIsReady) {
+  link_.Begin(true);
+  port_.incoming = "ready\r\n";
+  ASSERT_TRUE(Task());
 
-  link.Begin(false);
-  port.incoming = "o";
-  TaskInto(link, lines);
-  EXPECT_TRUE(lines.empty());
-  port.incoming = "k\r\nerror: out of range\r\nre";
-  TaskInto(link, lines);
-  EXPECT_EQ(lines, (std::vector<std::string>{"ok", "error: out of range"}));
+  bool const sent{link_.Send("text=Hi")};
+
+  EXPECT_TRUE(sent);
+  EXPECT_EQ(port_.written, "text=Hi\n");
 }
 
-// a sketch that never ends a line would grow the buffer without end; its text
-// is shown in pieces instead
-TEST(ControlLinkTest, CutsALineThatNeverEnds) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+/* The simulator's sketch said ready long before the program connected; waiting
+ * for it would wait for ever. */
+TEST_F(ControlLinkTest, IsReadyAtOnceWithTheSimulator) {
+  link_.Begin(false);
 
-  link.Begin(false);
-  port.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
-  TaskInto(link, lines);
-  ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0].size(), kControlLinkMaxLineLength);
+  EXPECT_TRUE(link_.IsReady());
 }
 
-// a board unplugged: the link says so, with the lines that came before, and
-// takes no more commands
-TEST(ControlLinkTest, SaysWhenThePortIsGone) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+TEST_F(ControlLinkTest, SendsALineAtOnceToTheSimulator) {
+  link_.Begin(false);
 
-  link.Begin(false);
-  port.incoming = "ok\r\n";
-  port.gone = true;
-  EXPECT_FALSE(TaskInto(link, lines));
-  EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
-  EXPECT_FALSE(link.IsReady());
-  EXPECT_FALSE(link.Send("clear"));
+  bool const sent{link_.Send("clear")};
+
+  EXPECT_TRUE(sent);
+  EXPECT_EQ(port_.written, "clear\n");
 }
 
-// half a line left from the last connection would be glued to the first line of
-// the next
-TEST(ControlLinkTest, BeginForgetsHalfALine) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+/* A serial port delivers a line in pieces; the link gives whole lines, without
+ * the \r\n of println(). */
+TEST_F(ControlLinkTest, GivesNoLineBeforeItsEnd) {
+  link_.Begin(false);
+  port_.incoming = "o";
 
-  link.Begin(true);
-  port.incoming = "rea";
-  TaskInto(link, lines);
-  link.Begin(true);
-  port.incoming = "dy\r\n";
-  TaskInto(link, lines);
-  EXPECT_EQ(lines, (std::vector<std::string>{"dy"}));
-  EXPECT_FALSE(link.IsReady());
+  Task();
+
+  EXPECT_TRUE(lines_.empty());
+}
+
+TEST_F(ControlLinkTest, CutsWhatArrivesIntoLines) {
+  link_.Begin(false);
+  port_.incoming = "o";
+  Task();
+  port_.incoming = "k\r\nerror: out of range\r\nre";
+
+  Task();
+
+  EXPECT_EQ(lines_, (std::vector<std::string>{"ok", "error: out of range"}));
+}
+
+/* a sketch that never ends a line would grow the buffer without end; its text
+ * is shown in pieces instead */
+TEST_F(ControlLinkTest, CutsALineThatNeverEnds) {
+  link_.Begin(false);
+  port_.incoming = std::string(kControlLinkMaxLineLength + 10, 'x');
+
+  Task();
+
+  ASSERT_EQ(lines_.size(), 1u);
+  EXPECT_EQ(lines_[0].size(), kControlLinkMaxLineLength);
+}
+
+/* A board unplugged: the link says so, with the lines that came before, and
+ * takes no more commands. */
+class GoneLinkTest : public ControlLinkTest {
+ protected:
+  void SetUp() override {
+    link_.Begin(false);
+    port_.incoming = "ok\r\n";
+    port_.gone = true;
+  }
+};
+
+TEST_F(GoneLinkTest, SaysThePortIsGone) {
+  bool const open{Task()};
+
+  EXPECT_FALSE(open);
+}
+
+TEST_F(GoneLinkTest, GivesTheLinesThatCameBefore) {
+  Task();
+
+  EXPECT_EQ(lines_, (std::vector<std::string>{"ok"}));
+}
+
+TEST_F(GoneLinkTest, IsNoLongerReady) {
+  Task();
+
+  EXPECT_FALSE(link_.IsReady());
+}
+
+TEST_F(GoneLinkTest, SendsNoMoreCommands) {
+  Task();
+
+  bool const sent{link_.Send("clear")};
+
+  EXPECT_FALSE(sent);
+}
+
+/* half a line left from the last connection would be glued to the first line of
+ * the next */
+TEST_F(ControlLinkTest, BeginForgetsHalfALine) {
+  link_.Begin(true);
+  port_.incoming = "rea";
+  Task();
+  link_.Begin(true);
+  port_.incoming = "dy\r\n";
+
+  Task();
+
+  EXPECT_EQ(lines_, (std::vector<std::string>{"dy"}));
+  EXPECT_FALSE(link_.IsReady());
 }
 
 // The answer to picture with the first column `first` and the rest dark, as
@@ -159,91 +213,148 @@ std::string Picture(char const* first) {
          std::string((2 * kControlNumberOfColumns) - 2, '0') + "\r\n";
 }
 
-// the picture is asked for once per interval, and its answer is kept rather
-// than shown as a line
-TEST(ControlLinkTest, AsksForThePictureOncePerInterval) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+/* The picture is asked for once per interval, and its answer is kept rather
+ * than shown as a line. */
+TEST_F(ControlLinkTest, HasNoPictureBeforeAnAnswer) {
+  link_.Begin(false);
 
-  link.Begin(false);
-  EXPECT_TRUE(link.GetPicture().empty());
-  link.AskForPicture(1000);
-  link.AskForPicture(1010);
-  EXPECT_EQ(port.written, "picture\n");
-  port.incoming = Picture("81");
-  TaskInto(link, lines);
-  EXPECT_TRUE(lines.empty());
-  ASSERT_EQ(link.GetPicture().size(),
-            static_cast<size_t>(kControlNumberOfColumns));
-  EXPECT_EQ(link.GetPicture()[0], 0x81);
-  link.AskForPicture(1000 + kControlLinkPictureIntervalMs - 1);
-  EXPECT_EQ(port.written, "picture\n");
-  link.AskForPicture(1000 + kControlLinkPictureIntervalMs);
-  EXPECT_EQ(port.written, "picture\npicture\n");
+  EXPECT_TRUE(link_.GetPicture().empty());
 }
 
-// an answer that never comes, a line lost on the wire say, would stop the
-// picture for good
-TEST(ControlLinkTest, AsksAgainWhenAnAnswerIsLost) {
-  FakePort port;
-  ControlLink link{port};
+TEST_F(ControlLinkTest, AsksForThePictureOncePerInterval) {
+  link_.Begin(false);
 
-  link.Begin(false);
-  link.AskForPicture(0);
-  link.AskForPicture(kControlLinkPictureTimeoutMs - 1);
-  EXPECT_EQ(port.written, "picture\n");
-  link.AskForPicture(kControlLinkPictureTimeoutMs);
-  EXPECT_EQ(port.written, "picture\npicture\n");
+  link_.AskForPicture(1000);
+  link_.AskForPicture(1010);
+
+  EXPECT_EQ(port_.written, "picture\n");
 }
 
-// a dot clicked while an answer is due: the answer shows the matrix before the
-// click and would turn the dot off again on the screen for a moment, so it is
-// dropped
-TEST(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+TEST_F(ControlLinkTest, KeepsTheAnswerToPicture) {
+  link_.Begin(false);
+  link_.AskForPicture(1000);
+  port_.incoming = Picture("81");
 
-  link.Begin(false);
-  link.AskForPicture(0);
-  link.Send("setDot=0,0,1");
-  port.incoming = Picture("00") + "ok\r\n";
-  TaskInto(link, lines);
-  EXPECT_TRUE(link.GetPicture().empty());
-  EXPECT_EQ(lines, (std::vector<std::string>{"ok"}));
-  link.AskForPicture(kControlLinkPictureIntervalMs);
-  port.incoming = Picture("01");
-  TaskInto(link, lines);
-  ASSERT_FALSE(link.GetPicture().empty());
-  EXPECT_EQ(link.GetPicture()[0], 0x01);
+  Task();
+
+  ASSERT_EQ(link_.GetPicture().size(), 32u);
+  EXPECT_EQ(link_.GetPicture()[0], 0x81);
 }
 
-// a board reset by its button says ready again and answers nothing asked for
-// before; the link asks again at the next interval rather than after the
-// timeout
-TEST(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
-  FakePort port;
-  ControlLink link{port};
-  std::vector<std::string> lines;
+TEST_F(ControlLinkTest, ShowsNoAnswerToPictureAsALine) {
+  link_.Begin(false);
+  link_.AskForPicture(1000);
+  port_.incoming = Picture("81");
 
-  link.Begin(false);
-  link.AskForPicture(0);
-  port.incoming = "ready\r\n";
-  TaskInto(link, lines);
-  EXPECT_EQ(lines, (std::vector<std::string>{"ready"}));
-  link.AskForPicture(kControlLinkPictureIntervalMs);
-  EXPECT_EQ(port.written, "picture\npicture\n");
+  Task();
+
+  EXPECT_TRUE(lines_.empty());
 }
 
-// a board that waits for ready is not asked, as it would lose the line
-TEST(ControlLinkTest, AsksNothingBeforeReady) {
-  FakePort port;
-  ControlLink link{port};
+/* the interval is 50 ms */
+TEST_F(ControlLinkTest, AsksNotAgainBeforeTheInterval) {
+  link_.Begin(false);
+  link_.AskForPicture(1000);
+  port_.incoming = Picture("81");
+  Task();
 
-  link.Begin(true);
-  link.AskForPicture(1000);
-  EXPECT_EQ(port.written, "");
+  link_.AskForPicture(1049);
+
+  EXPECT_EQ(port_.written, "picture\n");
+}
+
+TEST_F(ControlLinkTest, AsksAgainAfterTheInterval) {
+  link_.Begin(false);
+  link_.AskForPicture(1000);
+  port_.incoming = Picture("81");
+  Task();
+
+  link_.AskForPicture(1050);
+
+  EXPECT_EQ(port_.written, "picture\npicture\n");
+}
+
+/* An answer that never comes, a line lost on the wire say, would stop the
+ * picture for good; the link waits a second for it. */
+TEST_F(ControlLinkTest, WaitsForALostAnswerUntilTheTimeout) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+
+  link_.AskForPicture(999);
+
+  EXPECT_EQ(port_.written, "picture\n");
+}
+
+TEST_F(ControlLinkTest, AsksAgainWhenAnAnswerIsLost) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+
+  link_.AskForPicture(1000);
+
+  EXPECT_EQ(port_.written, "picture\npicture\n");
+}
+
+/* A dot clicked while an answer is due: the answer shows the matrix before the
+ * click and would turn the dot off again on the screen for a moment, so it is
+ * dropped. */
+TEST_F(ControlLinkTest, DropsAPictureAskedForBeforeACommand) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+  link_.Send("setDot=0,0,1");
+  port_.incoming = Picture("00") + "ok\r\n";
+
+  Task();
+
+  EXPECT_TRUE(link_.GetPicture().empty());
+  EXPECT_EQ(lines_, (std::vector<std::string>{"ok"}));
+}
+
+TEST_F(ControlLinkTest, KeepsThePictureAskedForAfterTheCommand) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+  link_.Send("setDot=0,0,1");
+  port_.incoming = Picture("00") + "ok\r\n";
+  Task();
+  link_.AskForPicture(50);
+  port_.incoming = Picture("01");
+
+  Task();
+
+  ASSERT_FALSE(link_.GetPicture().empty());
+  EXPECT_EQ(link_.GetPicture()[0], 0x01);
+}
+
+/* A board reset by its button says ready again and answers nothing asked for
+ * before; the link asks again at the next interval rather than after the
+ * timeout. */
+TEST_F(ControlLinkTest, ShowsTheReadyOfABoardStartedAgain) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+  port_.incoming = "ready\r\n";
+
+  Task();
+
+  EXPECT_EQ(lines_, (std::vector<std::string>{"ready"}));
+}
+
+TEST_F(ControlLinkTest, AsksAgainWhenTheBoardHasStartedAgain) {
+  link_.Begin(false);
+  link_.AskForPicture(0);
+  port_.incoming = "ready\r\n";
+  Task();
+
+  link_.AskForPicture(50);
+
+  EXPECT_EQ(port_.written, "picture\npicture\n");
+}
+
+/* a board that waits for ready is not asked, as it would lose the line */
+TEST_F(ControlLinkTest, AsksNothingBeforeReady) {
+  link_.Begin(true);
+
+  link_.AskForPicture(1000);
+
+  EXPECT_EQ(port_.written, "");
 }
 
 }  // namespace
