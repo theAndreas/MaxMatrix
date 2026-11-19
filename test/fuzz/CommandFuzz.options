@@ -1,0 +1,2 @@
+# A few lines of up to the 64 chars a line may have, and one too long.
+-max_len=512

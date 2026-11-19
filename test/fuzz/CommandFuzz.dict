@@ -1,0 +1,12 @@
+# The words of the lines Command reads, for libFuzzer to put together rather than guess.
+"text="
+"textShift="
+"intensity="
+"speed="
+"space="
+"setDot="
+"clear"
+"picture"
+"\x0a"
+"\x0d\x0a"
+","

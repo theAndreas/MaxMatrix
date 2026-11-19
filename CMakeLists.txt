@@ -179,6 +179,9 @@ file(GLOB Examples ${PROJECT_SOURCE_DIR}/examples/*/*.ino)
 set_source_files_properties(${Examples} PROPERTIES LANGUAGE CXX COMPILE_OPTIONS "-include;Arduino.h")
 
 add_maxmatrix_variant(bitbang)
+# The fuzzer of Command, the one parser of what comes from outside (TS-28), against the library with bit banging: the
+# transfer path makes no difference to the lines. Only with the preset fuzz, which `make fuzz` builds and runs.
+add_fuzzers(DIRECTORY ${PROJECT_SOURCE_DIR}/test/fuzz LIBRARY MaxMatrix-bitbang)
 add_maxmatrix_variant(spi MAXMATRIX_USE_SPI=STD_ON)
 add_simulator_variant(bitbang)
 add_simulator_variant(spi)

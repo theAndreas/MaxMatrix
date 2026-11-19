@@ -207,6 +207,10 @@ exception goes at the end of a list, with its reason.
   `test/model/`.
   `test/compile_warn/` holds what has to make the compiler warn, a dropped result of a getter,
   compiled under `compile_warn/` in gnu++11 and C++17 and left out by clang-tidy.
+  `test/fuzz/` holds `CommandFuzz`, the fuzzer of `Command`, the one parser of what comes from
+  outside (TS-28): every input fed to a matrix of its own, and what a program at the other end
+  relies on checked, every frame whole and every answer one it knows; beside it the corpus it
+  starts from, the words of its dictionary and its options. `make fuzz` builds and runs it.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
   `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
   runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a
