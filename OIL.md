@@ -1445,6 +1445,15 @@ drawn, lacks a char, and is set back, is a test for each. The cases of the defau
 the 642 tests the file runs in its three variants, five seconds of the nine it takes under the
 sanitizers on 16 cores.
 
+As built for `test/Command/CommandTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name;
+the helper that fed a line no longer checks every char but the last itself, as a line without its
+end, pending and unanswered, is a test of its own; a test of all the settings and of the dots is
+a test for each; the lines refused and the answer to each line are tables of named cases rather
+than loops; and what `text=` and `textShift=` show, and the answer to `picture`, are written down
+rather than compared with the same text drawn again or put together column by column. The helper
+that feeds a line and the name of a case of a table lie in the test support now, as the tests of
+the chain lengths and of fonts use them as well.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

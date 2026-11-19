@@ -4,240 +4,326 @@
 /* The lines a control page or program sends, carried out on a matrix. */
 
 #include <gtest/gtest.h>
-#include <stddef.h>
 #include <stdint.h>
 
 #include <array>
 #include <string>
 #include <vector>
 
+#include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
 
 namespace max_matrix {
 namespace {
 
-class MaxMatrixCommandTest : public MaxMatrixTest {
+/* The tests on the fixture take the name of the file, as TS-7 asks. */
+class CommandTest : public MaxMatrixTest {
  protected:
   Command command_;
   TextPrint answer_;
 
-  /* feeds a line char by char, as Serial would; every char but the last has to
-   * leave the line pending, and answer nothing */
-  Result<CommandState> FeedLine(std::string const& text) {
+  /* sends a line as a program does, char by char, and returns what the last
+   * char brought; answer_ holds the answer to this line alone */
+  Result<CommandState> Send(std::string const& line) {
     answer_.text.clear();
-    for (size_t i{0}; (i + 1) < text.size(); i++) {
-      EXPECT_EQ(command_.Feed(matrix_, text[i], answer_),
-                CommandState::kPending)
-          << "char " << i << " of " << text;
-    }
-    EXPECT_EQ(answer_.text, "") << "answered before the end of " << text;
-    return command_.Feed(matrix_, text.back(), answer_);
-  }
-
-  /* the display after every step of the shift running now, until it is done */
-  std::vector<std::vector<uint8_t>> ShiftSteps() {
-    std::vector<std::vector<uint8_t>> steps;
-    for (uint16_t step{0};
-         (step < 1000) && (matrix_.GetState() != State::kReady); step++) {
-      matrix_.ShiftTask();
-      steps.push_back(Display());
-    }
-    return steps;
+    return FeedLine(command_, matrix_, line, answer_);
   }
 };
 
-TEST_F(MaxMatrixCommandTest, TextShowsWhatSetTextShows) {
+/* the panel dark, laid out as Display() lays it out */
+std::vector<uint8_t> Dark() { return std::vector<uint8_t>(kNumberOfColumns); }
+
+/* "Hi!" is 7F 08 08 7F, the space, 44 7D 40, the space, 5F; the "xx" before it
+ * reached to the eleventh column */
+TEST_F(CommandTest, TextReplacesThePanelWithItsText) {
   matrix_.SetText("xx");
-  ASSERT_EQ(FeedLine("text=Hi!\n"), CommandState::kDone);
-  std::vector<uint8_t> const shown = Display();
 
-  matrix_.Clear();
-  matrix_.SetText("Hi!");
-  EXPECT_EQ(shown, Display());
-}
+  ASSERT_EQ(Send("text=Hi!\n"), CommandState::kDone);
 
-TEST_F(MaxMatrixCommandTest, SettingsAndDotsReachTheMatrix) {
-  EXPECT_EQ(FeedLine("intensity=8\n"), CommandState::kDone);
-  EXPECT_EQ(ChipOfModule(0).intensity, 8);
-  EXPECT_EQ(FeedLine("speed=120\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetShiftInterval(), 120);
-  EXPECT_EQ(FeedLine("space=3\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetSpaceBetweenChars(), 3);
-
-  EXPECT_EQ(FeedLine("setDot=5,3,1\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetDot(Point{X{5}, Y{3}}).GetError(), Error::kOk);
-  EXPECT_TRUE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
-  EXPECT_EQ(FeedLine("setDot=5,3,0\n"), CommandState::kDone);
-  EXPECT_EQ(matrix_.GetDot(Point{X{5}, Y{3}}).GetError(), Error::kOk);
-  EXPECT_FALSE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
-
-  matrix_.SetText("Hi");
-  EXPECT_EQ(FeedLine("clear\n"), CommandState::kDone);
-  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
+  EXPECT_EQ(LeftEdge(matrix_, 11),
+            (std::vector<uint8_t>{0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D,
+                                  0x40, 0x00, 0x5F, 0x00}));
 }
 
 /* SetTextWithShift() keeps only a pointer: a shift that read its text out of
- * the line buffer would shift whatever line came next */
-TEST_F(MaxMatrixCommandTest, TextShiftKeepsItsTextWhileLinesFollow) {
-  char const text[] = "AB";
+ * the line buffer would shift whatever line came next; "AB" is 7E 11 11 7E,
+ * the space, 7F 49 49 36, the space */
+TEST_F(CommandTest, TextShiftKeepsItsTextWhileLinesFollow) {
+  ASSERT_EQ(Send("textShift=AB\n"), CommandState::kDone);
+  ASSERT_EQ(Send("intensity=3\n"), CommandState::kDone);
 
-  ASSERT_EQ(FeedLine("textShift=AB\n"), CommandState::kDone);
-  ASSERT_EQ(FeedLine("intensity=3\n"), CommandState::kDone);
-  std::vector<std::vector<uint8_t>> const commanded = ShiftSteps();
+  ShiftUntilReady(matrix_);
 
-  matrix_.Clear();
-  ASSERT_EQ(matrix_.SetTextWithShift(text).GetError(), Error::kOk);
-  EXPECT_EQ(commanded, ShiftSteps());
+  EXPECT_EQ(RightEdge(matrix_, 10),
+            (std::vector<uint8_t>{0x7E, 0x11, 0x11, 0x7E, 0x00, 0x7F, 0x49,
+                                  0x49, 0x36, 0x00}));
 }
 
-TEST_F(MaxMatrixCommandTest, WrongLinesAreRefused) {
-  struct Refused {
-    char const* line;
-    Error error;
-  };
-  std::array<Refused, 16> const cases{{
-      {"blink\n", Error::kUnknownCommand},
-      {"clear=1\n", Error::kUnknownCommand},
-      {"intensity=16\n", Error::kOutOfRange},
-      {"intensity=\n", Error::kNotANumber},
-      {"intensity=x\n", Error::kNotANumber},
-      {"speed=65536\n", Error::kOutOfRange},
-      {"speed=99999999999999999999\n", Error::kOutOfRange},
-      /* 2^32, which a count in 32 bits wraps round to 0, a speed it would take
-       */
-      {"speed=4294967296\n", Error::kOutOfRange},
-      {"space=-1\n", Error::kNotANumber},
-      {"setDot=5\n", Error::kNotANumber},
-      {"setDot=1,2\n", Error::kNotANumber},
-      {"setDot=32,0,1\n", Error::kOutOfRange},
-      {"setDot=1,8,1\n", Error::kOutOfRange},
-      {"setDot=1,2,2\n", Error::kOutOfRange},
-      {"textShift=\n", Error::kNoText},
-      {"text=a\x01\n", Error::kUnknownChar},
-  }};
+TEST_F(CommandTest, IntensityReachesEveryChip) {
+  ASSERT_EQ(Send("intensity=8\n"), CommandState::kDone);
 
-  for (auto const& test_case : cases) {
-    EXPECT_EQ(FeedLine(test_case.line), test_case.error) << test_case.line;
-  }
-  EXPECT_EQ(matrix_.GetShiftInterval(), 0) << "changed by a refused speed=";
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{8, 8, 8, 8}));
 }
 
-TEST_F(MaxMatrixCommandTest, LineEndsInNewlineOrCarriageReturnNewline) {
-  EXPECT_EQ(FeedLine("intensity=4\r\n"), CommandState::kDone);
-  EXPECT_EQ(ChipOfModule(0).intensity, 4);
-  EXPECT_EQ(FeedLine("\n"), CommandState::kPending) << "an empty line";
-  EXPECT_EQ(FeedLine("intensity=5\n"), CommandState::kDone);
+TEST_F(CommandTest, SpeedSetsTheShiftInterval) {
+  ASSERT_EQ(Send("speed=120\n"), CommandState::kDone);
+
+  EXPECT_EQ(matrix_.GetShiftInterval(), 120);
+}
+
+TEST_F(CommandTest, SpaceSetsTheSpaceBetweenChars) {
+  ASSERT_EQ(Send("space=3\n"), CommandState::kDone);
+
+  EXPECT_EQ(matrix_.GetSpaceBetweenChars(), 3);
+}
+
+TEST_F(CommandTest, SetDotLightsTheDot) {
+  ASSERT_EQ(Send("setDot=5,3,1\n"), CommandState::kDone);
+
+  EXPECT_TRUE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
+}
+
+TEST_F(CommandTest, SetDotOfZeroDarkensTheDot) {
+  matrix_.SetDot(Point{X{5}, Y{3}}, true);
+
+  ASSERT_EQ(Send("setDot=5,3,0\n"), CommandState::kDone);
+
+  EXPECT_FALSE(matrix_.GetDot(Point{X{5}, Y{3}}).GetValue());
+}
+
+TEST_F(CommandTest, ClearDarkensThePanel) {
+  matrix_.SetText("Hi");
+
+  ASSERT_EQ(Send("clear\n"), CommandState::kDone);
+
+  EXPECT_EQ(Display(), Dark());
+}
+
+/* a line the matrix refuses, and why */
+struct RefusedLine {
+  char const* name;
+  char const* line;
+  Error error;
+};
+
+constexpr std::array<RefusedLine, 16> kRefusedLines{{
+    {"UnknownCommand", "blink\n", Error::kUnknownCommand},
+    {"ClearWithAValue", "clear=1\n", Error::kUnknownCommand},
+    {"IntensityAbove15", "intensity=16\n", Error::kOutOfRange},
+    {"IntensityWithoutAValue", "intensity=\n", Error::kNotANumber},
+    {"IntensityOfALetter", "intensity=x\n", Error::kNotANumber},
+    {"SpeedAbove65535", "speed=65536\n", Error::kOutOfRange},
+    {"SpeedAboveEveryCount", "speed=99999999999999999999\n",
+     Error::kOutOfRange},
+    /* 2^32, which a count in 32 bits wraps round to 0, a speed it would take */
+    {"SpeedOf2To32", "speed=4294967296\n", Error::kOutOfRange},
+    {"NegativeSpace", "space=-1\n", Error::kNotANumber},
+    {"SetDotOfOneNumber", "setDot=5\n", Error::kNotANumber},
+    {"SetDotOfTwoNumbers", "setDot=1,2\n", Error::kNotANumber},
+    {"SetDotRightOfThePanel", "setDot=32,0,1\n", Error::kOutOfRange},
+    {"SetDotBelowThePanel", "setDot=1,8,1\n", Error::kOutOfRange},
+    {"SetDotOfValue2", "setDot=1,2,2\n", Error::kOutOfRange},
+    {"TextShiftWithoutText", "textShift=\n", Error::kNoText},
+    {"TextWithAnUnknownChar", "text=a\x01\n", Error::kUnknownChar},
+}};
+
+class RefusedLineTest : public CommandTest,
+                        public ::testing::WithParamInterface<RefusedLine> {};
+
+INSTANTIATE_TEST_SUITE_P(Lines, RefusedLineTest,
+                         ::testing::ValuesIn(kRefusedLines),
+                         CaseName<RefusedLine>);
+
+TEST_P(RefusedLineTest, IsRefusedWithItsError) {
+  Result<CommandState> const result{Send(GetParam().line)};
+
+  EXPECT_EQ(result, GetParam().error);
+}
+
+TEST_F(CommandTest, SpeedOutOfRangeLeavesTheShiftInterval) {
+  Send("speed=65536\n");
+
+  EXPECT_EQ(matrix_.GetShiftInterval(), 0);
+}
+
+TEST_F(CommandTest, LineEndsInCarriageReturnNewline) {
+  ASSERT_EQ(Send("intensity=4\r\n"), CommandState::kDone);
+
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{4, 4, 4, 4}));
+}
+
+TEST_F(CommandTest, EmptyLineLeavesItPending) {
+  Result<CommandState> const result{Send("\n")};
+
+  EXPECT_EQ(result, CommandState::kPending);
+}
+
+/* a line is carried out at its end, and not before: the chips keep the 5 Init()
+ * gave them */
+TEST_F(CommandTest, LineWithoutItsEndIsPending) {
+  Result<CommandState> const result{Send("intensity=8")};
+
+  EXPECT_EQ(result, CommandState::kPending);
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{5, 5, 5, 5}));
+}
+
+TEST_F(CommandTest, LineWithoutItsEndIsNotAnswered) {
+  Send("intensity=8");
+
+  EXPECT_EQ(answer_.text, "");
 }
 
 /* a line cut short would carry out a different command, so a line too long is
  * dropped whole; the next one is read */
-TEST_F(MaxMatrixCommandTest, LineTooLongIsDroppedWhole) {
-  std::string const long_text =
-      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n";
+TEST_F(CommandTest, LineTooLongDrawsNothing) {
+  Send("text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
 
-  EXPECT_EQ(FeedLine(long_text), Error::kLineTooLong);
-  EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
-  EXPECT_EQ(FeedLine("intensity=2\n"), CommandState::kDone);
-  EXPECT_EQ(ChipOfModule(0).intensity, 2);
+  EXPECT_EQ(Display(), Dark());
 }
 
-/* a program pairs every line it sent with one line back, so each line is
- * answered once, an empty line not at all */
-TEST_F(MaxMatrixCommandTest, EveryLineIsAnsweredOnce) {
-  struct Answered {
-    char const* line;
-    char const* answer;
-  };
-  std::array<Answered, 6> const cases{{
-      {"intensity=8\n", "ok\r\n"},
-      {"clear\r\n", "ok\r\n"},
-      {"intensity=16\n", "error: out of range\r\n"},
-      {"blink\n", "error: unknown command\r\n"},
-      {"\n", ""},
-      {"\r\n", ""},
-  }};
+TEST_F(CommandTest, LineAfterALineTooLongIsCarriedOut) {
+  Send("text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
 
-  for (auto const& test_case : cases) {
-    FeedLine(test_case.line);
-    EXPECT_EQ(answer_.text, test_case.answer) << test_case.line;
-  }
-  FeedLine("text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
+  ASSERT_EQ(Send("intensity=2\n"), CommandState::kDone);
+
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{2, 2, 2, 2}));
+}
+
+/* a line and the one line back a program pairs it with; an empty line has
+ * none */
+struct AnsweredLine {
+  char const* name;
+  char const* line;
+  char const* answer;
+};
+
+constexpr std::array<AnsweredLine, 6> kAnsweredLines{{
+    {"Done", "intensity=8\n", "ok\r\n"},
+    {"DoneAfterCarriageReturn", "clear\r\n", "ok\r\n"},
+    {"OutOfRange", "intensity=16\n", "error: out of range\r\n"},
+    {"UnknownCommand", "blink\n", "error: unknown command\r\n"},
+    {"Empty", "\n", ""},
+    {"EmptyAfterCarriageReturn", "\r\n", ""},
+}};
+
+class AnsweredLineTest : public CommandTest,
+                         public ::testing::WithParamInterface<AnsweredLine> {};
+
+INSTANTIATE_TEST_SUITE_P(Lines, AnsweredLineTest,
+                         ::testing::ValuesIn(kAnsweredLines),
+                         CaseName<AnsweredLine>);
+
+TEST_P(AnsweredLineTest, IsAnsweredOnce) {
+  Send(GetParam().line);
+
+  EXPECT_EQ(answer_.text, GetParam().answer);
+}
+
+TEST_F(CommandTest, LineTooLongIsAnsweredWithItsError) {
+  Send("text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH, 'x') + "\n");
+
   EXPECT_EQ(answer_.text, "error: line too long\r\n");
 }
 
-/* picture answers in place of ok, and changes nothing */
-TEST_F(MaxMatrixCommandTest, PictureIsAnsweredWithTheColumns) {
+/* picture answers in place of ok, with two hex digits for every column: "Hi" is
+ * 7F 08 08 7F, the space, 44 7D 40 */
+TEST_F(CommandTest, PictureIsAnsweredWithTheColumns) {
   matrix_.SetText("Hi");
-  std::vector<uint8_t> const shown = Display();
 
-  EXPECT_EQ(FeedLine("picture\n"), CommandState::kAnswered);
-  ASSERT_EQ(answer_.text.size(), 8 + (2 * kNumberOfColumns) + 2);
-  EXPECT_EQ(answer_.text.substr(0, 8), "picture=");
-  EXPECT_EQ(answer_.text.substr(answer_.text.size() - 2), "\r\n");
-  EXPECT_EQ(Display(), shown);
-  EXPECT_EQ(FeedLine("picture=1\n"), Error::kUnknownCommand);
+  Send("picture\n");
+
+  EXPECT_EQ(answer_.text,
+            "picture=7F08087F00447D40"
+            "000000000000000000000000000000000000000000000000\r\n");
 }
 
-TEST_F(MaxMatrixCommandTest, LineOfFullLengthIsTaken) {
-  std::string const text =
-      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n";
+TEST_F(CommandTest, PictureIsAnswered) {
+  Result<CommandState> const result{Send("picture\n")};
 
-  EXPECT_EQ(FeedLine(text), CommandState::kDone);
+  EXPECT_EQ(result, CommandState::kAnswered);
+}
+
+TEST_F(CommandTest, PictureChangesNothing) {
+  matrix_.SetText("Hi");
+
+  Send("picture\n");
+
+  EXPECT_EQ(Display(), (std::vector<uint8_t>{
+                           0x7F, 0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40,  //
+                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //
+                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //
+                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}));
+}
+
+TEST_F(CommandTest, PictureWithAValueIsUnknown) {
+  Result<CommandState> const result{Send("picture=1\n")};
+
+  EXPECT_EQ(result, Error::kUnknownCommand);
 }
 
 /* picture answers with the panel as the viewer sees it, so that a program draws
  * it without knowing the orientations; one dot in a column of every module,
- * each in another row */
+ * each in another row: columns 0, 9, 16 and 31 are 01, 02, 10 and 80 */
 TEST_P(MaxMatrixMappingTest, PictureAnswerIsWhatTheViewerSees) {
   Command command;
   TextPrint answer;
-  std::string expected = "picture=";
-
   matrix_.SetDot(Point{X{0}, Y{0}}, true);
   matrix_.SetDot(Point{X{9}, Y{1}}, true);
   matrix_.SetDot(Point{X{16}, Y{4}}, true);
   matrix_.SetDot(Point{X{31}, Y{7}}, true);
-  for (char const c : std::string("picture\n")) {
-    command.Feed(matrix_, c, answer);
-  }
-  std::vector<std::string> columns(kNumberOfColumns, "00");
-  columns[0] = "01";
-  columns[9] = "02";
-  columns[16] = "10";
-  columns[31] = "80";
-  for (std::string const& column : columns) {
-    expected += column;
-  }
-  EXPECT_EQ(answer.text, expected + "\r\n");
+
+  FeedLine(command, matrix_, "picture\n", answer);
+
+  EXPECT_EQ(answer.text,
+            "picture="
+            "0100000000000000"
+            "0002000000000000"
+            "1000000000000000"
+            "0000000000000080\r\n");
 }
 
-TEST_F(MaxMatrixCommandTest, LineOneCharTooLongIsRefused) {
-  std::string const text =
-      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 4, 'x') + "\n";
+TEST_F(CommandTest, LineOfFullLengthIsTaken) {
+  std::string const line{
+      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 5, 'x') + "\n"};
 
-  EXPECT_EQ(FeedLine(text), Error::kLineTooLong);
+  Result<CommandState> const result{Send(line)};
+
+  EXPECT_EQ(result, CommandState::kDone);
 }
 
-TEST_F(MaxMatrixCommandTest, IntensityTakesItsGreatestValue) {
-  EXPECT_EQ(FeedLine("intensity=15\n"), CommandState::kDone);
+TEST_F(CommandTest, LineOneCharTooLongIsRefused) {
+  std::string const line{
+      "text=" + std::string(MAXMATRIX_COMMAND_LINE_LENGTH - 4, 'x') + "\n"};
+
+  Result<CommandState> const result{Send(line)};
+
+  EXPECT_EQ(result, Error::kLineTooLong);
+}
+
+TEST_F(CommandTest, IntensityTakesItsGreatestValue) {
+  ASSERT_EQ(Send("intensity=15\n"), CommandState::kDone);
 
   EXPECT_EQ(ChipOfModule(0).intensity, 15);
 }
 
-TEST_F(MaxMatrixCommandTest, SpaceTakesItsGreatestValue) {
-  EXPECT_EQ(FeedLine("space=255\n"), CommandState::kDone);
+TEST_F(CommandTest, SpaceTakesItsGreatestValue) {
+  ASSERT_EQ(Send("space=255\n"), CommandState::kDone);
 
   EXPECT_EQ(matrix_.GetSpaceBetweenChars(), 255);
 }
 
-TEST_F(MaxMatrixCommandTest, SpeedTakesItsGreatestValue) {
-  EXPECT_EQ(FeedLine("speed=65535\n"), CommandState::kDone);
+TEST_F(CommandTest, SpeedTakesItsGreatestValue) {
+  ASSERT_EQ(Send("speed=65535\n"), CommandState::kDone);
 
   EXPECT_EQ(matrix_.GetShiftInterval(), 65535);
 }
 
-TEST_F(MaxMatrixCommandTest, SetDotTakesTheLastDot) {
-  EXPECT_EQ(FeedLine("setDot=31,7,1\n"), CommandState::kDone);
+TEST_F(CommandTest, SetDotTakesTheLastDot) {
+  ASSERT_EQ(Send("setDot=31,7,1\n"), CommandState::kDone);
 
   EXPECT_TRUE(matrix_.GetDot(Point{X{31}, Y{7}}).GetValue());
 }

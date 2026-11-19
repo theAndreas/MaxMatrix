@@ -577,15 +577,6 @@ TEST(MatrixTest, BufferSizeIsMadeWhenCompiling) {
   EXPECT_EQ(BufferSize(4), 32u);
 }
 
-/* feeds a whole line to a command, char by char as Serial would */
-void FeedLine(Command& command, Matrix& matrix, std::string const& line,
-              Print& answer) {
-  for (char const c : line) {
-    // the answer says how the line ended, and the tests read it
-    Discard(command.Feed(matrix, c, answer));
-  }
-}
-
 /* Chains of other lengths than the examples', in every orientation: one module,
  * which is a pair of itself when the orientation changes, three, with one
  * module in the middle, and six. The buffer is the test's, filled with a

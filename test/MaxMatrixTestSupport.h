@@ -210,6 +210,19 @@ std::vector<std::string> ShownPicture(max_matrix::Matrix& matrix);
 std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
                                uint8_t width = 3);
 
+/* the name of a case of a table of a parameterized test, which the table gives
+ * as `name` */
+template <typename Case>
+std::string CaseName(::testing::TestParamInfo<Case> const& info) {
+  return info.param.name;
+}
+
+/* feeds a line to a command char by char, as Serial would, and returns what
+ * the last char brought */
+max_matrix::Result<max_matrix::CommandState> FeedLine(
+    max_matrix::Command& command, max_matrix::Matrix& matrix,
+    std::string const& line, Print& answer);
+
 /* the columns at the left edge of the panel, as numbers, where a text set
  * with SetText() starts */
 std::vector<uint8_t> LeftEdge(max_matrix::Matrix const& matrix, uint8_t width);
