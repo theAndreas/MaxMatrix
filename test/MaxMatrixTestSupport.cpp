@@ -131,6 +131,17 @@ std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
   return columns;
 }
 
+max_matrix::Result<max_matrix::CommandState> FeedLine(
+    max_matrix::Command& command, max_matrix::Matrix& matrix,
+    std::string const& line, Print& answer) {
+  max_matrix::Result<max_matrix::CommandState> result{
+      max_matrix::CommandState::kPending};
+  for (char const c : line) {
+    result = command.Feed(matrix, c, answer);
+  }
+  return result;
+}
+
 std::vector<uint8_t> LeftEdge(max_matrix::Matrix const& matrix, uint8_t width) {
   std::vector<uint8_t> columns;
   for (int16_t x{0}; x < width; x++) {

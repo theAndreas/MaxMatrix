@@ -37,12 +37,6 @@ constexpr auto kWideFont PROGMEM{
 /* The tests on the fixture take the name of the file, as TS-7 asks. */
 class FontTest : public MaxMatrixTest {};
 
-/* the name of a case of a table, which every table here gives as `name` */
-template <typename Case>
-std::string CaseName(::testing::TestParamInfo<Case> const& info) {
-  return info.param.name;
-}
-
 /* the Arduino IDE saves sketches as UTF-8, so an umlaut arrives as two bytes */
 TEST_F(FontTest, Utf8TextIsDrawnAsLatin1) {
   ASSERT_EQ(matrix_.SetText("\xC4\xF6\xFC!").GetError(), Error::kOk);

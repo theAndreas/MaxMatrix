@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1444,6 +1444,15 @@ the columns of "ab" and its steps instead; and a test of several behaviours, a f
 drawn, lacks a char, and is set back, is a test for each. The cases of the default font are 432 of
 the 642 tests the file runs in its three variants, five seconds of the nine it takes under the
 sanitizers on 16 cores.
+
+As built for `test/Command/CommandTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name;
+the helper that fed a line no longer checks every char but the last itself, as a line without its
+end, pending and unanswered, is a test of its own; a test of all the settings and of the dots is
+a test for each; the lines refused and the answer to each line are tables of named cases rather
+than loops; and what `text=` and `textShift=` show, and the answer to `picture`, are written down
+rather than compared with the same text drawn again or put together column by column. The helper
+that feeds a line and the name of a case of a table lie in the test support now, as the tests of
+the chain lengths and of fonts use them as well.
 
 ### 42 A newer avr-gcc as a cross-check
 
