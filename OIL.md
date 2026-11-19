@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1424,6 +1424,15 @@ parameter, from every mapping to every other. The behaviours run on one module t
 matrix orientation reckons with the length of the chain and `MaxMatrixMappingTest` tries every
 module type: on all eight, the chain lengths took 74 seconds under the sanitizers on 16 cores
 rather than the 37 they take now, against 19 for all the other tests.
+
+As built for `test/Text/TextTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name; a
+test of a text that repeats, which compared every picture with the one a pass later and computed
+the pass from a text that does not repeat, writes down the columns of two passes at the right
+edge, and that the shift goes on is a test of its own; the test of `StopShift()` is split into
+the end and the picture it holds, its stop twice being a test of the facade already; a sprite's
+picture and the text a span cuts short are written down rather than drawn by a lambda as the
+code draws them, the text drawn and the text shifted each a test; and a test that steps a shift
+calls a helper rather than a loop of its own, which counts the steps where a test needs them.
 
 ### 42 A newer avr-gcc as a cross-check
 

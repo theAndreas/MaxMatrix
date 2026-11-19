@@ -210,8 +210,12 @@ std::vector<std::string> ShownPicture(max_matrix::Matrix& matrix);
 std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
                                uint8_t width = 3);
 
-/* steps the shift running now until it is done, at most 1000 steps */
-void ShiftUntilReady(max_matrix::Matrix& matrix);
+/* steps the shift running now until it is done, at most 1000 steps, and
+ * returns the steps it took */
+uint16_t ShiftUntilReady(max_matrix::Matrix& matrix);
+
+/* steps the shift running now as often as `steps` says */
+void ShiftSteps(max_matrix::Matrix& matrix, uint16_t steps);
 
 /* draws Pattern() on the whole panel, dot by dot */
 void DrawPattern(max_matrix::Matrix& matrix);
