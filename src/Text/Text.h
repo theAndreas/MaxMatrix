@@ -73,8 +73,8 @@ class Text {
                                      char c) const;
 
   /*!
-   * \brief Starts shifting a char in from the right, until it stands at the
-   *        right edge.
+   * \brief Starts shifting a char in from the right, until it and the space
+   *        behind it have come in.
    *
    * \param[in] c The char, latin-1.
    * \return Error::kOk, or Error::kUnknownChar if the font has no sprite for
@@ -95,8 +95,8 @@ class Text {
   MAXMATRIX_NODISCARD Status SetText(Panel& panel, span<char const> text) const;
 
   /*!
-   * \brief Starts shifting a text in from the right, until its last char stands
-   *        at the right edge, or over and over.
+   * \brief Starts shifting a text in from the right, until its last char and
+   *        the space behind it have come in, or over and over.
    *
    * \param[in] text The text, UTF-8 or latin-1, up to its terminating null
    *                 character or the end of the span; it is kept as a span.
