@@ -48,7 +48,8 @@ target_link_libraries(ArduinoMock PUBLIC Max7219Model)
 add_executable(Max7219Test test/model/Max7219Test.cpp)
 set_target_properties(Max7219Test PROPERTIES CXX_STANDARD 17)
 target_link_libraries(Max7219Test PRIVATE Max7219Model GTest::gtest_main)
-gtest_discover_tests(Max7219Test TEST_PREFIX "model/")
+target_include_directories(Max7219Test PRIVATE test)
+gtest_discover_tests(Max7219Test TEST_PREFIX "model/" NO_PRETTY_VALUES)
 
 # The simulator's hosts once as well, the web host and the serial port on TCP: they know neither the library nor the
 # sketch, and the WebSocket half is tested on its own, without a network.
