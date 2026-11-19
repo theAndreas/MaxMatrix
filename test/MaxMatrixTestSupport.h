@@ -135,23 +135,6 @@ class MaxMatrixTest : public ::testing::Test {
                                   "of the board's";
     EXPECT_EQ(SREG, 0x80) << "the interrupts left off";
   }
-
-  /* the ShiftTask() calls the last ShiftWholeText() took, each one a step of
-   * the text on the panel */
-  uint16_t shift_calls_{0};
-
-  /* returns the number of frames the shift sent to the chain */
-  int32_t ShiftWholeText(max_matrix::span<char const> text) {
-    matrix_.Clear();
-    int32_t const frames_before{mock::frames};
-    matrix_.SetTextWithShift(text);
-    for (shift_calls_ = 0; (shift_calls_ < 1000) &&
-                           (matrix_.GetState() != max_matrix::State::kReady);
-         shift_calls_++) {
-      matrix_.ShiftTask();
-    }
-    return mock::frames - frames_before;
-  }
 };
 constexpr std::array<max_matrix::MatrixOrientation, 2> kMatrixOrientations{
     {max_matrix::MatrixOrientation::k0, max_matrix::MatrixOrientation::k180}};

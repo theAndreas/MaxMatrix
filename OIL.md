@@ -1478,6 +1478,14 @@ rather than a loop. A circle, a bitmap and a shape turned off are pictures writt
 each, where the old tests drew them by a lambda as the code draws them; and what lies far off the
 panel is a table of named places.
 
+As built for `test/Matrix/WiredTest.cpp` and `test/Max7219/ChainTest.cpp`, the parts below the
+facade (TS-7, 9, 13, 14, 17): the test of `internal::Wired` itself has a fixture of its own, and
+the frame it sends is written down rather than compared module by module in a loop; the tests
+through the matrix take the file's name; a test of a transfer that checked chip select, the
+transaction and the path at once, and the tests of a pin beyond the board or at its edge, are a
+test for each behaviour; and what a matrix draws after a failed `Init()` is written down. The
+fixture's `ShiftWholeText()`, which no test calls any more, is gone.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
