@@ -44,9 +44,12 @@ class SimulatorOptions {
 
   /*! \brief Returns the name of `--wiring`, or `kSimulatorPanelDefaultWiring`
    * without it. */
-  MAXMATRIX_NODISCARD std::string const& GetWiringName() const {
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const& {
     return wiring_name_;
   }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD std::string const& GetWiringName() const&& = delete;
 
   /*! \brief Returns whether `--upside-down` was given. */
   MAXMATRIX_NODISCARD bool IsUpsideDown() const { return upside_down_; }
@@ -76,9 +79,12 @@ class SimulatorOptions {
    * \brief Returns the lines of every `--serial`, each ended with a line feed,
    *        for the sketch's `Serial` to read.
    */
-  MAXMATRIX_NODISCARD std::string const& GetSerialInput() const {
+  MAXMATRIX_NODISCARD std::string const& GetSerialInput() const& {
     return serial_input_;
   }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD std::string const& GetSerialInput() const&& = delete;
 
   /*!
    * \brief Reads the command line, one option after the other.

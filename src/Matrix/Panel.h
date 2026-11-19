@@ -194,10 +194,13 @@ class Panel {
   }
 
   /*! \brief Returns the matrix as it is wired, below this one. */
-  Wired& GetWired() { return wired_; }
+  Wired& GetWired() & { return wired_; }
 
-  /*! \copydoc GetWired() */
-  MAXMATRIX_NODISCARD Wired const& GetWired() const { return wired_; }
+  /*! \copydoc GetWired() & */
+  MAXMATRIX_NODISCARD Wired const& GetWired() const& { return wired_; }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD Wired const& GetWired() const&& = delete;
 
   /*! \brief Returns how the LEDs of every module are wired. */
   MAXMATRIX_NODISCARD ModuleType GetModuleType() const { return module_type_; }

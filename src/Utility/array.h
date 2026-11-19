@@ -63,18 +63,26 @@ struct array {
    *
    * \param[in] index The position, from 0; below `Size`.
    */
-  Element& operator[](size_type index) { return elements[index]; }
+  Element& operator[](size_type index) & { return elements[index]; }
 
-  /*! \copydoc operator[](size_type) */
-  constexpr Element const& operator[](size_type index) const {
+  /*! \copydoc operator[](size_type) & */
+  constexpr Element const& operator[](size_type index) const& {
     return elements[index];
   }
 
-  /*! \brief Returns the address of the first element, as a C array gives it. */
-  MAXMATRIX_NODISCARD Element* data() { return elements; }
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  Element const& operator[](size_type index) const&& = delete;
 
-  /*! \copydoc data() */
-  MAXMATRIX_NODISCARD constexpr Element const* data() const { return elements; }
+  /*! \brief Returns the address of the first element, as a C array gives it. */
+  MAXMATRIX_NODISCARD Element* data() & { return elements; }
+
+  /*! \copydoc data() & */
+  MAXMATRIX_NODISCARD constexpr Element const* data() const& {
+    return elements;
+  }
+
+  /*! \brief Deleted, as a reference into a temporary would dangle (C-16). */
+  MAXMATRIX_NODISCARD Element const* data() const&& = delete;
 };
 
 namespace internal {
