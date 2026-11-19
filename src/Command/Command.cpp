@@ -13,7 +13,6 @@
 
 #include <avr/pgmspace.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "MaxMatrix.h"
 #include "Utility/Bit.h"
@@ -116,11 +115,11 @@ Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
     }
     return CommandState::kDone;
   }
-  if (0 == strcmp_P(line_.data(), PSTR("picture"))) {
+  if (IsName(PSTR("picture"))) {
     AnswerPicture(matrix, answer);
     return CommandState::kAnswered;
   }
-  if (0 != strcmp_P(line_.data(), PSTR("clear"))) {
+  if (!IsName(PSTR("clear"))) {
     return Error::kUnknownCommand;
   }
   matrix.Clear();
@@ -143,15 +142,24 @@ uint8_t Command::Find(uint8_t from, char c) const {
   return position;
 }
 
+// Whether the line, or its name once Execute() has ended it at its '=', is
+// `name`, a text in flash.
+bool Command::IsName(char const* name) const {
+  // MISRA 21.2.2: strcmp_P() compares with a text where it lies in flash. Both
+  // end with a null character: the line as Feed() ends it, `name` as a literal.
+  // NOLINTNEXTLINE(bugprone-unsafe-functions)
+  return 0 == strcmp_P(line_.data(), name);
+}
+
 // Passes a command NAME=VALUE on by its name, which ends where `value` starts.
 Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
-  if (0 == strcmp_P(line_.data(), PSTR("text"))) {
+  if (IsName(PSTR("text"))) {
     return ExecuteText(matrix, value);
   }
-  if (0 == strcmp_P(line_.data(), PSTR("textShift"))) {
+  if (IsName(PSTR("textShift"))) {
     return ExecuteTextShift(matrix, value);
   }
-  if (0 == strcmp_P(line_.data(), PSTR("setDot"))) {
+  if (IsName(PSTR("setDot"))) {
     return ExecuteDot(matrix, value);
   }
   return ExecuteSetting(matrix, value);
@@ -160,21 +168,14 @@ Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
 // textShift=TEXT copies the text out of the line buffer first: the shift reads
 // it for as long as it runs, and the next line would overwrite it there.
 Status Command::ExecuteTextShift(Matrix& matrix, uint8_t value) {
-  /*
-   * The text is part of Line, so it fits into shift_text_ as long as that is no
-   * shorter; strlcpy() would check the same at run time, for 30 bytes of flash
-   * in SerialControl
-   */
-  static_assert(sizeof(shift_text_) >= sizeof(line_),
-                "ShiftText has to hold any text of a line");
-
   if (line_[value] == internal::kNullCharacter) {
     return Error::kNoText;
   }
-  // strcpy() into a buffer that the static_assert above holds large enough.
-  // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
-  strcpy(shift_text_.data(), &line_[value]);  // NOLINT(runtime/printf)
-  return matrix.SetTextWithShift(shift_text_);
+  /* The whole line is copied, and the shift starts at its text: the text alone
+   * by a loop cost 16 bytes more of flash in SerialControl, and strcpy() is one
+   * of the string functions of C that MISRA 21.2.2 rules out. */
+  shift_text_ = line_;
+  return matrix.SetTextWithShift(span<char const>{shift_text_}.subspan(value));
 }
 
 // text=TEXT clears the matrix first and sends clear and text as one picture; an
@@ -228,10 +229,9 @@ Status Command::ExecuteDot(Matrix& matrix, uint8_t value) {
 // The commands that set a number: intensity=0..15, speed=MILLISECONDS and
 // space=COLUMNS.
 Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
-  char const* const name{line_.data()};
   Status status{Error::kOk};
 
-  if (0 == strcmp_P(name, PSTR("intensity"))) {
+  if (IsName(PSTR("intensity"))) {
     Result<uint16_t> const number{
         ConvertToNumber(value, max7219::kIntensityMaxValue)};
     if (!number.IsOk()) {
@@ -240,13 +240,13 @@ Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
     // ConvertToNumber() held it to the intensity's 15; the status is passed
     // on all the same, rather than dropped, should the matrix refuse it.
     status = matrix.SetIntensity(static_cast<uint8_t>(number.GetValue()));
-  } else if (0 == strcmp_P(name, PSTR("speed"))) {
+  } else if (IsName(PSTR("speed"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxInterval)};
     if (!number.IsOk()) {
       return number.GetError();
     }
     matrix.SetShiftInterval(number.GetValue());
-  } else if (0 == strcmp_P(name, PSTR("space"))) {
+  } else if (IsName(PSTR("space"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxByte)};
     if (!number.IsOk()) {
       return number.GetError();

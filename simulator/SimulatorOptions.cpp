@@ -11,10 +11,8 @@
 
 #include "SimulatorOptions.h"
 
-#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <algorithm>
 #include <iostream>
@@ -32,11 +30,30 @@ constexpr size_t kMillisecondDigits{3u};
  * 4294967, so that a longer number is refused before it is read */
 constexpr size_t kMaxSecondDigits{7u};
 
+/* the digits a number is written in */
+constexpr uint64_t kDecimalBase{10u};
+
+// Whether `c` is a decimal digit, compared rather than asked of isdigit(),
+// which depends on the locale (MISRA 24.5.1).
+bool IsDigit(char c) { return (c >= '0') && (c <= '9'); }
+
 // Whether `text` is decimal digits and nothing else; an empty one is.
 bool IsDigits(std::string const& text) {
-  return std::all_of(text.begin(), text.end(), [](char c) {
-    return isdigit(static_cast<unsigned char>(c)) != 0;
-  });
+  return std::all_of(text.begin(), text.end(), IsDigit);
+}
+
+// The value of `digits`, decimal digits only, up to `maximum`: past it, the
+// digits are no longer counted, so that a run too long for a uint64_t returns
+// a value above `maximum` rather than wrapping round into range.
+uint64_t ConvertDigits(std::string const& digits, uint64_t maximum) {
+  uint64_t value{0};
+
+  for (char const c : digits) {
+    if (value <= maximum) {
+      value = (value * kDecimalBase) + static_cast<uint64_t>(c - '0');
+    }
+  }
+  return value;
 }
 
 }  // namespace
@@ -127,21 +144,19 @@ bool SimulatorOptions::ParseValue(std::string const& option,
  * range.
  *
  * atoi() and a cast, as before, turned 70000 into port 4464 and "80x" into port
- * 80, so the simulator listened somewhere else than asked without a word.
+ * 80, so the simulator listened somewhere else than asked without a word;
+ * strtoul() after it took a sign as well, "+80", and is one of the string
+ * functions of C that MISRA 21.2.2 rules out.
  */
 SimulatorOptions::Converted<uint16_t> SimulatorOptions::ConvertToPort(
     char const* text) {
-  char* end{nullptr};
-  // uint64_t holds what strtoul() returns on every host, until the range check
-  // below.
-  uint64_t const value{strtoul(text, &end, 10)};
-
-  /* strtoul() takes a sign and wraps "-1" round to ULONG_MAX, which the range
-   * check then refuses */
-  bool const whole_text{(end != text) && (*end == '\0')};
+  std::string const digits{text};
+  bool const number{!digits.empty() && IsDigits(digits)};
+  uint64_t const value{number ? ConvertDigits(digits, kSimulatorOptionsMaxPort)
+                              : 0u};
   bool const in_range{(value != 0) && (value <= kSimulatorOptionsMaxPort)};
-  return Converted<uint16_t>{whole_text && in_range,
-                             static_cast<uint16_t>(value)};
+
+  return Converted<uint16_t>{number && in_range, static_cast<uint16_t>(value)};
 }
 
 /*
@@ -168,12 +183,12 @@ SimulatorOptions::Converted<uint32_t> SimulatorOptions::ConvertToRunFor(
   if (!digits_only || !has_digit || (whole.size() > kMaxSecondDigits)) {
     return Converted<uint32_t>{false, 0};
   }
-  uint64_t const seconds{whole.empty() ? 0u
-                                       : strtoull(whole.c_str(), nullptr, 10)};
+  uint64_t const seconds{ConvertDigits(whole, kSimulatorOptionsMaxRunFor)};
   std::string const thousandths{
       (fraction + "000").substr(0, kMillisecondDigits)};
-  uint64_t const milliseconds{(seconds * kMillisecondsPerSecond) +
-                              strtoull(thousandths.c_str(), nullptr, 10)};
+  uint64_t const milliseconds{
+      (seconds * kMillisecondsPerSecond) +
+      ConvertDigits(thousandths, kMillisecondsPerSecond)};
   bool const in_range{(milliseconds >= 1) &&
                       (milliseconds <= kSimulatorOptionsMaxRunFor)};
   return Converted<uint32_t>{in_range, static_cast<uint32_t>(milliseconds)};

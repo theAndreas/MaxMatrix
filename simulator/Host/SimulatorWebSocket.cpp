@@ -12,7 +12,6 @@
 
 #include "SimulatorWebSocket.h"
 
-#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -102,6 +101,14 @@ size_t ReadLength16(std::string const& frame) {
 // negative.
 uint32_t GetByte(std::string const& bytes, size_t index) {
   return static_cast<uint8_t>(bytes[index]);
+}
+
+// The char in lower case where it is a capital of ASCII, else as it is:
+// compared rather than asked of tolower(), which depends on the locale
+// (MISRA 24.5.1). A header's name is ASCII.
+char ToLower(char c) {
+  bool const capital{(c >= 'A') && (c <= 'Z')};
+  return capital ? static_cast<char>((c - 'A') + 'a') : c;
 }
 
 }  // namespace
@@ -252,7 +259,7 @@ SimulatorFoundText SimulatorWebSocket::GetKey(std::string const& request) {
   std::string lowered(request);
 
   for (char& c : lowered) {
-    c = static_cast<char>(tolower(static_cast<uint8_t>(c)));
+    c = ToLower(c);
   }
   size_t const found{lowered.find(kKeyHeader)};
   if (found == std::string::npos) {

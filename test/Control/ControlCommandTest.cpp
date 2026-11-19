@@ -6,6 +6,7 @@
 #include "ControlCommand.h"
 
 #include <gtest/gtest.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <array>
@@ -157,10 +158,36 @@ TEST(ControlCommandTest, DecodesAPictureTooLongAsEmpty) {
   EXPECT_TRUE(too_long.columns.empty());
 }
 
-TEST(ControlCommandTest, DecodesAPictureWithoutHexAsEmpty) {
-  ControlPicture const no_hex{ControlCommand::DecodePicture(
-      "picture="
-      "000000000000000000000000000000000000000000000000000000000000000x")};
+/* a char that is no hex digit, in the first column's high or low digit: each
+ * lies just outside one of the three ranges of hex digits */
+struct NoHexDigit {
+  char const* name;
+  char digit;
+  size_t position;
+};
+
+constexpr std::array<NoHexDigit, 6> kNoHexDigits{{
+    {"BelowTheDigits", '/', 0},
+    {"AboveTheDigits", ':', 1},
+    {"BelowTheCapitals", '@', 0},
+    {"AboveTheCapitals", 'G', 1},
+    {"BelowTheSmallLetters", '`', 0},
+    {"AboveTheSmallLetters", 'g', 1},
+}};
+
+class NoHexDigitTest : public ::testing::TestWithParam<NoHexDigit> {};
+
+INSTANTIATE_TEST_SUITE_P(Chars, NoHexDigitTest,
+                         ::testing::ValuesIn(kNoHexDigits),
+                         CaseName<NoHexDigit>);
+
+TEST_P(NoHexDigitTest, DecodesThePictureAsEmpty) {
+  std::string line{
+      "picture=" +
+      std::string(2u * static_cast<size_t>(kControlNumberOfColumns), '0')};
+  line[8 + GetParam().position] = GetParam().digit;
+
+  ControlPicture const no_hex{ControlCommand::DecodePicture(line)};
 
   EXPECT_TRUE(no_hex.answers_picture);
   EXPECT_TRUE(no_hex.columns.empty());
