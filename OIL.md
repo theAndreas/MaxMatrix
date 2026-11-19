@@ -1434,6 +1434,17 @@ picture and the text a span cuts short are written down rather than drawn by a l
 code draws them, the text drawn and the text shifted each a test; and a test that steps a shift
 calls a helper rather than a loop of its own, which counts the steps where a test needs them.
 
+As built for `test/Font/FontTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name; a
+test that looped over chars, fonts or columns is a table of named cases, the chars beyond ASCII,
+the sharp s and the degree sign drawn, every code of the default font from the space to the degree
+sign, and the fonts `SetFont()` refuses, the refusals for a font that does not fill its array among
+them; the columns a font draws are written down, read by a helper at the left edge as at the right;
+the tests that compared a text with unknown chars with one without, frames and calls, write down
+the columns of "ab" and its steps instead; and a test of several behaviours, a font that is set,
+drawn, lacks a char, and is set back, is a test for each. The cases of the default font are 432 of
+the 642 tests the file runs in its three variants, five seconds of the nine it takes under the
+sanitizers on 16 cores.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
