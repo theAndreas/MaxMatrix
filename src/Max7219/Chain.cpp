@@ -197,8 +197,8 @@ void Chain::ShiftOut(uint8_t value) {
       SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
   cli();
-  for (uint8_t bit{kFirstBit}; bit != 0u;
-       bit = Bit<uint8_t>::ShiftDown(bit, 1u)) {
+  uint8_t bit{kFirstBit};
+  while (bit != 0u) {
     if (Bit<uint8_t>::ReadBitGroup(value, bit) != 0u) {
       Bit<uint8_t>::SetBits(*data_in_register, data_in_.mask);
     } else {
@@ -206,6 +206,7 @@ void Chain::ShiftOut(uint8_t value) {
     }
     Bit<uint8_t>::SetBits(*clock_register, clock_.mask);
     Bit<uint8_t>::ClearBits(*clock_register, clock_.mask);
+    bit = Bit<uint8_t>::ShiftDown(bit, 1u);
   }
   SREG = status_register;
 }

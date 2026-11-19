@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169, #170 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1567,6 +1567,14 @@ panel's names and the window's shown link are `&`-qualified, their `const` overl
 a `const&&` overload deleted, so that a call on a temporary, whose reference would dangle, does
 not compile; `test/compile_fail/` holds the element of a temporary array. `span` keeps its index
 operator, a view of what another owns. No example changes in size.
+
+As built for T-26 (9.5.1): a `for` loop that did more than count is a `while`, or counts against a
+bound computed before it: the font's walk to its last char, which ended by `break`, Command's
+digits, which end at a null character, the bits of a byte out of the chain and into the model,
+which step by a shift, the bitmap at the panel's edge, the shift until it is ready and the tests
+that wait for a port, which stop on a second condition, and the simulator's frame log, whose
+condition was no compare of its counter; a row of the whole panel counts to the fewer of its
+modules and the values given. No example changes in size.
 
 ### 42 A newer avr-gcc as a cross-check
 

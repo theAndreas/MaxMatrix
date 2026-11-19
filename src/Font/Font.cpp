@@ -242,15 +242,16 @@ Status Font::CheckFont(span<uint8_t const> font) {
   }
   size_t offset{header.offset};
   /* the loop ends at the last char rather than past it, as a last char of
-   * 0xFFFF has no next */
-  for (uint16_t code{header.first};; code++) {
+   * 0xFFFF has no next; a count would wrap there */
+  uint16_t code{header.first};
+  bool walked{false};
+  while (!walked) {
     if (offset >= font.size()) {
       return Error::kNotAFont;
     }
     offset += ReadByte(font, offset) + 1u;
-    if (code == header.last) {
-      break;
-    }
+    walked = (code == header.last);
+    code++;
   }
   return (offset == font.size()) ? Error::kOk : Error::kNotAFont;
 }

@@ -135,8 +135,10 @@ void Panel::SetRow(Y y, span<Byte const> values) {
 
   if (HasRow(row)) {
     uint8_t const modules{GetNumberOfModules()};
-    for (uint8_t module{0}; (module < modules) && (module < values.size());
-         module++) {
+    bool const values_fewer{values.size() < modules};
+    uint8_t const given{values_fewer ? static_cast<uint8_t>(values.size())
+                                     : modules};
+    for (uint8_t module{0}; module < given; module++) {
       SetRow(Module{module}, static_cast<uint8_t>(row), values[module]);
     }
   }
@@ -273,10 +275,11 @@ void Panel::DrawBitmap(Point top_left, uint8_t height,
   int16_t left{top_left.x.number};
   int16_t const top{top_left.y.number};
 
-  for (size_t column{0};
-       (column < bitmap.size()) && (left < GetNumberOfColumns()); column++) {
+  size_t column{0};
+  while ((column < bitmap.size()) && (left < GetNumberOfColumns())) {
     DrawColumn(Point{X{left}, Y{top}}, height,
                Byte{pgm_read_byte(&bitmap[column])});
+    column++;
     left++;
   }
 }

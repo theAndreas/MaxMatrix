@@ -166,9 +166,9 @@ std::vector<uint8_t> LeftEdge(max_matrix::Matrix const& matrix, uint8_t width) {
 
 uint16_t ShiftUntilReady(max_matrix::Matrix& matrix) {
   uint16_t step{0};
-  for (; (step < 1000) && (matrix.GetState() != max_matrix::State::kReady);
-       step++) {
+  while ((step < 1000) && (matrix.GetState() != max_matrix::State::kReady)) {
     matrix.ShiftTask();
+    step++;
   }
   return step;
 }
