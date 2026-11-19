@@ -10,10 +10,12 @@
 #include <stdint.h>
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Arduino.h"
 #include "Max7219.h"
+#include "MaxMatrixAttributes.h"
 #include "MaxMatrixTestSupport.h"
 
 namespace max_matrix {
@@ -573,6 +575,316 @@ TEST(MatrixTest, BufferSizeIsMadeWhenCompiling) {
   static_assert(BufferSize(kMaxNumberOfModules) == 248, "of the longest chain");
 
   EXPECT_EQ(BufferSize(4), 32u);
+}
+
+/* feeds a whole line to a command, char by char as Serial would */
+void FeedLine(Command& command, Matrix& matrix, std::string const& line,
+              Print& answer) {
+  for (char const c : line) {
+    // the answer says how the line ended, and the tests read it
+    Discard(command.Feed(matrix, c, answer));
+  }
+}
+
+/* Chains of other lengths than the examples', in every orientation: one module,
+ * which is a pair of itself when the orientation changes, three, with one
+ * module in the middle, and six. The buffer is the test's, filled with a
+ * pattern that the matrix has to empty. A parameter starts with the length of
+ * the chain and the mapping it is set to. */
+template <typename Parameter>
+class ChainFixture : public ::testing::TestWithParam<Parameter> {
+ protected:
+  uint8_t number_of_modules_{std::get<0>(this->GetParam())};
+  uint8_t number_of_columns_{
+      static_cast<uint8_t>(number_of_modules_ * kColumnNumberOfModule)};
+  // a count and a value take parentheses, as braces name a vector's elements,
+  // and a member's initializer has parentheses only after =
+  std::vector<Byte> buffer_ =
+      std::vector<Byte>(BufferSize(number_of_modules_), Byte{0xAA});
+  Matrix matrix_{DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                 ClockPin{kClockPin},
+                 span<Byte>{buffer_.data(), buffer_.size()}};
+
+  void SetUp() override {
+    mock::Reset(kDataInPin, kChipSelectPin, kClockPin, number_of_modules_);
+    reports.clear();
+    ASSERT_EQ(matrix_.Init().GetError(), Error::kOk);
+    matrix_.SetShiftInterval(0);
+    matrix_.SetMatrixOrientation(std::get<1>(this->GetParam()));
+    matrix_.SetModuleType(std::get<2>(this->GetParam()));
+  }
+
+  /* as in MaxMatrixTest: the LEDs show the buffer, and every bit went out
+   * within a frame */
+  void TearDown() override {
+    EXPECT_EQ(Display(), Bytes({buffer_.data(), buffer_.size()}))
+        << "display differs from the buffer";
+    EXPECT_EQ(mock::errors, 0);
+  }
+
+  MAXMATRIX_NODISCARD std::vector<std::string> Pattern() const {
+    return Picture(::Pattern, number_of_columns_);
+  }
+
+  /* a picture of one lit dot */
+  MAXMATRIX_NODISCARD std::vector<std::string> OneDot(int16_t dot_x,
+                                                      int16_t dot_y) const {
+    return Picture(
+        [dot_x, dot_y](int16_t x, int16_t y) {
+          return (x == dot_x) && (y == dot_y);
+        },
+        number_of_columns_);
+  }
+
+  MAXMATRIX_NODISCARD std::vector<std::string> Dark() const {
+    return Picture([](int16_t, int16_t) { return false; }, number_of_columns_);
+  }
+};
+
+/* Of the mapping, only the matrix orientation reckons with the length of the
+ * chain, as it turns the whole panel; a module type works within a module, and
+ * MaxMatrixMappingTest tries every one. So the behaviours run on one module
+ * type, and only a change of the mapping, which works on a pair of modules at a
+ * time, on every one. */
+using ChainParameter = std::tuple<uint8_t, MatrixOrientation, ModuleType>;
+using ChainLengthTest = ChainFixture<ChainParameter>;
+
+std::string MappingName(MatrixOrientation matrix_orientation,
+                        ModuleType module_type) {
+  return std::string((matrix_orientation == MatrixOrientation::k180) ? "180"
+                                                                     : "0") +
+         "_" + ModuleTypeName(module_type);
+}
+
+std::string ChainName(::testing::TestParamInfo<ChainParameter> const& info) {
+  return std::to_string(std::get<0>(info.param)) + "modules_matrix" +
+         MappingName(std::get<1>(info.param), std::get<2>(info.param));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Lengths, ChainLengthTest,
+    ::testing::Combine(::testing::Values(uint8_t{1}, uint8_t{3}, uint8_t{6}),
+                       ::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::Values(ModuleType::kDr0Cr0Rr1)),
+    ChainName);
+
+TEST_P(ChainLengthTest, CountsItsModulesAndColumns) {
+  uint8_t const modules{matrix_.GetNumberOfModules()};
+  uint8_t const columns{matrix_.GetNumberOfColumns()};
+
+  EXPECT_EQ(modules, number_of_modules_);
+  EXPECT_EQ(columns, number_of_columns_);
+}
+
+TEST_P(ChainLengthTest, EmptiesTheBufferItIsHanded) {
+  std::vector<uint8_t> const buffer{Bytes({buffer_.data(), buffer_.size()})};
+
+  EXPECT_EQ(buffer, std::vector<uint8_t>(number_of_columns_, 0x00));
+}
+
+/* a frame carries an address and a value for every module */
+TEST_P(ChainLengthTest, FrameCarriesEveryModule) {
+  size_t const frame_length{mock::last_frame.size()};
+
+  EXPECT_EQ(frame_length, 2u * number_of_modules_);
+}
+
+TEST_P(ChainLengthTest, DotsRoundTrip) {
+  DrawPattern(matrix_);
+
+  EXPECT_EQ(ShownPicture(matrix_), Pattern());
+}
+
+TEST_P(ChainLengthTest, DotRightOfThePanelIsRefused) {
+  Error const error{
+      matrix_.GetDot(Point{X{number_of_columns_}, Y{0}}).GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+}
+
+TEST_P(ChainLengthTest, DotRightOfThePanelIsLeftOut) {
+  matrix_.SetDot(Point{X{number_of_columns_}, Y{0}}, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Dark());
+}
+
+TEST_P(ChainLengthTest, RotationLeftAndBackGivesThePicture) {
+  DrawPattern(matrix_);
+
+  matrix_.ShiftLeft(ShiftFill::kRotate);
+  matrix_.ShiftRight(ShiftFill::kRotate);
+
+  EXPECT_EQ(ShownPicture(matrix_), Pattern());
+}
+
+TEST_P(ChainLengthTest, RotationLeftTakesTheLeftColumnRound) {
+  matrix_.SetDot(Point{X{0}, Y{0}}, true);
+
+  matrix_.ShiftLeft(ShiftFill::kRotate);
+
+  EXPECT_EQ(ShownPicture(matrix_),
+            OneDot(static_cast<int16_t>(number_of_columns_ - 1), 0));
+}
+
+TEST_P(ChainLengthTest, RotationUpAndBackGivesThePicture) {
+  DrawPattern(matrix_);
+
+  matrix_.ShiftUp(ShiftFill::kRotate);
+  matrix_.ShiftDown(ShiftFill::kRotate);
+
+  EXPECT_EQ(ShownPicture(matrix_), Pattern());
+}
+
+TEST_P(ChainLengthTest, ShiftRightMovesTheLeftColumnOn) {
+  matrix_.SetDot(Point{X{0}, Y{3}}, true);
+
+  matrix_.ShiftRight();
+
+  EXPECT_EQ(ShownPicture(matrix_), OneDot(1, 3));
+}
+
+TEST_P(ChainLengthTest, ShiftLeftGivesTheColumnItPushesOut) {
+  matrix_.SetColumn(X{0}, Byte{0x5A});
+
+  Byte const pushed_out{matrix_.ShiftLeft(Byte{0x81})};
+
+  EXPECT_EQ(pushed_out, Byte{0x5A});
+}
+
+TEST_P(ChainLengthTest, ShiftLeftBringsInTheColumnItIsGiven) {
+  Discard(matrix_.ShiftLeft(Byte{0x81}));
+
+  Byte const brought_in{
+      matrix_.GetColumn(X{static_cast<int16_t>(number_of_columns_ - 1)})
+          .GetValue()};
+
+  EXPECT_EQ(brought_in, Byte{0x81});
+}
+
+/* a row of the whole panel takes one byte per module; an array longer than the
+ * chain is taken up to the chain */
+array<Byte, 6> const kRowValues{
+    {Byte{0x81}, Byte{0x42}, Byte{0x24}, Byte{0x18}, Byte{0xF0}, Byte{0x0F}}};
+
+TEST_P(ChainLengthTest, SetRowWritesAByteForEveryModule) {
+  array<Byte, 6> read{};
+
+  matrix_.SetRow(Y{2}, kRowValues);
+
+  ASSERT_EQ(matrix_.GetRow(Y{2}, read).GetError(), Error::kOk);
+  EXPECT_EQ(Bytes({read.data(), number_of_modules_}),
+            Bytes({kRowValues.data(), number_of_modules_}));
+}
+
+TEST_P(ChainLengthTest, RowOfTheLastModuleIsItsByte) {
+  matrix_.SetRow(Y{2}, kRowValues);
+
+  Byte const last{
+      matrix_.GetRow(Module{static_cast<uint8_t>(number_of_modules_ - 1)}, 2)
+          .GetValue()};
+
+  EXPECT_EQ(last, kRowValues[number_of_modules_ - 1u]);
+}
+
+/* a text shifts in from the right edge of this chain and ends with the space
+ * behind its last char; of "Hi", 7F 08 08 7F, the space, 44 7D 40, the last
+ * module shows all but the first column */
+TEST_P(ChainLengthTest, TextShiftEndsWithTheSpaceBehindItsLastChar) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
+
+  ShiftUntilReady(matrix_);
+
+  EXPECT_EQ(matrix_.GetState(), State::kReady);
+  EXPECT_EQ(
+      RightEdge(matrix_, 8),
+      (std::vector<uint8_t>{0x08, 0x08, 0x7F, 0x00, 0x44, 0x7D, 0x40, 0x00}));
+}
+
+/* picture answers with two hex digits for every column, after "picture=" and
+ * before the line's end */
+TEST_P(ChainLengthTest, PictureAnswersEveryColumn) {
+  Command command;
+  TextPrint answer;
+
+  FeedLine(command, matrix_, "picture\n", answer);
+
+  EXPECT_EQ(answer.text.size(), 8u + (2u * number_of_columns_) + 2u);
+}
+
+/* chains of more than one module, for what a row of one byte does there */
+class LongChainTest : public ChainLengthTest {};
+
+INSTANTIATE_TEST_SUITE_P(
+    Lengths, LongChainTest,
+    ::testing::Combine(::testing::Values(uint8_t{3}, uint8_t{6}),
+                       ::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::Values(ModuleType::kDr0Cr0Rr1)),
+    ChainName);
+
+TEST_P(LongChainTest, GetRowIntoOneByteIsRefused) {
+  array<Byte, 1> read{};
+
+  Error const error{matrix_.GetRow(Y{2}, read).GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+}
+
+/* a row of one byte is drawn as far as it reaches, the first module */
+TEST_P(LongChainTest, SetRowOfOneByteLeavesTheOtherModules) {
+  array<Byte, 1> const one{{Byte{0xFF}}};
+
+  matrix_.SetRow(Y{3}, one);
+
+  EXPECT_EQ(matrix_.GetRow(Module{0}, 3).GetValue(), Byte{0xFF});
+  EXPECT_EQ(matrix_.GetRow(Module{1}, 3).GetValue(), Byte{0x00});
+}
+
+class OneModuleChainTest : public ChainLengthTest {};
+
+INSTANTIATE_TEST_SUITE_P(
+    Lengths, OneModuleChainTest,
+    ::testing::Combine(::testing::Values(uint8_t{1}),
+                       ::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::Values(ModuleType::kDr0Cr0Rr1)),
+    ChainName);
+
+TEST_P(OneModuleChainTest, GetRowIntoOneByteIsTaken) {
+  array<Byte, 1> read{};
+
+  Error const error{matrix_.GetRow(Y{2}, read).GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+}
+
+/* the mapping changes a pair of modules at a time, m and n - 1 - m; the picture
+ * has to stay for every pair, from every mapping to every other */
+using MappingChange = std::tuple<uint8_t, MatrixOrientation, ModuleType,
+                                 MatrixOrientation, ModuleType>;
+using MappingChangeTest = ChainFixture<MappingChange>;
+
+std::string MappingChangeName(
+    ::testing::TestParamInfo<MappingChange> const& info) {
+  return std::to_string(std::get<0>(info.param)) + "modules_from_" +
+         MappingName(std::get<1>(info.param), std::get<2>(info.param)) +
+         "_to_" + MappingName(std::get<3>(info.param), std::get<4>(info.param));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Lengths, MappingChangeTest,
+    ::testing::Combine(::testing::Values(uint8_t{1}, uint8_t{3}, uint8_t{6}),
+                       ::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::ValuesIn(kModuleTypes),
+                       ::testing::ValuesIn(kMatrixOrientations),
+                       ::testing::ValuesIn(kModuleTypes)),
+    MappingChangeName);
+
+TEST_P(MappingChangeTest, PictureStaysWhenTheMappingChanges) {
+  DrawPattern(matrix_);
+
+  matrix_.SetMatrixOrientation(std::get<3>(GetParam()));
+  matrix_.SetModuleType(std::get<4>(GetParam()));
+
+  EXPECT_EQ(ShownPicture(matrix_), Pattern());
 }
 
 }  // namespace
