@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     SimulatorOptions::PrintUsage(*argv);
     return kSimulatorRunExitUsage;
   }
-  mock::tick = Tick;
+  mock::tick = &Tick;
   if (!front_end.Begin(options)) {
     return kSimulatorRunExitFailed;
   }

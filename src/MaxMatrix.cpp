@@ -193,11 +193,17 @@ void Matrix::ShiftTask() {
   }
   last_shift_ = now;
 
-  if ((State::kStringShift == state_) && !text_.StringShiftTask(panel_)) {
-    state_ = State::kReady;
+  // The step stands alone rather than behind a && that may skip it, which a
+  // reader of the condition misses (MISRA 8.14.1).
+  bool ended{false};
+  if (State::kStringShift == state_) {
+    ended = !text_.StringShiftTask(panel_);
+  } else if (State::kCharShift == state_) {
+    ended = !text_.CharShiftTask(panel_);
+  } else {
+    // no shift runs, so there is no step to take
   }
-
-  if ((State::kCharShift == state_) && !text_.CharShiftTask(panel_)) {
+  if (ended) {
     state_ = State::kReady;
   }
 

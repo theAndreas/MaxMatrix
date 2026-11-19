@@ -22,10 +22,17 @@
 
 namespace {
 
-/* ANSI escape sequences */
-constexpr char kClearScreen[] = "\x1b[2J";
-constexpr char kCursorHome[] = "\x1b[H";
-constexpr char kClearLineEnd[] = "\x1b[K";
+/* ANSI escape sequences; the escape char ends its literal, as a hex escape
+ * would take a hex digit after it (MISRA 5.13.2) */
+constexpr char kClearScreen[] =
+    "\x1b"
+    "[2J";
+constexpr char kCursorHome[] =
+    "\x1b"
+    "[H";
+constexpr char kClearLineEnd[] =
+    "\x1b"
+    "[K";
 
 /* a dot is two chars wide while it is drawn, so that the panel is about as wide
  * as it is high */
