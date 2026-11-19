@@ -148,6 +148,23 @@ CheckOptions:
   readability-function-cognitive-complexity.Threshold: 15
   # A text in PROGMEM is a char array, as F() and a table of texts need one.
   modernize-avoid-c-arrays.AllowStringArrays: true
+  # The functions of the C library that MISRA C++:2023 bans, by name, each group with its rule:
+  # the C strings of <cstring>, <cstdlib> and <cwchar> (21.2.2), <cctype> and <cwctype>
+  # (24.5.1), the bytes of memcpy() and its kin (24.5.2), the streams of <cstdio> (30.0.1),
+  # what ends the program (18.5.2), <csignal> (21.10.3) and setlocale() (25.5.1). The variants
+  # of avr-libc that read flash, as strcmp_P(), are listed with the function they mirror. A name
+  # without `::` is matched in any namespace, std:: and the global one alike; remove() and
+  # rename() of <cstdio> by their qualified name, as the algorithm std::remove() is another
+  # function of the same name. A reason may hold no comma, which ends it.
+  bugprone-unsafe-functions.CustomFunctions: >-
+    ^(str(cat|chr|cmp|coll|cpy|cspn|error|len|ncat|ncmp|ncpy|pbrk|rchr|spn|str|tok|xfrm)(_P)?|strto(l|ll|ul|ull|d|f|ld|imax|umax)|wcs(cat|chr|cmp|coll|cpy|cspn|len|ncat|ncmp|ncpy|pbrk|rchr|spn|str|tok|xfrm)|wcsto(l|ll|ul|ull|d|f|ld|imax|umax))$,,reads a string up to a null character that may be missing (MISRA C++:2023 Rule 21.2.2);
+    ^(is(alnum|alpha|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit)|to(lower|upper)|isw(alnum|alpha|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit|ctype)|tow(lower|upper|ctrans)|wctype|wctrans)$,,is undefined for a negative char and depends on the locale (MISRA C++:2023 Rule 24.5.1);
+    ^w?mem(cpy|move|cmp|chr)(_s|_P)?$,,copies or compares the bytes of objects whatever their type (MISRA C++:2023 Rule 24.5.2);
+    ^((v?(f|s|sn|w|fw|sw)?printf|v?(f|s|w|fw|sw)?scanf)(_P)?|f?puts(_P)?|clearerr|fclose|feof|ferror|fflush|fgetc|fgetpos|fgets|fgetwc|fgetws|fopen|fputc|fputwc|fputws|fread|fseek|fsetpos|freopen|ftell|fwide|fwrite|getc|getchar|gets|getwc|getwchar|perror|putc|putchar|putwc|putwchar|rewind|setbuf|setvbuf|tmpfile|tmpnam|ungetc|ungetwc)$,,is I/O of <cstdio> whose formats and buffers go unchecked (MISRA C++:2023 Rule 30.0.1);
+    ^::(remove|rename)$,,is I/O of <cstdio> (MISRA C++:2023 Rule 30.0.1);
+    ^(abort|exit|_Exit|quick_exit|terminate)$,,ends the program without unwinding the stack (MISRA C++:2023 Rule 18.5.2);
+    ^(signal|raise)$,,handles signals in which a handler can do little that is defined (MISRA C++:2023 Rule 21.10.3);
+    ^(setlocale|::std::locale::global)$,,changes the locale of the whole program (MISRA C++:2023 Rule 25.5.1)
   # A literal's suffix, docs/CodingStyle.md T-22: every L upper case, which MISRA 5.13.5 asks
   # and the check exists for; the u lower case rather than the check's U, which a hexadecimal
   # value reads on as a digit. The check looks a suffix up in the list in either case and

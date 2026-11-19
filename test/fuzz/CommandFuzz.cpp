@@ -73,7 +73,8 @@ bool IsKnownAnswer(std::string const& line) {
  * keeps the input. */
 void Require(bool holds) {
   if (!holds) {
-    abort();
+    // MISRA 18.5.2: how a fuzzer reports what does not hold (Testing TS-29)
+    abort();  // NOLINT(bugprone-unsafe-functions)
   }
 }
 

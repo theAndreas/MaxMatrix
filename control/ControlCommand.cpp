@@ -9,11 +9,9 @@
 
 #include "ControlCommand.h"
 
-#include <ctype.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <array>
 #include <string>
 #include <vector>
 
@@ -21,8 +19,34 @@
 
 namespace {
 
-/* a column of picture is two hex digits */
-constexpr int kHexBase{16};
+/* a column of picture is two hex digits, and the first that hex writes as a
+ * letter */
+constexpr uint8_t kHexBase{16u};
+constexpr uint8_t kFirstLetterDigit{10u};
+
+// Whether `c` is a hex digit, in upper or lower case: compared rather than
+// asked of isxdigit(), which depends on the locale (MISRA 24.5.1).
+bool IsHexDigit(char c) {
+  bool const digit{(c >= '0') && (c <= '9')};
+  bool const upper_case{(c >= 'A') && (c <= 'F')};
+  bool const lower_case{(c >= 'a') && (c <= 'f')};
+  return digit || upper_case || lower_case;
+}
+
+// The value of a hex digit that IsHexDigit() has taken: the lower case
+// letters lie above the upper case ones, which lie above the digits.
+uint8_t ConvertHexDigit(char c) {
+  uint8_t value{0};
+
+  if (c >= 'a') {
+    value = static_cast<uint8_t>((c - 'a') + kFirstLetterDigit);
+  } else if (c >= 'A') {
+    value = static_cast<uint8_t>((c - 'A') + kFirstLetterDigit);
+  } else {
+    value = static_cast<uint8_t>(c - '0');
+  }
+  return value;
+}
 
 }  // namespace
 
@@ -66,14 +90,14 @@ ControlPicture ControlCommand::DecodePicture(std::string const& line) {
     return picture;
   }
   for (size_t i{kName.size()}; i < line.size(); i += 2) {
-    std::array<char, 3> const digits{{line[i], line[i + 1], '\0'}};
-    if ((isxdigit(static_cast<unsigned char>(digits[0])) == 0) ||
-        (isxdigit(static_cast<unsigned char>(digits[1])) == 0)) {
+    char const high{line[i]};
+    char const low{line[i + 1]};
+    if (!IsHexDigit(high) || !IsHexDigit(low)) {
       picture.columns.clear();
       return picture;
     }
-    picture.columns.push_back(
-        static_cast<uint8_t>(strtoul(digits.data(), nullptr, kHexBase)));
+    picture.columns.push_back(static_cast<uint8_t>(
+        (ConvertHexDigit(high) * kHexBase) + ConvertHexDigit(low)));
   }
   return picture;
 }

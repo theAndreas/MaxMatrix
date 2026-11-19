@@ -63,7 +63,11 @@ SimulatorFrontEnd front_end;
  * It prints the panel and exits, from within the sketch's loop() or delay(),
  * which never return on their own.
  */
-[[noreturn]] void Finish() { exit(SimulatorRun::End(options, panel)); }
+[[noreturn]] void Finish() {
+  // MISRA 18.5.2: the one way out, as above; End() has printed the panel.
+  // NOLINTNEXTLINE(bugprone-unsafe-functions)
+  exit(SimulatorRun::End(options, panel));
+}
 
 /*!
  * \brief Follows the sketch.

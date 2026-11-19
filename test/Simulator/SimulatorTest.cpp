@@ -51,18 +51,23 @@ struct RefusedValue {
   char const* text;
 };
 
-constexpr std::array<TakenValue, 2> kTakenPorts{{
+constexpr std::array<TakenValue, 3> kTakenPorts{{
     {"Least", "1", 1},
     {"Greatest", "65535", 65535},
+    {"LeadingZeros", "0080", 80},
 }};
 
 /* Bug: atoi() and a cast to unsigned short turned --port 70000 into port 4464,
  * so the simulator listened somewhere else than asked, without a word. */
-constexpr std::array<RefusedValue, 6> kRefusedPorts{{
+constexpr std::array<RefusedValue, 9> kRefusedPorts{{
     {"Zero", "0"},
     {"OneBeyondTheGreatest", "65536"},
     {"FarBeyondTheGreatest", "70000"},
+    /* 2^64 + 80, port 80 if the digits wrapped round a uint64_t */
+    {"BeyondAUint64", "18446744073709551696"},
     {"Negative", "-1"},
+    {"Sign", "+80"},
+    {"Empty", ""},
     {"Word", "web"},
     {"NumberAndALetter", "80x"},
 }};
