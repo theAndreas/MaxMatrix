@@ -1494,6 +1494,18 @@ written down. A test of several operators or functions at once, `&`, `|` and `~`
 reference written through, the report checked beside its call, acts first; and the empty end of
 `subspan()`, a test of its own already, is no longer checked beside its middle.
 
+As built for the tests of the simulator (TS-9, 10, 13, 14): the ports and the durations of
+`--for`, taken or refused, the examples of FIPS 180-2 and RFC 4648, and the texts escaped for
+JSON are tables of named cases, the bugs they guard against named at their cases; a test that took
+a frame byte by byte in a loop takes it at its edges, the header alone, all but its last byte, and
+a later read that completes it; and a test of two behaviours, the intensity or the status line
+upright and upside down, a frame taken first and second, a serial host that carries both ways or
+keeps a first client beside a second, is a test for each. A result a test takes only to prepare
+what it tests goes to `Discard()`, with the reason. `CaseName()`, which names the cases of a table,
+lies in `test/CaseName.h` now, for the tests of the host code as well, and ctest names their cases
+by it rather than by their bytes. `SimulatorAvrTest` and `SimulatorWebHostTest` were as the rules
+ask already, the real time of the latter as TS-18 allows the tests of a port.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
