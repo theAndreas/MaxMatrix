@@ -1515,6 +1515,13 @@ TCP port, is a test for each; the tests of the link share a fixture of the port,
 lines it read, and those of a port that is gone one of their own; and the picture, the interval of
 50 ms and the timeout of a second are written down rather than computed from the constants.
 
+As built for the test of the model of the MAX7219 (TS-9, 10, 14), the last file of the chapter:
+a test that sent several frames and checked after each, a short frame, shutdown and normal
+operation, the scan limit, the display test and Code B, is a test for each, its frames before the
+one it tests arranged; the wirings are tables of named cases, all eight for every segment lighting
+one LED of its own, and the four MD_MAX72XX names for the LED of its first segment; and the order
+of the chain, upright, upside down and the chip of a column, is a test each.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
