@@ -131,10 +131,17 @@ std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
   return columns;
 }
 
-void ShiftUntilReady(max_matrix::Matrix& matrix) {
-  for (uint16_t step{0};
-       (step < 1000) && (matrix.GetState() != max_matrix::State::kReady);
+uint16_t ShiftUntilReady(max_matrix::Matrix& matrix) {
+  uint16_t step{0};
+  for (; (step < 1000) && (matrix.GetState() != max_matrix::State::kReady);
        step++) {
+    matrix.ShiftTask();
+  }
+  return step;
+}
+
+void ShiftSteps(max_matrix::Matrix& matrix, uint16_t steps) {
+  for (uint16_t step{0}; step < steps; step++) {
     matrix.ShiftTask();
   }
 }

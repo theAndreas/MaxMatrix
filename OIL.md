@@ -1425,6 +1425,15 @@ matrix orientation reckons with the length of the chain and `MaxMatrixMappingTes
 module type: on all eight, the chain lengths took 74 seconds under the sanitizers on 16 cores
 rather than the 37 they take now, against 19 for all the other tests.
 
+As built for `test/Text/TextTest.cpp` (TS-7, 9, 10, 13, 14): its tests take the file's name; a
+test of a text that repeats, which compared every picture with the one a pass later and computed
+the pass from a text that does not repeat, writes down the columns of two passes at the right
+edge, and that the shift goes on is a test of its own; the test of `StopShift()` is split into
+the end and the picture it holds, its stop twice being a test of the facade already; a sprite's
+picture and the text a span cuts short are written down rather than drawn by a lambda as the
+code draws them, the text drawn and the text shifted each a test; and a test that steps a shift
+calls a helper rather than a loop of its own, which counts the steps where a test needs them.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
