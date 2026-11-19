@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1477,6 +1477,14 @@ each line, both ways round, and each rectangle by each pair of corners is a name
 rather than a loop. A circle, a bitmap and a shape turned off are pictures written down, a test
 each, where the old tests drew them by a lambda as the code draws them; and what lies far off the
 panel is a table of named places.
+
+As built for `test/Matrix/WiredTest.cpp` and `test/Max7219/ChainTest.cpp`, the parts below the
+facade (TS-7, 9, 13, 14, 17): the test of `internal::Wired` itself has a fixture of its own, and
+the frame it sends is written down rather than compared module by module in a loop; the tests
+through the matrix take the file's name; a test of a transfer that checked chip select, the
+transaction and the path at once, and the tests of a pin beyond the board or at its edge, are a
+test for each behaviour; and what a matrix draws after a failed `Init()` is written down. The
+fixture's `ShiftWholeText()`, which no test calls any more, is gone.
 
 ### 42 A newer avr-gcc as a cross-check
 
