@@ -1568,6 +1568,14 @@ a `const&&` overload deleted, so that a call on a temporary, whose reference wou
 not compile; `test/compile_fail/` holds the element of a temporary array. `span` keeps its index
 operator, a view of what another owns. No example changes in size.
 
+As built for T-26 (9.5.1): a `for` loop that did more than count is a `while`, or counts against a
+bound computed before it: the font's walk to its last char, which ended by `break`, Command's
+digits, which end at a null character, the bits of a byte out of the chain and into the model,
+which step by a shift, the bitmap at the panel's edge, the shift until it is ready and the tests
+that wait for a port, which stop on a second condition, and the simulator's frame log, whose
+condition was no compare of its counter; a row of the whole panel counts to the fewer of its
+modules and the values given. No example changes in size.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
