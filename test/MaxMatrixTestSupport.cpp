@@ -4,6 +4,7 @@
 /* What the tests share, defined once: see MaxMatrixTestSupport.h. */
 #include "MaxMatrixTestSupport.h"
 
+#include <gtest/gtest.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -114,6 +115,10 @@ std::string MappingName(MatrixOrientation matrix_orientation,
   return std::string((matrix_orientation == MatrixOrientation::k180) ? "180"
                                                                      : "0") +
          "_" + ModuleTypeName(module_type);
+}
+
+std::string MappingPairName(::testing::TestParamInfo<MappingPair> const& info) {
+  return MappingName(std::get<0>(info.param), std::get<1>(info.param));
 }
 
 bool Pattern(int16_t x, int16_t y) {

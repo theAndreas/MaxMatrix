@@ -33,12 +33,8 @@ constexpr auto kBitmap PROGMEM{
 /* The tests on the fixture take the name of the file, as TS-7 asks. */
 class PanelTest : public MaxMatrixTest {};
 
-std::string MappingPairName(::testing::TestParamInfo<MappingPair> const& info) {
-  return MappingName(std::get<0>(info.param), std::get<1>(info.param));
-}
-
 /* MaxMatrixMappingTest is the facade in every mapping; the tests of Command
- * use it as well */
+ * instantiate it in their binary as well */
 INSTANTIATE_TEST_SUITE_P(
     AllMappings, MaxMatrixMappingTest,
     ::testing::Combine(::testing::ValuesIn(kMatrixOrientations),

@@ -600,7 +600,10 @@ Arduino core are ignored.
 `make tests` configures into `build/host`, builds the library three times, with bit banging,
 with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on each through
 `ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
-first two only. In `det/`, `MaxMatrixTestSupport.cpp` defines `ReportError()` itself and records
+first two only. The tests of a variant are a binary per folder of `test/`: ctest runs every test
+as a process of its own, which registers every test of its binary first, and under the sanitizers
+that took 121 ms a process with all of them in one binary; a new folder gets its line in
+`MaxMatrixTestFolders` of `CMakeLists.txt`. In `det/`, `MaxMatrixTestSupport.cpp` defines `ReportError()` itself and records
 into `reports`, which stays empty in the other two, so that a test expects reports in every variant. The library and the mock are built as `gnu++11`, like `avr-gcc` builds a sketch;
 only the tests are C++17, which GoogleTest needs. A test that loops over the orientations and
 module types is a `TEST_P` instead. The mock follows the pins as the chain sees them, given by `mock::Reset()`:
