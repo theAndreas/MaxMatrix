@@ -1532,6 +1532,24 @@ went out broken, the interrupts stayed off, a line was answered twice or an answ
 program knows. A wrong answer planted in `Command` made it abort on its first input. It starts from
 a line of each command and a dictionary of their words.
 
+As reviewed for the chapter MISRA on 2026-11-19, the rows of `docs/Misra.md` that review checks,
+in `src/`, `simulator/`, `control/`, `docu/` and the examples. Decided the same day: the numeric
+value of a char, where a digit is parsed or printed, a char's code is an index or UTF-8 is
+decoded, is a deviation of the template (7.0.3); the functions of the C library that the rules
+ban by name are reported by `bugprone-unsafe-functions`, by a list of the template, and replaced
+in MaxMatrix's code, but for three that keep a `NOLINT`: `strcmp_P()`, which compares with a text
+in flash, `vfprintf()`, the one taker of simavr's `va_list`, and `exit()`, the one way out of a
+sketch's `loop()` (21.2.2, 24.5.1, 30.0.1, 18.5.2); a member function that returns a reference
+into its object is ref-qualified (6.8.4); and a `for` loop that does more than count is a `while`
+(9.5.1). The last two are rules of the template's CodingStyle, T-26 and C-16.
+
+As built for the small findings of the chapter: the escape sequences of the terminal end their
+literal (5.13.2), the greatest shift interval is an unsigned literal, as `0xFFFF` is unsigned on
+the Uno, whose `int` has 16 bits (5.13.4), a string of the simulator no longer takes the name of
+`log()` (5.10.1), `mock::tick` takes `Tick` by its address (7.11.3), and `ShiftTask()` takes its
+step on its own rather than as the right side of a `&&` that may skip it (8.14.1), which made
+Messages, ScrollText and SerialControl 4 to 6 bytes of flash smaller.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

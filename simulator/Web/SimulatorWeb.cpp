@@ -167,12 +167,12 @@ std::string SimulatorWeb::GetMessage(SimulatorPanel const& panel) const {
 // commas. Every frame is quoted as it is: the frames hold nothing a JSON string
 // would have to escape.
 std::string SimulatorWeb::GetLog() const {
-  std::string log;
+  std::string frames;
 
   for (size_t i{0}; i < frame_log_.size(); i++) {
-    log += ((i > 0) ? ",\"" : "\"") + frame_log_[i] + "\"";
+    frames += ((i > 0) ? ",\"" : "\"") + frame_log_[i] + "\"";
   }
-  return log;
+  return frames;
 }
 
 // Returns the brightness of every module of `panel` for the message, separated

@@ -32,7 +32,7 @@ constexpr char kListSeparator{','};
 /* the largest numbers the commands take: a column, row or space fits a byte,
  * the shift interval a uint16_t */
 constexpr uint16_t kMaxByte{0xFF};
-constexpr uint16_t kMaxInterval{0xFFFF};
+constexpr uint16_t kMaxInterval{0xFFFFu};
 
 /* the digits a number is written in, and the first that hex writes as a letter
  */
