@@ -17,6 +17,7 @@
 using max_matrix::CommandState;
 using max_matrix::Error;
 using max_matrix::Matrix;
+using max_matrix::MatrixOrientation;
 using max_matrix::ModuleType;
 using max_matrix::Point;
 using max_matrix::Result;
@@ -106,6 +107,13 @@ std::vector<uint8_t> Display() {
 
 std::string ModuleTypeName(ModuleType module_type) {
   return kMax7219Wirings[static_cast<uint8_t>(module_type)].name;
+}
+
+std::string MappingName(MatrixOrientation matrix_orientation,
+                        ModuleType module_type) {
+  return std::string((matrix_orientation == MatrixOrientation::k180) ? "180"
+                                                                     : "0") +
+         "_" + ModuleTypeName(module_type);
 }
 
 bool Pattern(int16_t x, int16_t y) {

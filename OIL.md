@@ -1454,6 +1454,20 @@ rather than compared with the same text drawn again or put together column by co
 that feeds a line and the name of a case of a table lie in the test support now, as the tests of
 the chain lengths and of fonts use them as well.
 
+As built for the first half of `test/Matrix/PanelTest.cpp`, the dots, rows, columns, shifts and
+mappings (TS-7, 9, 10, 13, 14): its tests take the file's name, and `MaxMatrixModuleTest` is
+`PanelModuleTest`; a row, a column, a char at an edge and the columns shifted through the panel
+are written down, a picture or its columns, rather than drawn by a lambda as the code draws them;
+the twelve shifts are a table of named cases in every mapping, each moving three dots whose places
+are written down; what was checked at every step of a shift or every row is checked at one, the
+edges where there are two; the calls that send at most eight frames are a table as well, on a
+module type with digits as columns and one with digits as rows, as only that bit of the mapping
+changes how many columns a call touches; and the change of the mapping, which the tests of the
+chain lengths run from every mapping to every other on one, three and six modules, is no longer
+run here on four as well. Every behaviour that
+reckons with the mapping runs in all sixteen, as the loops of the old tests did: the run under the
+sanitizers on 16 cores went from 70 to 98 seconds for it, as decided on 2026-11-19.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
