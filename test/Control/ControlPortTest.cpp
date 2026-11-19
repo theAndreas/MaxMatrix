@@ -20,6 +20,7 @@
 #include "ControlSerialPort.h"
 #include "ControlTcpPort.h"
 #include "Host/SimulatorSerialHost.h"
+#include "MaxMatrixAttributes.h"
 
 namespace {
 
@@ -49,6 +50,18 @@ std::string ReadUntilReceived(ControlPort& port) {
   return received;
 }
 
+// Calls Task() of `host` until something arrives or half a second has passed,
+// as the simulator's tick would.
+std::string TaskUntilReceived(SimulatorSerialHost& host) {
+  std::string received;
+
+  for (int16_t i{0}; (i < 50) && received.empty(); i++) {
+    received += host.Task();
+    usleep(10000);
+  }
+  return received;
+}
+
 // A pseudo terminal: `board_` is the board_'s end, the one the test writes and
 // reads, and `name_` the port the program opens.
 class ControlSerialPortTest : public testing::Test {
@@ -72,17 +85,33 @@ class ControlSerialPortTest : public testing::Test {
   }
 };
 
-// a line goes out as it is, and what the board_ answers comes in, raw: no echo,
-// no \n turned into \r\n
-TEST_F(ControlSerialPortTest, CarriesBothWays) {
+TEST_F(ControlSerialPortTest, IsOpenOnceOpened) {
   ControlSerialPort port;
 
   ASSERT_TRUE(port.Open(name_, 115200));
+
   EXPECT_TRUE(port.IsOpen());
-  EXPECT_TRUE(port.Write("text=Hi\n"));
+}
+
+// A line goes out as it is, and what the board_ answers comes in, raw: no echo,
+// no \n turned into \r\n.
+TEST_F(ControlSerialPortTest, WritesALineAsItIs) {
+  ControlSerialPort port;
+  ASSERT_TRUE(port.Open(name_, 115200));
+
+  ASSERT_TRUE(port.Write("text=Hi\n"));
+
   EXPECT_EQ(Receive(board_), "text=Hi\n");
+}
+
+TEST_F(ControlSerialPortTest, ReadsWhatTheBoardSaysRaw) {
+  ControlSerialPort port;
+  ASSERT_TRUE(port.Open(name_, 115200));
   ASSERT_EQ(write(board_, "ok\r\n", 4), 4);
-  EXPECT_EQ(ReadUntilReceived(port), "ok\r\n");
+
+  std::string const received{ReadUntilReceived(port)};
+
+  EXPECT_EQ(received, "ok\r\n");
 }
 
 // a read without data returns at once rather than waiting, as the window reads
@@ -90,23 +119,38 @@ TEST_F(ControlSerialPortTest, CarriesBothWays) {
 TEST_F(ControlSerialPortTest, ReadDoesNotWait) {
   ControlSerialPort port;
   std::string received;
-
   ASSERT_TRUE(port.Open(name_, 115200));
-  EXPECT_TRUE(port.Read(received));
+
+  bool const open{port.Read(received)};
+
+  EXPECT_TRUE(open);
   EXPECT_EQ(received, "");
 }
 
-// a board_ unplugged: the read says the port is gone, and the port closes
+// A board_ unplugged: the read says the port is gone, and the port closes
 // itself, rather than reporting no data for ever, which a read that returned 0
-// would have done with VMIN 0
+// would have done with VMIN 0.
 TEST_F(ControlSerialPortTest, ReadSaysWhenTheBoardIsGone) {
   ControlSerialPort port;
   std::string received;
-
   ASSERT_TRUE(port.Open(name_, 115200));
   close(board_);
   board_ = -1;
-  EXPECT_FALSE(port.Read(received));
+
+  bool const open{port.Read(received)};
+
+  EXPECT_FALSE(open);
+}
+
+TEST_F(ControlSerialPortTest, ClosesItselfWhenTheBoardIsGone) {
+  ControlSerialPort port;
+  std::string received;
+  ASSERT_TRUE(port.Open(name_, 115200));
+  close(board_);
+  board_ = -1;
+
+  max_matrix::Discard(port.Read(received));  // the port is asked afterwards
+
   EXPECT_FALSE(port.IsOpen());
 }
 
@@ -115,63 +159,84 @@ TEST_F(ControlSerialPortTest, ReadSaysWhenTheBoardIsGone) {
 TEST_F(ControlSerialPortTest, KeepsTheBoardToItself) {
   ControlSerialPort port;
   ControlSerialPort second;
-
   ASSERT_TRUE(port.Open(name_, 115200));
-  EXPECT_FALSE(second.Open(name_, 115200));
+
+  bool const opened{second.Open(name_, 115200)};
+
+  EXPECT_FALSE(opened);
 }
 
-// a rate the port does not take, and a port that does not exist, fail rather
-// than open something else
-TEST_F(ControlSerialPortTest, RefusesWhatItCannotOpen) {
+// A rate the port does not take, and a port that does not exist, fail rather
+// than open something else.
+TEST_F(ControlSerialPortTest, RefusesARateItDoesNotTake) {
   ControlSerialPort port;
 
-  EXPECT_FALSE(port.Open(name_, 12345));
-  EXPECT_FALSE(port.Open("/dev/no-such-port", 115200));
+  bool const opened{port.Open(name_, 12345)};
+
+  EXPECT_FALSE(opened);
   EXPECT_FALSE(port.IsOpen());
 }
 
-// the control program and the simulator's serial host, each from its own end
-TEST(ControlTcpPortTest, CarriesBothWaysToTheSimulator) {
-  SimulatorSerialHost host;
-  ControlTcpPort port;
-  std::string received;
+TEST_F(ControlSerialPortTest, RefusesAPortThatDoesNotExist) {
+  ControlSerialPort port;
 
-  ASSERT_TRUE(host.Begin(kPort));
-  ASSERT_TRUE(port.Open(kPort));
-  EXPECT_TRUE(port.Write("clear\n"));
-  for (int16_t i{0}; (i < 50) && received.empty(); i++) {
-    received += host.Task();
-    usleep(10000);
-  }
-  EXPECT_EQ(received, "clear\n");
-  host.Send("ok\r\n");
-  EXPECT_EQ(ReadUntilReceived(port), "ok\r\n");
+  bool const opened{port.Open("/dev/no-such-port", 115200)};
+
+  EXPECT_FALSE(opened);
+  EXPECT_FALSE(port.IsOpen());
 }
 
-// a simulator that stops, or one that has a control program already and closes
-// the second: the port says it is gone
-TEST(ControlTcpPortTest, ReadSaysWhenTheSimulatorIsGone) {
+// The control program and the simulator's serial host, each from its own end.
+TEST(ControlTcpPortTest, WritesALineToTheSimulator) {
+  SimulatorSerialHost host;
   ControlTcpPort port;
-  std::string received;
+  ASSERT_TRUE(host.Begin(kPort));
+  ASSERT_TRUE(port.Open(kPort));
 
+  ASSERT_TRUE(port.Write("clear\n"));
+
+  EXPECT_EQ(TaskUntilReceived(host), "clear\n");
+}
+
+TEST(ControlTcpPortTest, ReadsWhatTheSimulatorSays) {
+  SimulatorSerialHost host;
+  ControlTcpPort port;
+  ASSERT_TRUE(host.Begin(kPort));
+  ASSERT_TRUE(port.Open(kPort));
+  // the host takes the connection; nothing has been sent that it could return
+  max_matrix::Discard(host.Task());
+  host.Send("ok\r\n");
+
+  std::string const received{ReadUntilReceived(port)};
+
+  EXPECT_EQ(received, "ok\r\n");
+}
+
+// A simulator that stops, or one that has a control program already and closes
+// the second: the port says it is gone.
+TEST(ControlTcpPortTest, ClosesItselfWhenTheSimulatorIsGone) {
+  ControlTcpPort port;
   {
     SimulatorSerialHost host;
     ASSERT_TRUE(host.Begin(kPort));
     ASSERT_TRUE(port.Open(kPort));
-    received += host.Task();
+    // the host takes the connection; nothing has been sent that it could return
+    max_matrix::Discard(host.Task());
   }
-  for (int16_t i{0}; (i < 50) && port.Read(received); i++) {
-    usleep(10000);
-  }
+
+  max_matrix::Discard(ReadUntilReceived(port));  // the port is asked afterwards
+
   EXPECT_FALSE(port.IsOpen());
 }
 
-// no simulator on the port: Open() fails at once, so that the window can say
-// how to start one
+// No simulator on the port: Open() fails at once, so that the window can say
+// how to start one.
 TEST(ControlTcpPortTest, OpenFailsWithoutASimulator) {
   ControlTcpPort port;
 
-  EXPECT_FALSE(port.Open(kPort));
+  bool const opened{port.Open(kPort)};
+
+  EXPECT_FALSE(opened);
   EXPECT_FALSE(port.IsOpen());
 }
 

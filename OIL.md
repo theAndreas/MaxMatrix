@@ -1506,6 +1506,15 @@ lies in `test/CaseName.h` now, for the tests of the host code as well, and ctest
 by it rather than by their bytes. `SimulatorAvrTest` and `SimulatorWebHostTest` were as the rules
 ask already, the real time of the latter as TS-18 allows the tests of a port.
 
+As built for the tests of the control program (TS-9, 10, 13, 14, 17): the lines of the commands
+and the lines that are no answer to `picture` are tables of named cases; a test of several
+behaviours, the bytes that fit or are left, the line breaks a text may not hold, the picture
+decoded, waiting for `ready`, a port that is gone, asking for the picture at its interval and
+after its timeout, a picture dropped after a command, opening, writing and reading a serial or a
+TCP port, is a test for each; the tests of the link share a fixture of the port, the link and the
+lines it read, and those of a port that is gone one of their own; and the picture, the interval of
+50 ms and the timeout of a second are written down rather than computed from the constants.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
