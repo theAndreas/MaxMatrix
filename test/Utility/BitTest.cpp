@@ -79,13 +79,17 @@ TEST(BitTest, InvertsEveryBit) {
 
 /* a uint8_t shifted as an int would have a sign; the bits beyond the byte fall
  * out */
-TEST(BitTest, ShiftsUpAndDown) {
+TEST(BitTest, ShiftsUp) {
   static_assert(Bits::ShiftUp(0x81u, 1) == 0x02u, "made when compiling");
-  static_assert(Bits::ShiftDown(0x81u, 1) == 0x40u, "made when compiling");
 
   EXPECT_EQ(Bits::ShiftUp(0xFFu, 7), 0x80u);
-  EXPECT_EQ(Bits::ShiftDown(0xFFu, 7), 0x01u);
   EXPECT_EQ(WordBits::ShiftUp(0xFFu, 24), 0xFF000000u);
+}
+
+TEST(BitTest, ShiftsDown) {
+  static_assert(Bits::ShiftDown(0x81u, 1) == 0x40u, "made when compiling");
+
+  EXPECT_EQ(Bits::ShiftDown(0xFFu, 7), 0x01u);
 }
 
 TEST(BitTest, RotatesLeft) {
@@ -97,20 +101,37 @@ TEST(BitTest, RotatesLeft) {
   EXPECT_EQ(Bits::RotateLeft(0x81u, 4), 0x18u);
 }
 
-/* a register is volatile, a variable is not: both take the same functions, and
- * the bits outside the mask stay as they were */
-TEST(BitTest, SetsAndClearsTheBitsOfATarget) {
+/* A register is volatile, a variable is not: both take the same functions, and
+ * the bits outside the mask stay as they were. */
+TEST(BitTest, SetsTheBitsOfAVolatileTarget) {
   uint8_t volatile port{0x81u};
-  uint32_t flags{0x0000FF00u};
 
   Bits::SetBits(port, 0x18u);
+
   EXPECT_EQ(port, 0x99u);
+}
+
+TEST(BitTest, ClearsTheBitsOfAVolatileTarget) {
+  uint8_t volatile port{0x99u};
+
   Bits::ClearBits(port, 0x81u);
+
   EXPECT_EQ(port, 0x18u);
+}
+
+TEST(BitTest, SetsTheBitsOfATarget) {
+  uint32_t flags{0x0000FF00u};
 
   WordBits::SetBits(flags, 0x00010001u);
+
   EXPECT_EQ(flags, 0x0001FF01u);
+}
+
+TEST(BitTest, ClearsTheBitsOfATarget) {
+  uint32_t flags{0x0001FF01u};
+
   WordBits::ClearBits(flags, 0x0000F000u);
+
   EXPECT_EQ(flags, 0x00010F01u);
 }
 

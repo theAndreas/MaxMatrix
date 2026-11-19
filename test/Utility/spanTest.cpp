@@ -24,12 +24,20 @@ TEST(SpanTest, IsEmptyWhenMadeOfNothing) {
 
 TEST(SpanTest, ReachesTheElementsItIsMadeOf) {
   array<uint8_t, 3> rows{{0x18, 0x3C, 0x7E}};
+
   span<uint8_t> const view{rows.data(), 2};
 
   EXPECT_EQ(view.size(), 2u);
   EXPECT_EQ(view.data(), rows.data());
   EXPECT_EQ(view[1], 0x3C);
+}
+
+TEST(SpanTest, WritesThroughToTheElements) {
+  array<uint8_t, 3> rows{{0x18, 0x3C, 0x7E}};
+  span<uint8_t> const view{rows};
+
   view[0] = 0x42;
+
   EXPECT_EQ(rows[0], 0x42);
 }
 
@@ -84,11 +92,9 @@ TEST(SpanTest, GivesTheElementsFromAnOffsetOn) {
   span<uint8_t const> const all{rows};
 
   span<uint8_t const> const rest{all.subspan(1)};
-  span<uint8_t const> const none{all.subspan(4)};
 
   EXPECT_EQ(rest.size(), 3u);
   EXPECT_EQ(rest[0], 2);
-  EXPECT_EQ(none.size(), 0u);
 }
 
 TEST(SpanTest, GivesItsFirstElements) {

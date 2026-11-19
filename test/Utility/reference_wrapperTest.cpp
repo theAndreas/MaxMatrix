@@ -17,10 +17,18 @@ namespace {
 
 TEST(ReferenceWrapperTest, GivesTheObjectItIsMadeOf) {
   int16_t value{7};
+
   reference_wrapper<int16_t> const reference{value};
 
   EXPECT_EQ(&reference.get(), &value);
+}
+
+TEST(ReferenceWrapperTest, WritesThroughToTheObject) {
+  int16_t value{7};
+  reference_wrapper<int16_t> const reference{value};
+
   reference.get() = 9;
+
   EXPECT_EQ(value, 9);
 }
 
