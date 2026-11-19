@@ -21,6 +21,8 @@
 #include <array>
 #include <string>
 
+#include "MaxMatrixAttributes.h"
+
 namespace {
 
 uint16_t const kPort{18087};
@@ -79,39 +81,70 @@ std::string TaskUntilReceived(SimulatorSerialHost& host) {
   return received;
 }
 
-// what a client sends reaches the sketch's Serial as it is, and what the sketch
-// prints reaches the client
-TEST(SimulatorSerialHostTest, CarriesBothWays) {
-  SimulatorSerialHost host;
+// Calls Task() once, as the tick would, for the host to take or let go of a
+// connection; nothing has been sent yet that it could return.
+void Take(SimulatorSerialHost& host) { max_matrix::Discard(host.Task()); }
 
+// what a client sends reaches the sketch's Serial as it is
+TEST(SimulatorSerialHostTest, CarriesWhatAClientSendsToTheSketch) {
+  SimulatorSerialHost host;
   ASSERT_TRUE(host.Begin(kPort));
   int const client{Connect()};
   ASSERT_GE(client, 0);
-
   ASSERT_EQ(send(client, "text=Hi\n", 8, 0), 8);
-  EXPECT_EQ(TaskUntilReceived(host), "text=Hi\n");
+
+  std::string const received{TaskUntilReceived(host)};
+
+  EXPECT_EQ(received, "text=Hi\n");
+  close(client);
+}
+
+// what the sketch prints reaches the client
+TEST(SimulatorSerialHostTest, CarriesWhatTheSketchPrintsToTheClient) {
+  SimulatorSerialHost host;
+  ASSERT_TRUE(host.Begin(kPort));
+  int const client{Connect()};
+  ASSERT_GE(client, 0);
+  Take(host);
+
   host.Send("ok\r\n");
+
   EXPECT_EQ(Receive(client), "ok\r\n");
   close(client);
 }
 
 // a serial port has one program at its other end; a second client is told at
 // once that the port is taken, rather than being left waiting for answers that
-// go to the first, which keeps its connection
+// go to the first
 TEST(SimulatorSerialHostTest, ClosesASecondClient) {
   SimulatorSerialHost host;
-  std::string received;
-
   ASSERT_TRUE(host.Begin(kPort));
   int const first{Connect()};
   ASSERT_GE(first, 0);
-  received += host.Task();
+  Take(host);
   int const second{Connect()};
   ASSERT_GE(second, 0);
-  received += host.Task();
+
+  Take(host);
 
   EXPECT_TRUE(IsClosedByHost(second));
+  close(first);
+  close(second);
+}
+
+// the first client keeps its connection when a second is closed
+TEST(SimulatorSerialHostTest, KeepsTheFirstClientBesideASecond) {
+  SimulatorSerialHost host;
+  ASSERT_TRUE(host.Begin(kPort));
+  int const first{Connect()};
+  ASSERT_GE(first, 0);
+  Take(host);
+  int const second{Connect()};
+  ASSERT_GE(second, 0);
+  Take(host);
+
   host.Send("ok\r\n");
+
   EXPECT_EQ(Receive(first), "ok\r\n");
   close(first);
   close(second);
@@ -121,14 +154,12 @@ TEST(SimulatorSerialHostTest, ClosesASecondClient) {
 // host lets go of a client that has gone
 TEST(SimulatorSerialHostTest, TakesTheNextClientOnceTheFirstHasGone) {
   SimulatorSerialHost host;
-  std::string received;
-
   ASSERT_TRUE(host.Begin(kPort));
   int const first{Connect()};
   ASSERT_GE(first, 0);
-  received += host.Task();
+  Take(host);
   close(first);
-  received += host.Task();
+  Take(host);
 
   int const next{Connect()};
   ASSERT_GE(next, 0);

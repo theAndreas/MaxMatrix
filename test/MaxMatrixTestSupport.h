@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "Arduino.h"
+#include "CaseName.h"   // IWYU pragma: export
 #include "MaxMatrix.h"  // IWYU pragma: export
 
 constexpr uint8_t kDataInPin{11};
@@ -198,13 +199,6 @@ std::vector<std::string> ShownPicture(max_matrix::Matrix& matrix);
  * shifts in shows what it has brought so far */
 std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
                                uint8_t width = 3);
-
-/* the name of a case of a table of a parameterized test, which the table gives
- * as `name` */
-template <typename Case>
-std::string CaseName(::testing::TestParamInfo<Case> const& info) {
-  return info.param.name;
-}
 
 /* feeds a line to a command char by char, as Serial would, and returns what
  * the last char brought */

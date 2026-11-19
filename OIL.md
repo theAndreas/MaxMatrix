@@ -50,7 +50,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159 |
+| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 
@@ -1493,6 +1493,18 @@ written down. A test of several operators or functions at once, `&`, `|` and `~`
 `ClearBits()`, is a test for each; a test that acted again after it had asserted, a span or a
 reference written through, the report checked beside its call, acts first; and the empty end of
 `subspan()`, a test of its own already, is no longer checked beside its middle.
+
+As built for the tests of the simulator (TS-9, 10, 13, 14): the ports and the durations of
+`--for`, taken or refused, the examples of FIPS 180-2 and RFC 4648, and the texts escaped for
+JSON are tables of named cases, the bugs they guard against named at their cases; a test that took
+a frame byte by byte in a loop takes it at its edges, the header alone, all but its last byte, and
+a later read that completes it; and a test of two behaviours, the intensity or the status line
+upright and upside down, a frame taken first and second, a serial host that carries both ways or
+keeps a first client beside a second, is a test for each. A result a test takes only to prepare
+what it tests goes to `Discard()`, with the reason. `CaseName()`, which names the cases of a table,
+lies in `test/CaseName.h` now, for the tests of the host code as well, and ctest names their cases
+by it rather than by their bytes. `SimulatorAvrTest` and `SimulatorWebHostTest` were as the rules
+ask already, the real time of the latter as TS-18 allows the tests of a port.
 
 ### 42 A newer avr-gcc as a cross-check
 

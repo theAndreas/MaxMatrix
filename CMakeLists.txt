@@ -61,8 +61,10 @@ foreach(Test SimulatorWebSocketTest SimulatorWebHostTest SimulatorSerialHostTest
     add_executable(${Test} test/Simulator/${Test}.cpp)
     set_target_properties(${Test} PROPERTIES CXX_STANDARD 17)
     target_link_libraries(${Test} PRIVATE SimulatorHosts GTest::gtest_main)
+    # test/ for CaseName.h, which names the cases of a table
+    target_include_directories(${Test} PRIVATE test)
     # one port per test binary, and ctest runs every test of it as a process of its own
-    gtest_discover_tests(${Test} TEST_PREFIX "simulator/" PROPERTIES RESOURCE_LOCK ${Test})
+    gtest_discover_tests(${Test} TEST_PREFIX "simulator/" NO_PRETTY_VALUES PROPERTIES RESOURCE_LOCK ${Test})
 endforeach()
 
 # The rest of the simulator but main.cpp once too: it reads the model, never the library, so the transfer path makes no
@@ -76,7 +78,8 @@ target_compile_definitions(Simulator PRIVATE SIMULATOR_PAGE="${PROJECT_SOURCE_DI
 add_executable(SimulatorTest test/Simulator/SimulatorTest.cpp)
 set_target_properties(SimulatorTest PROPERTIES CXX_STANDARD 17)
 target_link_libraries(SimulatorTest PRIVATE Simulator GTest::gtest_main)
-gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/")
+target_include_directories(SimulatorTest PRIVATE test)
+gtest_discover_tests(SimulatorTest TEST_PREFIX "simulator/" NO_PRETTY_VALUES)
 
 # The control program, and its classes without a window once: they know neither the library nor the sketch. Its ports
 # are tested against a pseudo terminal and against the simulator's serial host, on a port of its own.
