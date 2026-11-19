@@ -1561,6 +1561,13 @@ WebSocket lowers a header's name, and the control program decodes a hex digit, b
 rather than by `<cctype>`, which depends on the locale. `vfprintf()` of simavr's log and `exit()`
 at the end of `--for` keep a `NOLINT`, as does the fuzzer's `abort()` (TS-29).
 
+As built for C-16 (6.8.4): the index operator and `data()` of `array`, the panel's `GetWired()`,
+the wired buffer's `GetChain()`, and in the host code the link's picture, the options' and the
+panel's names and the window's shown link are `&`-qualified, their `const` overload `const&` with
+a `const&&` overload deleted, so that a call on a temporary, whose reference would dangle, does
+not compile; `test/compile_fail/` holds the element of a temporary array. `span` keeps its index
+operator, a view of what another owns. No example changes in size.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
