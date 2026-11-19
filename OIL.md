@@ -1468,6 +1468,16 @@ run here on four as well. Every behaviour that
 reckons with the mapping runs in all sixteen, as the loops of the old tests did: the run under the
 sanitizers on 16 cores went from 70 to 98 seconds for it, as decided on 2026-11-19.
 
+As built for the second half of `test/Matrix/PanelTest.cpp`, the shapes and bitmaps (TS-7, 9,
+13, 14), as decided on 2026-11-19: a line is checked against the ideal line and a rectangle
+against its sides rather than against a picture written down, as they test what a line and a
+rectangle are and not how the code draws them, which TS-13 is about, and a line or a rectangle
+worked out by hand where it runs as far as an `int16_t` reaches would be the likelier mistake;
+each line, both ways round, and each rectangle by each pair of corners is a named case of a table
+rather than a loop. A circle, a bitmap and a shape turned off are pictures written down, a test
+each, where the old tests drew them by a lambda as the code draws them; and what lies far off the
+panel is a table of named places.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,

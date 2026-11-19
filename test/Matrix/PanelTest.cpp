@@ -660,200 +660,379 @@ void ExpectLine(Matrix const& matrix, Line const& line) {
   }
 }
 
-/* a line in each of the eight directions, both ways round, and lines whose ends
- * lie off the panel, as far as an int16_t reaches: the sum of their differences
- * does not fit in an int, which has 16 bits on the Uno */
-TEST_F(MaxMatrixTest, DrawLineRunsFromEndToEnd) {
-  std::array<Line, 13> const lines{{
-      {2, 3, 20, 3},
-      {7, 0, 7, 7},
-      {0, 0, 7, 7},
-      {0, 0, 31, 7},
-      {3, 1, 9, 6},
-      {30, 0, 26, 7},
-      {0, 7, 31, 0},
-      {12, 4, 12, 4},
-      {-40, -10, 60, 17},
-      {5, -20, 9, 30},
-      {-32768, 0, 32767, 7},
-      {-32768, -32768, 32767, 32767},
-      {16, -32768, 17, 32767},
-  }};
+/* a line, its name and its ends */
+struct LineCase {
+  char const* name;
+  Line line;
+};
 
-  for (auto const& line : lines) {
-    for (bool const reverse : {false, true}) {
-      SCOPED_TRACE(::testing::Message()
-                   << "(" << line.x0 << ", " << line.y0 << ") to (" << line.x1
-                   << ", " << line.y1 << ")" << (reverse ? " reversed" : ""));
-      matrix_.Clear();
-      Point const from{X{line.x0}, Y{line.y0}};
-      Point const to{X{line.x1}, Y{line.y1}};
-      if (reverse) {
-        matrix_.DrawLine(to, from, true);
-      } else {
-        matrix_.DrawLine(from, to, true);
-      }
-      ExpectLine(matrix_, line);
-    }
-  }
-  matrix_.Clear();
+/* A line in each of the eight directions, and lines whose ends lie off the
+ * panel, as far as an int16_t reaches: the sum of their differences does not
+ * fit in an int, which has 16 bits on the Uno. Each is checked against the
+ * ideal line rather than a picture written down: a dot per column or row along
+ * its longer axis, at most half a dot from it, and none beyond its ends. */
+constexpr std::array<LineCase, 13> kLines{{
+    {"Flat", {2, 3, 20, 3}},
+    {"Upright", {7, 0, 7, 7}},
+    {"Diagonal", {0, 0, 7, 7}},
+    {"AcrossThePanel", {0, 0, 31, 7}},
+    {"Steep", {3, 1, 9, 6}},
+    {"SteepBackwards", {30, 0, 26, 7}},
+    {"RisingAcrossThePanel", {0, 7, 31, 0}},
+    {"Dot", {12, 4, 12, 4}},
+    {"EndsOffThePanel", {-40, -10, 60, 17}},
+    {"SteepEndsOffThePanel", {5, -20, 9, 30}},
+    {"FlatAsFarAsInt16Reaches", {-32768, 0, 32767, 7}},
+    {"DiagonalAsFarAsInt16Reaches", {-32768, -32768, 32767, 32767}},
+    {"SteepAsFarAsInt16Reaches", {16, -32768, 17, 32767}},
+}};
+
+/* a line, and whether it is drawn from its second end to its first */
+using LineParameter = std::tuple<LineCase, bool>;
+
+class LineTest : public PanelTest,
+                 public ::testing::WithParamInterface<LineParameter> {};
+
+std::string LineName(::testing::TestParamInfo<LineParameter> const& info) {
+  std::string const name{std::get<0>(info.param).name};
+  return name + (std::get<1>(info.param) ? "_reversed" : "");
+}
+
+INSTANTIATE_TEST_SUITE_P(Lines, LineTest,
+                         ::testing::Combine(::testing::ValuesIn(kLines),
+                                            ::testing::Bool()),
+                         LineName);
+
+TEST_P(LineTest, RunsFromEndToEnd) {
+  Line const& line{std::get<0>(GetParam()).line};
+  Point const first{X{line.x0}, Y{line.y0}};
+  Point const second{X{line.x1}, Y{line.y1}};
+  bool const reversed{std::get<1>(GetParam())};
+
+  matrix_.DrawLine(reversed ? second : first, reversed ? first : second, true);
+
+  ExpectLine(matrix_, line);
+}
+
+TEST_F(PanelTest, LineDrawnDarkTurnsItsDotsOff) {
   Point const far_left{X{-32768}, Y{0}};
   Point const far_right{X{32767}, Y{7}};
   matrix_.DrawLine(far_left, far_right, true);
+
   matrix_.DrawLine(far_left, far_right, false);
-  EXPECT_EQ(ShownPicture(matrix_),
-            Picture([](int16_t, int16_t) { return false; }))
-      << "a line turned off";
+
+  EXPECT_EQ(ShownPicture(matrix_), Dots({}));
 }
 
-/* a rectangle on the panel, one partly off it, one of a row, a column or a
- * dot, and one as large as an int16_t allows, by either pair of opposite
- * corners in either order; the outline is what the filled one has more than its
- * inside */
-TEST_F(MaxMatrixTest, RectanglesCoverTheirArea) {
-  struct Rectangle {
-    int16_t left, top, right, bottom;
-  };
-  std::array<Rectangle, 9> const rectangles{{
-      {2, 1, 6, 4},
-      {10, 0, 10, 7},
-      {20, 6, 23, 6},
-      {12, 4, 12, 4},
-      {-3, -2, 2, 2},
-      {29, 5, 38, 14},
-      {-32768, -32768, 32767, 32767},
-      {0, 0, 32767, 32767},
-      {32767, 0, 32767, 7},
-  }};
+/* a rectangle by its sides */
+struct Rectangle {
+  char const* name;
+  int16_t left, top, right, bottom;
+};
 
-  for (auto const& r : rectangles) {
-    auto inside{[&](int16_t x, int16_t y) {
-      return (x >= r.left) && (x <= r.right) && (y >= r.top) && (y <= r.bottom);
-    }};
-    auto const edge{[&](int16_t x, int16_t y) {
-      return inside(x, y) && ((x == r.left) || (x == r.right) || (y == r.top) ||
-                              (y == r.bottom));
-    }};
+/* A rectangle on the panel, one partly off it, one of a column, a row or a
+ * dot, and one as large as an int16_t allows. Each is checked against what it
+ * is rather than a picture written down: the dots between its sides, or on
+ * them. */
+constexpr std::array<Rectangle, 9> kRectangles{{
+    {"OnThePanel", 2, 1, 6, 4},
+    {"Column", 10, 0, 10, 7},
+    {"Row", 20, 6, 23, 6},
+    {"Dot", 12, 4, 12, 4},
+    {"OffTheTopLeft", -3, -2, 2, 2},
+    {"OffTheBottomRight", 29, 5, 38, 14},
+    {"AsLargeAsInt16Allows", -32768, -32768, 32767, 32767},
+    {"FromTheCornerToTheEnd", 0, 0, 32767, 32767},
+    {"ColumnAtTheEnd", 32767, 0, 32767, 7},
+}};
+
+/* which pair of opposite corners a rectangle is given by, in which order */
+enum class Corners : uint8_t {
+  kTopLeftFirst,
+  kBottomRightFirst,
+  kTopRightFirst,
+  kBottomLeftFirst
+};
+
+constexpr std::array<Corners, 4> kCorners{
+    {Corners::kTopLeftFirst, Corners::kBottomRightFirst,
+     Corners::kTopRightFirst, Corners::kBottomLeftFirst}};
+
+using RectangleParameter = std::tuple<Rectangle, Corners>;
+
+class RectangleTest : public PanelTest,
+                      public ::testing::WithParamInterface<RectangleParameter> {
+ protected:
+  /* the two corners of the rectangle in the order of the parameter */
+  static std::pair<Point, Point> GetCorners() {
+    Rectangle const& r{std::get<0>(GetParam())};
     Point const top_left{X{r.left}, Y{r.top}};
     Point const bottom_right{X{r.right}, Y{r.bottom}};
     Point const top_right{X{r.right}, Y{r.top}};
     Point const bottom_left{X{r.left}, Y{r.bottom}};
-    std::array<std::pair<Point, Point>, 4> const corners{{
+    std::array<std::pair<Point, Point>, 4> const pairs{{
         {top_left, bottom_right},
         {bottom_right, top_left},
         {top_right, bottom_left},
         {bottom_left, top_right},
     }};
-
-    for (auto const& pair : corners) {
-      SCOPED_TRACE(::testing::Message()
-                   << "(" << pair.first.x.number << ", " << pair.first.y.number
-                   << ") to (" << pair.second.x.number << ", "
-                   << pair.second.y.number << ")");
-      matrix_.Clear();
-      matrix_.FillRect(pair.first, pair.second, true);
-      EXPECT_EQ(ShownPicture(matrix_), Picture(inside)) << "filled";
-      matrix_.Clear();
-      matrix_.DrawRect(pair.first, pair.second, true);
-      EXPECT_EQ(ShownPicture(matrix_), Picture(edge)) << "outline";
-    }
+    return pairs[static_cast<size_t>(std::get<1>(GetParam()))];
   }
 
+  /* whether a dot lies between the sides of the rectangle */
+  static bool Inside(int16_t x, int16_t y) {
+    Rectangle const& r{std::get<0>(GetParam())};
+    return (x >= r.left) && (x <= r.right) && (y >= r.top) && (y <= r.bottom);
+  }
+
+  /* whether a dot lies on a side of the rectangle */
+  static bool OnASide(int16_t x, int16_t y) {
+    Rectangle const& r{std::get<0>(GetParam())};
+    bool const on_a_side{(x == r.left) || (x == r.right) || (y == r.top) ||
+                         (y == r.bottom)};
+    return Inside(x, y) && on_a_side;
+  }
+};
+
+std::string RectangleName(
+    ::testing::TestParamInfo<RectangleParameter> const& info) {
+  std::array<char const*, 4> const corners{
+      {"TopLeftFirst", "BottomRightFirst", "TopRightFirst", "BottomLeftFirst"}};
+  std::string const name{std::get<0>(info.param).name};
+  return name + "_" + corners[static_cast<size_t>(std::get<1>(info.param))];
+}
+
+INSTANTIATE_TEST_SUITE_P(Rectangles, RectangleTest,
+                         ::testing::Combine(::testing::ValuesIn(kRectangles),
+                                            ::testing::ValuesIn(kCorners)),
+                         RectangleName);
+
+TEST_P(RectangleTest, FillRectCoversItsArea) {
+  std::pair<Point, Point> const corners{GetCorners()};
+
+  matrix_.FillRect(corners.first, corners.second, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture(Inside));
+}
+
+TEST_P(RectangleTest, DrawRectDrawsItsSides) {
+  std::pair<Point, Point> const corners{GetCorners()};
+
+  matrix_.DrawRect(corners.first, corners.second, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Picture(OnASide));
+}
+
+TEST_F(PanelTest, FillRectOfFalseTurnsItsAreaOff) {
   matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+
   matrix_.FillRect(Point{X{1}, Y{1}}, Point{X{3}, Y{2}}, false);
-  matrix_.DrawRect(Point{X{5}, Y{3}}, Point{X{7}, Y{5}}, false);
-  EXPECT_EQ(
-      ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-        bool const filled_off{(x >= 1) && (x <= 3) && (y >= 1) && (y <= 2)};
-        bool const in_outline{(x >= 5) && (x <= 7) && (y >= 3) && (y <= 5)};
-        bool const off_centre{(x != 6) || (y != 4)};
-        bool const outline_off{in_outline && off_centre};
-        return !(filled_off || outline_off);
-      }))
-      << "turned off";
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "################################",
+                                       "#...############################",
+                                       "#...############################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                   }));
 }
 
-/* the outlines the midpoint circle gives for small radii, round and closed,
- * also across the edge of the panel */
-TEST_F(MaxMatrixTest, DrawCircleDrawsItsOutline) {
-  std::vector<std::string> const radius_3{
-      "..###..", ".#...#.", "#.....#", "#.....#",
-      "#.....#", ".#...#.", "..###..",
-  };
-
-  matrix_.DrawCircle(Point{X{10}, Y{3}}, 3, true);
-  EXPECT_EQ(
-      ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
-        return (x >= 7) && (x <= 13) && (y <= 6) &&
-               (radius_3[static_cast<size_t>(y)][static_cast<size_t>(x - 7)] ==
-                '#');
-      }));
-
-  matrix_.Clear();
-  matrix_.DrawCircle(Point{X{0}, Y{0}}, 3, true);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&radius_3](int16_t x, int16_t y) {
-              return (x <= 3) && (y <= 3) &&
-                     (radius_3[static_cast<size_t>(y + 3)]
-                              [static_cast<size_t>(x + 3)] == '#');
-            }))
-      << "the quarter on the panel";
-
-  matrix_.Clear();
-  matrix_.DrawCircle(Point{X{20}, Y{4}}, 0, true);
-  matrix_.DrawCircle(Point{X{25}, Y{4}}, 1, true);
-  matrix_.DrawCircle(Point{X{28}, Y{4}}, -1, true);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return ((x == 20) && (y == 4)) ||
-                     ((std::abs(x - 25) + std::abs(y - 4)) == 1);
-            }))
-      << "radius 0 is a dot, 1 a cross, a negative one nothing";
-
-  matrix_.Clear();
-  matrix_.DrawCircle(Point{X{16}, Y{3}}, 32767, true);
-  matrix_.DrawCircle(Point{X{-32768}, Y{-32768}}, 32767, true);
-  EXPECT_EQ(ShownPicture(matrix_),
-            Picture([](int16_t, int16_t) { return false; }))
-      << "circles far beyond the panel";
-}
-
-/* a bitmap is drawn column by column from flash, also partly off the panel, and
- * leaves the rows below its height */
-TEST_F(MaxMatrixTest, DrawBitmapDrawsItsColumns) {
-  auto bitmap_dot{[](int16_t column, int16_t row) {
-    return (column >= 0) && (column < static_cast<int16_t>(kBitmap.size())) &&
-           (row >= 0) && (row < 8) &&
-           bitRead(kBitmap[static_cast<size_t>(column)], row);
-  }};
-
-  matrix_.DrawBitmap(Point{X{3}, Y{0}}, kBitmap);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
-              return bitmap_dot(x - 3, y);
-            }));
-
-  matrix_.Clear();
-  matrix_.DrawBitmap(Point{X{-2}, Y{3}}, kBitmap);
-  matrix_.DrawBitmap(Point{X{29}, Y{-1}}, kBitmap);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
-              return bitmap_dot(x + 2, y - 3) || bitmap_dot(x - 29, y + 1);
-            }))
-      << "partly off the panel";
-
+TEST_F(PanelTest, DrawRectOfFalseTurnsItsSidesOff) {
   matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
-  matrix_.DrawBitmap(Point{X{10}, Y{2}}, 3, kBitmap);
-  EXPECT_EQ(ShownPicture(matrix_), Picture([&](int16_t x, int16_t y) {
-              return (x < 10) || (x >= 15) || (y < 2) || (y >= 5) ||
-                     bitmap_dot(x - 10, y - 2);
-            }))
-      << "three rows high, over a lit panel";
 
-  matrix_.Clear();
-  matrix_.DrawBitmap(Point{X{32767}, Y{0}}, kBitmap);
-  matrix_.DrawBitmap(Point{X{-32768}, Y{0}}, kBitmap);
-  matrix_.DrawBitmap(Point{X{0}, Y{32767}}, 8, kBitmap);
-  matrix_.DrawBitmap(Point{X{0}, Y{-32768}}, 8, kBitmap);
-  EXPECT_EQ(ShownPicture(matrix_),
-            Picture([](int16_t, int16_t) { return false; }))
-      << "far off the panel";
+  matrix_.DrawRect(Point{X{5}, Y{3}}, Point{X{7}, Y{5}}, false);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                       "#####...########################",
+                                       "#####.#.########################",
+                                       "#####...########################",
+                                       "################################",
+                                       "################################",
+                                   }));
+}
+
+/* the outline the midpoint circle gives for a radius of 3, round and closed */
+TEST_F(PanelTest, DrawCircleDrawsItsOutline) {
+  matrix_.DrawCircle(Point{X{10}, Y{3}}, 3, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       ".........###....................",
+                                       "........#...#...................",
+                                       ".......#.....#..................",
+                                       ".......#.....#..................",
+                                       ".......#.....#..................",
+                                       "........#...#...................",
+                                       ".........###....................",
+                                       "................................",
+                                   }));
+}
+
+TEST_F(PanelTest, CircleAcrossTheCornerShowsTheQuarterOnThePanel) {
+  matrix_.DrawCircle(Point{X{0}, Y{0}}, 3, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "...#............................",
+                                       "...#............................",
+                                       "..#.............................",
+                                       "##..............................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                   }));
+}
+
+TEST_F(PanelTest, CircleOfRadius0IsADot) {
+  matrix_.DrawCircle(Point{X{20}, Y{4}}, 0, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "....................#...........",
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                   }));
+}
+
+TEST_F(PanelTest, CircleOfRadius1IsACross) {
+  matrix_.DrawCircle(Point{X{25}, Y{4}}, 1, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       ".........................#......",
+                                       "........................#.#.....",
+                                       ".........................#......",
+                                       "................................",
+                                       "................................",
+                                   }));
+}
+
+TEST_F(PanelTest, CircleOfANegativeRadiusDrawsNothing) {
+  matrix_.DrawCircle(Point{X{28}, Y{4}}, -1, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Dots({}));
+}
+
+/* the sums of a circle of the largest radius do not fit in an int, which has
+ * 16 bits on the Uno */
+TEST_F(PanelTest, CircleOfTheLargestRadiusAroundThePanelDrawsNothing) {
+  matrix_.DrawCircle(Point{X{16}, Y{3}}, 32767, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Dots({}));
+}
+
+TEST_F(PanelTest, CircleFarBeyondThePanelDrawsNothing) {
+  matrix_.DrawCircle(Point{X{-32768}, Y{-32768}}, 32767, true);
+
+  EXPECT_EQ(ShownPicture(matrix_), Dots({}));
+}
+
+/* a bitmap is drawn column by column from flash, bit 0 at the top: 01 82 FF 00
+ * 3C */
+TEST_F(PanelTest, DrawBitmapDrawsItsColumns) {
+  matrix_.DrawBitmap(Point{X{3}, Y{0}}, kBitmap);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "...#.#..........................",
+                                       "....##..........................",
+                                       ".....#.#........................",
+                                       ".....#.#........................",
+                                       ".....#.#........................",
+                                       ".....#.#........................",
+                                       ".....#..........................",
+                                       "....##..........................",
+                                   }));
+}
+
+/* off the left edge, three rows down: FF 00 3C of its columns, of which the
+ * rows on the panel */
+TEST_F(PanelTest, BitmapOffTheLeftEdgeShowsThePartOnThePanel) {
+  matrix_.DrawBitmap(Point{X{-2}, Y{3}}, kBitmap);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "................................",
+                                       "................................",
+                                       "................................",
+                                       "#...............................",
+                                       "#...............................",
+                                       "#.#.............................",
+                                       "#.#.............................",
+                                       "#.#.............................",
+                                   }));
+}
+
+/* off the right edge, a row up: 01 82 FF of its columns */
+TEST_F(PanelTest, BitmapOffTheRightEdgeShowsThePartOnThePanel) {
+  matrix_.DrawBitmap(Point{X{29}, Y{-1}}, kBitmap);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "..............................##",
+                                       "...............................#",
+                                       "...............................#",
+                                       "...............................#",
+                                       "...............................#",
+                                       "...............................#",
+                                       "..............................##",
+                                       "................................",
+                                   }));
+}
+
+/* three rows high over a lit panel: the rows 0 to 2 of its columns, 1 0 0,
+ * 0 1 0, 1 1 1, 0 0 0 and 0 0 1, and the rest of the panel as it was */
+TEST_F(PanelTest, BitmapOfThreeRowsLeavesTheRowsBelowIt) {
+  matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
+
+  matrix_.DrawBitmap(Point{X{10}, Y{2}}, 3, kBitmap);
+
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "################################",
+                                       "################################",
+                                       "###########.#..#################",
+                                       "##########.##..#################",
+                                       "##########..#.##################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                   }));
+}
+
+/* a bitmap far off the panel, where the sum of its place and its size does not
+ * fit in an int, which has 16 bits on the Uno */
+struct FarBitmap {
+  char const* name;
+  void (*draw)(Matrix&);
+};
+
+constexpr std::array<FarBitmap, 4> kFarBitmaps{{
+    {"Right", [](Matrix& m) { m.DrawBitmap(Point{X{32767}, Y{0}}, kBitmap); }},
+    {"Left", [](Matrix& m) { m.DrawBitmap(Point{X{-32768}, Y{0}}, kBitmap); }},
+    {"Below",
+     [](Matrix& m) { m.DrawBitmap(Point{X{0}, Y{32767}}, 8, kBitmap); }},
+    {"Above",
+     [](Matrix& m) { m.DrawBitmap(Point{X{0}, Y{-32768}}, 8, kBitmap); }},
+}};
+
+class FarBitmapTest : public PanelTest,
+                      public ::testing::WithParamInterface<FarBitmap> {};
+
+INSTANTIATE_TEST_SUITE_P(Places, FarBitmapTest,
+                         ::testing::ValuesIn(kFarBitmaps), CaseName<FarBitmap>);
+
+TEST_P(FarBitmapTest, DrawsNothing) {
+  GetParam().draw(matrix_);
+
+  EXPECT_EQ(ShownPicture(matrix_), Dots({}));
 }
 
 /* whether DrawBitmap() takes a bitmap and then a number, as its width once
@@ -869,28 +1048,34 @@ struct TakesAWidthAfterTheBitmap<
 /* Bug, of the width taken from the bitmap: DrawBitmap(x, y, bitmap, width), as
  * it was called before, compiled with the height last and drew the width as
  * the height; the height goes before the bitmap, so that it does not compile */
-TEST_F(MaxMatrixTest, DrawBitmapTakesNoWidthAfterTheBitmap) {
+TEST_F(PanelTest, DrawBitmapTakesNoWidthAfterTheBitmap) {
   static_assert(!TakesAWidthAfterTheBitmap<Matrix>::value,
                 "a width after the bitmap would be read as its height");
 }
 
 /* a bitmap less than a module high at the top row leaves the rows below it,
  * where a whole column at once would have turned them off */
-TEST_F(MaxMatrixTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
+TEST_F(PanelTest, BitmapAtTheTopLeavesTheRowsBelowIt) {
   matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
 
   matrix_.DrawBitmap(Point{X{10}, Y{0}}, 3, kBitmap);
 
-  EXPECT_EQ(ShownPicture(matrix_), Picture([](int16_t x, int16_t y) {
-              return (x < 10) || (x >= 15) || (y >= 3) ||
-                     bitRead(kBitmap[static_cast<size_t>(x - 10)], y);
-            }));
+  EXPECT_EQ(ShownPicture(matrix_), (std::vector<std::string>{
+                                       "###########.#..#################",
+                                       "##########.##..#################",
+                                       "##########..#.##################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                       "################################",
+                                   }));
 }
 
 /* a bitmap higher than a module read bits beyond its byte, which turned the
  * dots below its eighth row off or, from bit 32 on, shifted further than C++
  * defines; it is drawn eight rows high, and the rows below stay as they are */
-class BitmapHeightTest : public MaxMatrixTest,
+class BitmapHeightTest : public PanelTest,
                          public ::testing::WithParamInterface<uint8_t> {};
 
 TEST_P(BitmapHeightTest, BitmapHigherThanAModuleIsDrawnEightHigh) {
@@ -911,10 +1096,15 @@ TEST_P(BitmapHeightTest, BitmapHigherThanAModuleIsDrawnEightHigh) {
                                    }));
 }
 
-INSTANTIATE_TEST_SUITE_P(Heights, BitmapHeightTest,
-                         ::testing::Values(uint8_t{9}, uint8_t{255}));
+std::string HeightName(::testing::TestParamInfo<uint8_t> const& info) {
+  return "Height" + std::to_string(info.param);
+}
 
-TEST_F(MaxMatrixTest, BitmapOfNoRowDrawsNothing) {
+INSTANTIATE_TEST_SUITE_P(Heights, BitmapHeightTest,
+                         ::testing::Values(uint8_t{9}, uint8_t{255}),
+                         HeightName);
+
+TEST_F(PanelTest, BitmapOfNoRowDrawsNothing) {
   constexpr auto kDarkColumn PROGMEM{make_array<uint8_t>(0x00)};
   matrix_.FillRect(Point{X{0}, Y{0}}, Point{X{31}, Y{7}}, true);
 
