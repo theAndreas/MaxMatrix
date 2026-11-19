@@ -1522,6 +1522,16 @@ one it tests arranged; the wirings are tables of named cases, all eight for ever
 one LED of its own, and the four MD_MAX72XX names for the LED of its first segment; and the order
 of the chain, upright, upside down and the chip of a column, is a test each.
 
+As built for TS-28, the last rule of the chapter, as decided on 2026-11-18: `Command` has a
+fuzzer, `test/fuzz/CommandFuzz.cpp`, as it is the one parser of the library that reads from
+outside; the font, the WebSocket and HTTP of the simulator and the picture the control program
+decodes have none, as what they read comes from the sketch, the page or the board. Every input
+starts from a board that has just started, is fed char by char, and steps on a shift it started,
+so that a text kept past its line is read; beyond what ASan and UBSan find, it aborts where a frame
+went out broken, the interrupts stayed off, a line was answered twice or an answer is none a
+program knows. A wrong answer planted in `Command` made it abort on its first input. It starts from
+a line of each command and a dictionary of their words.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
