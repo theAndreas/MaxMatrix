@@ -44,8 +44,10 @@ std::string Receive(int descriptor) {
 std::string ReadUntilReceived(ControlPort& port) {
   std::string received;
 
-  for (int16_t i{0}; (i < 50) && received.empty() && port.Read(received); i++) {
+  int16_t i{0};
+  while ((i < 50) && received.empty() && port.Read(received)) {
     usleep(10000);
+    i++;
   }
   return received;
 }
@@ -55,9 +57,11 @@ std::string ReadUntilReceived(ControlPort& port) {
 std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
-  for (int16_t i{0}; (i < 50) && received.empty(); i++) {
+  int16_t i{0};
+  while ((i < 50) && received.empty()) {
     received += host.Task();
     usleep(10000);
+    i++;
   }
   return received;
 }

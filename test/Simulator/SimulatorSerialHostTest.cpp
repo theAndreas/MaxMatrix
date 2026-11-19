@@ -74,9 +74,11 @@ bool IsClosedByHost(int client) {
 std::string TaskUntilReceived(SimulatorSerialHost& host) {
   std::string received;
 
-  for (int16_t i{0}; (i < 100) && received.empty(); i++) {
+  int16_t i{0};
+  while ((i < 100) && received.empty()) {
     received += host.Task();
     usleep(10000);
+    i++;
   }
   return received;
 }

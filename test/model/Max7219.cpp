@@ -109,8 +109,10 @@ void Max7219Chain::Reset(uint8_t number_of_chips) {
 
 /* a byte as the wire carries it, most significant bit first */
 void Max7219Chain::Shift(uint8_t value) {
-  for (uint8_t mask{kTopBit}; mask != 0u; mask = Bits::ShiftDown(mask, 1u)) {
+  uint8_t mask{kTopBit};
+  while (mask != 0u) {
     ShiftBit(Bits::ReadBitGroup(value, mask) != 0u);
+    mask = Bits::ShiftDown(mask, 1u);
   }
 }
 
