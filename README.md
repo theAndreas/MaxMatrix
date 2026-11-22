@@ -15,7 +15,7 @@ Features:
 - set and get single dots, rows and columns, in the same coordinates on every type of module
 - draw lines, rectangles, circles and pictures from flash
 - print chars and text (ASCII 32 to 126, the German umlauts, ß and °, variable char width)
-- shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps, once or over and over
+- shift a char or a text over the matrix without blocking `loop()`, a column per call, once or over and over
 - shift the matrix content left, right, up and down, with or without rotation
 - send a picture drawn with many calls at once, in at most eight frames
 - all eight ways a module can be wired, mirrored ones included, and a board mounted upside down
