@@ -14,9 +14,8 @@
 
 #include "Chain.h"
 
-#include <avr/interrupt.h>
-#include <avr/io.h>
 #include <stdint.h>
+#include <util/atomic.h>
 
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
@@ -184,31 +183,28 @@ void Chain::Transfer(max7219::Register address, uint8_t value) {
 void Chain::ShiftOut(uint8_t value) {
   /*
    * The core's portOutputRegister() makes the register's address, a number read
-   * from flash, a pointer, and SREG is the status register at its fixed
-   * address: clang-tidy reports both on the Uno, where there is no other way to
-   * a port. T-8: auto, as the register is a volatile uint8_t on the board and
-   * the mock's object of its own on the host.
+   * from flash, a pointer: clang-tidy reports it on the Uno, where there is no
+   * other way to a port. T-8: auto, as the register is a volatile uint8_t on
+   * the board and the mock's object of its own on the host.
    */
   auto* const data_in_register{portOutputRegister(
       data_in_.port)}; /* NOLINT(performance-no-int-to-ptr) */
   auto* const clock_register{
       portOutputRegister(clock_.port)}; /* NOLINT(performance-no-int-to-ptr) */
-  uint8_t const status_register{
-      SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
-  cli();
-  uint8_t bit{kFirstBit};
-  while (bit != 0u) {
-    if (Bit<uint8_t>::ReadBitGroup(value, bit) != 0u) {
-      Bit<uint8_t>::SetBits(*data_in_register, data_in_.mask);
-    } else {
-      Bit<uint8_t>::ClearBits(*data_in_register, data_in_.mask);
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    uint8_t bit{kFirstBit};
+    while (bit != 0u) {
+      if (Bit<uint8_t>::ReadBitGroup(value, bit) != 0u) {
+        Bit<uint8_t>::SetBits(*data_in_register, data_in_.mask);
+      } else {
+        Bit<uint8_t>::ClearBits(*data_in_register, data_in_.mask);
+      }
+      Bit<uint8_t>::SetBits(*clock_register, clock_.mask);
+      Bit<uint8_t>::ClearBits(*clock_register, clock_.mask);
+      bit = Bit<uint8_t>::ShiftDown(bit, 1u);
     }
-    Bit<uint8_t>::SetBits(*clock_register, clock_.mask);
-    Bit<uint8_t>::ClearBits(*clock_register, clock_.mask);
-    bit = Bit<uint8_t>::ShiftDown(bit, 1u);
   }
-  SREG = status_register;
 }
 #endif
 
@@ -220,19 +216,17 @@ Chain::PortBit Chain::LookUpPortBit(uint8_t pin) {
 
 // Sets `pin` high or low, with the interrupts held off, as ShiftOut() does.
 void Chain::WritePin(PortBit pin, bool high) {
-  // The NOLINTs are those of ShiftOut(), for the same reason.
+  // The NOLINT is that of ShiftOut(), for the same reason.
   auto* const port_register{
       portOutputRegister(pin.port)}; /* NOLINT(performance-no-int-to-ptr) */
-  uint8_t const status_register{
-      SREG}; /* NOLINT(clang-analyzer-core.FixedAddressDereference) */
 
-  cli();
-  if (high) {
-    Bit<uint8_t>::SetBits(*port_register, pin.mask);
-  } else {
-    Bit<uint8_t>::ClearBits(*port_register, pin.mask);
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    if (high) {
+      Bit<uint8_t>::SetBits(*port_register, pin.mask);
+    } else {
+      Bit<uint8_t>::ClearBits(*port_register, pin.mask);
+    }
   }
-  SREG = status_register;
 }
 
 // All three, though SPI drives data in and clock by pins of its own: a sketch
