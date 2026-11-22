@@ -1,10 +1,12 @@
 # MaxMatrix development containers
 
-VS Code offers two configurations when running **Dev Containers: Reopen in Container**:
+VS Code offers three configurations when running **Dev Containers: Reopen in Container**:
 
 - **MaxMatrix (Linux)** for native Linux and remote environments. It mounts the host's SSH agent.
 - **MaxMatrix (WSL2)** when VS Code runs in WSL2. It relies on VS Code's own SSH-agent forwarding and
   mounts nothing.
+- **MaxMatrix (macOS)** with Docker Desktop or OrbStack. It mounts nothing either, see
+  [macOS](#macos).
 
 Open the repository from a checkout on the host, in WSL2 the Linux side of it: a folder inside
 another container is lost with that container.
@@ -98,6 +100,20 @@ missing one is reported as such rather than as a docker error about an empty `so
 ssh-add -l
 ```
 
+## macOS
+
+The Linux variant cannot start on a Mac: there is no `/tmp/.X11-unix` to mount, and the agent's
+socket in `SSH_AUTH_SOCK` belongs to launchd, which Docker Desktop and OrbStack cannot bind into a
+container. The macOS variant mounts neither and takes the agent from VS Code, which forwards the
+host's. For git over SSH, that agent has to hold the key: macOS's `ssh` can take a key from the
+keychain without adding it to the agent, so check with `ssh-add -l` on the host, and add it with
+`ssh-add --apple-use-keychain` if the list is empty. A checkout over HTTPS needs no agent: VS Code
+forwards the host's credentials until `gh auth login` has run in the container.
+
+The image is built for the Mac's own architecture, arm64 on Apple silicon, with the checksums the
+`Dockerfile` pins for it. A window needs an X server, which macOS lacks; a page served from the
+container works, as VS Code forwards its port.
+
 GitHub's SSH host key is written into `/etc/ssh/ssh_known_hosts` by the `Dockerfile`, as published
 by GitHub, so the first SSH operation does not fail with `Host key verification failed`.
 
@@ -130,7 +146,7 @@ local feature in `shared/`, which every configuration references with
 
 ## Site-specific variants
 
-Another directory beside `linux/` and `wsl2/` shows up as another entry in the same picker: the
+Another directory beside `linux/`, `wsl2/` and `macos/` shows up as another entry in the same picker: the
 place for what must not be committed, such as an internal base image through the `BASE_IMAGE`
 build argument. `/.devcontainer/vector/` is listed in `.gitignore` for that.
 

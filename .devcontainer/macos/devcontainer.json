@@ -1,0 +1,14 @@
+{
+    "name": "MaxMatrix (macOS)",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    // Extensions, the Arduino core and the volumes live in ../shared.
+    // Nothing is mounted: macOS has no /tmp/.X11-unix, and its SSH agent is a launchd socket
+    // that Docker Desktop and OrbStack cannot bind into a container. This variant relies on
+    // VS Code's own SSH-agent forwarding, as the WSL2 one does.
+    "features": {
+        "./../shared": {}
+    }
+}
