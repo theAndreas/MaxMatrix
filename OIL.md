@@ -53,7 +53,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 41 | The template's rules that review checks | 36 | done | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169, #170, #172 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
-| 44 | A text in flash | 41 | open | |
+| 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
 
 ### 1 Build with CMake
@@ -1661,6 +1661,31 @@ is read from RAM, so `Messages` keeps its four texts there. Found by the review 
 AVR in 41. A text in flash, as `F("...")` gives it to the core's `Print`, beside the span; what a
 shifting text that reads flash costs is measured before it is built. A change of the API is
 allowed, as 3.0.0 is not released.
+
+Measured on 2026-11-22 on prototypes, on the Uno with avr-gcc 7.3, every example in all three
+variants. A flag in `internal::Text` that says whether its text lies in flash: 1 byte of RAM and
+4 of flash in every sketch, 82 to 94 bytes of flash in a sketch that shifts a text but writes no
+`F()`, as SerialControl, and with the texts in flash 15 bytes of RAM less in ScrollText and 77 in
+Messages. A pointer to the function that reads the text instead, set to the reader of flash only
+by the overload that takes one, so that the linker could drop it: worse, 38 bytes of flash and 2
+of RAM in every sketch, as avr-gcc no longer inlines the reader of RAM behind the call. Decided
+the same day: the flag, as RAM is what the Uno lacks.
+
+As built: `SetText()` and `SetTextWithShift()` take a `__FlashStringHelper const*`, as `F()` of the
+core gives one, beside the span, and `FromFlash()` hands on a text of a table in flash, which
+`F()` cannot be written for, without a cast in the sketch. `internal::Text` reads a text of either
+kind through `ReadChars()`, which the drawn and the shifting text share: a text in RAM as it is,
+from flash the byte of a char or the two of its UTF-8 sequence, the second only behind a first that
+is not the null character, so never past the end of the text, which needs no length and no
+`strlen_P()`. A null pointer is no text, `Error::kNoText`, as `{}` is one where a sketch writes it
+for an empty text; `F("")` draws nothing, as `""` does. `ScrollText` writes its text with `F()` and
+`Messages` its table with `PROGMEM`: the mock reads flash where RAM is, so only the examples in
+simavr tell the two apart, and their panels are the same as before. Measured on the Uno with
+avr-gcc 7.3, every example in all three variants, against the texts in RAM: Messages 75 to 77 bytes
+of RAM less and 120 to 146 of flash more, ScrollText 15 of RAM less and 24 to 46 of flash more;
+every other example 1 byte of RAM more, for the flag, and of flash 4 where it draws no text, 20 to
+28 where it draws one, as Basics and Shutdown, and 54 to 56 in SerialControl, which shifts a text
+from RAM. A `Matrix` takes 38 bytes of RAM with bit banging and 34 with SPI.
 
 ### 45 The pace of a shifting text in the sketch
 

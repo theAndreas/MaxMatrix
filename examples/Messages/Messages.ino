@@ -13,31 +13,34 @@
  *   DIN -> 11, CS -> 10, CLK -> 13
  */
 #include <MaxMatrix.h>
+#include <avr/pgmspace.h>
 #include <stdint.h>
 
-/* a text must stay valid while it is shifted, so none of them is a local
- * variable; the blanks at the end let it leave the matrix before the next one
- * comes in */
-char const kHello[] = "Hello!    ";
+/* the texts lie in flash with PROGMEM, where they take no RAM; the blanks at
+ * the end let one leave the matrix before the next one comes in */
+char const kHello[] PROGMEM = "Hello!    ";
 /* "Gruene Aepfel, schoene Oefen" with umlauts; an escape takes every hex digit
  * after it, so the text goes on in a string of its own before the f */
-char const kUmlauts[] =
+char const kUmlauts[] PROGMEM =
     "Gr\xC3\xBCne \xC3\x84pfel, sch\xC3\xB6ne \xC3\x96"
     "fen    ";
-char const kFast[] = "fast...    ";
-char const kSlow[] = "and slow    ";
+char const kFast[] PROGMEM = "fast...    ";
+char const kSlow[] PROGMEM = "and slow    ";
 
 /* T-13: made as a whole, {kHello, 50}; a default for its interval would make it
  * no aggregate in C++11, as a sketch is compiled */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): T-13, see above
 struct Message {
-  max_matrix::span<char const> text;
+  __FlashStringHelper const* text;
   uint16_t shift_interval_ms;
 };
 
-constexpr auto kMessages{
-    max_matrix::make_array<Message>(Message{kHello, 50}, Message{kUmlauts, 50},
-                                    Message{kFast, 15}, Message{kSlow, 120})};
+/* FromFlash() hands a text of the table on as F() hands on one in quotes */
+auto const kMessages{max_matrix::make_array<Message>(
+    Message{max_matrix::FromFlash(kHello), 50},
+    Message{max_matrix::FromFlash(kUmlauts), 50},
+    Message{max_matrix::FromFlash(kFast), 15},
+    Message{max_matrix::FromFlash(kSlow), 120})};
 uint8_t const kNumberOfMessages{kMessages.size()};
 
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},

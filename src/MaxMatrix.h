@@ -51,6 +51,33 @@ enum class State : uint8_t {
 };
 
 /*!
+ * \brief Hands on a text of a table in flash as F() hands on one in quotes, for
+ *        Matrix::SetText() and Matrix::SetTextWithShift().
+ *
+ * F() can only be written inside a function. A table of texts lies in flash
+ * with `PROGMEM`, and this hands one of them on:
+ *
+ * \code{.cpp}
+ * char const kHello[] PROGMEM = "Hello!";
+ *
+ * matrix.SetTextWithShift(max_matrix::FromFlash(kHello));
+ * \endcode
+ *
+ * \param[in] text The text, a char array in flash with its null character.
+ * \return The text, of the type F() gives.
+ * \pre `text` lies in flash, with `PROGMEM`; an array in RAM is read from the
+ *      flash address it has in RAM, which is another text or none.
+ */
+template <size_t Size>
+// PROGMEM takes only an array, and a text is one, as T-20 allows.
+// NOLINTNEXTLINE(modernize-avoid-c-arrays): T-20, a text
+__FlashStringHelper const* FromFlash(char const (&text)[Size]) {
+  // AVR-1: a text in flash is handed on as F() of the core makes one
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  return reinterpret_cast<__FlashStringHelper const*>(text);
+}
+
+/*!
  * \brief The matrix a sketch draws on: a chain of 8x8 modules, in the
  *        coordinates the viewer sees.
  *
@@ -78,8 +105,8 @@ enum class State : uint8_t {
  * A shifting text takes one step per call of ShiftStep(); the sketch decides
  * when, as a rule with an Interval, so that the library reads no clock.
  *
- * A Matrix takes 37 bytes of RAM on the Uno with bit banging and 33 with SPI,
- * besides its buffer of eight bytes per module: a MatrixOf<4> takes 69 and 65.
+ * A Matrix takes 38 bytes of RAM on the Uno with bit banging and 34 with SPI,
+ * besides its buffer of eight bytes per module: a MatrixOf<4> takes 70 and 66.
  *
  * \note With `MAXMATRIX_DEV_ERROR_DETECT` at `STD_ON`, every function here that
  *       fails reports its name and the error to ReportError().
@@ -421,6 +448,24 @@ class Matrix {
   }
 
   /*!
+   * \brief Draws a text that lies in flash from the left edge, as far as it
+   *        fits, as SetText() draws one in RAM.
+   *
+   * The text takes no RAM: `matrix.SetText(F("Hi!"))`, or a text of a table
+   * with FromFlash().
+   *
+   * \param[in] text The text in flash, UTF-8 or latin-1, up to its terminating
+   *                 null character.
+   * \return Error::kOk; Error::kNoText if `text` is a null pointer, as `{}` is;
+   *         or Error::kUnknownChar if a char of the text is not in the font,
+   *         with the chars before it drawn.
+   */
+  Status SetText(__FlashStringHelper const* text) {
+    return UpdateIfAuto(
+        MAXMATRIX_REPORT_ERROR("SetText", text_.SetText(panel_, text)));
+  }
+
+  /*!
    * \brief Starts shifting a text in from the right, until its last char and
    *        the space behind it have come in, or over and over.
    *
@@ -440,6 +485,22 @@ class Matrix {
    *      is undefined.
    */
   Status SetTextWithShift(span<char const> text, bool repeat = false);
+
+  /*!
+   * \brief Starts shifting a text that lies in flash in from the right, as
+   *        SetTextWithShift() does one in RAM.
+   *
+   * The text takes no RAM: `matrix.SetTextWithShift(F("Hello"), true)`, or a
+   * text of a table with FromFlash().
+   *
+   * \param[in] text The text in flash, UTF-8 or latin-1, up to its terminating
+   *                 null character.
+   * \param[in] repeat True to start over after the last char, without end.
+   * \return Error::kOk; Error::kNotSetUp before an Init() has succeeded; or
+   *         Error::kNoText if `text` is a null pointer, as `{}` is. Nothing
+   *         starts on an error.
+   */
+  Status SetTextWithShift(__FlashStringHelper const* text, bool repeat = false);
 
   /*!
    * \brief Stops a shifting text or char where it is.

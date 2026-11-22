@@ -101,6 +101,17 @@ A text in quotes or in a `char` array passes as it is, and its length goes with 
 character or at the end of its array, whichever comes first. A text known only by a pointer, as `String::c_str()`
 gives one, goes with its length: `matrix.SetText({text, strlen(text)})`.
 
+A text that never changes can stay in flash, where it takes no RAM, of which the Uno has 2 KiB: `F()` of the
+Arduino core keeps it there, `matrix.SetTextWithShift(F("Hello World!   "), true)`. `F()` can only be written
+inside a function; a table of texts lies in flash with `PROGMEM`, and `max_matrix::FromFlash()` hands one of them on,
+as the [Messages](https://github.com/theAndreas/MaxMatrix/blob/main/examples/Messages/Messages.ino) example does:
+
+```cpp
+char const kHello[] PROGMEM = "Hello!    ";
+
+matrix.SetTextWithShift(max_matrix::FromFlash(kHello));
+```
+
 More examples can be found in [examples/](https://github.com/theAndreas/MaxMatrix/tree/main/examples/):
 
 | Example | Shows |
@@ -156,14 +167,15 @@ at once read their byte in different directions:
 | `SetDot(point, value)`, `GetDot(point)` | one LED |
 | `SetColumn(X{x}, value)`, `SetColumn(Module{m}, column, value)`, `GetColumn(…)` | a column, bit 0 at the top |
 | `SetRow(Y{y}, values)`, `SetRow(Module{m}, row, value)`, `GetRow(…)` | a row, bit 7 on the left |
-| `SetChar(top_left, c)`, `SetText(text)` | a char with its top left corner at a point, or a text from the left edge |
+| `SetChar(top_left, c)`, `SetText(text)` | a char with its top left corner at a point, or a text from the left edge, in RAM or in flash with `F("…")` |
 | `SetSprite(top_left, sprite)` | a sprite of your own, up to 5 columns wide |
 | `DrawLine(from, to, value)` | a straight line between two points, both ends included |
 | `DrawRect(corner, opposite_corner, value)`, `FillRect(…)` | the outline of a rectangle between two opposite corners, both part of it, or the rectangle with its inside |
 | `DrawCircle(centre, radius, value)` | the outline of a circle; radius 3 fills the height |
 | `DrawBitmap(top_left, bitmap)`, `DrawBitmap(top_left, height, bitmap)` | a picture in `PROGMEM`, a column per byte as wide as its array, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
-| `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftStep()`, `GetState()` | a char or a text that shifts in from the right, one column per `ShiftStep()`, a text once or over and over |
+| `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftStep()`, `GetState()` | a char or a text that shifts in from the right, one column per `ShiftStep()`, a text once or over and over, in RAM or in flash |
+| `max_matrix::FromFlash(text)` | a text of a table in flash, `PROGMEM`, handed on as `F()` hands on one in quotes |
 | `StopShift()` | stops a shifting char or text where it stands |
 | `max_matrix::Interval{milliseconds}`, `IsDue(now)`, `SetMs(milliseconds)` | when the next step of a shifting text, or of anything that moves, is due |
 | `SetSpaceBetweenChars(columns)` | how far apart the chars of a text are |
