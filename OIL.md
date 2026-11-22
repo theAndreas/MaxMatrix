@@ -53,7 +53,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 41 | The template's rules that review checks | 36 | done | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169, #170, #172 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
-| 44 | A text in flash | 41 | done | |
+| 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
 
 ### 1 Build with CMake
