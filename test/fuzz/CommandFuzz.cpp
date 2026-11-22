@@ -100,9 +100,10 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t const* data, size_t size) {
     // what a line brought is checked in the answer, after the last
     max_matrix::Discard(command.Feed(matrix, c, answer));
   }
-  for (uint16_t step{0};
-       (step < kShiftSteps) && (matrix.GetState() != State::kReady); step++) {
+  uint16_t step{0};
+  while ((step < kShiftSteps) && (matrix.GetState() != State::kReady)) {
     matrix.ShiftTask();
+    step++;
   }
 
   /* every bit went out within a frame, with the interrupts off, which are on
@@ -112,11 +113,12 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t const* data, size_t size) {
   /* one line back for every line at most, each one a program knows */
   size_t answered{0};
   size_t start{0};
-  for (size_t end{answer.text.find("\r\n")}; end != std::string::npos;
-       end = answer.text.find("\r\n", start)) {
+  size_t end{answer.text.find("\r\n")};
+  while (end != std::string::npos) {
     Require(IsKnownAnswer(answer.text.substr(start, end - start)));
     answered++;
     start = end + 2;
+    end = answer.text.find("\r\n", start);
   }
   Require(start == answer.text.size());
   Require(answered <= line_ends);

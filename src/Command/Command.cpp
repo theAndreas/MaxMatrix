@@ -294,8 +294,8 @@ Result<uint16_t> Command::ConvertToNumber(uint8_t text,
   if (line_[text] == internal::kNullCharacter) {
     return Error::kNotANumber;
   }
-  for (uint8_t position{text}; line_[position] != internal::kNullCharacter;
-       position++) {
+  uint8_t position{text};
+  while (line_[position] != internal::kNullCharacter) {
     char const digit{line_[position]};
     if ((digit < '0') || (digit > '9')) {
       return Error::kNotANumber;
@@ -303,6 +303,7 @@ Result<uint16_t> Command::ConvertToNumber(uint8_t text,
     if (value <= maximum) {
       value = (value * kDecimalBase) + static_cast<uint32_t>(digit - '0');
     }
+    position++;
   }
   if (value > maximum) {
     return Error::kOutOfRange;

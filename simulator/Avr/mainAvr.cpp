@@ -55,8 +55,8 @@ bool RunAvr() {
                        (options.GetRunFor() == 0)};
   std::chrono::steady_clock::time_point const start{
       std::chrono::steady_clock::now()};
-  for (uint32_t now{1};
-       (options.GetRunFor() == 0) || (now <= options.GetRunFor()); now++) {
+  uint32_t now{1};
+  while ((options.GetRunFor() == 0) || (now <= options.GetRunFor())) {
     if (!avr.Run(now)) {
       std::cerr << "the AVR stopped after " << now << " ms\n";
       return false;
@@ -67,6 +67,7 @@ bool RunAvr() {
     if (real_time) {
       std::this_thread::sleep_until(start + std::chrono::milliseconds(now));
     }
+    now++;
   }
   return true;
 }

@@ -103,7 +103,9 @@ std::string SimulatorWeb::ConvertToJsonString(std::string const& text) {
 void SimulatorWeb::LogFrame() {
   std::string line = "#" + std::to_string(mock::frames) + ":";
 
-  for (size_t i{0}; (i + 1) < mock::last_frame.size(); i += 2) {
+  size_t const modules{mock::last_frame.size() / 2u};
+  for (size_t module{0}; module < modules; module++) {
+    size_t const i{2u * module};
     line += (i == 0) ? " " : " | ";
     line += ConvertToHex(mock::last_frame[i], 2) + " " +
             ConvertToHex(mock::last_frame[i + 1], 2);
