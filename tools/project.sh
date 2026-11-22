@@ -38,6 +38,32 @@ ARDUINO_BOARD_URLS=""
 # `make avr` runs them. So tools/self_check.sh has nothing to run.
 SIMAVR_MCU=""
 SIMAVR_FREQUENCY="16000000"
+
+# The boards beyond the AVR (OIL 46), which `make boards` and the workflow boards.yml compile
+# every example for, each alone, as their cores take 8 GB: TARGETS stays the Uno, the default
+# target, for every other check, which compiles the code that differs on them, the pins through
+# digitalWrite(), as the variant portable. MAXMATRIX_BOARDS names the boards to build instead.
+if [[ -n "${MAXMATRIX_BOARDS:-}" ]]; then
+  read -r -a TARGETS <<< "${MAXMATRIX_BOARDS}"
+fi
+target_settings() {
+  case "$1" in
+    uno-r4)
+      FQBN="arduino:renesas_uno:minima"
+      ARDUINO_CORE="arduino:renesas_uno@1.6.0"
+      ;;
+    pico)
+      FQBN="rp2040:rp2040:rpipico"
+      ARDUINO_CORE="rp2040:rp2040@6.3.2"
+      ARDUINO_BOARD_URLS="https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json"
+      ;;
+    esp32)
+      FQBN="esp32:esp32:esp32"
+      ARDUINO_CORE="esp32:esp32@3.3.12"
+      ARDUINO_BOARD_URLS="https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+      ;;
+  esac
+}
 # SerialControl reaches the most of the library: the text, the commands and Serial.
 DATABASE_EXAMPLE="SerialControl"
 

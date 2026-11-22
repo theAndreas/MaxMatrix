@@ -1,0 +1,67 @@
+# The boards beyond the AVR (OIL 46): `make boards` compiles every example in every variant for
+# the Uno R4, the Pico and the ESP32, failing on a warning of this repository, as ci.yml's
+# examples job does for the Uno. MaxMatrix's own, beside the template's: their cores take 8 GB,
+# so each board is a job of its own with a cache of its own, rather than a target of every check
+# in tools/project.sh. On every pull request, as every change to the library reaches the examples.
+name: Boards
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Read the repository and nothing else.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first answer worthless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  board:
+    name: Examples for ${{ matrix.board }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    strategy:
+      # One board that fails says nothing of the others.
+      fail-fast: false
+      matrix:
+        board: [uno-r4, pico, esp32]
+    steps:
+      - uses: actions/checkout@v7
+
+      # The version the dev container pins, as the template's target-setup reads it.
+      - name: Read arduino-cli's version
+        id: read
+        run: |
+          version=$(sed -n 's/^ARG ARDUINO_CLI_VERSION=//p' .devcontainer/Dockerfile)
+          if [ -z "$version" ]; then
+            echo "::error::.devcontainer/Dockerfile names no ARG ARDUINO_CLI_VERSION"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: ${{ steps.read.outputs.version }}
+
+      # A cache per board, keyed by the settings that pin its core; without the archives arduino-cli
+      # downloaded, which it needs no more once a core is installed.
+      - name: Cache the core
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.arduino15
+            !~/.arduino15/staging
+          key: boards-${{ matrix.board }}-${{ runner.os }}-${{ hashFiles('tools/project.sh') }}
+          restore-keys: boards-${{ matrix.board }}-${{ runner.os }}-
+
+      - name: Compile every example
+        run: make boards BOARDS=${{ matrix.board }}
