@@ -55,7 +55,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 | 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
-| 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | in progress | #177 |
+| 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | done | #177, #178 |
 | 47 | A SPI bus of the sketch's choice | 46 | open | |
 
 ### 1 Build with CMake
@@ -1778,6 +1778,19 @@ the Uno, the Uno R4, the Pico and the ESP32: no error, and no warning from this 
 Measured on the Uno with avr-gcc 7.3: the variants as before; through `digitalWrite()` every
 example 144 to 150 bytes of flash and 3 of RAM smaller, but a byte four times as slow (22), so
 the AVR keeps its port registers. Not run on any of the three boards.
+
+As built for the second, decided on 2026-11-22: the three are targets of `tools/project.sh`, but
+`TARGETS` stays the Uno for every check, and `MAXMATRIX_BOARDS` names the boards to build instead.
+`make boards` installs their cores and compiles every example in every variant through the
+template's `tools/setup.sh` and `tools/compile_examples.sh`, which fail on a warning of this
+repository, and the workflow `boards.yml` runs it, a job per board, each with a cache of its own
+without arduino-cli's downloaded archives. The cores take 8 GB installed, the ESP32's 6 of it with
+the toolchains of every ESP32, where GitHub keeps 10 GB of cache for a repository: as targets of
+every check, each job that sets up the targets would have installed all of them, and clang-tidy
+would have read the ESP32's flags, which no one has tried. The code that differs on those boards,
+the pins through `digitalWrite()`, is what the variant `portable` compiles, checks and tests on
+the Uno and the host. Not part of `make check`, so that a check in a new dev container does not
+download 8 GB.
 
 ### 47 A SPI bus of the sketch's choice
 

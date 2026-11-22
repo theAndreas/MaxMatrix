@@ -214,9 +214,10 @@ exception goes at the end of a list, with its reason.
   relies on checked, every frame whole and every answer one it knows; beside it the corpus it
   starts from, the words of its dictionary and its options. `make fuzz` builds and runs it.
 - `.github/workflows/` — the template's `ci.yml`, `static-analysis.yml`, `docs.yml` and
-  `release.yml`, which run the targets of the `Makefile`, and `avr.yml` of MaxMatrix's own, which
-  runs `make avr`: the examples in simavr, as the template's SelfCheck in simavr does for a
-  project that has one. The reference is published on GitHub Pages from `main`.
+  `release.yml`, which run the targets of the `Makefile`, and two of MaxMatrix's own: `avr.yml`,
+  which runs `make avr`, the examples in simavr, as the template's SelfCheck in simavr does for a
+  project that has one; and `boards.yml`, which runs `make boards` for the Uno R4, the Pico and
+  the ESP32, a job and a cache each, as their cores take 8 GB. The reference is published on GitHub Pages from `main`.
 - `.devcontainer/` — the template's; what MaxMatrix needs beyond it, simavr's library for
   `SimulatorAvr` and wxWidgets for the control program, is in `apt-packages.txt`, which CI
   installs as well.
@@ -605,6 +606,7 @@ the template's targets:
 
 ```bash
 make avr                      # every example for the Uno, in simavr, against simulator/Expected/
+make boards                   # every example for the Uno R4, the Pico and the ESP32; BOARDS="esp32"
 build/host/DocuPictures --write docu   # draws docu/ again after a change that moves a dot
 tools/wokwi.py EXAMPLE        # an example for Wokwi, see wokwi.toml
 ```
