@@ -107,8 +107,8 @@ extern array<uint8_t, kDefaultFontSize> const kDefaultFont PROGMEM;
  * \code{.cpp}
  * constexpr auto kDigits PROGMEM{max_matrix::make_array<uint8_t>(
  *     'F', 1, '0', '1', 7, // version 1, the chars 0 to 1, 7 rows high
- *     3, B00111110, B01000001, B00111110, // 0
- *     2, B01000010, B01111111)};          // 1
+ *     3, 0b00111110, 0b01000001, 0b00111110, // 0
+ *     2, 0b01000010, 0b01111111)};          // 1
  * \endcode
  *
  * A char is found by walking from the first char to it, as MD_MAX72XX does: in

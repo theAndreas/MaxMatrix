@@ -5,7 +5,6 @@
  * font, and a font of a sketch's own. */
 
 #include <avr/pgmspace.h>
-#include <binary.h>
 #include <gtest/gtest.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -24,12 +23,12 @@ namespace {
  * in version 2; and a char of 8 columns. kNoFont, which the tests of errors
  * use as well, lies in MaxMatrixTestSupport.h */
 constexpr auto kDigitFont PROGMEM{make_array<uint8_t>(
-    'F', 1, '0', '2', 7, 3, B00111110, B01000001, B00111110,  // 0
-    2, B01000010, B01111111,                                  // 1
+    'F', 1, '0', '2', 7, 3, 0b00111110, 0b01000001, 0b00111110,  // 0
+    2, 0b01000010, 0b01111111,                                   // 1
     0)};  // 2, not in the font
 constexpr auto kDigitFontVersion2 PROGMEM{make_array<uint8_t>(
-    'F', 2, 0, '0', 0, '1', 7, 3, B00111110, B01000001, B00111110,  // 0
-    2, B01000010, B01111111)};                                      // 1
+    'F', 2, 0, '0', 0, '1', 7, 3, 0b00111110, 0b01000001, 0b00111110,  // 0
+    2, 0b01000010, 0b01111111)};                                       // 1
 constexpr auto kWideFont PROGMEM{
     make_array<uint8_t>('F', 1, 'W', 'W', 8, 8, 0x01, 0x02, 0x04, 0x08, 0x10,
                         0x20, 0x40, 0x80)};  // W, a diagonal
