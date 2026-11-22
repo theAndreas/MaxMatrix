@@ -8,11 +8,11 @@
  * each for a second, without blocking loop(). Each is drawn in a batch, so the
  * matrix goes from one straight to the next.
  *
- * Wiring (Arduino Uno / Nano):
- *   DIN -> 11, CS -> 10, CLK -> 13
+ * Wiring, to the board's hardware SPI pins, which SPI needs and bit banging
+ * takes as well: DIN -> MOSI, CS -> SS, CLK -> SCK; on the Uno, Nano and
+ * Uno R4 11, 10, 13, on the Pico 19, 17, 18, on the ESP32 23, 5, 18.
  */
 #include <MaxMatrix.h>
-#include <avr/pgmspace.h>
 #include <stdint.h>
 
 using max_matrix::Point;
@@ -25,9 +25,9 @@ uint8_t const kNumberOfShapes{4};
 constexpr auto kHeart PROGMEM{
     max_matrix::make_array<uint8_t>(0x06, 0x0F, 0x1F, 0x3E, 0x1F, 0x0F, 0x06)};
 
-max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
-                               max_matrix::ChipSelectPin{10},
-                               max_matrix::ClockPin{13}};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{MOSI},
+                               max_matrix::ChipSelectPin{SS},
+                               max_matrix::ClockPin{SCK}};
 
 uint8_t shape{0};
 max_matrix::Interval shape_interval{1000};
@@ -59,11 +59,13 @@ void DrawShape() {
 }
 
 void setup() {
-  // A pin the board lacks fails: the LED on the board says so, and loop()
-  // draws nothing, as the matrix is not set up.
+  // A pin the board lacks fails: the LED on the board says so, where it
+  // has one, and loop() draws nothing, as the matrix is not set up.
   if (!matrix.Init().IsOk()) {
+#ifdef LED_BUILTIN
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
+#endif
     return;
   }
   matrix.SetModuleType(

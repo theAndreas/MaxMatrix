@@ -275,12 +275,21 @@ class Chain {
                          uint8_t column);
 
  private:
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
   /* a pin's port and its bit there, as one, so that the two cannot be mixed up
    * between pins or swapped in a call (FN-16) */
-  struct PortBit {
+  struct OutputPin {
     uint8_t port;
     uint8_t mask;
   };
+#else
+  /* the pin as Init() took it, for digitalWrite(); kNoPin until then, as pin 0
+   * is a board's on most boards, and no board has 255 */
+  static constexpr uint8_t kNoPin{0xFFu};
+  struct OutputPin {
+    uint8_t pin;
+  };
+#endif
 
   /*
    * Not const, though they change no member: they change the chain this object
@@ -295,8 +304,8 @@ class Chain {
 #if (MAXMATRIX_USE_SPI == STD_OFF)
   void ShiftOut(uint8_t value);
 #endif
-  static PortBit LookUpPortBit(uint8_t pin);
-  static void WritePin(PortBit pin, bool high);
+  static OutputPin LookUpOutputPin(uint8_t pin);
+  static void WritePin(OutputPin pin, bool high);
   // Whether each of the three pins is one of the board's, which Init() checks
   // before it takes them.
   MAXMATRIX_NODISCARD bool HasBoardPins() const;
@@ -304,7 +313,13 @@ class Chain {
   // frame would write the core's NOT_A_PORT, address 0, or with SPI wait for
   // ever for a byte before SPI.begin(). A bit of its own would cost a byte of
   // RAM.
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
   MAXMATRIX_NODISCARD bool IsSetUp() const { return chip_select_.mask != 0u; }
+#else
+  MAXMATRIX_NODISCARD bool IsSetUp() const {
+    return chip_select_.pin != kNoPin;
+  }
+#endif
 
   uint8_t data_in_pin_;
   uint8_t chip_select_pin_;
@@ -317,10 +332,14 @@ class Chain {
    * statement expression, which decltype() cannot take outside a function, so
    * it is read where it is written. Data in and clock only bit bang.
    */
-  PortBit chip_select_{};
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
+  OutputPin chip_select_{};
+#else
+  OutputPin chip_select_{kNoPin};
+#endif
 #if (MAXMATRIX_USE_SPI == STD_OFF)
-  PortBit data_in_{};
-  PortBit clock_{};
+  OutputPin data_in_{};
+  OutputPin clock_{};
 #endif
 };
 

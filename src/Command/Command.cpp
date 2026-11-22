@@ -11,10 +11,10 @@
 
 #include "Command.h"
 
-#include <avr/pgmspace.h>
 #include <stdint.h>
 
 #include "MaxMatrix.h"
+#include "MaxMatrixPgmspace.h"
 #include "Utility/Bit.h"
 #include "Utility/Byte.h"
 

@@ -66,6 +66,15 @@ TEST_F(ChainTest, InterruptsThatWereOffStayOff) {
   EXPECT_EQ(status_register_after, 0x00);
 }
 
+/* the AVR writes its pins through their port registers; every other board, and
+ * the AVR when told so, through digitalWrite(), which every core has */
+TEST_F(ChainTest, PinsGoThroughPortRegistersWhenTheyAreConfigured) {
+  Transfer();
+
+  EXPECT_EQ(mock::port_register_writes > 0,
+            MAXMATRIX_USE_PORT_REGISTERS == STD_ON);
+}
+
 TEST_F(ChainTest, TransfersGoThroughSpiWhenItIsConfigured) {
   Transfer();
 

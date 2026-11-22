@@ -20,6 +20,7 @@ uint8_t clock_pin;
 bool transaction_open;
 int32_t errors;
 int32_t frames;
+int32_t port_register_writes;
 std::vector<uint8_t> frame;
 std::vector<uint8_t> last_frame;
 Max7219Chain chain;
@@ -61,6 +62,7 @@ void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
   transaction_open = false;
   errors = 0;
   frames = 0;
+  port_register_writes = 0;
   frame.clear();
   last_frame.clear();
   spi_used = false;
@@ -140,11 +142,13 @@ static void WritePort(uint8_t port, uint8_t mask, uint8_t level) {
 }
 
 PortRegister& PortRegister::operator|=(uint8_t mask) {
+  port_register_writes++;
   WritePort(port, mask, HIGH);
   return *this;
 }
 
 PortRegister& PortRegister::operator&=(uint8_t mask) {
+  port_register_writes++;
   WritePort(port, static_cast<uint8_t>(~mask), LOW);
   return *this;
 }

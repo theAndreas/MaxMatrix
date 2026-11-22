@@ -11,13 +11,13 @@
 
 #include "Panel.h"
 
-#include <avr/pgmspace.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "Max7219/Chain.h"
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
+#include "MaxMatrixPgmspace.h"
 #include "Utility/Bit.h"
 #include "Utility/Byte.h"
 #include "Utility/array.h"

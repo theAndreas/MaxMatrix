@@ -45,12 +45,14 @@ DATABASE_EXAMPLE="SerialControl"
 # reports of MAXMATRIX_DEV_ERROR_DETECT, the weak MaxMatrixReportError(), F() in the facade and
 # its Serial, which only meet avr-gcc here. Each takes other branches of #if, so clang-tidy and
 # cppcheck read all three.
-VARIANTS=(default spi det)
-TIDY_VARIANTS=(default spi det)
+# portable: bit banging through digitalWrite(), as on every board but the AVR, on the Uno.
+VARIANTS=(default spi det portable)
+TIDY_VARIANTS=(default spi det portable)
 variant_flags() {
   case "$1" in
     spi) echo "-DMAXMATRIX_USE_SPI=STD_ON" ;;
     det) echo "-DMAXMATRIX_DEV_ERROR_DETECT=STD_ON" ;;
+    portable) echo "-DMAXMATRIX_USE_PORT_REGISTERS=STD_OFF" ;;
   esac
 }
 

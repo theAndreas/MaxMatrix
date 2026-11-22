@@ -9,11 +9,11 @@
  * the UTF-8 the Arduino IDE saves. This file writes them as their two bytes of
  * UTF-8 only to stay ASCII, as the library's sources do.
  *
- * Wiring (Arduino Uno / Nano):
- *   DIN -> 11, CS -> 10, CLK -> 13
+ * Wiring, to the board's hardware SPI pins, which SPI needs and bit banging
+ * takes as well: DIN -> MOSI, CS -> SS, CLK -> SCK; on the Uno, Nano and
+ * Uno R4 11, 10, 13, on the Pico 19, 17, 18, on the ESP32 23, 5, 18.
  */
 #include <MaxMatrix.h>
-#include <avr/pgmspace.h>
 #include <stdint.h>
 
 /* the texts lie in flash with PROGMEM, where they take no RAM; the blanks at
@@ -43,9 +43,9 @@ auto const kMessages{max_matrix::make_array<Message>(
     Message{max_matrix::FromFlash(kSlow), 120})};
 uint8_t const kNumberOfMessages{kMessages.size()};
 
-max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
-                               max_matrix::ChipSelectPin{10},
-                               max_matrix::ClockPin{13}};
+max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{MOSI},
+                               max_matrix::ChipSelectPin{SS},
+                               max_matrix::ClockPin{SCK}};
 /* the pace of the text shown, which each message sets */
 max_matrix::Interval shift_interval{50};
 uint8_t current{0};
@@ -56,11 +56,13 @@ void Show(Message const& message) {
 }
 
 void setup() {
-  // A pin the board lacks fails: the LED on the board says so, and loop()
-  // draws nothing, as the matrix is not set up.
+  // A pin the board lacks fails: the LED on the board says so, where it
+  // has one, and loop() draws nothing, as the matrix is not set up.
   if (!matrix.Init().IsOk()) {
+#ifdef LED_BUILTIN
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
+#endif
     return;
   }
   matrix.SetModuleType(

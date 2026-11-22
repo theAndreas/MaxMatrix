@@ -31,6 +31,7 @@
 #include "MaxMatrixBatch.h"          // IWYU pragma: export
 #include "MaxMatrixConfig.h"         // IWYU pragma: export
 #include "MaxMatrixError.h"          // IWYU pragma: export
+#include "MaxMatrixPgmspace.h"       // IWYU pragma: export
 #include "MaxMatrixStandardTypes.h"  // IWYU pragma: export
 #include "Utility/Byte.h"            // IWYU pragma: export
 #include "Utility/array.h"           // IWYU pragma: export

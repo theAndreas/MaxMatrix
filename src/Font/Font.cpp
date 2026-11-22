@@ -11,12 +11,12 @@
 
 #include "Font.h"
 
-#include <avr/pgmspace.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
+#include "MaxMatrixPgmspace.h"
 #include "Utility/Bit.h"
 #include "Utility/array.h"
 #include "Utility/span.h"
