@@ -55,7 +55,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 | 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
-| 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | in progress | |
+| 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | in progress | #177 |
 | 47 | A SPI bus of the sketch's choice | 46 | open | |
 
 ### 1 Build with CMake
