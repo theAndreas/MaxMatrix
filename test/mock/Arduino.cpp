@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 
+#include <array>
 #include <chrono>
 #include <string>
 #include <thread>
@@ -11,8 +12,8 @@
 #include "SPI.h"
 
 namespace mock {
-uint8_t pin_mode[kNumberOfPins];
-uint8_t pin_level[kNumberOfPins];
+std::array<uint8_t, kNumberOfPins> pin_mode;
+std::array<uint8_t, kNumberOfPins> pin_level;
 uint8_t data_in_pin;
 uint8_t chip_select_pin;
 uint8_t clock_pin;
@@ -49,8 +50,8 @@ void SetMillis(uint32_t milliseconds) {
 void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
            uint8_t number_of_chips) {
   clock_held = false;
-  memset(pin_mode, INPUT, sizeof(pin_mode));
-  memset(pin_level, LOW, sizeof(pin_level));
+  pin_mode.fill(INPUT);
+  pin_level.fill(LOW);
   mock::data_in_pin = data_in;
   mock::chip_select_pin = chip_select;
   mock::clock_pin = clock;

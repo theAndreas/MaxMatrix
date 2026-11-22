@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -139,8 +140,8 @@ mock::PortRegister* portOutputRegister(uint8_t port);
 namespace mock {
 uint8_t const kNumberOfPins = 64;
 
-extern uint8_t pin_mode[kNumberOfPins];
-extern uint8_t pin_level[kNumberOfPins];
+extern std::array<uint8_t, kNumberOfPins> pin_mode;
+extern std::array<uint8_t, kNumberOfPins> pin_level;
 extern uint8_t data_in_pin;
 extern uint8_t chip_select_pin;
 extern uint8_t clock_pin;
