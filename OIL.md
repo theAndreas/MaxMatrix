@@ -1705,8 +1705,9 @@ longer, and its tests none. `Animation`, `Band` and `Shapes` time their steps wi
 as well. Measured on the Uno with avr-gcc 7.3, every example in all three variants: 12 to 78 bytes
 of flash smaller; 6 bytes of RAM less where a sketch shifts no text, 4 where an `Interval` took the
 place of the sketch's own `uint32_t`, and the same where the sketch's `Interval` took the matrix's
-6 bytes. A `Matrix` takes 37 bytes of RAM with bit banging and 33 with SPI. The private shift
-functions of `internal::Text` keep their names, `CharShiftTask()` and `StringShiftTask()`.
+6 bytes. A `Matrix` takes 37 bytes of RAM with bit banging and 33 with SPI. The shift functions
+of `internal::Text` that `ShiftStep()` calls are `CharShiftStep()` and `StringShiftStep()`, as
+each takes one step.
 
 ## Decisions
 
