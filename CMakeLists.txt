@@ -43,6 +43,8 @@ add_library(ArduinoMock STATIC test/mock/Arduino.cpp)
 # and not this repository's. Its sources are compiled with every warning still.
 target_include_directories(ArduinoMock SYSTEM PUBLIC test/mock)
 target_link_libraries(ArduinoMock PUBLIC Max7219Model)
+# The mock stands in for the AVR core, which the build names as arduino-cli does for a Uno.
+target_compile_definitions(ArduinoMock PUBLIC ARDUINO_ARCH_AVR)
 
 # The MAX7219 model on its own, once: it does not depend on the transfer path.
 add_executable(Max7219Test test/model/Max7219Test.cpp)
@@ -189,6 +191,9 @@ add_simulator_variant(spi)
 # With the reports on, once and without the simulators: the tests check every report, and the transfer path makes no
 # difference to them.
 add_maxmatrix_variant(det MAXMATRIX_DEV_ERROR_DETECT=STD_ON)
+# Bit banging through digitalWrite(), as on every board but the AVR, which the host builds as an AVR otherwise: once and
+# without the simulators, as the frames are the same.
+add_maxmatrix_variant(portable MAXMATRIX_USE_PORT_REGISTERS=STD_OFF)
 # The library's own report, which prints on Serial: in a binary of its own, as the tests above define the report
 # themselves to record it, and the default is linked only where nothing else defines it.
 add_executable(MaxMatrixErrorReportTest test/MaxMatrixErrorReportTest.cpp)

@@ -15,7 +15,9 @@
 #include "Chain.h"
 
 #include <stdint.h>
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
 #include <util/atomic.h>
+#endif
 
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
@@ -58,7 +60,7 @@ Status Chain::Init(uint8_t number_of_modules) {
   pinMode(chip_select_pin_, OUTPUT);
   // A local first: read back from the member, it cost 8 bytes of flash in
   // every example with SPI.
-  PortBit const chip_select{LookUpPortBit(chip_select_pin_)};
+  OutputPin const chip_select{LookUpOutputPin(chip_select_pin_)};
   chip_select_ = chip_select;
   WritePin(chip_select, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
@@ -68,8 +70,8 @@ Status Chain::Init(uint8_t number_of_modules) {
 #else
   pinMode(data_in_pin_, OUTPUT);
   pinMode(clock_pin_, OUTPUT);
-  data_in_ = LookUpPortBit(data_in_pin_);
-  clock_ = LookUpPortBit(clock_pin_);
+  data_in_ = LookUpOutputPin(data_in_pin_);
+  clock_ = LookUpOutputPin(clock_pin_);
   /* clock idles low, MAX7219 samples data on the rising edge */
   WritePin(clock_, false);
 #endif
@@ -170,6 +172,7 @@ void Chain::Transfer(max7219::Register address, uint8_t value) {
 }
 
 #if (MAXMATRIX_USE_SPI == STD_OFF)
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
 /*
  * Bit bangs `value`, most significant bit first: data in, then a rising clock,
  * on which the MAX7219 takes the bit, and the clock low again. The interrupts
@@ -206,16 +209,33 @@ void Chain::ShiftOut(uint8_t value) {
     }
   }
 }
+#else
+// Bit bangs `value` as above, a pin at a time through the core, which holds
+// the interrupts off itself where its board needs it.
+// Not const: it changes the chain this object stands for, see Chain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const)
+void Chain::ShiftOut(uint8_t value) {
+  uint8_t bit{kFirstBit};
+  while (bit != 0u) {
+    bool const high{Bit<uint8_t>::ReadBitGroup(value, bit) != 0u};
+    WritePin(data_in_, high);
+    WritePin(clock_, true);
+    WritePin(clock_, false);
+    bit = Bit<uint8_t>::ShiftDown(bit, 1u);
+  }
+}
+#endif
 #endif
 
+#if (MAXMATRIX_USE_PORT_REGISTERS == STD_ON)
 // Looks up the port of `pin` and its bit there, as digitalWrite() does on every
 // call.
-Chain::PortBit Chain::LookUpPortBit(uint8_t pin) {
-  return PortBit{digitalPinToPort(pin), digitalPinToBitMask(pin)};
+Chain::OutputPin Chain::LookUpOutputPin(uint8_t pin) {
+  return OutputPin{digitalPinToPort(pin), digitalPinToBitMask(pin)};
 }
 
 // Sets `pin` high or low, with the interrupts held off, as ShiftOut() does.
-void Chain::WritePin(PortBit pin, bool high) {
+void Chain::WritePin(OutputPin pin, bool high) {
   // The NOLINT is that of ShiftOut(), for the same reason.
   auto* const port_register{
       portOutputRegister(pin.port)}; /* NOLINT(performance-no-int-to-ptr) */
@@ -228,6 +248,16 @@ void Chain::WritePin(PortBit pin, bool high) {
     }
   }
 }
+#else
+// Takes the pin as it is: digitalWrite() looks its port up itself.
+Chain::OutputPin Chain::LookUpOutputPin(uint8_t pin) { return OutputPin{pin}; }
+
+// Sets `pin` high or low through the core, which holds the interrupts off
+// itself where its board needs it.
+void Chain::WritePin(OutputPin pin, bool high) {
+  digitalWrite(pin.pin, high ? HIGH : LOW);
+}
+#endif
 
 // All three, though SPI drives data in and clock by pins of its own: a sketch
 // names the same pins for both, and one the board lacks is a mistake in either.

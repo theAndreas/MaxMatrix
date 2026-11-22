@@ -10,7 +10,6 @@
 
 #include "Text.h"
 
-#include <avr/pgmspace.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -18,6 +17,7 @@
 #include "Matrix/Panel.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixError.h"
+#include "MaxMatrixPgmspace.h"
 #include "MaxMatrixStandardTypes.h"
 #include "Utility/Byte.h"
 #include "Utility/array.h"

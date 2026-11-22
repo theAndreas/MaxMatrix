@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 
+#include <array>
 #include <chrono>
 #include <string>
 #include <thread>
@@ -11,14 +12,15 @@
 #include "SPI.h"
 
 namespace mock {
-uint8_t pin_mode[kNumberOfPins];
-uint8_t pin_level[kNumberOfPins];
+std::array<uint8_t, kNumberOfPins> pin_mode;
+std::array<uint8_t, kNumberOfPins> pin_level;
 uint8_t data_in_pin;
 uint8_t chip_select_pin;
 uint8_t clock_pin;
 bool transaction_open;
 int32_t errors;
 int32_t frames;
+int32_t port_register_writes;
 std::vector<uint8_t> frame;
 std::vector<uint8_t> last_frame;
 Max7219Chain chain;
@@ -49,8 +51,8 @@ void SetMillis(uint32_t milliseconds) {
 void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
            uint8_t number_of_chips) {
   clock_held = false;
-  memset(pin_mode, INPUT, sizeof(pin_mode));
-  memset(pin_level, LOW, sizeof(pin_level));
+  pin_mode.fill(INPUT);
+  pin_level.fill(LOW);
   mock::data_in_pin = data_in;
   mock::chip_select_pin = chip_select;
   mock::clock_pin = clock;
@@ -60,6 +62,7 @@ void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
   transaction_open = false;
   errors = 0;
   frames = 0;
+  port_register_writes = 0;
   frame.clear();
   last_frame.clear();
   spi_used = false;
@@ -139,11 +142,13 @@ static void WritePort(uint8_t port, uint8_t mask, uint8_t level) {
 }
 
 PortRegister& PortRegister::operator|=(uint8_t mask) {
+  port_register_writes++;
   WritePort(port, mask, HIGH);
   return *this;
 }
 
 PortRegister& PortRegister::operator&=(uint8_t mask) {
+  port_register_writes++;
   WritePort(port, static_cast<uint8_t>(~mask), LOW);
   return *this;
 }

@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,10 @@ class __FlashStringHelper;  // NOLINT(bugprone-reserved-identifier): the core's
 /* the Uno's, of the pins_arduino.h the core includes */
 #define NUM_DIGITAL_PINS 20
 #define LED_BUILTIN 13
+/* the Uno's hardware SPI pins, as its pins_arduino.h declares them */
+static uint8_t const SS = 10;    // NOLINT(readability-identifier-naming)
+static uint8_t const MOSI = 11;  // NOLINT(readability-identifier-naming)
+static uint8_t const SCK = 13;   // NOLINT(readability-identifier-naming)
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 // The core's bitSet() and bitClear() are ((value) |= (1UL << (bit))) and
@@ -139,14 +144,16 @@ mock::PortRegister* portOutputRegister(uint8_t port);
 namespace mock {
 uint8_t const kNumberOfPins = 64;
 
-extern uint8_t pin_mode[kNumberOfPins];
-extern uint8_t pin_level[kNumberOfPins];
+extern std::array<uint8_t, kNumberOfPins> pin_mode;
+extern std::array<uint8_t, kNumberOfPins> pin_level;
 extern uint8_t data_in_pin;
 extern uint8_t chip_select_pin;
 extern uint8_t clock_pin;
 extern bool transaction_open;
 extern int32_t errors;
 extern int32_t frames;
+/* the writes through a port register, which only the AVR's fast path makes */
+extern int32_t port_register_writes;
 extern std::vector<uint8_t> frame;
 extern std::vector<uint8_t> last_frame;
 extern Max7219Chain chain;

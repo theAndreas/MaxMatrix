@@ -309,6 +309,10 @@ each pin's port and bit once (`digitalPinToPort()`, `digitalPinToBitMask()`), an
 `portOutputRegister()` of the port, with the interrupts held off as `digitalWrite()` holds them
 off. That made a bit-banged frame four times as fast (measured in simavr). The mock's port
 registers are objects that pass every bit on to the pins, so the host tests run the same code.
+The port registers are the AVR's alone, `MAXMATRIX_USE_PORT_REGISTERS`, on by default where
+`ARDUINO_ARCH_AVR` is, as the mock defines it: every other board writes its pins through
+`digitalWrite()`, which every core has, and the variant `portable` tests that way on the host and
+compiles it for the Uno (OIL 46).
 
 ### Code conventions
 
@@ -565,8 +569,10 @@ it.
 
 Every file includes what it uses (F-5, `misc-include-cleaner`), the C library's headers as
 `<stdint.h>`, as avr-gcc has no `<cstdint>`. `MaxMatrix.h` exports the headers whose names a
-sketch uses, with `// IWYU pragma: export`, so that a sketch includes it alone and, of avr-libc,
-what it uses itself, as `<avr/pgmspace.h>`; a new public header is exported there as well.
+sketch uses, with `// IWYU pragma: export`, so that a sketch includes it alone; a new public
+header is exported there as well. `PROGMEM` and `pgm_read_byte()` come from `MaxMatrixPgmspace.h`,
+which finds them where the board's core has them, `<avr/pgmspace.h>` or the ESP32's `<pgmspace.h>`,
+so that neither the library nor a sketch names avr-libc's header itself.
 `MaxMatrixTestSupport.h` exports `MaxMatrix.h` to the tests of the facade.
 
 #### Comments
@@ -605,15 +611,15 @@ tools/wokwi.py EXAMPLE        # an example for Wokwi, see wokwi.toml
 
 Compile every example after a change to the library, not just the one that uses the change:
 the examples are the only code that instantiates the class with the real AVR toolchain.
-`make examples` compiles each in the three variants of `tools/project.sh`, bit banging, SPI and
-with `MAXMATRIX_DEV_ERROR_DETECT`, and fails on a warning in this repository; warnings from the
+`make examples` compiles each in the four variants of `tools/project.sh`, bit banging, SPI,
+with `MAXMATRIX_DEV_ERROR_DETECT` and `portable`, through `digitalWrite()`, and fails on a warning in this repository; warnings from the
 Arduino core are ignored.
 #### Tests
 
-`make tests` configures into `build/host`, builds the library three times, with bit banging,
-with SPI and with `MAXMATRIX_DEV_ERROR_DETECT` on, and runs the same tests on each through
-`ctest`, each test under a `bitbang/`, `spi/` or `det/` prefix; the simulators are built for the
-first two only. The tests of a variant are a binary per folder of `test/`: ctest runs every test
+`make tests` configures into `build/host`, builds the library four times, with bit banging,
+with SPI, with `MAXMATRIX_DEV_ERROR_DETECT` on and `portable`, bit banging through
+`digitalWrite()`, and runs the same tests on each through `ctest`, each test under a `bitbang/`,
+`spi/`, `det/` or `portable/` prefix; the simulators are built for the first two only. The tests of a variant are a binary per folder of `test/`: ctest runs every test
 as a process of its own, which registers every test of its binary first, and under the sanitizers
 that took 121 ms a process with all of them in one binary; a new folder gets its line in
 `MaxMatrixTestFolders` of `CMakeLists.txt`. In `det/`, `MaxMatrixTestSupport.cpp` defines `ReportError()` itself and records

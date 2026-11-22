@@ -10,9 +10,9 @@
 
 #include "MaxMatrixError.h"
 
-#include <avr/pgmspace.h>
 #include <stdint.h>
 
+#include "MaxMatrixPgmspace.h"
 #include "Utility/array.h"
 
 namespace max_matrix {

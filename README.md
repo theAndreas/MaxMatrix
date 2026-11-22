@@ -15,11 +15,12 @@ Features:
 - set and get single dots, rows and columns, in the same coordinates on every type of module
 - draw lines, rectangles, circles and pictures from flash
 - print chars and text (ASCII 32 to 126, the German umlauts, ß and °, variable char width)
-- shift a char or a text over the matrix without blocking `loop()`, at a pace the library keeps, once or over and over
+- shift a char or a text over the matrix without blocking `loop()`, a column per call, once or over and over
 - shift the matrix content left, right, up and down, with or without rotation
 - send a picture drawn with many calls at once, in at most eight frames
 - all eight ways a module can be wired, mirrored ones included, and a board mounted upside down
 - bit banging (any pins) or hardware SPI
+- the Arduino Uno and Nano, the Uno R4, the Raspberry Pi Pico and the ESP32
 - a simulator that runs the examples on the PC, in the terminal or in a browser
 - a control program for Linux and Windows that drives a board or the simulator over SerialControl
 
@@ -29,15 +30,20 @@ or clone it into your `Arduino/libraries` folder.
 
 ## Wiring
 
-| Module | Arduino Uno / Nano |
-|--------|--------------------|
-| VCC    | 5V                 |
-| GND    | GND                |
-| DIN    | 11                 |
-| CS     | 10                 |
-| CLK    | 13                 |
+| Module | Board  | Uno / Nano / Uno R4 | Pico | ESP32 |
+|--------|--------|---------------------|------|-------|
+| VCC    | 5V     | 5V                  | VBUS | 5V    |
+| GND    | GND    | GND                 | GND  | GND   |
+| DIN    | `MOSI` | 11                  | 19   | 23    |
+| CS     | `SS`   | 10                  | 17   | 5     |
+| CLK    | `SCK`  | 13                  | 18   | 18    |
 
-In bit banging mode any digital pins can be used. With hardware SPI, DIN and CLK must be connected to the SPI pins of the board (MOSI and SCK).
+The examples take the pins by the names the core gives them, `MOSI`, `SS` and `SCK`, so that they run on every board
+unchanged. In bit banging mode any digital pins can be used. With hardware SPI, DIN and CLK must be connected to the SPI
+pins of the board (MOSI and SCK).
+
+The Pico and the ESP32 drive their pins with 3.3 V. A MAX7219 at 5 V takes 3.5 V as high, by its datasheet: many
+modules work at 3.3 V all the same, but a level shifter, or a module made for 3.3 V, is within the datasheet.
 
 ## Configuration
 The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
@@ -45,6 +51,7 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | Parameter                                  | Default   | Description                                           |
 |--------------------------------------------|-----------|-------------------------------------------------------|
 | `MAXMATRIX_USE_SPI`                        | `STD_OFF` | use hardware SPI instead of bit banging on any pins   |
+| `MAXMATRIX_USE_PORT_REGISTERS`             | AVR: `STD_ON`, else `STD_OFF` | bit bang through the port registers, four times as fast as `digitalWrite()`; the AVR only |
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `Init()` (0 to 15)                |

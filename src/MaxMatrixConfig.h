@@ -35,6 +35,20 @@
 #define MAXMATRIX_USE_SPI STD_OFF
 #endif
 
+/*!
+ * \brief `STD_ON` writes the pins through their port registers, four times as
+ *        fast as digitalWrite() on the AVR, and the default there; `STD_OFF`
+ *        through digitalWrite(), which every core has, and the default on every
+ *        other board. Any other value fails when compiling.
+ */
+#ifndef MAXMATRIX_USE_PORT_REGISTERS
+#ifdef ARDUINO_ARCH_AVR
+#define MAXMATRIX_USE_PORT_REGISTERS STD_ON
+#else
+#define MAXMATRIX_USE_PORT_REGISTERS STD_OFF
+#endif
+#endif
+
 /*! \brief The SPI clock in Hz; the MAX7219 takes 10 MHz at most, and a value
  * beyond fails when compiling. */
 #ifndef MAXMATRIX_SPI_CLOCK_SPEED
@@ -75,6 +89,9 @@
 // what it switched on.
 static_assert((MAXMATRIX_USE_SPI == STD_ON) || (MAXMATRIX_USE_SPI == STD_OFF),
               "MAXMATRIX_USE_SPI is STD_ON or STD_OFF");
+static_assert((MAXMATRIX_USE_PORT_REGISTERS == STD_ON) ||
+                  (MAXMATRIX_USE_PORT_REGISTERS == STD_OFF),
+              "MAXMATRIX_USE_PORT_REGISTERS is STD_ON or STD_OFF");
 static_assert((MAXMATRIX_DEV_ERROR_DETECT == STD_ON) ||
                   (MAXMATRIX_DEV_ERROR_DETECT == STD_OFF),
               "MAXMATRIX_DEV_ERROR_DETECT is STD_ON or STD_OFF");
