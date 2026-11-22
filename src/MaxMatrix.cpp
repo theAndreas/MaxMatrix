@@ -189,9 +189,9 @@ void Matrix::ShiftStep() {
   // reader of the condition misses (MISRA 8.14.1).
   bool ended{false};
   if (State::kStringShift == state_) {
-    ended = !text_.StringShiftTask(panel_);
+    ended = !text_.StringShiftStep(panel_);
   } else if (State::kCharShift == state_) {
-    ended = !text_.CharShiftTask(panel_);
+    ended = !text_.CharShiftStep(panel_);
   } else {
     // no shift runs, so there is no step to take
   }

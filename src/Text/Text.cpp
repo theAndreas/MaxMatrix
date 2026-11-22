@@ -119,7 +119,7 @@ void Text::SetGlyph(Panel& panel, Point top_left, Glyph const& glyph) {
   panel.DrawBitmap(top_left, glyph.height, glyph.columns);
 }
 
-bool Text::CharShiftTask(Panel& panel) {
+bool Text::CharShiftStep(Panel& panel) {
   // An empty column comes in, by the column rather than ShiftFill, so
   // that a sketch that only shifts text does not link the other fills.
   panel.ShiftLeft(Byte{});
@@ -146,7 +146,7 @@ bool Text::CharShiftTask(Panel& panel) {
  * that call, but avr-gcc kept ReadNextChar() out of line for its second caller,
  * 46 to 64 bytes of flash in the examples that shift text.
  */
-bool Text::StringShiftTask(Panel& panel) {
+bool Text::StringShiftStep(Panel& panel) {
   if (sprite_shift_counter_ == kShiftIdle) {
     ReadNextChar();
   }
@@ -154,7 +154,7 @@ bool Text::StringShiftTask(Panel& panel) {
   if (going_on) {
     // Whether the char has come in shows in the counter, which the next
     // call reads.
-    Discard(CharShiftTask(panel));
+    Discard(CharShiftStep(panel));
   }
   return going_on;
 }
