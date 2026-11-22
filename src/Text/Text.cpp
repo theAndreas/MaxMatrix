@@ -10,6 +10,7 @@
 
 #include "Text.h"
 
+#include <avr/pgmspace.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,11 +18,21 @@
 #include "Matrix/Panel.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixError.h"
+#include "MaxMatrixStandardTypes.h"
 #include "Utility/Byte.h"
+#include "Utility/array.h"
 #include "Utility/span.h"
 
 namespace max_matrix {
 namespace internal {
+
+namespace {
+
+// How far the span of a text in flash reaches, see ToFlashText(): the
+// greatest index of a text on the Uno, whose size_t has 16 bits.
+constexpr size_t kFlashTextLength{0xFFFFu};
+
+}  // namespace
 
 Text::Text() = default;
 
@@ -55,14 +66,31 @@ Status Text::SetCharWithShift(char c) {
 }
 
 Status Text::SetText(Panel& panel, span<char const> text) const {
-  int16_t char_column{0};
-  size_t position{0};
-
   if (text.size() == 0) {
     return Error::kNoText;
   }
-  while (!IsEndOfText(text, position)) {
-    DecodedChar const decoded{Font::DecodeChar(text.subspan(position))};
+  return DrawText(panel, text, false);
+}
+
+// A null pointer is no text, as an empty span; `{}` is one, as a sketch may
+// write for an empty text. F("") is a text of no char, as "" is in RAM, which
+// draws nothing.
+Status Text::SetText(Panel& panel, __FlashStringHelper const* text) const {
+  if (text == nullptr) {
+    return Error::kNoText;
+  }
+  return DrawText(panel, ToFlashText(text), true);
+}
+
+Status Text::DrawText(Panel& panel, span<char const> text,
+                      bool in_flash) const {
+  int16_t char_column{0};
+  size_t position{0};
+  array<char, 2> buffer{};
+  span<char const> chars{ReadChars(text, position, in_flash, buffer)};
+
+  while (!IsEndOfText(chars, 0)) {
+    DecodedChar const decoded{Font::DecodeChar(chars)};
     position += decoded.length;
     Result<Glyph> const found{Font::GetGlyph(GetFont(), decoded.c)};
     if (!found.IsOk()) {
@@ -76,6 +104,7 @@ Status Text::SetText(Panel& panel, span<char const> text) const {
     if (char_column > panel.GetNumberOfColumns()) {
       break;
     }
+    chars = ReadChars(text, position, in_flash, buffer);
   }
   return Error::kOk;
 }
@@ -88,7 +117,55 @@ Status Text::SetTextWithShift(span<char const> text, bool repeat) {
   text_ = text;
   position_ = 0;
   repeat_ = repeat;
+  text_in_flash_ = false;
   return Error::kOk;
+}
+
+// As SetText(), a null pointer is no text.
+Status Text::SetTextWithShift(__FlashStringHelper const* text, bool repeat) {
+  if (text == nullptr) {
+    return Error::kNoText;
+  }
+  sprite_shift_counter_ = kShiftIdle;
+  text_ = ToFlashText(text);
+  position_ = 0;
+  repeat_ = repeat;
+  text_in_flash_ = true;
+  return Error::kOk;
+}
+
+/*
+ * A text in flash as a span, which ends at its null character alone: its
+ * length is not known without reading it all, so the span reaches as far as an
+ * index of a text can, and only ReadChars() reads it.
+ */
+span<char const> Text::ToFlashText(__FlashStringHelper const* text) {
+  // AVR-1: F() of the core makes a text in flash this type; it is a char
+  // array, as Print reads it
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  return span<char const>{reinterpret_cast<char const*>(text),
+                          kFlashTextLength};
+}
+
+/*
+ * The chars of a text from `position` on, as DecodeChar() reads them: a text
+ * in RAM as it is; from flash its next char, the byte, or the two of a UTF-8
+ * sequence, copied into `buffer`. The second byte is read only behind a first
+ * that is not the null character, so never past the end of the text.
+ */
+span<char const> Text::ReadChars(span<char const> text, size_t position,
+                                 bool in_flash, array<char, 2>& buffer) {
+  span<char const> const rest{text.subspan(position)};
+  if (!in_flash) {
+    return rest;
+  }
+  buffer[0] = static_cast<char>(pgm_read_byte(rest.data()));
+  size_t count{1u};
+  if (buffer[0] != kNullCharacter) {
+    buffer[1] = static_cast<char>(pgm_read_byte(&rest[1]));
+    count = 2u;
+  }
+  return span<char const>{buffer.data(), count};
 }
 
 void Text::SetSpaceBetweenChars(uint8_t space_between_chars) {
@@ -172,14 +249,17 @@ void Text::ReadNextChar() {
   bool may_start_over{repeat_};
 
   while (sprite_shift_counter_ == kShiftIdle) {
-    if (IsEndOfText(text_, position_)) {
+    array<char, 2> buffer{};
+    span<char const> const chars{
+        ReadChars(text_, position_, text_in_flash_, buffer)};
+    if (IsEndOfText(chars, 0)) {
       if (!may_start_over) {
         return;
       }
       position_ = 0;
       may_start_over = false;
     } else {
-      DecodedChar const decoded{Font::DecodeChar(text_.subspan(position_))};
+      DecodedChar const decoded{Font::DecodeChar(chars)};
       position_ += decoded.length;
       // A char the font lacks leaves the counter idle, and the loop reads on.
       Discard(SetCharWithShift(decoded.c));

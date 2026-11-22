@@ -17,6 +17,7 @@
 #include "Matrix/Panel.h"
 #include "MaxMatrixAttributes.h"
 #include "MaxMatrixConfig.h"
+#include "Utility/array.h"
 #include "Utility/span.h"
 
 namespace max_matrix {
@@ -95,6 +96,20 @@ class Text {
   MAXMATRIX_NODISCARD Status SetText(Panel& panel, span<char const> text) const;
 
   /*!
+   * \brief Draws a text that lies in flash from the left edge, as far as it
+   *        fits.
+   *
+   * \param[in,out] panel The panel to draw on.
+   * \param[in] text The text in flash, UTF-8 or latin-1, as F() gives it, up to
+   *                 its terminating null character.
+   * \return Error::kOk; Error::kNoText if `text` is a null pointer; or
+   *         Error::kUnknownChar if the font lacks a char of the text, with the
+   *         chars before it drawn.
+   */
+  MAXMATRIX_NODISCARD Status SetText(Panel& panel,
+                                     __FlashStringHelper const* text) const;
+
+  /*!
    * \brief Starts shifting a text in from the right, until its last char and
    *        the space behind it have come in, or over and over.
    *
@@ -109,6 +124,20 @@ class Text {
    *      undefined.
    */
   MAXMATRIX_NODISCARD Status SetTextWithShift(span<char const> text,
+                                              bool repeat);
+
+  /*!
+   * \brief Starts shifting a text that lies in flash in from the right, as
+   *        SetTextWithShift() does a text in RAM.
+   *
+   * \param[in] text The text in flash, UTF-8 or latin-1, as F() gives it, up to
+   *                 its terminating null character; it is kept as a pointer.
+   * \param[in] repeat True to start over with the first char after the last,
+   *                   without end.
+   * \return Error::kOk, or Error::kNoText if `text` is a null pointer; nothing
+   *         starts then.
+   */
+  MAXMATRIX_NODISCARD Status SetTextWithShift(__FlashStringHelper const* text,
                                               bool repeat);
 
   /*!
@@ -178,6 +207,11 @@ class Text {
   static constexpr uint16_t kShiftStart{1};
 
   void ReadNextChar();
+  MAXMATRIX_NODISCARD Status DrawText(Panel& panel, span<char const> text,
+                                      bool in_flash) const;
+  static span<char const> ToFlashText(__FlashStringHelper const* text);
+  static span<char const> ReadChars(span<char const> text, size_t position,
+                                    bool in_flash, array<char, 2>& buffer);
   static span<uint8_t const> DefaultFont();
 
   /*
@@ -204,6 +238,8 @@ class Text {
   span<char const> text_;
   size_t position_{0};
   bool repeat_{false};
+  /* whether text_ lies in flash, where a byte is read by pgm_read_byte() */
+  bool text_in_flash_{false};
 };
 
 }  // namespace internal

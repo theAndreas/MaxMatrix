@@ -3,12 +3,14 @@
 
 /* Text and sprites: drawn, shifting in to its end, over again, and held. */
 
+#include <avr/pgmspace.h>
 #include <gtest/gtest.h>
 #include <stdint.h>
 
 #include <string>
 #include <vector>
 
+#include "Arduino.h"
 #include "MaxMatrixTestSupport.h"
 
 namespace max_matrix {
@@ -20,6 +22,103 @@ class TextTest : public MaxMatrixTest {};
 /* the whole panel dark */
 std::vector<std::string> Dark() {
   return Picture([](int16_t, int16_t) { return false; });
+}
+
+/* A text in flash, as F() and FromFlash() give one, draws and shifts as the
+ * same text in RAM (OIL 44): the tests compare the two, as the picture of each
+ * is pinned by the tests of the text in RAM. */
+
+TEST_F(TextTest, TextInFlashDrawsAsInRam) {
+  ASSERT_EQ(matrix_.SetText("Hi!").GetError(), Error::kOk);
+  std::vector<uint8_t> const in_ram{LeftEdge(matrix_, 12)};
+  matrix_.Clear();
+
+  ASSERT_EQ(matrix_.SetText(F("Hi!")).GetError(), Error::kOk);
+
+  EXPECT_EQ(LeftEdge(matrix_, 12), in_ram);
+}
+
+/* "\xC3\x84", A umlaut in UTF-8, is one char, read from flash a byte at a
+ * time */
+TEST_F(TextTest, TextInFlashDecodesUtf8AsInRam) {
+  ASSERT_EQ(matrix_.SetText("\xC3\x84").GetError(), Error::kOk);
+  std::vector<uint8_t> const in_ram{LeftEdge(matrix_, 6)};
+  matrix_.Clear();
+
+  ASSERT_EQ(matrix_.SetText(F("\xC3\x84")).GetError(), Error::kOk);
+
+  EXPECT_EQ(LeftEdge(matrix_, 6), in_ram);
+}
+
+TEST_F(TextTest, TextInFlashWithAnUnknownCharDrawsTheCharsBeforeIt) {
+  ASSERT_EQ(matrix_.SetText("I").GetError(), Error::kOk);
+  std::vector<uint8_t> const in_ram{LeftEdge(matrix_, 6)};
+  matrix_.Clear();
+
+  Error const error{matrix_.SetText(F("I\x01")).GetError()};
+
+  EXPECT_EQ(error, Error::kUnknownChar);
+  EXPECT_EQ(LeftEdge(matrix_, 6), in_ram);
+}
+
+TEST_F(TextTest, TextShiftInFlashShiftsAsInRam) {
+  ASSERT_EQ(matrix_.SetTextWithShift("H\xC3\x84llo").GetError(), Error::kOk);
+  uint16_t const steps_in_ram{ShiftUntilReady(matrix_)};
+  std::vector<uint8_t> const in_ram{RightEdge(matrix_, 24)};
+  matrix_.Clear();
+
+  ASSERT_EQ(matrix_.SetTextWithShift(F("H\xC3\x84llo")).GetError(), Error::kOk);
+  uint16_t const steps_in_flash{ShiftUntilReady(matrix_)};
+
+  EXPECT_EQ(steps_in_flash, steps_in_ram);
+  EXPECT_EQ(RightEdge(matrix_, 24), in_ram);
+}
+
+TEST_F(TextTest, RepeatingTextInFlashStartsOverAsInRam) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
+  ShiftSteps(matrix_, 18);
+  std::vector<uint8_t> const in_ram{RightEdge(matrix_, 18)};
+  matrix_.Clear();
+
+  ASSERT_EQ(matrix_.SetTextWithShift(F("Hi"), true).GetError(), Error::kOk);
+  ShiftSteps(matrix_, 18);
+
+  EXPECT_EQ(RightEdge(matrix_, 18), in_ram);
+  EXPECT_EQ(matrix_.GetState(), State::kStringShift);
+}
+
+/* a text in RAM after one in flash is read from RAM again: as RAM, it ends at
+ * the end of its span, "Hi" of "Hix"; read as flash, it went on to its null
+ * character, as the mock reads flash where RAM is */
+TEST_F(TextTest, TextShiftInRamAfterOneInFlashReadsRam) {
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
+  ShiftUntilReady(matrix_);
+  std::vector<uint8_t> const in_ram{RightEdge(matrix_, 15)};
+  matrix_.Clear();
+  ASSERT_EQ(matrix_.SetTextWithShift(F("AB")).GetError(), Error::kOk);
+  char const longer[] = "Hix";
+
+  ASSERT_EQ(matrix_.SetTextWithShift(span<char const>{longer, 2}).GetError(),
+            Error::kOk);
+  ShiftUntilReady(matrix_);
+
+  EXPECT_EQ(RightEdge(matrix_, 15), in_ram);
+}
+
+/* a table of texts lies in flash with PROGMEM, where F() cannot be written;
+ * FromFlash() hands one on as F() does */
+TEST_F(TextTest, TextFromAFlashTableShiftsAsInRam) {
+  static char const kTableText[] PROGMEM = "Hi";
+  ASSERT_EQ(matrix_.SetTextWithShift("Hi").GetError(), Error::kOk);
+  ShiftUntilReady(matrix_);
+  std::vector<uint8_t> const in_ram{RightEdge(matrix_, 9)};
+  matrix_.Clear();
+
+  ASSERT_EQ(matrix_.SetTextWithShift(FromFlash(kTableText)).GetError(),
+            Error::kOk);
+  ShiftUntilReady(matrix_);
+
+  EXPECT_EQ(RightEdge(matrix_, 9), in_ram);
 }
 
 /* SetTextWithShift() took a char*, though the shift only reads the text, so

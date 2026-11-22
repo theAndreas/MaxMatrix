@@ -132,6 +132,18 @@ Status Matrix::SetTextWithShift(span<char const> text, bool repeat) {
   return MAXMATRIX_REPORT_ERROR("SetTextWithShift", status);
 }
 
+Status Matrix::SetTextWithShift(__FlashStringHelper const* text, bool repeat) {
+  // As in SetCharWithShift().
+  Status status{Error::kNotSetUp};
+  if (state_ != State::kNone) {
+    status = text_.SetTextWithShift(text, repeat);
+  }
+  if (status.IsOk()) {
+    state_ = State::kStringShift;
+  }
+  return MAXMATRIX_REPORT_ERROR("SetTextWithShift", status);
+}
+
 void Matrix::StopShift() {
   // Only a shift ends here: before Init() the state says the chain is not set
   // up.

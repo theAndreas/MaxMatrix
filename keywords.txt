@@ -24,6 +24,7 @@ Y	KEYWORD1
 Interval	KEYWORD1
 Init	KEYWORD2
 make_array	KEYWORD2
+FromFlash	KEYWORD2
 Clear	KEYWORD2
 ShiftStep	KEYWORD2
 StopShift	KEYWORD2

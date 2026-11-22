@@ -196,19 +196,42 @@ INSTANTIATE_TEST_SUITE_P(
         ErrorCase{"SetTextUnknownChar",
                   [](Matrix& m) { return m.SetText("\x01").GetError(); },
                   Error::kUnknownChar, "SetText"},
-        ErrorCase{"SetTextEmptySpan",
-                  [](Matrix& m) { return m.SetText({}).GetError(); },
-                  Error::kNoText, "SetText"},
+        ErrorCase{
+            "SetTextEmptySpan",
+            [](Matrix& m) { return m.SetText(span<char const>{}).GetError(); },
+            Error::kNoText, "SetText"},
+        ErrorCase{
+            "SetTextInFlashNull",
+            [](Matrix& m) {
+              return m.SetText(static_cast<__FlashStringHelper const*>(nullptr))
+                  .GetError();
+            },
+            Error::kNoText, "SetText"},
+        ErrorCase{"SetTextWithShiftInFlashNull",
+                  [](Matrix& m) {
+                    return m
+                        .SetTextWithShift(
+                            static_cast<__FlashStringHelper const*>(nullptr))
+                        .GetError();
+                  },
+                  Error::kNoText, "SetTextWithShift"},
+        ErrorCase{"SetTextInFlashUnknownChar",
+                  [](Matrix& m) { return m.SetText(F("\x01")).GetError(); },
+                  Error::kUnknownChar, "SetText"},
         ErrorCase{
             "SetCharWithShift",
             [](Matrix& m) { return m.SetCharWithShift('\x01').GetError(); },
             Error::kUnknownChar, "SetCharWithShift"},
         ErrorCase{"SetTextWithShiftEmptySpan",
-                  [](Matrix& m) { return m.SetTextWithShift({}).GetError(); },
+                  [](Matrix& m) {
+                    return m.SetTextWithShift(span<char const>{}).GetError();
+                  },
                   Error::kNoText, "SetTextWithShift"},
         ErrorCase{
             "SetTextWithShiftEmptySpanRepeating",
-            [](Matrix& m) { return m.SetTextWithShift({}, true).GetError(); },
+            [](Matrix& m) {
+              return m.SetTextWithShift(span<char const>{}, true).GetError();
+            },
             Error::kNoText, "SetTextWithShift"},
         ErrorCase{"SetCharWithShiftBeforeInit",
                   [](Matrix&) {
@@ -224,6 +247,14 @@ INSTANTIATE_TEST_SUITE_P(
                         DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
                         ClockPin{kClockPin}};
                     return fresh.SetTextWithShift("Hi").GetError();
+                  },
+                  Error::kNotSetUp, "SetTextWithShift"},
+        ErrorCase{"SetTextWithShiftInFlashBeforeInit",
+                  [](Matrix&) {
+                    MatrixOf<kNumberOfModules> fresh{
+                        DataInPin{kDataInPin}, ChipSelectPin{kChipSelectPin},
+                        ClockPin{kClockPin}};
+                    return fresh.SetTextWithShift(F("Hi")).GetError();
                   },
                   Error::kNotSetUp, "SetTextWithShift"},
         ErrorCase{"SetIntensityBeforeInit",

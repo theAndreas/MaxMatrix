@@ -23,10 +23,6 @@ max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
 /* the pace of the text: a column every 50 ms */
 max_matrix::Interval shift_interval{50};
 
-/* Text must stay valid while it is shifted, so don't use a local variable; the
- * spaces at its end keep the end apart from the start */
-char const kText[] = "Hello World!   ";
-
 void setup() {
   // A pin the board lacks fails: the LED on the board says so, and loop()
   // draws nothing, as the matrix is not set up.
@@ -38,7 +34,9 @@ void setup() {
   /* the common 4-in-1 FC-16 boards; the README lists the other modules */
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   matrix.SetIntensity(2);
-  matrix.SetTextWithShift(kText, true);  // over and over
+  /* F() keeps the text in flash, where it takes no RAM; the spaces at its end
+   * keep the end apart from the start */
+  matrix.SetTextWithShift(F("Hello World!   "), true);  // over and over
 }
 
 void loop() {

@@ -446,7 +446,12 @@ A text itself is an array, `char const kText[] = "...";` (T-20): the object is t
 only an array takes `PROGMEM`. A `span<char const>` picks a text that exists already, with its
 length, as `text` of `Message` in `Messages`, and is what a function of the library takes for a
 text: the text ends at its null character or at the end of the span, whichever comes first,
-so that a buffer without one is not read past its end. `Command` alone walks its own line by
+so that a buffer without one is not read past its end. A text in flash, as `F()` gives it or
+`FromFlash()` a text of a table with `PROGMEM`, is a `__FlashStringHelper const*`, as the core's
+`Print` takes it, and ends at its null character alone; `internal::Text` reads either through
+`ReadChars()`, which copies a char from flash a byte or two at a time for `DecodeChar()` (OIL 44).
+The mock reads flash where RAM is, so only the examples in simavr tell the two apart: `Messages`
+and `ScrollText` keep their texts in flash. `Command` alone walks its own line by
 byte positions, as that line always ends with a null character and a span cost SerialControl
 flash (OIL 41).
 
