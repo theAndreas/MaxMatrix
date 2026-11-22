@@ -54,7 +54,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 | 44 | A text in flash | 41 | open | |
-| 45 | The pace of a shifting text in the sketch | 23, 41 | done | |
+| 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
 
 ### 1 Build with CMake
 
