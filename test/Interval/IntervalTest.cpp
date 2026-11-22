@@ -97,6 +97,18 @@ TEST(IntervalTest, NewMillisecondsCountFromTheLastStep) {
   EXPECT_TRUE(interval.IsDue(1120));
 }
 
+/* an interval beyond 16 bits is kept whole: a uint16_t took 70000 as 4464,
+ * with no more than a warning in a sketch, as Arduino compiles with
+ * -Wno-error=narrowing */
+TEST(IntervalTest, KeepsAnIntervalBeyondSixteenBits) {
+  Interval interval{70000};
+  ASSERT_TRUE(interval.IsDue(70000));
+
+  EXPECT_EQ(interval.GetMs(), 70000u);
+  EXPECT_FALSE(interval.IsDue(139999));
+  EXPECT_TRUE(interval.IsDue(140000));
+}
+
 /* the interval is counted across the overflow of millis() after 49.7 days: a
  * step 50 ms after 0xFFFFFFF0 comes at 0x22, and none at 0xFFFFFFFF, where a
  * comparison with the sum, which wraps first, is due (H-2) */
