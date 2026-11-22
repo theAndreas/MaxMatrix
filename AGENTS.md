@@ -635,7 +635,7 @@ The mock has a `Serial` that reads `mock::serial_input` and appends what the ske
 `mock::serial_output`, so that `SerialControl` builds into a simulator as well; `F()`, `PSTR()`,
 `strcmp_P()` and `pgm_read_ptr()` take strings in RAM there, as the host has no separate flash, but
 `F()` keeps the type `__FlashStringHelper const*` of the core. What avr-libc declares lies in
-`test/mock/avr/`, as on the board, so that a file includes the same header for both.
+`test/mock/avr/` and `test/mock/util/`, as on the board, so that a file includes the same header for both.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `mock::SetMillis()`
 instead, until the next `mock::Reset()`; `delay()` then moves it on without waiting. The library

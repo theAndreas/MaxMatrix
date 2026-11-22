@@ -50,9 +50,11 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 38 | Results that must not be ignored | 36 | done | #94 |
 | 39 | MC/DC coverage | 34 | done | #95, #96 |
 | 40 | Braced initialization checked | 34 | done | #93 |
-| 41 | The template's rules that review checks | 36 | in progress | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169, #170 |
+| 41 | The template's rules that review checks | 36 | done | #99, #100, #101, #102, #104, #105, #106, #107, #113, #115, #116, #117, #118, #121, #122, #124, #125, #126, #127, #128, #129, #130, #132, #133, #134, #135, #136, #139, #140, #141, #142, #143, #144, #145, #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157, #158, #159, #160, #161, #162, #163, #166, #167, #168, #169, #170, #172 |
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
+| 44 | A text in flash | 41 | open | |
+| 45 | The pace of a shifting text in the sketch | 23, 41 | open | |
 
 ### 1 Build with CMake
 
@@ -1576,6 +1578,20 @@ that wait for a port, which stop on a second condition, and the simulator's fram
 condition was no compare of its counter; a row of the whole panel counts to the fewer of its
 modules and the values given. No example changes in size.
 
+As reviewed for the profile AVR on 2026-11-22, the rules AVR-1 to AVR-7 of `docs/targets/avr.md`,
+in `src/` and the examples. Found: the two writes to a port held the interrupts off by hand, SREG
+saved, `cli()` and SREG put back; they are `ATOMIC_BLOCK(ATOMIC_RESTORESTATE)` now, as AVR-2 asks,
+with a stand-in in `test/mock/util/atomic.h` built as avr-libc builds it, and a test that the
+interrupts a sketch had off stay off, which fails when the block turns them on. Every example is
+the same size, in all three variants. Held: the library's own texts lie in flash and print
+through `F()` (AVR-1); it names SREG and the ports as `<avr/io.h>` and the core do (AVR-3); its
+pace takes the difference of two readings of `millis()`, with tests across the overflow (AVR-4);
+it has no interrupt routine (AVR-5), no `delay()` (AVR-6) and no `asm` (AVR-7). Decided the same
+day: AVR-6 holds for the library, as H-1, which it names; an example may wait for what it shows,
+as Basics, Shutdown and Sprites do. Left for items of their own: a text a sketch hands in lies in
+RAM, as `SetText()` takes none in flash (AVR-1), 44; and the library reads `millis()` itself
+rather than being given its clock (AVR-4, H-2), 45.
+
 ### 42 A newer avr-gcc as a cross-check
 
 `max_matrix::Byte` (41) made the examples 30 to 50 bytes of flash larger on the Uno at first,
@@ -1636,6 +1652,46 @@ masked first; masked first, every example that draws a text took 2 bytes more. T
 `test/compile_fail/` run through `add_compile_fail_tests()` of the template, in gnu++11 alone,
 as the function takes one standard; the loop of its own ran them in C++17 as well. With the
 template at v0.11.0, whose function takes several standards, they run in C++17 again.
+
+### 44 A text in flash
+
+AVR-1 asks for constant text in flash. The library keeps it for its own texts, but a text a
+sketch shows lies in RAM: `SetText()` and `SetTextWithShift()` take a `span<char const>`, which
+is read from RAM, so `Messages` keeps its four texts there. Found by the review of the profile
+AVR in 41. A text in flash, as `F("...")` gives it to the core's `Print`, beside the span; what a
+shifting text that reads flash costs is measured before it is built. A change of the API is
+allowed, as 3.0.0 is not released.
+
+### 45 The pace of a shifting text in the sketch
+
+`ShiftTask()` reads `millis()` and steps only once `shift_interval_` has passed (23): most calls
+do nothing, and the library reads a clock rather than being given one, against H-2 and AVR-4.
+Found by the review of the profile AVR in 41. Decided on 2026-11-22: the time is measured outside
+the library, as Wordclock's platform measures it while its firmware counts ticks alone. A call
+shifts one step, always, and a helper the sketch takes decides when:
+
+```cpp
+max_matrix::Interval shift_interval{50};  // ms per column
+
+void loop() {
+  if (shift_interval.IsDue(millis())) {
+    matrix.ShiftStep();
+  }
+}
+```
+
+Proposed, the names open until its pull request:
+
+- `ShiftStep()` in place of `ShiftTask()`, one step a call.
+- `Interval`, with `IsDue(now)`, `SetMs()`, `GetMs()` and `Restart(now)`: the difference of two
+  readings rather than a sum, right across the overflow, and no catching up after a late call,
+  as Wordclock's tick. `Animation`, `Band` and `Shapes` take it for their own steps as well (M-3).
+- `SetShiftInterval()`, `GetShiftInterval()` and `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE` go.
+  `speed=` of `Command` stays on the wire and sets the sketch's `Interval`, which the sketch then
+  hands `Command` as well.
+
+A break of the API, for 3.0.0, which is not released. To measure: flash and RAM of every example;
+the matrix loses `last_shift_` and `shift_interval_`, 6 bytes of RAM.
 
 ## Decisions
 

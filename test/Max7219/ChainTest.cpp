@@ -53,6 +53,19 @@ TEST_F(ChainTest, NoTransactionIsLeftOpen) {
   EXPECT_FALSE(mock::transaction_open);
 }
 
+/* a sketch that draws with the interrupts off, as inside a critical section of
+ * its own, finds them off afterwards: the library puts back the state it found
+ * rather than turning them on (AVR-2, ATOMIC_RESTORESTATE) */
+TEST_F(ChainTest, InterruptsThatWereOffStayOff) {
+  SREG = 0x00;
+
+  Transfer();
+  uint8_t const status_register_after{SREG};
+  SREG = 0x80;
+
+  EXPECT_EQ(status_register_after, 0x00);
+}
+
 TEST_F(ChainTest, TransfersGoThroughSpiWhenItIsConfigured) {
   Transfer();
 
