@@ -54,7 +54,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 42 | A newer avr-gcc as a cross-check | 41 | done | |
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 | 44 | A text in flash | 41 | open | |
-| 45 | The pace of a shifting text in the sketch | 23, 41 | open | |
+| 45 | The pace of a shifting text in the sketch | 23, 41 | done | |
 
 ### 1 Build with CMake
 
@@ -1692,6 +1692,21 @@ Proposed, the names open until its pull request:
 
 A break of the API, for 3.0.0, which is not released. To measure: flash and RAM of every example;
 the matrix loses `last_shift_` and `shift_interval_`, 6 bytes of RAM.
+
+As built, with the names proposed, and decided on 2026-11-22 for the two questions left: `Command`
+is handed the `Interval` with every char, `Feed(matrix, shift_interval, c, answer)`, as it is
+handed the matrix, rather than keeping a reference or owning it; and `Interval` has no `Restart()`,
+so a new text takes its first step one interval after it starts rather than at once, which moved
+the panels `ScrollText` and `Messages` show after their simulated time by one and two columns.
+`Interval` lies in `src/Interval/`, with its tests in `test/Interval/`, which took over those of
+`ShiftPaceTest`: no step before the interval has passed, one after a late check and counted from
+it, every check with 0, and across the overflow of the clock. The library reads no clock any
+longer, and its tests none. `Animation`, `Band` and `Shapes` time their steps with an `Interval`
+as well. Measured on the Uno with avr-gcc 7.3, every example in all three variants: 12 to 78 bytes
+of flash smaller; 6 bytes of RAM less where a sketch shifts no text, 4 where an `Interval` took the
+place of the sketch's own `uint32_t`, and the same where the sketch's `Interval` took the matrix's
+6 bytes. A `Matrix` takes 37 bytes of RAM with bit banging and 33 with SPI. The private shift
+functions of `internal::Text` keep their names, `CharShiftTask()` and `StringShiftTask()`.
 
 ## Decisions
 
