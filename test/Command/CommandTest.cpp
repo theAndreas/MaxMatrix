@@ -20,13 +20,19 @@ namespace {
 class CommandTest : public MaxMatrixTest {
  protected:
   Command command_;
+  /* the sketch's, which speed= sets */
+  Interval shift_interval_{50};
   TextPrint answer_;
 
   /* sends a line as a program does, char by char, and returns what the last
    * char brought; answer_ holds the answer to this line alone */
   Result<CommandState> Send(std::string const& line) {
     answer_.text.clear();
-    return FeedLine(command_, matrix_, line, answer_);
+    Result<CommandState> result{CommandState::kPending};
+    for (char const c : line) {
+      result = command_.Feed(matrix_, shift_interval_, c, answer_);
+    }
+    return result;
   }
 };
 
@@ -69,7 +75,7 @@ TEST_F(CommandTest, IntensityReachesEveryChip) {
 TEST_F(CommandTest, SpeedSetsTheShiftInterval) {
   ASSERT_EQ(Send("speed=120\n"), CommandState::kDone);
 
-  EXPECT_EQ(matrix_.GetShiftInterval(), 120);
+  EXPECT_EQ(shift_interval_.GetMs(), 120);
 }
 
 TEST_F(CommandTest, SpaceSetsTheSpaceBetweenChars) {
@@ -144,7 +150,7 @@ TEST_P(RefusedLineTest, IsRefusedWithItsError) {
 TEST_F(CommandTest, SpeedOutOfRangeLeavesTheShiftInterval) {
   Send("speed=65536\n");
 
-  EXPECT_EQ(matrix_.GetShiftInterval(), 0);
+  EXPECT_EQ(shift_interval_.GetMs(), 50);
 }
 
 TEST_F(CommandTest, LineEndsInCarriageReturnNewline) {
@@ -327,7 +333,7 @@ TEST_F(CommandTest, SpaceTakesItsGreatestValue) {
 TEST_F(CommandTest, SpeedTakesItsGreatestValue) {
   ASSERT_EQ(Send("speed=65535\n"), CommandState::kDone);
 
-  EXPECT_EQ(matrix_.GetShiftInterval(), 65535);
+  EXPECT_EQ(shift_interval_.GetMs(), 65535);
 }
 
 TEST_F(CommandTest, SetDotTakesTheLastDot) {

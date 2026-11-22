@@ -158,7 +158,7 @@ TEST_P(MaxMatrixMappingTest, ShiftStepSendsAtMostEightFrames) {
   ShiftSteps(matrix_, 6);
   int32_t const frames_before{mock::frames};
 
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_LE(mock::frames - frames_before, 8);
 }

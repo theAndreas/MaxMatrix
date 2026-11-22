@@ -33,6 +33,7 @@ enum class CommandState : uint8_t {
   kAnswered /*!< The line asked for something, and the answer is printed. */
 };
 
+class Interval;
 class Matrix;
 
 /*!
@@ -59,11 +60,17 @@ class Matrix;
  * over; a board cannot be told what it shows otherwise.
  *
  * \code{.cpp}
+ * max_matrix::Interval shift_interval{50};
  * max_matrix::Command command;
  *
  * void loop() {
- *     while(Serial.available() > 0) command.Feed(matrix, Serial.read(),
- * Serial); matrix.ShiftTask();
+ *     while (Serial.available() > 0) {
+ *         command.Feed(matrix, shift_interval,
+ *                      static_cast<char>(Serial.read()), Serial);
+ *     }
+ *     if (shift_interval.IsDue(millis())) {
+ *         matrix.ShiftStep();
+ *     }
  * }
  * \endcode
  *
@@ -87,6 +94,8 @@ class Command {
    * than carried out cut short.
    *
    * \param[in,out] matrix The matrix the command acts on.
+   * \param[in,out] shift_interval The sketch's interval of a shifting text,
+   *                               which `speed=` sets.
    * \param[in] c The next char, as `Serial.read()` gives it.
    * \param[out] answer Where the answer to a line goes, as a rule `Serial`.
    * \return CommandState::kPending while the line goes on or after an empty
@@ -96,7 +105,8 @@ class Command {
    *         Error::kUnknownCommand if no command has its name; or why the
    *         command failed: kNoText, kNotANumber, kOutOfRange or kUnknownChar.
    */
-  Result<CommandState> Feed(Matrix& matrix, char c, Print& answer);
+  Result<CommandState> Feed(Matrix& matrix, Interval& shift_interval, char c,
+                            Print& answer);
 
  private:
   /*
@@ -111,14 +121,18 @@ class Command {
   static_assert(MAXMATRIX_COMMAND_LINE_LENGTH <= kMaxLineLength,
                 "a position in the line has to fit into a byte");
   MAXMATRIX_NODISCARD Result<CommandState> Execute(Matrix& matrix,
+                                                   Interval& shift_interval,
                                                    Print& answer);
   MAXMATRIX_NODISCARD uint8_t Find(uint8_t from, char c) const;
   MAXMATRIX_NODISCARD bool IsName(char const* name) const;
-  MAXMATRIX_NODISCARD Status ExecuteWithValue(Matrix& matrix, uint8_t value);
+  MAXMATRIX_NODISCARD Status ExecuteWithValue(Matrix& matrix,
+                                              Interval& shift_interval,
+                                              uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteTextShift(Matrix& matrix, uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteText(Matrix& matrix, uint8_t value) const;
   MAXMATRIX_NODISCARD Status ExecuteDot(Matrix& matrix, uint8_t value);
   MAXMATRIX_NODISCARD Status ExecuteSetting(Matrix& matrix,
+                                            Interval& shift_interval,
                                             uint8_t value) const;
   static void AnswerPicture(Matrix const& matrix, Print& answer);
   MAXMATRIX_NODISCARD Result<uint16_t> ConvertToNumber(uint8_t text,

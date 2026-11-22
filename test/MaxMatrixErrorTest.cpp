@@ -21,11 +21,12 @@ namespace {
 /* a whole line to a command of its own, and why it failed */
 Error FeedText(Matrix& matrix, std::string const& text) {
   Command command;
+  Interval shift_interval{50};
   TextPrint answer;
   Result<CommandState> result{CommandState::kPending};
 
   for (char const c : text) {
-    result = command.Feed(matrix, c, answer);
+    result = command.Feed(matrix, shift_interval, c, answer);
   }
   return result.GetError();
 }

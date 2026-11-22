@@ -62,7 +62,7 @@ TEST_F(TextTest, RepeatingTextGoesOnPastItsEnd) {
 TEST_F(TextTest, RepeatingTextWithoutAKnownCharEnds) {
   ASSERT_EQ(matrix_.SetTextWithShift("\x01\x02", true).GetError(), Error::kOk);
 
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(matrix_.GetState(), State::kReady);
 }
@@ -77,7 +77,7 @@ TEST_F(TextTest, StopShiftEndsARepeatingText) {
 }
 
 /* the picture as it stood when the shift was stopped stays, whatever calls of
- * ShiftTask() come after */
+ * ShiftStep() come after */
 TEST_F(TextTest, StopShiftHoldsThePicture) {
   ASSERT_EQ(matrix_.SetTextWithShift("Hello ", true).GetError(), Error::kOk);
   ShiftSteps(matrix_, 20);
@@ -91,7 +91,7 @@ TEST_F(TextTest, StopShiftHoldsThePicture) {
 
 TEST_F(TextTest, StopShiftEndsAShiftingChar) {
   ASSERT_EQ(matrix_.SetCharWithShift('A').GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   matrix_.StopShift();
 
@@ -255,7 +255,7 @@ TEST_F(TextTest, NoSpaceBetweenCharsSetsThemSideBySide) {
 TEST_F(TextTest, CharShiftBringsOneColumnPerStep) {
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
 
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }

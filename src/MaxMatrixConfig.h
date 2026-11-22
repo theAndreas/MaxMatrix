@@ -64,16 +64,6 @@
 #define MAXMATRIX_COMMAND_LINE_LENGTH 64
 #endif
 
-/*!
- * \brief The milliseconds per column of a shifting text, until
- *        Matrix::SetShiftInterval(); 0 for a step on every call, up to 65535; a
- *        value beyond fails when compiling.
- */
-#ifndef MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): T-6, a sketch sets it
-#define MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE 50
-#endif
-
 // STD_ON reports every error to ReportError(), see MaxMatrixError.h.
 // Not a block: the Doxyfile sets it, so that the report is in the reference,
 // and the README's table has it.

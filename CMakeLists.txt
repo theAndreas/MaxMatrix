@@ -110,10 +110,11 @@ endif()
 # by side; what they share is in MaxMatrixTestSupport. A binary per folder of test/ and variant: ctest runs every test as
 # a process of its own, and each process registers every test of its binary before it runs one, which under the
 # sanitizers took 121 ms with the 2031 tests of a variant in one binary, against 14 ms for the 41 of the model's.
-set(MaxMatrixTestFolders Facade Command Font Matrix Max7219 Text Utility)
+set(MaxMatrixTestFolders Facade Command Font Interval Matrix Max7219 Text Utility)
 set(MaxMatrixFacadeTests test/MaxMatrixTest.cpp test/MaxMatrixBatchTest.cpp test/MaxMatrixErrorTest.cpp)
 set(MaxMatrixCommandTests test/Command/CommandTest.cpp)
 set(MaxMatrixFontTests test/Font/FontTest.cpp)
+set(MaxMatrixIntervalTests test/Interval/IntervalTest.cpp)
 set(MaxMatrixMatrixTests test/Matrix/PanelTest.cpp test/Matrix/WiredTest.cpp)
 set(MaxMatrixMax7219Tests test/Max7219/ChainTest.cpp)
 set(MaxMatrixTextTests test/Text/TextTest.cpp)

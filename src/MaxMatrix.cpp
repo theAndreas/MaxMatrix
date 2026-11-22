@@ -115,7 +115,7 @@ Status Matrix::SetCharWithShift(char c) {
     status = text_.SetCharWithShift(c);
   }
   if (status.IsOk()) {
-    StartShift(State::kCharShift);
+    state_ = State::kCharShift;
   }
   return MAXMATRIX_REPORT_ERROR("SetCharWithShift", status);
 }
@@ -127,7 +127,7 @@ Status Matrix::SetTextWithShift(span<char const> text, bool repeat) {
     status = text_.SetTextWithShift(text, repeat);
   }
   if (status.IsOk()) {
-    StartShift(State::kStringShift);
+    state_ = State::kStringShift;
   }
   return MAXMATRIX_REPORT_ERROR("SetTextWithShift", status);
 }
@@ -184,15 +184,7 @@ Status Matrix::Init() {
   return status;
 }
 
-void Matrix::ShiftTask() {
-  uint32_t const now{millis()};
-
-  // The interval counts from this step on, not from when the step was due.
-  if ((now - last_shift_) < shift_interval_) {
-    return;
-  }
-  last_shift_ = now;
-
+void Matrix::ShiftStep() {
   // The step stands alone rather than behind a && that may skip it, which a
   // reader of the condition misses (MISRA 8.14.1).
   bool ended{false};
@@ -251,16 +243,6 @@ void Matrix::UpdateIfAuto() {
 Status Matrix::UpdateIfAuto(Status status) {
   UpdateIfAuto();
   return status;
-}
-
-/*
- * Starts shifting a char or a text: sets the state, State::kCharShift
- * or kStringShift, and dates the last step one interval back, so that the first
- * step comes on the next call of ShiftTask() rather than an interval later.
- */
-void Matrix::StartShift(State shift_state) {
-  state_ = shift_state;
-  last_shift_ = millis() - shift_interval_;
 }
 
 }  // namespace max_matrix

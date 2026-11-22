@@ -48,7 +48,6 @@ The configuration is done in [src/MaxMatrixConfig.h](src/MaxMatrixConfig.h):
 | `MAXMATRIX_SPI_CLOCK_SPEED`                | `10000000`| SPI clock, the MAX7219 supports max. 10 MHz           |
 | `MAXMATRIX_SPACE_BETWEEN_CHARS_INIT_VALUE` | `1`       | empty columns between chars                           |
 | `MAXMATRIX_INTENSITY_INIT_VALUE`           | `5`       | LED intensity after `Init()` (0 to 15)                |
-| `MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE`      | `50`      | ms per column of a shifting text, `0` for every call  |
 | `MAXMATRIX_COMMAND_LINE_LENGTH`            | `64`      | longest command line of `max_matrix::Command`, in chars   |
 | `MAXMATRIX_DEV_ERROR_DETECT`               | `STD_OFF` | report every failed call, see [Functions](#functions)  |
 
@@ -71,6 +70,7 @@ max_matrix::Matrix matrix{max_matrix::DataInPin{11}, max_matrix::ChipSelectPin{1
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},  // a chain of 4 modules
                                max_matrix::ChipSelectPin{10},
                                max_matrix::ClockPin{13}};
+max_matrix::Interval shift_interval{50};    // ms per column
 char const kText[] = "Hello World!   ";
 
 void setup()
@@ -82,14 +82,16 @@ void setup()
 
 void loop()
 {
-    matrix.ShiftTask();     // shifts the text one column every 50 ms
+    if (shift_interval.IsDue(millis())) {
+        matrix.ShiftStep();     // shifts the text one column
+    }
 }
 ```
 
-`ShiftTask()` keeps the pace itself: call it on every `loop()`, and it takes a step only when the shift interval has
-passed since the last one. `SetShiftInterval()` sets the interval in milliseconds per column; with `0` every call is a
-step, for a sketch that times the steps itself. A call that comes late, because `loop()` was busy, takes one step and
-does not catch up.
+`ShiftStep()` shifts the text one column on every call; the sketch decides when. `max_matrix::Interval` says when the
+next step is due: `IsDue(millis())` is true once its milliseconds have passed since the last step, and `SetMs()`
+changes them; with `0` every check is due. A check that comes late, because `loop()` was busy, is due once and does
+not catch up. The library itself reads no clock, so an animation of the sketch's own takes an `Interval` as well.
 
 With `true`, `SetTextWithShift()` starts the text over with its first char right after its last, so the spaces at the
 end of the text keep the two apart; `StopShift()` ends it. `SetTextWithShift()` only keeps where the text is and how
@@ -161,9 +163,10 @@ at once read their byte in different directions:
 | `DrawCircle(centre, radius, value)` | the outline of a circle; radius 3 fills the height |
 | `DrawBitmap(top_left, bitmap)`, `DrawBitmap(top_left, height, bitmap)` | a picture in `PROGMEM`, a column per byte as wide as its array, bit 0 at the top |
 | `SetFont(font)`, `GetFont()` | the font every char is drawn in, see [below](#fonts) |
-| `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftTask()`, `GetState()` | a char or a text that shifts in from the right, a text once or over and over |
+| `SetCharWithShift(c)`, `SetTextWithShift(text, repeat)`, `ShiftStep()`, `GetState()` | a char or a text that shifts in from the right, one column per `ShiftStep()`, a text once or over and over |
 | `StopShift()` | stops a shifting char or text where it stands |
-| `SetShiftInterval(milliseconds)`, `SetSpaceBetweenChars(columns)` | how fast a text shifts and how far apart its chars are |
+| `max_matrix::Interval{milliseconds}`, `IsDue(now)`, `SetMs(milliseconds)` | when the next step of a shifting text, or of anything that moves, is due |
+| `SetSpaceBetweenChars(columns)` | how far apart the chars of a text are |
 | `ShiftLeft(fill)`, `ShiftRight(fill)`, `ShiftUp(fill)`, `ShiftDown(fill)` | moves the whole picture by one dot; what comes in is empty, what fell out at the other edge, or kept: `max_matrix::ShiftFill::kZero`, `kRotate`, `kKeep` |
 | `ShiftLeft(column)`, `ShiftRight(column)` | moves the picture by one column and brings `column` in, bit 0 at the top; returns the column that fell out |
 | `GetNumberOfModules()`, `GetNumberOfColumns()` | the length of the chain, eight columns per module |
@@ -243,7 +246,7 @@ off with `SetAutoUpdate(false)` and send with `Update()` whenever the picture is
 | `text=Hello` | shows a text from the left edge, on a cleared matrix |
 | `textShift=Hello` | shifts a text in from the right |
 | `intensity=8` | brightness, 0 to 15 |
-| `speed=50` | milliseconds per column of a shifting text |
+| `speed=50` | milliseconds per column of a shifting text, set on the `Interval` handed to `Feed()` |
 | `space=1` | empty columns between chars |
 | `setDot=5,3,1` | column, row, `1` for on and `0` for off |
 | `clear` | turns every LED off |
@@ -255,12 +258,17 @@ viewer sees it, bit 0 the top row. The [SerialControl](https://github.com/theAnd
 Arduino IDE sends them with "Newline" as line ending:
 
 ```cpp
+max_matrix::Interval shift_interval{50};
 max_matrix::Command command;
 
 void loop()
 {
-    while(Serial.available() > 0) command.Feed(matrix, Serial.read(), Serial);
-    matrix.ShiftTask();
+    while (Serial.available() > 0) {
+        command.Feed(matrix, shift_interval, static_cast<char>(Serial.read()), Serial);
+    }
+    if (shift_interval.IsDue(millis())) {
+        matrix.ShiftStep();
+    }
 }
 ```
 

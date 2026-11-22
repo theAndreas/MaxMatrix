@@ -120,6 +120,8 @@ exception goes at the end of a list, with its reason.
   - `Text/` — `internal::Text`, text that stands or shifts in.
   - `Command/` — `Command`, the lines of text a control page or program sends
     (`text=`, `setDot=`, …), carried out on a `Matrix`.
+  - `Interval/` — `Interval`, when the next step of something that moves is due, from the clock
+    a sketch hands it; a shifting text takes one step per `Matrix::ShiftStep()`.
   - `MaxMatrixError.h` / `.cpp` — `Error`, and `Status` / `Result<T>`,
     what a function that can fail returns, with `GetErrorText()`; `MaxMatrixErrorReport.cpp`, the
     report of `MAXMATRIX_DEV_ERROR_DETECT`, in a file of its own (see "Return values").
@@ -247,9 +249,11 @@ column, even one that was empty already, because after power-up the registers ho
 `Batch` turns `auto_update_` off for the life of a block and puts back what it found, so
 that a sketch cannot forget to turn it on again; the sketch-facing docs lead with it.
 
-The facade also keeps the pace of a shifting text: `ShiftTask()` returns at once until
-`shift_interval_` has passed since `last_shift_`, so a sketch calls it on every `loop()` and times
-nothing itself.
+The library reads no clock (H-2, AVR-4): `ShiftStep()` shifts a text one column on every call, and
+the sketch decides when, as a rule with an `Interval` (`src/Interval/`), which takes the clock it is
+given and says when the next step is due. `Command` sets that `Interval` for `speed=`, as the sketch
+hands it to `Feed()` beside the matrix. Wordclock does the same: its platform reads the clock, its
+firmware counts ticks.
 
 #### The parts
 
@@ -638,10 +642,9 @@ The mock has a `Serial` that reads `mock::serial_input` and appends what the ske
 `test/mock/avr/` and `test/mock/util/`, as on the board, so that a file includes the same header for both.
 The mock also has `millis()`, `micros()` and `delay()` on the host clock, for the simulator;
 `delay()` really waits. A test that times something holds the clock with `mock::SetMillis()`
-instead, until the next `mock::Reset()`; `delay()` then moves it on without waiting. The library
-tests set the shift interval to 0 in `SetUp()`, so that every `ShiftTask()` is a step, and test
-the timing on its own. `mock::tick`, called after every frame and every millisecond of
-`delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The tests
+instead, until the next `mock::Reset()`; `delay()` then moves it on without waiting. Every
+`ShiftStep()` is a step, so the library tests need no clock; `IntervalTest` tests the timing on its
+own. `mock::tick`, called after every frame and every millisecond of `delay()`, is how the simulator draws while a sketch blocks. The tests leave it unset. The tests
 `simulator/run/<example>` run every example for two seconds, which fails if a frame reaches the
 chain broken; what they draw depends on the host's clock, so it is not compared. The test
 `simulator/Basics` runs the `Basics` example for a second and compares the panel with

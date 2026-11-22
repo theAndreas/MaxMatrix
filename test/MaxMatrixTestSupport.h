@@ -120,9 +120,6 @@ class MaxMatrixTest : public ::testing::Test {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
     reports.clear();
     matrix_.Init();
-    /* the tests step a shifting text with every call; the timing of the steps
-     * has tests of its own */
-    matrix_.SetShiftInterval(0);
   }
 
   /* whatever a test did, the LEDs have to show what the buffer says - the get
@@ -204,7 +201,8 @@ std::vector<uint8_t> RightEdge(max_matrix::Matrix const& matrix,
                                uint8_t width = 3);
 
 /* feeds a line to a command char by char, as Serial would, and returns what
- * the last char brought */
+ * the last char brought; the interval speed= would set is the call's own, for
+ * a line that sets none */
 max_matrix::Result<max_matrix::CommandState> FeedLine(
     max_matrix::Command& command, max_matrix::Matrix& matrix,
     std::string const& line, Print& answer);
