@@ -55,6 +55,8 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 43 | Bit operations in one class, from the template | 41 | done | #109 |
 | 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
+| 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | in progress | |
+| 47 | A SPI bus of the sketch's choice | 46 | open | |
 
 ### 1 Build with CMake
 
@@ -218,7 +220,7 @@ Not planned yet, collected so they are not lost:
   `setShiftDataOutCallback` in MD_MAX72XX: became item 32, without callbacks.
 - More than one row of modules, as `setPosition` in Max72xxPanel.
 - Other architectures: an `SPIClass&` instead of the global `SPI`, and more than `avr` in
-  `library.properties`.
+  `library.properties`: became items 46 and 47.
 - Text effects and zones, as in MD_Parola. A shifting text that starts over by itself became
   item 31.
 
@@ -1739,6 +1741,50 @@ In 16 bits, `Interval{70000}` was 4464 ms with no more than a warning in a sketc
 compiles with `-Wno-error=narrowing`, and no check when compiling can see the value a constructor
 is handed in C++11, as `static_assert` saw the macro it replaced. 2 bytes of RAM and 12 to 24 of
 flash in every example that has an `Interval`; `speed=` still takes up to 65535.
+
+### 46 ESP32, RP2040 and Uno R4 beside the AVR
+
+MaxMatrix built for the AVR alone: `library.properties` said `architectures=avr`, the pins were
+written through the AVR's port registers with `ATOMIC_BLOCK` of `<util/atomic.h>`, and `PROGMEM`
+came from avr-libc's `<avr/pgmspace.h>`. Compiled unchanged on 2026-11-22, every example failed on
+the three: the Uno R4 and the Pico on `<util/atomic.h>`, the ESP32 on `<avr/pgmspace.h>`, which its
+core has as `<pgmspace.h>` alone; and the examples on `LED_BUILTIN`, which the ESP32 DevKit lacks,
+and on their pins 11, 10 and 13, where the ESP32's GPIO 6 to 11 drive its own flash.
+
+Decided the same day: the ESP32 (`esp32:esp32`), the Pico (`rp2040:rp2040`, arduino-pico) and the
+Uno R4 (`arduino:renesas_uno`), at versions at least two weeks old, 3.3.12, 6.3.2 and 1.6.0. Bit
+banging goes through `digitalWrite()` there, which every core has and a 32-bit chip runs fast
+enough; the port registers stay the AVR's, behind a switch, so that the host tests both. The
+examples take the board's SPI pins by name, `MOSI`, `SS` and `SCK`, the same 11, 10 and 13 on the
+Uno, and light the LED only where the board has one. In two pull requests: the library and the
+examples, compiled here for all four; then the three as targets of `tools/project.sh`, which
+`make examples` and CI build, as the ESP32's core takes 11 GB with its toolchains, and clang-tidy
+is yet to read their flags. A SPI bus other than the global `SPI` is 47.
+
+Nothing here runs on those boards: simavr is an AVR. The pull request says on which boards the
+examples ran, if any.
+
+As built for the first of the two: `MAXMATRIX_USE_PORT_REGISTERS` chooses how bit banging and chip
+select write a pin, on by default where `ARDUINO_ARCH_AVR` is, which the mock defines, as it stands
+in for the AVR's core; the variant `portable` turns it off, in the host tests and in the examples
+on the Uno, and a test pins that only the AVR's way writes a port register. `MaxMatrixPgmspace.h`
+finds `PROGMEM` by `__has_include`, in avr-libc's header or the ESP32's, and `MaxMatrix.h` exports
+it, so that a sketch names neither. The examples take `MOSI`, `SS` and `SCK`, the same pins on the
+Uno, whose panels in simavr are the same. The font and its example were written with `B01011111`
+of `binary.h`, which the cores of the Uno R4 and the Pico mark deprecated: as `0b01011111` now,
+which GCC and clang take in gnu++11 and c++11 without a warning but under `-Wpedantic`, which
+the project does not set. Compiled on 2026-11-22, every example with bit banging and with SPI, on
+the Uno, the Uno R4, the Pico and the ESP32: no error, and no warning from this repository.
+Measured on the Uno with avr-gcc 7.3: the variants as before; through `digitalWrite()` every
+example 144 to 150 bytes of flash and 3 of RAM smaller, but a byte four times as slow (22), so
+the AVR keeps its port registers. Not run on any of the three boards.
+
+### 47 A SPI bus of the sketch's choice
+
+The library sends through the global `SPI`. A board with more than one bus, as the ESP32 and the
+Pico, may want the matrix on another, `SPIClass&` as MD_MAX72XX takes it. The constructor takes
+four parameters already, the most FN-3 allows, so how a sketch names the bus is decided before it
+is built. After 46.
 
 ## Decisions
 
