@@ -45,7 +45,7 @@ class Interval {
    *
    * \param[in] ms The milliseconds between two steps; 0 makes every check due.
    */
-  explicit Interval(uint16_t ms) : ms_{ms} {}
+  explicit Interval(uint32_t ms) : ms_{ms} {}
 
   /*!
    * \brief Returns whether the next step is due, and if so, counts the next
@@ -58,17 +58,20 @@ class Interval {
   MAXMATRIX_NODISCARD bool IsDue(uint32_t now);
 
   /*! \brief Returns the milliseconds between two steps. */
-  MAXMATRIX_NODISCARD uint16_t GetMs() const { return ms_; }
+  MAXMATRIX_NODISCARD uint32_t GetMs() const { return ms_; }
 
   /*!
    * \brief Sets the milliseconds between two steps, counted from the last one.
    *
    * \param[in] ms The milliseconds; 0 makes every check due.
    */
-  void SetMs(uint16_t ms) { ms_ = ms; }
+  void SetMs(uint32_t ms) { ms_ = ms; }
 
  private:
-  uint16_t ms_;
+  /* 32 bits, as the clock: a sketch's interval beyond 16 bits was cut short
+   * with no more than a warning, as Arduino compiles with -Wno-error=narrowing
+   */
+  uint32_t ms_;
   uint32_t last_step_{0};
 };
 

@@ -1709,6 +1709,12 @@ place of the sketch's own `uint32_t`, and the same where the sketch's `Interval`
 of `internal::Text` that `ShiftStep()` calls are `CharShiftStep()` and `StringShiftStep()`, as
 each takes one step.
 
+As built, decided on 2026-11-22: an `Interval` keeps its milliseconds in 32 bits, as the clock.
+In 16 bits, `Interval{70000}` was 4464 ms with no more than a warning in a sketch, as Arduino
+compiles with `-Wno-error=narrowing`, and no check when compiling can see the value a constructor
+is handed in C++11, as `static_assert` saw the macro it replaced. 2 bytes of RAM and 12 to 24 of
+flash in every example that has an `Interval`; `speed=` still takes up to 65535.
+
 ## Decisions
 
 Why it is planned this way rather than the obvious alternative.
