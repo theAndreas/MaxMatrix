@@ -25,6 +25,7 @@ using max_matrix::ChipSelectPin;
 using max_matrix::ClockPin;
 using max_matrix::Command;
 using max_matrix::DataInPin;
+using max_matrix::Interval;
 using max_matrix::MatrixOf;
 using max_matrix::State;
 
@@ -83,12 +84,12 @@ void Require(bool holds) {
 extern "C" int LLVMFuzzerTestOneInput(uint8_t const* data, size_t size) {
   /* every input from the same state, as a board that has just started */
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  mock::SetMillis(0);
   MatrixOf<kNumberOfModules> matrix{DataInPin{kDataInPin},
                                     ChipSelectPin{kChipSelectPin},
                                     ClockPin{kClockPin}};
   Require(matrix.Init().IsOk());
-  matrix.SetShiftInterval(0);
+  /* speed= sets it; the steps below come one per call regardless */
+  Interval shift_interval{50};
   Command command;
   Answer answer;
   size_t line_ends{0};
@@ -98,11 +99,11 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t const* data, size_t size) {
     char const c{static_cast<char>(input[i])};
     line_ends += (c == '\n') ? 1u : 0u;
     // what a line brought is checked in the answer, after the last
-    max_matrix::Discard(command.Feed(matrix, c, answer));
+    max_matrix::Discard(command.Feed(matrix, shift_interval, c, answer));
   }
   uint16_t step{0};
   while ((step < kShiftSteps) && (matrix.GetState() != State::kReady)) {
-    matrix.ShiftTask();
+    matrix.ShiftStep();
     step++;
   }
 

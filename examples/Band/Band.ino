@@ -16,8 +16,6 @@
 #include <avr/pgmspace.h>
 #include <stdint.h>
 
-uint32_t const kStepIntervalMs{60};
-
 /* one beat, a column per byte, bit 0 the top row: a line in row 5 with a spike
  * up and down */
 constexpr auto kBeat PROGMEM{max_matrix::make_array<uint8_t>(
@@ -29,7 +27,7 @@ max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
                                max_matrix::ClockPin{13}};
 
 uint8_t next_column{0};
-uint32_t last_step{0};
+max_matrix::Interval step_interval{60};
 
 void setup() {
   // A pin the board lacks fails: the LED on the board says so, and loop()
@@ -47,12 +45,11 @@ void loop() {
   if (matrix.GetState() == max_matrix::State::kNone) {
     return;
   }
-  /* a step only every kStepIntervalMs; the rest of loop() is free for other
+  /* a step only every 60 ms; the rest of loop() is free for other
    * work */
-  if ((millis() - last_step) < kStepIntervalMs) {
+  if (!step_interval.IsDue(millis())) {
     return;
   }
-  last_step = millis();
 
   /* the column that falls out at the left comes back, for a sketch that passes
    * it on */

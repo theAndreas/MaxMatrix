@@ -14,14 +14,14 @@
  * is max_matrix::MatrixOf<8>.
  */
 #include <MaxMatrix.h>
-#include <stdint.h>
 
 max_matrix::DataInPin const kDataInPin{11};
 max_matrix::ChipSelectPin const kChipSelectPin{10};
 max_matrix::ClockPin const kClockPin{13};
-uint16_t const kShiftIntervalMs{50};
 
 max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
+/* the pace of the text: a column every 50 ms */
+max_matrix::Interval shift_interval{50};
 
 /* Text must stay valid while it is shifted, so don't use a local variable; the
  * spaces at its end keep the end apart from the start */
@@ -38,7 +38,6 @@ void setup() {
   /* the common 4-in-1 FC-16 boards; the README lists the other modules */
   matrix.SetModuleType(max_matrix::ModuleType::kFc16);
   matrix.SetIntensity(2);
-  matrix.SetShiftInterval(kShiftIntervalMs);
   matrix.SetTextWithShift(kText, true);  // over and over
 }
 
@@ -46,9 +45,10 @@ void loop() {
   if (matrix.GetState() == max_matrix::State::kNone) {
     return;
   }
-  /* takes a step only every kShiftIntervalMs, so it can be called on every
-   * loop() */
-  matrix.ShiftTask();
+  /* a step each time the interval has passed, so loop() never waits */
+  if (shift_interval.IsDue(millis())) {
+    matrix.ShiftStep();
+  }
 
   /* other work can be done here */
 }

@@ -19,7 +19,6 @@ using max_matrix::Point;
 using max_matrix::X;
 using max_matrix::Y;
 
-uint32_t const kShowMs{1000};
 uint8_t const kNumberOfShapes{4};
 
 /* a heart, a column per byte, bit 0 the top row */
@@ -31,7 +30,7 @@ max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
                                max_matrix::ClockPin{13}};
 
 uint8_t shape{0};
-uint32_t last_shape{0};
+max_matrix::Interval shape_interval{1000};
 
 void DrawShape() {
   X const right{static_cast<int16_t>(matrix.GetNumberOfColumns() - 1)};
@@ -76,12 +75,11 @@ void loop() {
   if (matrix.GetState() == max_matrix::State::kNone) {
     return;
   }
-  /* the next shape only every kShowMs; the rest of loop() is free for other
+  /* the next shape only every 1000 ms; the rest of loop() is free for other
    * work */
-  if ((millis() - last_shape) < kShowMs) {
+  if (!shape_interval.IsDue(millis())) {
     return;
   }
-  last_shape = millis();
 
   shape = static_cast<uint8_t>((shape + 1) % kNumberOfShapes);
   DrawShape();

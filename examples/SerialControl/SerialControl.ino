@@ -34,6 +34,8 @@ max_matrix::ClockPin const kClockPin{13};
 uint32_t const kBaudRate{115200};
 
 max_matrix::MatrixOf<4> matrix{kDataInPin, kChipSelectPin, kClockPin};
+/* the pace of a shifting text, which speed= sets */
+max_matrix::Interval shift_interval{50};
 max_matrix::Command command;
 
 void setup() {
@@ -55,7 +57,10 @@ void loop() {
     return;
   }
   while (Serial.available() > 0) {
-    command.Feed(matrix, static_cast<char>(Serial.read()), Serial);
+    command.Feed(matrix, shift_interval, static_cast<char>(Serial.read()),
+                 Serial);
   }
-  matrix.ShiftTask();
+  if (shift_interval.IsDue(millis())) {
+    matrix.ShiftStep();
+  }
 }

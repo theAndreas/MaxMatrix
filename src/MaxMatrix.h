@@ -25,6 +25,7 @@
 // What a sketch names, it has through this header alone.
 #include "Command/Command.h"         // IWYU pragma: export
 #include "Font/Font.h"               // IWYU pragma: export
+#include "Interval/Interval.h"       // IWYU pragma: export
 #include "Matrix/Panel.h"            // IWYU pragma: export
 #include "Max7219/Chain.h"           // IWYU pragma: export
 #include "MaxMatrixBatch.h"          // IWYU pragma: export
@@ -74,12 +75,11 @@ enum class State : uint8_t {
  * }
  * \endcode
  *
- * A shifting text keeps its own pace: ShiftTask() may be called on every
- * `loop()` and takes a step only when the shift interval has passed since the
- * last one, so that no sketch has to time it.
+ * A shifting text takes one step per call of ShiftStep(); the sketch decides
+ * when, as a rule with an Interval, so that the library reads no clock.
  *
- * A Matrix takes 43 bytes of RAM on the Uno with bit banging and 39 with SPI,
- * besides its buffer of eight bytes per module: a MatrixOf<4> takes 75 and 71.
+ * A Matrix takes 37 bytes of RAM on the Uno with bit banging and 33 with SPI,
+ * besides its buffer of eight bytes per module: a MatrixOf<4> takes 69 and 65.
  *
  * \note With `MAXMATRIX_DEV_ERROR_DETECT` at `STD_ON`, every function here that
  *       fails reports its name and the error to ReportError().
@@ -150,12 +150,6 @@ class Matrix {
   /*! \brief Returns whether every function that draws sends its result at once;
    * see SetAutoUpdate(). */
   MAXMATRIX_NODISCARD bool GetAutoUpdate() const { return auto_update_; }
-
-  /*! \brief Returns the milliseconds per column of a shifting text; see
-   * SetShiftInterval(). */
-  MAXMATRIX_NODISCARD uint16_t GetShiftInterval() const {
-    return shift_interval_;
-  }
 
   /*! \brief Returns the pin DIN of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetDataInPin() const {
@@ -272,16 +266,6 @@ class Matrix {
    * \param[in] auto_update True to send after every function that draws.
    */
   void SetAutoUpdate(bool auto_update);
-
-  /*!
-   * \brief Sets the milliseconds per column of a shifting text.
-   *
-   * \param[in] shift_interval The milliseconds; 0 makes every ShiftTask() a
-   *                           step.
-   */
-  void SetShiftInterval(uint16_t shift_interval) {
-    shift_interval_ = shift_interval;
-  }
 
   /*!
    * \brief Sets how bright every LED is lit.
@@ -408,7 +392,7 @@ class Matrix {
    * \brief Starts shifting a char in from the right, until it and the space
    *        behind it have come in.
    *
-   * ShiftTask() takes the steps, one column each; GetState() is
+   * ShiftStep() takes the steps, one column each; GetState() is
    * State::kCharShift until the char stands, the space behind it at the
    * right edge, so that a char shifted in after it keeps its distance.
    *
@@ -440,7 +424,7 @@ class Matrix {
    * \brief Starts shifting a text in from the right, until its last char and
    *        the space behind it have come in, or over and over.
    *
-   * ShiftTask() takes the steps, one column each; GetState() is
+   * ShiftStep() takes the steps, one column each; GetState() is
    * State::kStringShift until the text stands. A text that repeats goes on with
    * its first char right after its last, so a few spaces at its end keep the
    * two apart; it shifts until StopShift() or the next shift starts.
@@ -452,7 +436,7 @@ class Matrix {
    *         Error::kNoText if `text` is an empty span. Nothing starts on an
    *         error.
    * \pre `text` lives until the text stands, or as long as it repeats;
-   *      otherwise ShiftTask() reads memory that is no longer the text, which
+   *      otherwise ShiftStep() reads memory that is no longer the text, which
    *      is undefined.
    */
   Status SetTextWithShift(span<char const> text, bool repeat = false);
@@ -461,7 +445,7 @@ class Matrix {
    * \brief Stops a shifting text or char where it is.
    *
    * The picture stays as it is, and GetState() is State::kReady;
-   * ShiftTask() takes no step until the next shift starts. Without a shift, it
+   * ShiftStep() takes no step until the next shift starts. Without a shift, it
    * does nothing.
    */
   void StopShift();
@@ -541,17 +525,13 @@ class Matrix {
   Status Init();
 
   /*!
-   * \brief Shifts a text or a char one column further, if the shift interval
-   *        has passed.
+   * \brief Shifts a text or a char one column further.
    *
-   * Call it on every `loop()` until GetState() is State::kReady again, or on
-   * every `loop()` at all: without a shift, it changes nothing.
-   * It takes a step only when the shift interval has passed since the last one,
-   * and with an interval of 0 on every call. A call that comes late takes one
-   * step, not the ones it missed: catching up would make the text jump after
-   * `loop()` was held up.
+   * Every call is a step; the sketch decides when, as a rule each time an
+   * Interval is due, until GetState() is State::kReady again. Without a shift,
+   * it changes nothing.
    */
-  void ShiftTask();
+  void ShiftStep();
 
   /*!
    * \brief Sends what was drawn since the last update.
@@ -603,18 +583,11 @@ class Matrix {
   // ends with it.
   void UpdateIfAuto();
   MAXMATRIX_NODISCARD Status UpdateIfAuto(Status status);
-  void StartShift(State shift_state);
 
   internal::Panel panel_;
   internal::Text text_;
   State state_{State::kNone};
   bool auto_update_{true};
-  // E-2: as for the space between chars in Text.
-  static_assert(static_cast<uint16_t>(MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE) ==
-                    MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE,
-                "MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE is 0 to 65535");
-  uint16_t shift_interval_{MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE};
-  uint32_t last_shift_{0};
 };
 
 namespace internal {

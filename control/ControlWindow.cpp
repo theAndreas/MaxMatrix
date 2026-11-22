@@ -52,6 +52,8 @@ constexpr int kTcpPort{8081};
 constexpr int kPollMs{20};
 constexpr int kMaxIntensity{15};
 constexpr int kMinSpeed{10};
+/* what SerialControl's interval starts at */
+constexpr int kStartSpeed{50};
 constexpr int kMaxSpeed{500};
 constexpr int kMaxSpace{255};
 constexpr int kConnectionsWidth{220};
@@ -201,9 +203,8 @@ wxWindow* ControlWindow::MakeText(wxWindow* parent) {
                             MAXMATRIX_INTENSITY_INIT_VALUE, 0, kMaxIntensity,
                             wxDefaultPosition,
                             FromDIP(wxSize(-1, kSliderHeight)), kLevelSlider);
-  speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY,
-                        MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE, kMinSpeed,
-                        kMaxSpeed, wxDefaultPosition,
+  speed_ = new wxSlider(speed_box->GetStaticBox(), wxID_ANY, kStartSpeed,
+                        kMinSpeed, kMaxSpeed, wxDefaultPosition,
                         FromDIP(wxSize(-1, kSliderHeight)), kLevelSlider);
   shift_ = new wxCheckBox(page, wxID_ANY, "Shift in");
   space_ = new wxSpinCtrl(page, wxID_ANY, wxEmptyString, wxDefaultPosition,

@@ -149,8 +149,9 @@ max_matrix::Result<max_matrix::CommandState> FeedLine(
     std::string const& line, Print& answer) {
   max_matrix::Result<max_matrix::CommandState> result{
       max_matrix::CommandState::kPending};
+  max_matrix::Interval shift_interval{50};
   for (char const c : line) {
-    result = command.Feed(matrix, c, answer);
+    result = command.Feed(matrix, shift_interval, c, answer);
   }
   return result;
 }
@@ -167,7 +168,7 @@ std::vector<uint8_t> LeftEdge(max_matrix::Matrix const& matrix, uint8_t width) {
 uint16_t ShiftUntilReady(max_matrix::Matrix& matrix) {
   uint16_t step{0};
   while ((step < 1000) && (matrix.GetState() != max_matrix::State::kReady)) {
-    matrix.ShiftTask();
+    matrix.ShiftStep();
     step++;
   }
   return step;
@@ -175,7 +176,7 @@ uint16_t ShiftUntilReady(max_matrix::Matrix& matrix) {
 
 void ShiftSteps(max_matrix::Matrix& matrix, uint16_t steps) {
   for (uint16_t step{0}; step < steps; step++) {
-    matrix.ShiftTask();
+    matrix.ShiftStep();
   }
 }
 

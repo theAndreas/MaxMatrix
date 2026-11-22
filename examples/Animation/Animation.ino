@@ -18,8 +18,6 @@ using max_matrix::Point;
 using max_matrix::X;
 using max_matrix::Y;
 
-uint32_t const kStepIntervalMs{40};
-
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
                                max_matrix::ChipSelectPin{10},
                                max_matrix::ClockPin{13}};
@@ -28,7 +26,7 @@ int16_t ball_x{0};
 int16_t ball_y{0};
 int8_t step_x{1};
 int8_t step_y{1};
-uint32_t last_step{0};
+max_matrix::Interval step_interval{40};
 
 void setup() {
   // A pin the board lacks fails: the LED on the board says so, and loop()
@@ -47,12 +45,11 @@ void loop() {
   if (matrix.GetState() == max_matrix::State::kNone) {
     return;
   }
-  /* a step only every kStepIntervalMs; the rest of loop() is free for other
+  /* a step only every 40 ms; the rest of loop() is free for other
    * work */
-  if ((millis() - last_step) < kStepIntervalMs) {
+  if (!step_interval.IsDue(millis())) {
     return;
   }
-  last_step = millis();
 
   /* without the batch the matrix would show the frame without a ball in
    * between, as a flicker */

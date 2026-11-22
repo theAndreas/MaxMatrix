@@ -91,12 +91,6 @@ TEST_F(MatrixBeforeInitTest, DisplayTestNeedsInit) {
   EXPECT_EQ(mock::frames, 0);
 }
 
-TEST_F(MatrixBeforeInitTest, ShiftIntervalStartsAtTheConfiguredValue) {
-  uint16_t const interval{matrix_.GetShiftInterval()};
-
-  EXPECT_EQ(interval, MAXMATRIX_SHIFT_INTERVAL_INIT_VALUE);
-}
-
 TEST_F(MaxMatrixTest, IntensityReachesEveryChip) {
   Error const error{
       matrix_.SetIntensity(max7219::kIntensityMaxValue).GetError()};
@@ -162,138 +156,45 @@ TEST_F(MaxMatrixTest, AutoUpdateOnSendsWhatWasDrawn) {
 
 /* The tests below tell the steps of a shifting char by the three columns at
  * the right edge of the panel, where '#' brings 0x14, 0x3E and 0x14, one per
- * step, and hold the clock, so that a step 50 ms on does not depend on how
- * fast the host is. Up to three steps, each leaves the edge another picture. */
-/* a char shifting in at 50 ms per step, its shift started at `start` */
-class ShiftPaceTest : public MaxMatrixTest {
+ * step. Up to three steps, each leaves the edge another picture. */
+/* a char shifting in */
+class ShiftStepTest : public MaxMatrixTest {
  protected:
-  void StartShift(uint32_t start) {
-    mock::SetMillis(start);
-    matrix_.SetShiftInterval(50);
+  void SetUp() override {
+    MaxMatrixTest::SetUp();
     ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
   }
 };
 
-TEST_F(ShiftPaceTest, FirstStepComesAtOnce) {
-  StartShift(1000);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
-}
-
-TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassed) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1049);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
-}
-
-TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassed) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1050);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
-}
-
-/* a call after loop() was held up takes one step, not the ones it missed */
-TEST_F(ShiftPaceTest, LateCallTakesOneStep) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1180);
-
-  matrix_.ShiftTask();
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
-}
-
-/* the interval counts from a late step, not from when it was due */
-TEST_F(ShiftPaceTest, NoStepAnIntervalAfterTheMissedOne) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1180);
-  matrix_.ShiftTask();
-  mock::SetMillis(1229);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
-}
-
-TEST_F(ShiftPaceTest, StepAnIntervalAfterTheLateOne) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1180);
-  matrix_.ShiftTask();
-  mock::SetMillis(1230);
-
-  matrix_.ShiftTask();
+/* the sketch decides when a step comes, with an Interval of its own: every
+ * call is one, however close to the last */
+TEST_F(ShiftStepTest, EveryCallIsAStep) {
+  matrix_.ShiftStep();
+  matrix_.ShiftStep();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
 }
 
-TEST_F(ShiftPaceTest, IntervalZeroStepsOnEveryCall) {
-  StartShift(1000);
-  matrix_.SetShiftInterval(0);
+/* the library reads no clock: a step comes with the call, wherever the clock
+ * stands (H-2) */
+TEST_F(ShiftStepTest, StepsWhateverTheClockSays) {
+  mock::SetMillis(0);
 
-  matrix_.ShiftTask();
-  matrix_.ShiftTask();
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x14, 0x3E, 0x14}));
+  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
 }
 
-/* a new char or text starts at once, however recently the one before took a
- * step: '+' brings 0x08 first, beside the 0x14 of '#' */
-TEST_F(ShiftPaceTest, NewShiftStartsAtOnce) {
-  StartShift(1000);
-  matrix_.ShiftTask();
-  mock::SetMillis(1010);
+/* a new char or text starts with the next step: '+' brings 0x08 first, beside
+ * the 0x14 of '#' */
+TEST_F(ShiftStepTest, NewShiftStartsWithTheNextStep) {
+  matrix_.ShiftStep();
   ASSERT_EQ(matrix_.SetCharWithShift('+').GetError(), Error::kOk);
 
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(RightEdge(matrix_, 2), (std::vector<uint8_t>{0x14, 0x08}));
-}
-
-/* the interval is counted across the overflow of millis() after 49.7 days: a
- * step 50 ms after 0xFFFFFFF0 comes at 0x22, and none at 0xFFFFFFFF, where a
- * comparison with the sum, which wraps first, takes one (H-2) */
-TEST_F(ShiftPaceTest, NoStepJustBeforeTheClockWraps) {
-  StartShift(0xFFFFFFF0u);
-  matrix_.ShiftTask();
-  mock::SetMillis(0xFFFFFFFFu);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
-}
-
-TEST_F(ShiftPaceTest, NoStepBeforeTheIntervalHasPassedAcrossTheWrap) {
-  StartShift(0xFFFFFFF0u);
-  matrix_.ShiftTask();
-  mock::SetMillis(0x21u);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x00, 0x14}));
-}
-
-TEST_F(ShiftPaceTest, StepOnceTheIntervalHasPassedAcrossTheWrap) {
-  StartShift(0xFFFFFFF0u);
-  matrix_.ShiftTask();
-  mock::SetMillis(0x22u);
-
-  matrix_.ShiftTask();
-
-  EXPECT_EQ(RightEdge(matrix_), (std::vector<uint8_t>{0x00, 0x14, 0x3E}));
 }
 
 TEST_F(MaxMatrixTest, ShutdownDarkensEveryModule) {
@@ -457,10 +358,10 @@ TEST_F(MaxMatrixTest, InitAgainClearsThePanel) {
 /* Init() during a shift ends it, as it clears the panel the shift draws on */
 TEST_F(MaxMatrixTest, InitEndsARunningShift) {
   ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   Error const error{matrix_.Init().GetError()};
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(error, Error::kOk);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
@@ -478,8 +379,8 @@ TEST_F(MatrixBeforeInitTest, InitClearsWhatWasDrawnBefore) {
   EXPECT_EQ(Display(), std::vector<uint8_t>(kNumberOfColumns, 0));
 }
 
-TEST_F(MatrixBeforeInitTest, ShiftTaskBeforeInitDoesNothing) {
-  matrix_.ShiftTask();
+TEST_F(MatrixBeforeInitTest, ShiftStepBeforeInitDoesNothing) {
+  matrix_.ShiftStep();
 
   EXPECT_EQ(matrix_.GetState(), State::kNone);
   EXPECT_EQ(mock::frames, 0);
@@ -491,11 +392,11 @@ TEST_F(MatrixBeforeInitTest, StopShiftBeforeInitLeavesTheMatrixNotSetUp) {
   EXPECT_EQ(matrix_.GetState(), State::kNone);
 }
 
-TEST_F(MaxMatrixTest, ShiftTaskWithoutAShiftSendsNothing) {
+TEST_F(MaxMatrixTest, ShiftStepWithoutAShiftSendsNothing) {
   matrix_.SetText("Hi");
   int32_t const frames_before{mock::frames};
 
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   EXPECT_EQ(mock::frames, frames_before);
   EXPECT_EQ(matrix_.GetState(), State::kReady);
@@ -523,7 +424,7 @@ TEST_F(MaxMatrixTest, UpdateWithNothingChangedSendsNothing) {
 
 TEST_F(MaxMatrixTest, CharShiftTakesOverFromARunningText) {
   ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   Error const error{matrix_.SetCharWithShift('#').GetError()};
 
@@ -533,7 +434,7 @@ TEST_F(MaxMatrixTest, CharShiftTakesOverFromARunningText) {
 
 TEST_F(MaxMatrixTest, TextShiftTakesOverFromARunningChar) {
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   Error const error{matrix_.SetTextWithShift("Hi").GetError()};
 
@@ -545,7 +446,7 @@ TEST_F(MaxMatrixTest, TextShiftTakesOverFromARunningChar) {
  * an error */
 TEST_F(MaxMatrixTest, CharShiftThatFailsLeavesTheRunningText) {
   ASSERT_EQ(matrix_.SetTextWithShift("Hi", true).GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   Error const error{matrix_.SetCharWithShift('\x01').GetError()};
 
@@ -555,7 +456,7 @@ TEST_F(MaxMatrixTest, CharShiftThatFailsLeavesTheRunningText) {
 
 TEST_F(MaxMatrixTest, TextShiftThatFailsLeavesTheRunningChar) {
   ASSERT_EQ(matrix_.SetCharWithShift('#').GetError(), Error::kOk);
-  matrix_.ShiftTask();
+  matrix_.ShiftStep();
 
   Error const error{matrix_.SetTextWithShift({}).GetError()};
 
@@ -600,7 +501,6 @@ class ChainFixture : public ::testing::TestWithParam<Parameter> {
     mock::Reset(kDataInPin, kChipSelectPin, kClockPin, number_of_modules_);
     reports.clear();
     ASSERT_EQ(matrix_.Init().GetError(), Error::kOk);
-    matrix_.SetShiftInterval(0);
     matrix_.SetMatrixOrientation(std::get<1>(this->GetParam()));
     matrix_.SetModuleType(std::get<2>(this->GetParam()));
   }

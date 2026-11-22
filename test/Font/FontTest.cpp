@@ -203,7 +203,7 @@ TEST_F(FontTest, TextShiftLeavesOutAnUnknownCharAtTheEnd) {
   EXPECT_EQ(RightEdge(matrix_, 10), Ab());
 }
 
-/* Bug: skipping an unknown char took a ShiftTask() call of its own that sent
+/* Bug: skipping an unknown char took a ShiftStep() call of its own that sent
  * nothing, and the text stood still for a step; "ab" takes a step for each of
  * its ten columns and one that finds its end */
 TEST_F(FontTest, TextShiftSkipsUnknownCharsInTheMiddleWithoutAStep) {

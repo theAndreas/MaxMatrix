@@ -63,7 +63,8 @@ Command::Command() {
  * which answer is whose by counting; the answer to `picture` stands in for its
  * `ok`.
  */
-Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
+Result<CommandState> Command::Feed(Matrix& matrix, Interval& shift_interval,
+                                   char c, Print& answer) {
   if (c == kCarriageReturn) {
     return CommandState::kPending;
   }
@@ -88,7 +89,7 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
   }
   Result<CommandState> result{Error::kLineTooLong};
   if (!too_long) {
-    result = Execute(matrix, answer);
+    result = Execute(matrix, shift_interval, answer);
   }
   if (!result.IsOk()) {
     answer.print(F("error: "));
@@ -103,13 +104,14 @@ Result<CommandState> Command::Feed(Matrix& matrix, char c, Print& answer) {
 
 // Splits the line at its first '=' into name and value, overwriting the '='
 // with the end of the name, and passes it on by name.
-Result<CommandState> Command::Execute(Matrix& matrix, Print& answer) {
+Result<CommandState> Command::Execute(Matrix& matrix, Interval& shift_interval,
+                                      Print& answer) {
   uint8_t const separator{Find(0, kValueSeparator)};
 
   if (line_[separator] != internal::kNullCharacter) {
     line_[separator] = internal::kNullCharacter;
-    Status const status{
-        ExecuteWithValue(matrix, static_cast<uint8_t>(separator + 1))};
+    Status const status{ExecuteWithValue(matrix, shift_interval,
+                                         static_cast<uint8_t>(separator + 1))};
     if (!status.IsOk()) {
       return status.GetError();
     }
@@ -152,7 +154,8 @@ bool Command::IsName(char const* name) const {
 }
 
 // Passes a command NAME=VALUE on by its name, which ends where `value` starts.
-Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
+Status Command::ExecuteWithValue(Matrix& matrix, Interval& shift_interval,
+                                 uint8_t value) {
   if (IsName(PSTR("text"))) {
     return ExecuteText(matrix, value);
   }
@@ -162,7 +165,7 @@ Status Command::ExecuteWithValue(Matrix& matrix, uint8_t value) {
   if (IsName(PSTR("setDot"))) {
     return ExecuteDot(matrix, value);
   }
-  return ExecuteSetting(matrix, value);
+  return ExecuteSetting(matrix, shift_interval, value);
 }
 
 // textShift=TEXT copies the text out of the line buffer first: the shift reads
@@ -228,7 +231,8 @@ Status Command::ExecuteDot(Matrix& matrix, uint8_t value) {
 
 // The commands that set a number: intensity=0..15, speed=MILLISECONDS and
 // space=COLUMNS.
-Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
+Status Command::ExecuteSetting(Matrix& matrix, Interval& shift_interval,
+                               uint8_t value) const {
   Status status{Error::kOk};
 
   if (IsName(PSTR("intensity"))) {
@@ -245,7 +249,7 @@ Status Command::ExecuteSetting(Matrix& matrix, uint8_t value) const {
     if (!number.IsOk()) {
       return number.GetError();
     }
-    matrix.SetShiftInterval(number.GetValue());
+    shift_interval.SetMs(number.GetValue());
   } else if (IsName(PSTR("space"))) {
     Result<uint16_t> const number{ConvertToNumber(value, kMaxByte)};
     if (!number.IsOk()) {

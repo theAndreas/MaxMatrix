@@ -27,8 +27,8 @@ namespace internal {
  *        shifting in.
  *
  * Every function that draws is given the panel it draws on. A text shifts in
- * from the right, one column per call of CharShiftTask() or StringShiftTask(),
- * which Matrix::ShiftTask() makes.
+ * from the right, one column per call of CharShiftStep() or StringShiftStep(),
+ * which Matrix::ShiftStep() makes.
  */
 class Text {
  public:
@@ -143,23 +143,23 @@ class Text {
   /*!
    * \brief Shifts the char one column further.
    *
-   * Called by Matrix::ShiftTask(), or by StringShiftTask() for each char of
+   * Called by Matrix::ShiftStep(), or by StringShiftStep() for each char of
    * a text, until it returns false.
    *
    * \param[in,out] panel The panel to draw on.
    * \return True while the char or the space after it is still shifting.
    */
-  bool CharShiftTask(Panel& panel);
+  bool CharShiftStep(Panel& panel);
 
   /*!
    * \brief Shifts the text one column further.
    *
-   * Called by Matrix::ShiftTask() until it returns false.
+   * Called by Matrix::ShiftStep() until it returns false.
    *
    * \param[in,out] panel The panel to draw on.
    * \return True while the text is still shifting.
    */
-  bool StringShiftTask(Panel& panel);
+  bool StringShiftStep(Panel& panel);
 
  private:
   /*

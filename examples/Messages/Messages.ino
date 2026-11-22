@@ -43,10 +43,12 @@ uint8_t const kNumberOfMessages{kMessages.size()};
 max_matrix::MatrixOf<4> matrix{max_matrix::DataInPin{11},
                                max_matrix::ChipSelectPin{10},
                                max_matrix::ClockPin{13}};
+/* the pace of the text shown, which each message sets */
+max_matrix::Interval shift_interval{50};
 uint8_t current{0};
 
 void Show(Message const& message) {
-  matrix.SetShiftInterval(message.shift_interval_ms);
+  shift_interval.SetMs(message.shift_interval_ms);
   matrix.SetTextWithShift(message.text);
 }
 
@@ -68,8 +70,10 @@ void loop() {
   if (matrix.GetState() == max_matrix::State::kNone) {
     return;
   }
-  /* takes a step only when the interval of the current text has passed */
-  matrix.ShiftTask();
+  /* a step each time the interval of the current text has passed */
+  if (shift_interval.IsDue(millis())) {
+    matrix.ShiftStep();
+  }
   /* the text has been shifted in completely: on to the next one */
   if (matrix.GetState() == max_matrix::State::kReady) {
     current = static_cast<uint8_t>((current + 1) % kNumberOfMessages);
