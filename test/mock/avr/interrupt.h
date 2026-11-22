@@ -10,6 +10,6 @@
 #include <avr/io.h>
 
 /* avr-libc's name, which the library calls. */
-inline void cli() { SREG &= 0x7FU; }  // NOLINT(readability-identifier-naming)
+inline void cli() { SREG &= 0x7Fu; }  // NOLINT(readability-identifier-naming)
 
 #endif  // MAXMATRIX_TEST_MOCK_AVR_INTERRUPT_H_

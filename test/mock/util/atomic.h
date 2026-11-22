@@ -26,8 +26,8 @@ inline void MockAtomicRestore(uint8_t const* status_register) {
 /* The names of avr-libc, which the library uses. */
 // NOLINTBEGIN(readability-identifier-naming,cppcoreguidelines-macro-usage)
 #define ATOMIC_BLOCK(type)                                                 \
-  for (type, mock_atomic_to_do = MockAtomicCli(); mock_atomic_to_do != 0U; \
-       mock_atomic_to_do = 0U)
+  for (type, mock_atomic_to_do = MockAtomicCli(); mock_atomic_to_do != 0u; \
+       mock_atomic_to_do = 0u)
 #define ATOMIC_RESTORESTATE           \
   uint8_t mock_atomic_status_register \
       __attribute__((__cleanup__(MockAtomicRestore))) = SREG
