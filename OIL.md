@@ -56,7 +56,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
 | 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | done | #177, #178 |
-| 47 | A SPI bus of the sketch's choice | 46 | done | |
+| 47 | A SPI bus of the sketch's choice | 46 | done | #179 |
 
 ### 1 Build with CMake
 
