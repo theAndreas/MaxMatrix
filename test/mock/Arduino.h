@@ -9,7 +9,8 @@
  * rising clock shifts the level of data in into the chain, as SimulatorAvr does
  * for the real binary. The mock records what the library sends within a frame
  * and counts every bit or SPI byte outside one, outside an SPI transaction, or
- * on a pin that is no output, an SPI byte before SPI.begin(), a frame that
+ * on a pin that is no output, an SPI byte before begin() of its bus, a call on
+ * a bus the chain is not wired to (mock::chain_bus in SPI.h), a frame that
  * ends within a byte, and a port written with the interrupts on or written
  * that is none of the board's, as an error. Every bit and every rising chip
  * select also go to the MAX7219 model in Max7219.h, mock::chain. */

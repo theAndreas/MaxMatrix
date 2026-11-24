@@ -303,7 +303,11 @@ and end the SPI transaction. Every module in the chain gets one address/value pa
 `WriteRegisterAll()` (one value for every module) and `WriteRegisterEach()` (one value per
 module) are the two kinds of frame. Bit banging and SPI are selected with `#if` on
 `MAXMATRIX_USE_SPI` in `Transfer()`, and in `Init()` and the members for the two pins only bit
-banging uses; both branches have to keep working.
+banging uses; both branches have to keep working. With SPI the chain keeps the bus instead, the
+global `SPI` or the one a sketch names, `MatrixOf<4>{SPI1, ChipSelectPin{13}}`, for a board with
+two (OIL 47); DIN and CLK are then the bus's, and the pin constructor takes them only so that a
+sketch builds both ways. The mock has `SPI` and `SPI1`, and `mock::chain_bus` says which the chain
+is wired to: a call on the other counts as an error.
 
 The pins are written through their port registers, not with `digitalWrite()`: `Init()` looks up
 each pin's port and bit once (`digitalPinToPort()`, `digitalPinToBitMask()`), and a write takes

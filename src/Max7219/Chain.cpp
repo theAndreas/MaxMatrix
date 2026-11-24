@@ -46,11 +46,22 @@ constexpr uint8_t kFirstBit{0x80};
 
 }  // namespace
 
+#if (MAXMATRIX_USE_SPI == STD_ON)
+Chain::Chain(SPIClass& spi, ChipSelectPin chip_select_pin)
+    : chip_select_pin_{chip_select_pin.number}, spi_{spi} {}
+
+// The bus drives data in and clock at pins of its own; the two are taken only
+// so that a sketch builds with bit banging and with SPI alike.
+Chain::Chain(DataInPin /*data_in_pin*/, ChipSelectPin chip_select_pin,
+             ClockPin /*clock_pin*/)
+    : Chain{SPI, chip_select_pin} {}
+#else
 Chain::Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin)
-    : data_in_pin_{data_in_pin.number},
-      chip_select_pin_{chip_select_pin.number},
+    : chip_select_pin_{chip_select_pin.number},
+      data_in_pin_{data_in_pin.number},
       clock_pin_{clock_pin.number} {}
+#endif
 
 Status Chain::Init(uint8_t number_of_modules) {
   if (!HasBoardPins()) {
@@ -64,9 +75,9 @@ Status Chain::Init(uint8_t number_of_modules) {
   chip_select_ = chip_select;
   WritePin(chip_select, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
-  // the core's SPI object; its members are static on the AVR alone
+  // the sketch's bus; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.begin();
+  spi_.get().begin();
 #else
   pinMode(data_in_pin_, OUTPUT);
   pinMode(clock_pin_, OUTPUT);
@@ -128,9 +139,9 @@ void Chain::WriteRegisterEach(max7219::Register address,
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::StartTransmission() {
 #if (MAXMATRIX_USE_SPI == STD_ON)
-  // the core's SPI object; its members are static on the AVR alone
+  // the sketch's bus; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.beginTransaction(
+  spi_.get().beginTransaction(
       SPISettings(MAXMATRIX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
 #endif
   WritePin(chip_select_, false);
@@ -146,25 +157,24 @@ void Chain::StartTransmission() {
 void Chain::StopTransmission() {
   WritePin(chip_select_, true);
 #if (MAXMATRIX_USE_SPI == STD_ON)
-  // the core's SPI object; its members are static on the AVR alone
+  // the sketch's bus; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.endTransaction();
+  spi_.get().endTransaction();
 #endif
 }
 
 // Sends the address and value of one module within a frame; StartTransmission()
-// has to come first. Neither const nor static: it changes the chain, and bit
-// banging needs the pins, see Chain.h.
-// NOLINTNEXTLINE(readability-make-member-function-const,readability-convert-member-functions-to-static)
+// has to come first. Not const: it changes the chain, see Chain.h.
+// NOLINTNEXTLINE(readability-make-member-function-const)
 void Chain::Transfer(max7219::Register address, uint8_t value) {
   auto const address_byte{static_cast<uint8_t>(address)};
 #if (MAXMATRIX_USE_SPI == STD_ON)
-  // the core's SPI object; its members are static on the AVR alone
+  // the sketch's bus; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.transfer(address_byte);
-  // the core's SPI object; its members are static on the AVR alone
+  spi_.get().transfer(address_byte);
+  // the sketch's bus; its members are static on the AVR alone
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  SPI.transfer(value);
+  spi_.get().transfer(value);
 #else
   ShiftOut(address_byte);
   ShiftOut(value);
@@ -259,13 +269,17 @@ void Chain::WritePin(OutputPin pin, bool high) {
 }
 #endif
 
-// All three, though SPI drives data in and clock by pins of its own: a sketch
-// names the same pins for both, and one the board lacks is a mistake in either.
+// With SPI chip select alone: the bus drives data in and clock at pins of its
+// own, which a sketch on another bus does not name.
 bool Chain::HasBoardPins() const {
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  return IsBoardPin(chip_select_pin_);
+#else
   bool const data_in_on_board{IsBoardPin(data_in_pin_)};
   bool const chip_select_on_board{IsBoardPin(chip_select_pin_)};
   bool const clock_on_board{IsBoardPin(clock_pin_)};
   return data_in_on_board && chip_select_on_board && clock_on_board;
+#endif
 }
 
 }  // namespace internal

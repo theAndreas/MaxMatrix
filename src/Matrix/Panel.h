@@ -20,6 +20,9 @@
 #include "Utility/Byte.h"
 #include "Utility/span.h"
 #include "Wired.h"
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 
@@ -182,6 +185,21 @@ class Panel {
    */
   Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
         ClockPin clock_pin, span<Byte> buffer);
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  /*!
+   * \brief Makes the panel of the chain on this bus and at this pin CS, of
+   *        modules ModuleType::kDr0Cr0Rr1 in matrix orientation 0.
+   *
+   * \param[in] spi The bus DIN and CLK of the chain are connected to.
+   * \param[in] chip_select_pin The pin CS of the chain is connected to.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`.
+   * \pre `spi` and `buffer` live as long as the panel; otherwise the panel
+   *      writes memory that is no longer the buffer, which is undefined.
+   */
+  Panel(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer);
+#endif
 
   /*! \brief Returns the modules of the chain. */
   MAXMATRIX_NODISCARD uint8_t GetNumberOfModules() const {

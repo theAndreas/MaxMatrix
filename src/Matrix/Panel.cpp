@@ -18,10 +18,14 @@
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "MaxMatrixPgmspace.h"
+#include "MaxMatrixStandardTypes.h"
 #include "Utility/Bit.h"
 #include "Utility/Byte.h"
 #include "Utility/array.h"
 #include "Utility/span.h"
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 namespace internal {
@@ -60,6 +64,11 @@ constexpr int16_t GetGreater(int16_t first, int16_t second) {
 Panel::Panel(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
              ClockPin clock_pin, span<Byte> buffer)
     : wired_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+Panel::Panel(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer)
+    : wired_{spi, chip_select_pin, buffer} {}
+#endif
 
 Result<Byte> Panel::GetColumn(X x) const {
   int16_t const column{x.number};

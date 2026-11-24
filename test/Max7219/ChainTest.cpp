@@ -1,8 +1,8 @@
 // Copyright 2026 Andreas Burnickl
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/* The transfer to the chain: the pins it takes, and every bit within a frame.
- */
+/* The transfer to the chain: the pins and the bus it takes, and every bit
+ * within a frame. */
 
 #include <gtest/gtest.h>
 #include <stdint.h>
@@ -13,6 +13,10 @@
 #include "Arduino.h"
 #include "Max7219.h"
 #include "MaxMatrixTestSupport.h"
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 namespace {
@@ -110,11 +114,16 @@ class PinBeyondTheBoardTest : public PinTest {
   }
 };
 
+/* with SPI, the bus drives data in and clock at pins of its own, so that only
+ * chip select is the sketch's */
 INSTANTIATE_TEST_SUITE_P(
     EachPin, PinBeyondTheBoardTest,
-    ::testing::Values(PinCase{"DataIn", kBeyondPin, kChipSelectPin, kClockPin},
-                      PinCase{"ChipSelect", kDataInPin, kBeyondPin, kClockPin},
-                      PinCase{"Clock", kDataInPin, kChipSelectPin, kBeyondPin}),
+    ::testing::Values(
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+        PinCase{"DataIn", kBeyondPin, kChipSelectPin, kClockPin},
+        PinCase{"Clock", kDataInPin, kChipSelectPin, kBeyondPin},
+#endif
+        PinCase{"ChipSelect", kDataInPin, kBeyondPin, kClockPin}),
     CaseName<PinCase>);
 
 TEST_P(PinBeyondTheBoardTest, IsRefusedByInit) {
@@ -155,9 +164,12 @@ class LastPinTest : public PinTest {
 
 INSTANTIATE_TEST_SUITE_P(
     EachPin, LastPinTest,
-    ::testing::Values(PinCase{"DataIn", kLastPin, kChipSelectPin, kClockPin},
-                      PinCase{"ChipSelect", kDataInPin, kLastPin, kClockPin},
-                      PinCase{"Clock", kDataInPin, kChipSelectPin, kLastPin}),
+    ::testing::Values(
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+        PinCase{"DataIn", kLastPin, kChipSelectPin, kClockPin},
+        PinCase{"Clock", kDataInPin, kChipSelectPin, kLastPin},
+#endif
+        PinCase{"ChipSelect", kDataInPin, kLastPin, kClockPin}),
     CaseName<PinCase>);
 
 TEST_P(LastPinTest, IsTakenByInit) {
@@ -176,8 +188,8 @@ TEST_P(LastPinTest, CarriesTheTransfers) {
 }
 
 /* a failed Init() keeps the pins the chain was set up with */
-TEST_F(ChainTest, InitAfterADataInPinBeyondTheBoardIsRefused) {
-  matrix_.SetDataInPin(kBeyondPin);
+TEST_F(ChainTest, InitAfterAChipSelectPinBeyondTheBoardIsRefused) {
+  matrix_.SetChipSelectPin(kBeyondPin);
 
   Error const error{matrix_.Init().GetError()};
 
@@ -185,7 +197,7 @@ TEST_F(ChainTest, InitAfterADataInPinBeyondTheBoardIsRefused) {
 }
 
 TEST_F(ChainTest, FailedInitLeavesTheMatrixReady) {
-  matrix_.SetDataInPin(kBeyondPin);
+  matrix_.SetChipSelectPin(kBeyondPin);
 
   matrix_.Init();
 
@@ -194,7 +206,7 @@ TEST_F(ChainTest, FailedInitLeavesTheMatrixReady) {
 
 /* "Hi!" is 7F 08 08 7F, the space, 44 7D 40, the space, 5F */
 TEST_F(ChainTest, MatrixDrawsOnTheOldPinsAfterAFailedInit) {
-  matrix_.SetDataInPin(kBeyondPin);
+  matrix_.SetChipSelectPin(kBeyondPin);
   matrix_.Init();
 
   matrix_.SetText("Hi!");
@@ -210,9 +222,8 @@ TEST_F(ChainTest, MatrixDrawsOnTheOldPinsAfterAFailedInit) {
  * r0 */
 TEST_F(ChainTest, NothingIsSentBeforeInitSucceeded) {
   mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
-  MatrixOf<kNumberOfModules> matrix{DataInPin{kBeyondPin},
-                                    ChipSelectPin{kChipSelectPin},
-                                    ClockPin{kClockPin}};
+  MatrixOf<kNumberOfModules> matrix{
+      DataInPin{kDataInPin}, ChipSelectPin{kBeyondPin}, ClockPin{kClockPin}};
   ASSERT_EQ(matrix.Init().GetError(), Error::kOutOfRange);
 
   matrix.SetDot(Point{X{0}, Y{0}}, true);
@@ -223,6 +234,66 @@ TEST_F(ChainTest, NothingIsSentBeforeInitSucceeded) {
 
   EXPECT_EQ(mock::frames, 0);
 }
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+/* the pin constructor takes data in and clock only so that a sketch builds
+ * with bit banging and with SPI alike; with SPI they are the bus's */
+TEST_F(ChainTest, DataInAndClockBeyondTheBoardAreLeftToTheBus) {
+  MatrixOf<kNumberOfModules> matrix{DataInPin{kBeyondPin},
+                                    ChipSelectPin{kChipSelectPin},
+                                    ClockPin{kBeyondPin}};
+
+  Error const error{matrix.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOk);
+}
+
+/* a matrix on a bus other than SPI, as a board with two may want, on a chain
+ * wired to that bus */
+class ChainBusTest : public ChainTest {
+ protected:
+  void SetUp() override {
+    ChainTest::SetUp();
+    mock::Reset(kDataInPin, kChipSelectPin, kClockPin, kNumberOfModules);
+    mock::chain_bus = &SPI1;
+  }
+
+  MatrixOf<kNumberOfModules> on_bus_{SPI1, ChipSelectPin{kChipSelectPin}};
+};
+
+/* Init() sends the intensity it starts with, 5, to every chip */
+TEST_F(ChainBusTest, InitSendsOnTheBusGiven) {
+  ASSERT_EQ(on_bus_.Init().GetError(), Error::kOk);
+
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{5, 5, 5, 5}));
+}
+
+/* the mock counts a call on a bus the chain is not wired to as an error */
+TEST_F(ChainBusTest, SpiIsLeftAlone) {
+  on_bus_.Init();
+
+  EXPECT_EQ(mock::errors, 0);
+}
+
+TEST_F(ChainBusTest, MatrixWithItsOwnBufferSendsOnTheBusGiven) {
+  array<Byte, BufferSize(kNumberOfModules)> buffer{};
+  Matrix matrix{SPI1, ChipSelectPin{kChipSelectPin}, buffer};
+
+  ASSERT_EQ(matrix.Init().GetError(), Error::kOk);
+
+  EXPECT_EQ(ChipValues(&Max7219::intensity),
+            (std::vector<uint8_t>{5, 5, 5, 5}));
+}
+
+TEST_F(ChainBusTest, ChipSelectBeyondTheBoardIsRefusedByInit) {
+  MatrixOf<kNumberOfModules> matrix{SPI1, ChipSelectPin{kBeyondPin}};
+
+  Error const error{matrix.Init().GetError()};
+
+  EXPECT_EQ(error, Error::kOutOfRange);
+}
+#endif
 
 TEST_F(ChainTest, PinsAreMadeWhenCompiling) {
   static_assert(DataInPin{11}.number == 11, "data in");

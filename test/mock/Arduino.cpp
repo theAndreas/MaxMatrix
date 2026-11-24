@@ -28,9 +28,7 @@ std::string serial_input;
 std::string serial_output;
 void (*tick)() = NULL;
 bool spi_used;
-/* SPI.begin() was called: before it, the Uno waits for ever for a byte to go
- * out, as the SPI is off */
-static bool spi_begun;
+SPIClass* chain_bus{&SPI};
 /* the bits of the byte that is being clocked in, and how many there are */
 static uint8_t bits;
 static uint8_t bit_count;
@@ -66,7 +64,9 @@ void Reset(uint8_t data_in, uint8_t chip_select, uint8_t clock,
   frame.clear();
   last_frame.clear();
   spi_used = false;
-  spi_begun = false;
+  chain_bus = &SPI;
+  SPI = SPIClass{};
+  SPI1 = SPIClass{};
   serial_input.clear();
   serial_output.clear();
   chain.Reset(number_of_chips);
@@ -215,23 +215,31 @@ size_t Print::println(__FlashStringHelper const* text) {
 size_t Print::println() { return write("\r\n"); }
 
 SPIClass SPI;
+SPIClass SPI1;
 
-void SPIClass::begin() { mock::spi_begun = true; }
+void SPIClass::begin() {
+  if (this != mock::chain_bus) mock::errors++;
+  begun_ = true;
+}
 
 void SPIClass::beginTransaction(SPISettings) {
-  if (mock::transaction_open) mock::errors++;
+  if (mock::transaction_open || this != mock::chain_bus) mock::errors++;
   mock::transaction_open = true;
   mock::spi_used = true;
 }
 
 void SPIClass::endTransaction() {
-  if (!mock::transaction_open) mock::errors++;
+  if (!mock::transaction_open || this != mock::chain_bus) mock::errors++;
   mock::transaction_open = false;
 }
 
 uint8_t SPIClass::transfer(uint8_t value) {
-  if (!mock::transaction_open || !mock::spi_begun) mock::errors++;
-  mock::Transfer(value);
+  if (!mock::transaction_open || !begun_) mock::errors++;
+  if (this == mock::chain_bus) {
+    mock::Transfer(value);
+  } else {
+    mock::errors++;
+  }
   return 0;
 }
 
