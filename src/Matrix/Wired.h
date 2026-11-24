@@ -19,6 +19,9 @@
 #include "MaxMatrixConfig.h"
 #include "Utility/Byte.h"
 #include "Utility/span.h"
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 namespace internal {
@@ -46,6 +49,21 @@ class Wired {
    */
   Wired(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
         ClockPin clock_pin, span<Byte> buffer);
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  /*!
+   * \brief Makes the matrix of the chain on this bus and at this pin CS, and
+   *        empties its buffer.
+   *
+   * \param[in] spi The bus DIN and CLK of the chain are connected to.
+   * \param[in] chip_select_pin The pin CS of the chain is connected to.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`.
+   * \pre `spi` and `buffer` live as long as the matrix; otherwise the matrix
+   *      writes memory that is no longer the buffer, which is undefined.
+   */
+  Wired(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer);
+#endif
 
   /*! \brief Returns the chain the matrix sends to. */
   Chain& GetChain() & { return chain_; }

@@ -17,7 +17,11 @@
 #include "MaxMatrixConfig.h"
 #include "MaxMatrixError.h"
 #include "Utility/Byte.h"
+#include "Utility/reference_wrapper.h"
 #include "Utility/span.h"
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 
@@ -181,13 +185,30 @@ namespace internal {
  * \brief The chain of MAX7219s: the pins, and the frames sent to them.
  *
  * A frame carries one address and value per module. Only this class touches the
- * pins; bit banging or SPI is chosen with `MAXMATRIX_USE_SPI`.
+ * pins; bit banging or SPI is chosen with `MAXMATRIX_USE_SPI`. With SPI, the
+ * bus drives DIN and CLK at pins of its own, and the chain knows only CS.
  */
 class Chain {
  public:
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  /*!
+   * \brief Makes the chain on this bus and at this pin CS; nothing is sent
+   *        until an Init() succeeds.
+   *
+   * \param[in] spi The bus DIN and CLK of the chain are connected to.
+   * \param[in] chip_select_pin The pin CS of the chain is connected to.
+   * \pre `spi` lives as long as the chain.
+   */
+  Chain(SPIClass& spi, ChipSelectPin chip_select_pin);
+#endif
+
   /*!
    * \brief Makes the chain at these pins; nothing is sent until an Init()
    *        succeeds.
+   *
+   * With SPI, the chain is on the bus `SPI`, which drives DIN and CLK at pins
+   * of its own: `data_in_pin` and `clock_pin` are taken so that a sketch builds
+   * with bit banging and with SPI alike, and not used.
    *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
@@ -196,14 +217,17 @@ class Chain {
   Chain(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
         ClockPin clock_pin);
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
   /*! \brief Returns the pin DIN of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetDataInPin() const { return data_in_pin_; }
+#endif
 
   /*! \brief Returns the pin CS of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetChipSelectPin() const {
     return chip_select_pin_;
   }
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
   /*! \brief Returns the pin CLK of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetClockPin() const { return clock_pin_; }
 
@@ -214,6 +238,7 @@ class Chain {
    *                        takes it.
    */
   void SetDataInPin(uint8_t data_in_pin) { data_in_pin_ = data_in_pin; }
+#endif
 
   /*!
    * \brief Sets the pin CS of the chain is connected to.
@@ -225,6 +250,7 @@ class Chain {
     chip_select_pin_ = chip_select_pin;
   }
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
   /*!
    * \brief Sets the pin CLK of the chain is connected to.
    *
@@ -232,6 +258,7 @@ class Chain {
    *                      it.
    */
   void SetClockPin(uint8_t clock_pin) { clock_pin_ = clock_pin; }
+#endif
 
   /*!
    * \brief Sets the pins up, and every MAX7219 to drive an 8x8 matrix.
@@ -239,9 +266,10 @@ class Chain {
    * All eight digits, no decoding, normal operation, no display test.
    *
    * \param[in] number_of_modules The MAX7219s in the chain.
-   * \return Error::kOk, or Error::kOutOfRange if a pin is none of the board's,
-   *         `NUM_DIGITAL_PINS` or above; then nothing is set up, and the chain
-   *         drives the pins of the last Init() that succeeded.
+   * \return Error::kOk, or Error::kOutOfRange if a pin the chain knows is none
+   *         of the board's, `NUM_DIGITAL_PINS` or above; then nothing is set
+   *         up, and the chain drives the pins of the last Init() that
+   *         succeeded.
    */
   MAXMATRIX_NODISCARD Status Init(uint8_t number_of_modules);
 
@@ -294,9 +322,8 @@ class Chain {
   /*
    * Not const, though they change no member: they change the chain this object
    * stands for, and a const Chain that still sends would be a lie.
-   * transfer() is not static either, though with SPI it uses no member: bit
-   * banging needs the pins. clang-tidy reports all three, and each definition
-   * answers it with a NOLINT.
+   * clang-tidy reports all three, and each definition answers it with a
+   * NOLINT.
    */
   void StartTransmission();
   void StopTransmission();
@@ -321,9 +348,13 @@ class Chain {
   }
 #endif
 
-  uint8_t data_in_pin_;
   uint8_t chip_select_pin_;
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  reference_wrapper<SPIClass> spi_;
+#else
+  uint8_t data_in_pin_;
   uint8_t clock_pin_;
+#endif
   /*
    * The port and the bit of each pin, looked up once in Init(): digitalWrite()
    * looks both up in tables in flash on every call, which made a byte bit

@@ -40,7 +40,13 @@ or clone it into your `Arduino/libraries` folder.
 
 The examples take the pins by the names the core gives them, `MOSI`, `SS` and `SCK`, so that they run on every board
 unchanged. In bit banging mode any digital pins can be used. With hardware SPI, DIN and CLK must be connected to the SPI
-pins of the board (MOSI and SCK).
+pins of the board (MOSI and SCK), and the matrix sends through `SPI`. A board with a second bus, as the Pico and the
+ESP32, takes the chain on that one as well: the bus is named instead of DIN and CLK, `SPI1` of the Pico's core, or a bus
+the sketch makes on the ESP32, `SPIClass hspi{HSPI};`.
+
+```cpp
+max_matrix::MatrixOf<4> matrix{SPI1, max_matrix::ChipSelectPin{13}};  // MAXMATRIX_USE_SPI at STD_ON
+```
 
 The Pico and the ESP32 drive their pins with 3.3 V. A MAX7219 at 5 V takes 3.5 V as high, by its datasheet: many
 modules work at 3.3 V all the same, but a level shifter, or a module made for 3.3 V, is within the datasheet.

@@ -17,8 +17,12 @@
 
 #include "Max7219/Chain.h"
 #include "MaxMatrixConfig.h"
+#include "MaxMatrixStandardTypes.h"
 #include "Utility/Byte.h"
 #include "Utility/span.h"
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"
+#endif
 
 namespace max_matrix {
 namespace internal {
@@ -50,6 +54,13 @@ Wired::Wired(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
     : chain_{data_in_pin, chip_select_pin, clock_pin}, matrix_buffer_{buffer} {
   Zero(matrix_buffer_);
 }
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+Wired::Wired(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer)
+    : chain_{spi, chip_select_pin}, matrix_buffer_{buffer} {
+  Zero(matrix_buffer_);
+}
+#endif
 
 // From the size of the buffer, as the count of its columns wraps beyond a
 // byte.

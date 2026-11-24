@@ -19,6 +19,11 @@ Matrix::Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
                ClockPin clock_pin, span<Byte> buffer)
     : panel_{data_in_pin, chip_select_pin, clock_pin, buffer} {}
 
+#if (MAXMATRIX_USE_SPI == STD_ON)
+Matrix::Matrix(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer)
+    : panel_{spi, chip_select_pin, buffer} {}
+#endif
+
 void Matrix::SetAutoUpdate(bool auto_update) {
   auto_update_ = auto_update;
   UpdateIfAuto();

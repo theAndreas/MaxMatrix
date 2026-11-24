@@ -36,6 +36,9 @@
 #include "Utility/Byte.h"            // IWYU pragma: export
 #include "Utility/array.h"           // IWYU pragma: export
 #include "Utility/span.h"            // IWYU pragma: export
+#if (MAXMATRIX_USE_SPI == STD_ON)
+#include "SPI.h"  // IWYU pragma: export
+#endif
 
 namespace max_matrix {
 
@@ -131,6 +134,10 @@ class Matrix {
    *                           max_matrix::ClockPin{13}, buffer};
    * \endcode
    *
+   * With `MAXMATRIX_USE_SPI`, the chain is on the bus `SPI`, which drives DIN
+   * and CLK at pins of its own: `data_in_pin` and `clock_pin` are taken so
+   * that a sketch builds with bit banging and with SPI alike, and not used.
+   *
    * \param[in] data_in_pin The pin DIN of the chain is connected to.
    * \param[in] chip_select_pin The pin CS of the chain is connected to.
    * \param[in] clock_pin The pin CLK of the chain is connected to.
@@ -142,6 +149,32 @@ class Matrix {
    */
   Matrix(DataInPin data_in_pin, ChipSelectPin chip_select_pin,
          ClockPin clock_pin, span<Byte> buffer);
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  /*!
+   * \brief Makes a matrix on the chain on this bus and at this pin CS, in the
+   *        buffer given, and empties it.
+   *
+   * For a board with more than one bus, as the Pico and the ESP32, where the
+   * chain is on another than `SPI`; only with `MAXMATRIX_USE_SPI`.
+   * The bus drives DIN and CLK at pins of its own. Nothing is sent until an
+   * Init() succeeds, which begins the bus.
+   *
+   * \code{.cpp}
+   * max_matrix::array<max_matrix::Byte, max_matrix::BufferSize(4)> buffer;
+   * max_matrix::Matrix matrix{SPI1, max_matrix::ChipSelectPin{13}, buffer};
+   * \endcode
+   *
+   * \param[in] spi The bus DIN and CLK of the chain are connected to.
+   * \param[in] chip_select_pin The pin CS of the chain is connected to.
+   * \param[out] buffer The buffer, `BufferSize()` of the modules in the chain,
+   *                    1 to `kMaxNumberOfModules`; Init() refuses any other
+   *                    length.
+   * \pre `spi` and `buffer` live as long as the matrix; otherwise the matrix
+   *      writes memory that is no longer the buffer, which is undefined.
+   */
+  Matrix(SPIClass& spi, ChipSelectPin chip_select_pin, span<Byte> buffer);
+#endif
 
   /*! \brief Leaves the LEDs as they are. */
   ~Matrix() = default;
@@ -179,20 +212,26 @@ class Matrix {
    * see SetAutoUpdate(). */
   MAXMATRIX_NODISCARD bool GetAutoUpdate() const { return auto_update_; }
 
-  /*! \brief Returns the pin DIN of the chain is connected to. */
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+  /*! \brief Returns the pin DIN of the chain is connected to; only with bit
+   * banging, as SPI has a pin of its own. */
   MAXMATRIX_NODISCARD uint8_t GetDataInPin() const {
     return panel_.GetWired().GetChain().GetDataInPin();
   }
+#endif
 
   /*! \brief Returns the pin CS of the chain is connected to. */
   MAXMATRIX_NODISCARD uint8_t GetChipSelectPin() const {
     return panel_.GetWired().GetChain().GetChipSelectPin();
   }
 
-  /*! \brief Returns the pin CLK of the chain is connected to. */
+#if (MAXMATRIX_USE_SPI == STD_OFF)
+  /*! \brief Returns the pin CLK of the chain is connected to; only with bit
+   * banging, as SPI has a pin of its own. */
   MAXMATRIX_NODISCARD uint8_t GetClockPin() const {
     return panel_.GetWired().GetChain().GetClockPin();
   }
+#endif
 
   /*! \brief Returns how the LEDs of every module are wired; see
    * SetModuleType(). */
@@ -256,14 +295,17 @@ class Matrix {
     return text_.GetFont();
   }
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
   /*!
-   * \brief Sets the pin DIN of the chain is connected to.
+   * \brief Sets the pin DIN of the chain is connected to; only with bit
+   *        banging, as SPI has a pin of its own.
    *
    * \param[in] data_in_pin The pin; Init() makes it an output.
    */
   void SetDataInPin(uint8_t data_in_pin) {
     panel_.GetWired().GetChain().SetDataInPin(data_in_pin);
   }
+#endif
 
   /*!
    * \brief Sets the pin CS of the chain is connected to.
@@ -274,14 +316,17 @@ class Matrix {
     panel_.GetWired().GetChain().SetChipSelectPin(chip_select_pin);
   }
 
+#if (MAXMATRIX_USE_SPI == STD_OFF)
   /*!
-   * \brief Sets the pin CLK of the chain is connected to.
+   * \brief Sets the pin CLK of the chain is connected to; only with bit
+   *        banging, as SPI has a pin of its own.
    *
    * \param[in] clock_pin The pin; Init() makes it an output.
    */
   void SetClockPin(uint8_t clock_pin) {
     panel_.GetWired().GetChain().SetClockPin(clock_pin);
   }
+#endif
 
   /*!
    * \brief Sets whether what is drawn is sent at once.
@@ -713,6 +758,27 @@ class MatrixOf : private internal::Buffer<NumberOfModules>, public Matrix {
            ClockPin clock_pin)
       : internal::Buffer<NumberOfModules>{},
         Matrix{data_in_pin, chip_select_pin, clock_pin, this->buffer_} {}
+
+#if (MAXMATRIX_USE_SPI == STD_ON)
+  /*!
+   * \brief Makes the matrix on the chain on this bus and at this pin CS: for a
+   *        board with more than one bus; only with `MAXMATRIX_USE_SPI`.
+   *
+   * Nothing is sent until an Init() succeeds: what is drawn before only
+   * changes the buffer, which Init() clears.
+   *
+   * \code{.cpp}
+   * max_matrix::MatrixOf<4> matrix{SPI1, max_matrix::ChipSelectPin{13}};
+   * \endcode
+   *
+   * \param[in] spi The bus DIN and CLK of the chain are connected to.
+   * \param[in] chip_select_pin The pin CS of the chain is connected to.
+   * \pre `spi` lives as long as the matrix.
+   */
+  MatrixOf(SPIClass& spi, ChipSelectPin chip_select_pin)
+      : internal::Buffer<NumberOfModules>{},
+        Matrix{spi, chip_select_pin, this->buffer_} {}
+#endif
 };
 
 }  // namespace max_matrix
