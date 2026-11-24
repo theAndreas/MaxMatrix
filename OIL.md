@@ -56,7 +56,7 @@ Status: `open`, `in progress`, `done`, `dropped` (with the reason in the item).
 | 44 | A text in flash | 41 | done | #176 |
 | 45 | The pace of a shifting text in the sketch | 23, 41 | done | #173 |
 | 46 | ESP32, RP2040 and Uno R4 beside the AVR | 12 | done | #177, #178 |
-| 47 | A SPI bus of the sketch's choice | 46 | open | |
+| 47 | A SPI bus of the sketch's choice | 46 | done | |
 
 ### 1 Build with CMake
 
@@ -1798,6 +1798,27 @@ The library sends through the global `SPI`. A board with more than one bus, as t
 Pico, may want the matrix on another, `SPIClass&` as MD_MAX72XX takes it. The constructor takes
 four parameters already, the most FN-3 allows, so how a sketch names the bus is decided before it
 is built. After 46.
+
+Decided on 2026-11-24, after a prototype measured on the Uno: in the SPI variant a constructor
+takes the bus in place of DIN and CLK, `MatrixOf<4>{SPI1, ChipSelectPin{13}}` and
+`Matrix{SPI1, ChipSelectPin{13}, buffer}`, three parameters; a setter `SetSpi()` would have cost a
+sketch 12 bytes of flash more for its call, and a macro would have needed `MaxMatrixConfig.h`
+edited in the Arduino IDE, with one bus for every matrix of a sketch. `SPIClass` is a type on all
+four boards, checked in their cores' headers: a class of its own on the AVR and the ESP32, and
+`arduino::HardwareSPI` with virtual functions on the Uno R4 and the Pico. The Uno, which has one
+bus, keeps the bus as the others do, so that the host tests check the code it runs.
+
+As built: with SPI the chain keeps chip select and the bus, and no longer DIN and CLK, which are the
+bus's; the pin constructor stays, takes the two so that a sketch builds both ways, and means the
+global `SPI`. `Init()` then checks chip select alone, and the getters and setters of DIN and CLK are
+there only with bit banging. The mock has a second bus, `SPI1`, each with its own `begin()`, and
+`mock::chain_bus` says which one the chain is wired to; a call on the other counts as an error.
+Measured on the Uno with avr-gcc 7.3, the SPI variant: every example 20 bytes of flash smaller, as
+`Init()` checks one pin, and 1 byte of RAM larger, the AVR's empty `SPI` object, whose address the
+matrix now keeps; a `MatrixOf<4>` stays at 66 bytes. Bit banging is unchanged. `make boards`
+compiled every example in every variant for the Uno R4, the Pico and the ESP32, and a sketch on a
+second bus compiled for the Pico, with `SPI1`, and for the ESP32, with `SPIClass hspi{HSPI}`; the
+Uno R4 has one bus, `SPI_HOWMANY` 1 in both of its variants. Not run on a board with two buses.
 
 ## Decisions
 
