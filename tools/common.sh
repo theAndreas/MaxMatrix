@@ -25,6 +25,7 @@ readonly BUILD_DIR="${ROOT_DIR}/build"
 {
   NAMESPACE=""
   TARGETS=(board)
+  SIZES_TARGETS=()
   BUILD_SYSTEM="arduino-cli"
   CMAKE_TOOLCHAIN=""
   CMAKE_DEFINES=()

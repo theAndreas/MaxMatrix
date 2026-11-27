@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Compiles every example of a library, or the image of a firmware, for each target in each variant
-# and prints flash and RAM of each, as a Markdown table: a column per variant, named
-# target/variant where there is more than one target.
+# and prints flash and RAM of each, as a Markdown table: a column per variant of each target of
+# SIZES_TARGETS, all of TARGETS if it names none, named target/variant where the table shows more
+# than one target. A target the table leaves out is built and checked all the same.
 # Fails where an example does not compile or warns outside the toolchain's own files, where a
 # build that passed left no ELF file of one, and where check_elf() of tools/project.sh fails on
 # what was built. When every example compiles, the table goes to build/sizes.md as well, which
@@ -28,6 +29,8 @@ main() {
   local program
   local variant
   local label
+  local column
+  local shown
   local measured
   local built
   local elf
@@ -35,17 +38,42 @@ main() {
   local programs
   local -A flash_size
   local -A ram_size
-  local labels=()
-  # Each program once, in the order the first target and variant named it.
+  local columns=()
+  # Each program once, in the order the first target and variant of the table named it.
   local rows=()
   local -r sizes="${BUILD_DIR}/sizes.md"
   rm -f "${sizes}"
 
+  # The targets of the table: a misspelt one would drop its columns without a word.
+  local table_targets=("${TARGETS[@]}")
+  if ((${#SIZES_TARGETS[@]} > 0)); then
+    for target in "${SIZES_TARGETS[@]}"; do
+      if [[ " ${TARGETS[*]} " != *" ${target} "* ]]; then
+        err "SIZES_TARGETS in tools/project.sh names ${target}, which is no target of TARGETS:" \
+          "${TARGETS[*]}."
+        exit 1
+      fi
+    done
+    table_targets=("${SIZES_TARGETS[@]}")
+  fi
+
   for target in "${TARGETS[@]}"; do
     select_target "${target}"
+    shown=0
+    if [[ " ${table_targets[*]} " == *" ${target} "* ]]; then
+      shown=1
+    fi
     for variant in "${VARIANTS[@]}"; do
       label="$(target_label "${variant}")"
-      labels+=("${label}")
+      # The variant alone where the table shows one target, so that it reads as a project's of
+      # one target, whatever else is built.
+      column="${variant}"
+      if ((${#table_targets[@]} > 1)); then
+        column="${target}/${variant}"
+      fi
+      if ((shown)); then
+        columns+=("${column}")
+      fi
       built=1
       if ! target_build "${variant}"; then
         built=0
@@ -57,7 +85,7 @@ main() {
       fi
       mapfile -t programs <<< "${listed}"
       for program in "${programs[@]}"; do
-        if [[ " ${rows[*]} " != *" ${program} "* ]]; then
+        if ((shown)) && [[ " ${rows[*]} " != *" ${program} "* ]]; then
           rows+=("${program}")
         fi
         elf="$(target_elf "${variant}" "${program}")"
@@ -69,9 +97,11 @@ main() {
           continue
         fi
         check_elf "${variant}" "${elf}" || failed=1
-        measured="$(target_sizes "${variant}" "${program}")"
-        flash_size["${program}/${label}"]="${measured% *}"
-        ram_size["${program}/${label}"]="${measured#* }"
+        if ((shown)); then
+          measured="$(target_sizes "${variant}" "${program}")"
+          flash_size["${program}/${column}"]="${measured% *}"
+          ram_size["${program}/${column}"]="${measured#* }"
+        fi
       done
     done
   done
@@ -83,23 +113,23 @@ main() {
     header="| Image |"
   fi
   local rule="|---|"
-  for label in "${labels[@]}"; do
-    header+=" Flash, ${label} |"
+  for column in "${columns[@]}"; do
+    header+=" Flash, ${column} |"
     rule+="---|"
   done
-  for label in "${labels[@]}"; do
-    header+=" RAM, ${label} |"
+  for column in "${columns[@]}"; do
+    header+=" RAM, ${column} |"
     rule+="---|"
   done
   local table="${header}"$'\n'"${rule}"
   local row
   for program in "${rows[@]}"; do
     row="| ${program} |"
-    for label in "${labels[@]}"; do
-      row+=" ${flash_size["${program}/${label}"]:-} |"
+    for column in "${columns[@]}"; do
+      row+=" ${flash_size["${program}/${column}"]:-} |"
     done
-    for label in "${labels[@]}"; do
-      row+=" ${ram_size["${program}/${label}"]:-} |"
+    for column in "${columns[@]}"; do
+      row+=" ${ram_size["${program}/${column}"]:-} |"
     done
     table+=$'\n'"${row}"
   done

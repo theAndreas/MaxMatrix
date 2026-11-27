@@ -78,6 +78,9 @@ A change is done when all of these hold, not when it compiles:
 - What a sketch can use is documented (Documentation.md), and `make docs` passes.
 - The README's table of flash and RAM, if it has one, is what the build measures: after a change
   that moves them, `make examples` and `make sizes FIX=1`.
+- Each rule of `tools/stack.toml`, if there is one, still holds: where `make stack` finds that a
+  rule cuts other calls than `tools/stack_cuts.txt` lists, read its reason against the changed
+  programs, and only where it holds, `make stack FIX=1`; where it does not, change the rule.
 - What a user of the library notices is in `CHANGELOG.md`, if the project keeps one.
 - Your answer names every rule you deviated from, and why.
 
