@@ -12,8 +12,13 @@ rule. Read the rule in the standard.
 
 - **Covered by**: the check that enforces the rule, the compiler's warning, a test, a rule of
   CodingStyle.md, or *Review*. *In part* means the check finds only some of the cases the rule
-  names, and review takes the rest; *Review* means no free tool is known to check it. Empty
-  means not yet assessed; *n/a* means it cannot occur in this code, with the reason.
+  names, and review takes the rest; it is followed by what that rest is, `in part: not in the
+  head of a for loop`, as the topic is a note of ours and the rule's text is not here: a rest
+  that is not named is checked by no one. *Review* means no free tool is known to check it.
+  Empty means not yet assessed; *n/a* means it cannot occur in this code, with the reason.
+- **A check is named for what it reports under the project's flags**, shown on a case: one that
+  the flags silence covers nothing, as `performance-noexcept-move-constructor` reports nothing
+  under `-fno-exceptions`.
 - **Deviation**: where the project departs from the rule, as a whole, with its reason. A
   deviation at one place is a `NOLINT` that names the check and the rule
   (`// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast): MISRA 8.2.5, F() of the core`).
@@ -33,19 +38,19 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Dir 0.3.1 | Advisory | Floating-point arithmetic used appropriately | CodingStyle H-7 | |
 | Dir 0.3.2 | Required | Calls meet the preconditions of the callee | CodingStyle E-2, Review | |
 | Dir 5.7.2 | Advisory | No commented-out code | AGENTS.md, Review | |
-| Dir 15.8.1 | Required | Assignment handles self-assignment | `bugprone-unhandled-self-assignment`, in part | |
+| Dir 15.8.1 | Required | Assignment handles self-assignment | `bugprone-unhandled-self-assignment`, in part: not a move assignment, nor a copy of a class without a pointer or array member | |
 
 ### Rules of chapter 0
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 0.0.1 | Required | Unreachable statements | `-Wunreachable-code-aggressive` |  |
-| Rule 0.0.2 | Advisory | Invariant controlling expressions | `-Wtautological-compare`, `clang-analyzer-*`, in part |  |
+| Rule 0.0.2 | Advisory | Invariant controlling expressions | `-Wtautological-compare`, `-Wtype-limits`, `misc-redundant-expression`, `readability-simplify-boolean-expr`, in part: not one invariant through a named constant, the data flow or a range of values |  |
 | Rule 0.1.1 | Advisory | Redundant writes to local objects | `clang-analyzer-deadcode.DeadStores` |  |
-| Rule 0.1.2 | Required | Return values used | `-Wunused-result`, in part: a result marked as CodingStyle FN-10 asks | A result whose drop is no mistake, as the pointer `memcpy()` returns or the count of `printf()`, is dropped as it is: FN-10 marks a result only where dropping it is a mistake, so that a mark means something, and a drop of a marked one says why |
+| Rule 0.1.2 | Required | Return values used | `-Wunused-result`, in part: not a result that CodingStyle FN-10 leaves unmarked, the deviation | A result whose drop is no mistake, as the pointer `memcpy()` returns or the count of `printf()`, is dropped as it is: FN-10 marks a result only where dropping it is a mistake, so that a mark means something, and a drop of a marked one says why |
 | Rule 0.2.1 | Advisory | Variables of limited visibility are used | `-Wunused-variable` |  |
 | Rule 0.2.2 | Required | Named parameters are used | `-Wunused-parameter` |  |
-| Rule 0.2.3 | Advisory | Types of limited visibility are used | `-Wunused-local-typedef`, in part |  |
+| Rule 0.2.3 | Advisory | Types of limited visibility are used | `-Wunused-local-typedef`, in part: not a class, enum or union, nor any type in an unnamed namespace |  |
 | Rule 0.2.4 | Advisory | Functions of limited visibility are used | `-Wunused-function`, `-Wunused-member-function`, `-Wunused-template` |  |
 
 ### Rules of chapter 4
@@ -77,7 +82,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 6.0.1 | Required | Block declarations not ambiguous | `-Wvexing-parse`, in part |  |
+| Rule 6.0.1 | Required | Block declarations not ambiguous | `-Wvexing-parse`, in part: not a function declared in a block that cannot be read as an object, `void Reset();` |  |
 | Rule 6.0.2 | Advisory | External arrays with a size | Review | A text declared `extern` in a header, as CodingStyle M-4 asks for one whose address is taken, leaves its size to its definition, so that the text is written once |
 | Rule 6.0.3 | Advisory | Few declarations in the global namespace | CodingStyle F-9 |  |
 | Rule 6.0.4 | Required | `main` only as the global function | n/a: a sketch has no `main`, the library none either |  |
@@ -86,15 +91,15 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Rule 6.2.3 | Required | An entity defined once | Review |  |
 | Rule 6.2.4 | Required | No non-inline definitions in headers | `misc-definitions-in-headers` |  |
 | Rule 6.4.1 | Required | No variable hides another | `-Wshadow-all` |  |
-| Rule 6.4.2 | Required | No derived function hides a base one | `-Woverloaded-virtual`, in part |  |
+| Rule 6.4.2 | Required | No derived function hides a base one | `-Woverloaded-virtual`, `bugprone-derived-method-shadowing-base-method`, in part: not another signature of a non-virtual function, an override of some of the overloads only, or a data member |  |
 | Rule 6.4.3 | Required | No unqualified lookup into a dependent base | Review |  |
 | Rule 6.5.1 | Advisory | External entities declared in a header | `misc-use-internal-linkage` |  |
-| Rule 6.5.2 | Advisory | Internal linkage by an unnamed namespace, not `static` | `readability-static-definition-in-anonymous-namespace`, in part |  |
+| Rule 6.5.2 | Advisory | Internal linkage by an unnamed namespace, not `static` | `misc-use-anonymous-namespace`, `readability-static-definition-in-anonymous-namespace`, in part: not `extern` in an unnamed namespace, nor `static` in a header |  |
 | Rule 6.7.1 | Required | No static local variables | Review |  |
 | Rule 6.7.2 | Required | No global variables | `cppcoreguidelines-avoid-non-const-global-variables` |  |
 | Rule 6.8.1 | Required | No access outside an object's lifetime | `make sanitize`, `clang-analyzer-*` |  |
 | Rule 6.8.2 | Mandatory | No reference or pointer to a local returned | `-Wreturn-stack-address` |  |
-| Rule 6.8.3 | Required | No local address kept longer | `clang-analyzer-core.StackAddressEscape`, in part |  |
+| Rule 6.8.3 | Required | No local address kept longer | `clang-analyzer-core.StackAddressEscape`, in part: not an address kept in a local of an outer block, nor one kept in a global and reset before the function returns |  |
 | Rule 6.8.4 | Advisory | Members returning a reference into their object ref-qualified | CodingStyle C-16, Review |  |
 | Rule 6.9.1 | Required | Same type aliases in all declarations | Review |  |
 | Rule 6.9.2 | Advisory | No standard integer type names | CodingStyle T-1, Review |  |
@@ -103,8 +108,8 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 7.0.1 | Required | No conversion from `bool` | `readability-implicit-bool-conversion`, in part |  |
-| Rule 7.0.2 | Required | No conversion to `bool` | `readability-implicit-bool-conversion` |  |
+| Rule 7.0.1 | Required | No conversion from `bool` | `readability-implicit-bool-conversion`, in part: not an explicit cast from `bool`, `static_cast<int8_t>(b)`, nor `^` of two `bool`, nor a conversion in a macro or in an instance of a template |  |
+| Rule 7.0.2 | Required | No conversion to `bool` | `readability-implicit-bool-conversion`, in part: not an explicit cast to `bool`, `static_cast<bool>(n)` or `static_cast<bool>(p)` |  |
 | Rule 7.0.3 | Required | No numeric value of a character | Review | Where a char's numeric value is what the code is for: a digit parsed or printed, `c - '0'` and `'0' + value`, a char's code as an index, as of its glyph in a font, and the bytes of UTF-8 decoded. T-21 widens a char through `unsigned char` |
 | Rule 7.0.4 | Required | Operands of bitwise and shift operators | CodingStyle H-8 and H-9: only in the bit class, `house-bitwise-in-bit-class`; there by review |  |
 | Rule 7.0.5 | Required | Promotions keep signedness | `-Wsign-conversion`, in part: not the promotion of a type narrower than `int`; CodingStyle T-19 | The promotion of an unsigned type narrower than `int`, as `uint8_t`, to `int` in arithmetic: it keeps every value, and a cast at each operand would hide the computation it is part of. T-19 widens an operand where the result could overflow |
@@ -118,15 +123,15 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 8.0.1 | Advisory | Parentheses make the meaning clear | `house-operator-precedence`, `-Wparentheses`, CodingStyle T-23; the expression of an `#if` by review |  |
-| Rule 8.1.1 | Required | No implicit capture of `this` | `cppcoreguidelines-misleading-capture-default-by-value`, in part |  |
+| Rule 8.1.1 | Required | No implicit capture of `this` | `cppcoreguidelines-misleading-capture-default-by-value`, in part: not `[&]` that captures `this` |  |
 | Rule 8.1.2 | Advisory | Lambda captures explicit | Review |  |
 | Rule 8.2.1 | Required | Virtual bases cast by `dynamic_cast` only | n/a: no virtual base (13.1.1), no RTTI |  |
 | Rule 8.2.2 | Required | No C-style or functional cast | `google-readability-casting`, `cppcoreguidelines-pro-type-cstyle-cast`, `-Wold-style-cast` |  |
 | Rule 8.2.3 | Required | No cast removing `const` or `volatile` | `cppcoreguidelines-pro-type-const-cast`, `-Wcast-qual` |  |
 | Rule 8.2.4 | Required | No cast of function pointers | Review |  |
 | Rule 8.2.5 | Required | No `reinterpret_cast` | `cppcoreguidelines-pro-type-reinterpret-cast` |  |
-| Rule 8.2.6 | Required | No integer or `void*` cast to a pointer | `cppcoreguidelines-pro-type-reinterpret-cast`, in part |  |
-| Rule 8.2.7 | Advisory | No pointer cast to an integer | `cppcoreguidelines-pro-type-reinterpret-cast`, in part |  |
+| Rule 8.2.6 | Required | No integer or `void*` cast to a pointer | `cppcoreguidelines-pro-type-reinterpret-cast`, `cppcoreguidelines-pro-type-cstyle-cast`, `performance-no-int-to-ptr`, in part: not a `static_cast` from a `void*` |  |
+| Rule 8.2.7 | Advisory | No pointer cast to an integer | `cppcoreguidelines-pro-type-reinterpret-cast`, `cppcoreguidelines-pro-type-cstyle-cast`, `google-readability-casting` |  |
 | Rule 8.2.8 | Required | Pointer to integer via `intptr_t` only | CodingStyle T-9, Review |  |
 | Rule 8.2.9 | Required | No polymorphic operand of `typeid` | n/a: no RTTI (CodingStyle M-2) |  |
 | Rule 8.2.10 | Required | No recursion | `misc-no-recursion` |  |
@@ -146,7 +151,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 9.2.1 | Required | No explicit conversion as a statement | `bugprone-unused-raii`, in part |  |
+| Rule 9.2.1 | Required | No explicit conversion as a statement | `bugprone-unused-raii`, `-Wunused-value`, in part: not a temporary that ends a block, of a class with a trivial destructor, or in a template or a macro |  |
 | Rule 9.3.1 | Required | Bodies are compound statements | `readability-braces-around-statements` |  |
 | Rule 9.4.1 | Required | `if … else if` ends with `else` | `house-else-if-without-else`, CodingStyle T-24 |  |
 | Rule 9.4.2 | Required | Structure of a `switch` | `bugprone-switch-missing-default-case`, `-Wswitch`, `-Wimplicit-fallthrough`, CodingStyle T-15, in part: the rest of the structure, as where the labels stand and how many branches there are, by review | A `switch` over an `enum class` names every value and has no `default` (T-15): `-Wswitch` then reports a value added to the `enum` later, which a `default` would take in unnoticed. A value the `enum` does not name is handled after the `switch`, so that a way out stays |
@@ -188,7 +193,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Rule 12.2.1 | Advisory | No bit-fields | Review |  |
 | Rule 12.2.2 | Required | Bit-fields of fitting types | Review |  |
 | Rule 12.2.3 | Required | No named one-bit signed bit-field | Review |  |
-| Rule 12.3.1 | Required | No `union` | `cppcoreguidelines-pro-type-union-access`, in part |  |
+| Rule 12.3.1 | Required | No `union` | `cppcoreguidelines-pro-type-union-access`, in part: not the declaration, nor a union that is only made, copied or used by its own members |  |
 
 ### Rules of chapter 13
 
@@ -197,7 +202,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Rule 13.1.1 | Advisory | No virtual inheritance | Review |  |
 | Rule 13.1.2 | Required | No base both virtual and non-virtual | Review |  |
 | Rule 13.3.1 | Required | `virtual`, `override`, `final` as fits | `modernize-use-override`, CodingStyle C-10 |  |
-| Rule 13.3.2 | Required | Overrides keep the default arguments | `google-default-arguments`, in part |  |
+| Rule 13.3.2 | Required | Overrides keep the default arguments | `google-default-arguments`, CodingStyle FN-12: no default argument on a virtual function at all |  |
 | Rule 13.3.3 | Required | Same parameter names in all declarations | `readability-inconsistent-declaration-parameter-name` |  |
 | Rule 13.3.4 | Required | Virtual member pointers compared with `nullptr` only | Review |  |
 
@@ -212,7 +217,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 15.0.1 | Required | Special member functions as needed | `cppcoreguidelines-special-member-functions`, CodingStyle C-3 |  |
-| Rule 15.0.2 | Advisory | Signatures of copy and move functions | `misc-unconventional-assign-operator`, `performance-noexcept-move-constructor`, in part |  |
+| Rule 15.0.2 | Advisory | Signatures of copy and move functions | `house-copy-move-signature`, CodingStyle C-17; the return type `misc-unconventional-assign-operator` |  |
 | Rule 15.1.1 | Required | No dynamic type used in a constructor or destructor | `clang-analyzer-optin.cplusplus.VirtualCall` |  |
 | Rule 15.1.2 | Advisory | Constructors initialize every base | Review |  |
 | Rule 15.1.3 | Required | Conversions by one argument explicit | cpplint `runtime/explicit` for a constructor, a conversion operator by review; CodingStyle C-4 | A conversion that is meant, as of a span from an array, is implicit, with a `NOLINT(runtime/explicit)` that says why (C-4) |
@@ -272,7 +277,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 21.2.1 | Required | No `atof`, `atoi`, `atol`, `atoll` | `cert-err34-c` |  |
-| Rule 21.2.2 | Required | No C string functions | `bugprone-unsafe-functions`, by the list of `.clang-tidy` |  |
+| Rule 21.2.2 | Required | No C string functions | `bugprone-unsafe-functions`, by the list of `.clang-tidy` | The mock of `avr/pgmspace.h` counts a text in flash by `strlen()`, which avr-libc's `strlen_P()` is where flash is RAM, on the host, with a `NOLINT` |
 | Rule 21.2.3 | Required | No `system()` | `cert-env33-c` |  |
 | Rule 21.2.4 | Required | No `offsetof` | Review |  |
 | Rule 21.6.1 | Advisory | No dynamic memory | `cppcoreguidelines-no-malloc`, `cppcoreguidelines-owning-memory`, CodingStyle M-1 |  |
@@ -288,7 +293,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
-| Rule 22.3.1 | Required | `assert` not of a constant | `misc-static-assert`, in part |  |
+| Rule 22.3.1 | Required | `assert` not of a constant | `misc-static-assert`, `-Wconversion` for `assert(!"text")`, in part: not `assert(0)` or `assert(0 && "text")`, a `const` value that is not `constexpr`, or a constant of a template |  |
 | Rule 22.4.1 | Required | Only zero assigned to `errno` | Review |  |
 
 ### Rules of chapter 23
@@ -302,7 +307,7 @@ PVS-Studio or Cppcheck Premium, fills the rows marked *Review* (ROADMAP I-4).
 | Id | Category | Topic | Covered by | Deviation |
 |---|---|---|---|---|
 | Rule 24.5.1 | Required | No `<cctype>` functions | `bugprone-unsafe-functions`, by the list of `.clang-tidy` |  |
-| Rule 24.5.2 | Required | No `memcpy`, `memmove`, `memcmp` | `bugprone-unsafe-functions`, by the list of `.clang-tidy` | A fuzzer takes a value out of libFuzzer's bytes by `std::memcpy()`, the one way without undefined behaviour before C++20's `std::bit_cast`, with a `NOLINT` |
+| Rule 24.5.2 | Required | No `memcpy`, `memmove`, `memcmp` | `bugprone-unsafe-functions`, by the list of `.clang-tidy` | A fuzzer takes a value out of libFuzzer's bytes by `std::memcpy()`, the one way without undefined behaviour before C++20's `std::bit_cast`, with a `NOLINT`; the mock of `avr/pgmspace.h` reads a value from flash the same way, and its `memcpy_P()` and `memcmp_P()` are `memcpy()` and `memcmp()`, as flash is RAM on the host, with a `NOLINT` |
 
 ### Rules of chapter 25
 

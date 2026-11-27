@@ -9,10 +9,17 @@
 # pinned there. tools/common.sh sources this file and calls the functions platformio_*, which
 # target_setup() and the others there describe. This file comes from the template.
 #
+# Of a firmware, the platformio.ini builds the image. Of a library, a project with examples/, it
+# builds each example against the library, which it names in lib_deps, so that PlatformIO reads
+# the library's library.json as a project of its registry would: one build per example, its
+# sketch as the sources of the build.
+#
 # What the tools need to differ from a plain `pio run` they give it in PlatformIO's own variables,
 # so that platformio.ini stays as a developer builds with it:
 #
-#   PLATFORMIO_BUILD_DIR        <target build dir>/<variant>, one build per variant
+#   PLATFORMIO_BUILD_DIR        <target build dir>/<variant>, one build per variant, and of a
+#                               library <target build dir>/<variant>/<example>
+#   PLATFORMIO_SRC_DIR          of a library: examples/<example>, the sketch to build
 #   PLATFORMIO_BUILD_FLAGS      the variant's flags, as variant_flags() prints them, on every file
 #
 # A warning fails the build where it lies in a file of the project's own, which the log is read
@@ -35,25 +42,43 @@ platformio_setup() {
   download "${PIO[@]}" pkg install --silent -d "${ROOT_DIR}/${PIO_DIR}" -e "${PIO_ENV}"
 }
 
-# Prints the build folder of a variant.
-platformio_dir() {
-  local dir
-  dir="$(target_build_dir)"
-  echo "${dir}/$1"
+# Whether the project is a library, whose examples PlatformIO builds each, rather than a firmware,
+# whose image it builds: a library has examples/.
+platformio_library() {
+  [[ -d "${ROOT_DIR}/examples" ]]
 }
 
-# Runs pio with the arguments given for a variant, with the variables above set, and prints what
-# it prints. Its callers test its status, which turns off set -e within it.
+# Prints the build folder of a program in a variant: of an example of a library its own, of the
+# image of a firmware the variant's.
 # Arguments:
-#   variant, then what `pio run` is given beyond the folder and the environment
+#   variant, program
+platformio_dir() {
+  local dir
+  dir="$(target_build_dir)/$1"
+  if platformio_library; then
+    dir+="/$2"
+  fi
+  echo "${dir}"
+}
+
+# Runs pio with the arguments given for a program in a variant, with the variables above set, and
+# prints what it prints. Its callers test its status, which turns off set -e within it.
+# Arguments:
+#   variant, program, then what `pio run` is given beyond the folder and the environment
 platformio_run() {
   local variant="$1"
-  shift
+  local program="$2"
+  shift 2
   local flags
   flags="$(variant_flags "${variant}")" || return
   local dir
-  dir="$(platformio_dir "${variant}")"
-  PLATFORMIO_BUILD_DIR="${dir}" \
+  dir="$(platformio_dir "${variant}" "${program}")"
+  local sources=()
+  if platformio_library; then
+    sources=("PLATFORMIO_SRC_DIR=${ROOT_DIR}/examples/${program}")
+  fi
+  env "${sources[@]}" \
+    PLATFORMIO_BUILD_DIR="${dir}" \
     PLATFORMIO_BUILD_FLAGS="${flags//$'\n'/ }" \
     "${PIO[@]}" run -d "${ROOT_DIR}/${PIO_DIR}" -e "${PIO_ENV}" "$@" 2>&1
 }
@@ -85,21 +110,25 @@ platformio_own_warnings() {
   done <<< "$1"
 }
 
-# Builds the image of a variant, failing on an error and on a warning in the project's own
-# files, and keeps what pio printed beside it, which platformio_sizes() reads.
+# Builds a program of a variant, failing on an error and on a warning in the project's own files,
+# and keeps what pio printed beside it, which platformio_sizes() reads.
 # Arguments:
 #   variant: one of VARIANTS
-#   program: optional; there is one, the image
-platformio_build() {
+#   program: as platformio_programs() prints it
+build_program() {
   local variant="$1"
+  local program="$2"
   local label
   label="$(target_label "${variant}")"
+  if platformio_library; then
+    label+=" ${program}"
+  fi
   local dir
-  dir="$(platformio_dir "${variant}")"
+  dir="$(platformio_dir "${variant}" "${program}")"
   mkdir -p "${dir}"
   rm -f "${dir}/build.log"
   local output
-  if ! output="$(platformio_run "${variant}")"; then
+  if ! output="$(platformio_run "${variant}" "${program}")"; then
     err "${label}: the build failed:"
     err "${output}"
     return 1
@@ -114,9 +143,40 @@ platformio_build() {
   fi
 }
 
-# Prints the name of the image: the project's, as the folder's, which cpplint requires it to be.
+# Builds every program of a variant, or the one named, and fails where one fails.
+# Arguments:
+#   variant: one of VARIANTS
+#   program: optional, as platformio_programs() prints it: an example of a library; a firmware
+#     has one, the image
+platformio_build() {
+  local variant="$1"
+  local programs=()
+  if [[ -n "${2:-}" ]]; then
+    programs=("$2")
+  else
+    local listed
+    listed="$(platformio_programs)" || return 1
+    mapfile -t programs <<< "${listed}"
+  fi
+  local failed=0
+  local program
+  for program in "${programs[@]}"; do
+    if ! build_program "${variant}" "${program}"; then
+      failed=1
+    fi
+  done
+  return "${failed}"
+}
+
+# Prints the name of every program: of a library its examples, as list_examples() of
+# tools/lib/arduino_cli.sh names them; of a firmware the image, named as the project is, as the
+# folder's, which cpplint requires it to be.
 platformio_programs() {
-  basename "${ROOT_DIR}"
+  if platformio_library; then
+    list_examples
+  else
+    basename "${ROOT_DIR}"
+  fi
 }
 
 # Prints the path of the image's ELF file.
@@ -124,7 +184,7 @@ platformio_programs() {
 #   variant, program
 platformio_elf() {
   local dir
-  dir="$(platformio_dir "$1")"
+  dir="$(platformio_dir "$1" "$2")"
   echo "${dir}/${PIO_ENV}/firmware.elf"
 }
 
@@ -133,7 +193,7 @@ platformio_elf() {
 #   variant, program
 platformio_sizes() {
   local dir
-  dir="$(platformio_dir "$1")"
+  dir="$(platformio_dir "$1" "$2")"
   if [[ ! -f "${dir}/build.log" ]]; then
     return 0
   fi
@@ -149,22 +209,38 @@ platformio_sizes() {
 # Writes the database of a variant, as `pio run -t compiledb` writes it, rewritten for clang into
 # <dir> with tools/lib/clang_database.py, and prints the folder of the one as pio wrote it, which
 # names the target's own compiler. pio writes it into PIO_DIR, whatever else it is told, so it is
-# moved out of the sources at once.
+# moved out of the sources at once. Of a library, pio writes the database of DATABASE_EXAMPLE, and
+# tools/lib/sketch_database.py writes its flags for each source of src/ and of the examples the
+# target compiles, as arduino_cli_database() of tools/lib/arduino_cli.sh does.
 # Arguments:
 #   variant: one of TIDY_VARIANTS
 #   dir: the folder to write into
 platformio_database() {
   local variant="$1"
   local dir="$2"
+  local program
+  if platformio_library; then
+    program="${DATABASE_EXAMPLE}"
+  else
+    program="$(platformio_programs)"
+  fi
   local output
-  if ! output="$(platformio_run "${variant}" -t compiledb)"; then
+  if ! output="$(platformio_run "${variant}" "${program}" -t compiledb)"; then
     err "${output}"
     return 1
   fi
   local compiler_dir
-  compiler_dir="$(platformio_dir "${variant}")/compiledb"
+  compiler_dir="$(platformio_dir "${variant}" "${program}")/compiledb"
   mkdir -p "${compiler_dir}"
   mv "${ROOT_DIR}/${PIO_DIR}/compile_commands.json" "${compiler_dir}/compile_commands.json"
+  if platformio_library; then
+    local files
+    list_files files '\.(cpp|ino)$' 'src/*' 'examples/*'
+    local sources
+    target_files sources "${files[@]}"
+    python3 "${ROOT_DIR}/tools/lib/sketch_database.py" "${compiler_dir}" "${ROOT_DIR}" \
+      "${sources[@]/#/${ROOT_DIR}/}" || return
+  fi
   python3 "${ROOT_DIR}/tools/lib/clang_database.py" "${compiler_dir}" "${dir}" || return
   echo "${compiler_dir}"
 }

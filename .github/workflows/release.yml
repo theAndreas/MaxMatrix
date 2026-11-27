@@ -51,6 +51,14 @@ jobs:
             echo "::error::The tag says $tag, $file says ${version:-nothing}"
             exit 1
           fi
+          # library.json says it to PlatformIO's registry, where there is one.
+          if [ -f library.json ]; then
+            version=$(jq -r .version library.json)
+            if [ "$tag" != "$version" ]; then
+              echo "::error::The tag says $tag, library.json says $version"
+              exit 1
+            fi
+          fi
           echo "Version $version"
 
   publish:
@@ -74,7 +82,7 @@ jobs:
             name=$(sed -n 's/^project(\([A-Za-z0-9]*\).*/\1/p' CMakeLists.txt)
             files=(CMakeLists.txt cmake)
           fi
-          for path in LICENSE README.md src examples platform; do
+          for path in library.json LICENSE README.md src examples platform; do
             if [ -e "$path" ]; then
               files+=("$path")
             fi

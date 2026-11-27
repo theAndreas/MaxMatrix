@@ -41,7 +41,10 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(CMAKE_C_FLAGS_INIT "-mmcu=${AVR_MCU} -DF_CPU=${AVR_F_CPU}UL -ffunction-sections -fdata-sections \
 -fstack-usage -fcallgraph-info=su")
 set(CMAKE_CXX_FLAGS_INIT "${CMAKE_C_FLAGS_INIT}")
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-mmcu=${AVR_MCU} -Wl,--gc-sections")
+# --emit-relocs: the relocations stay in the program, which say whose addresses it takes, the
+# functions tools/avr_stack.py takes a call through a pointer to reach; the image is byte for
+# byte the same without them.
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-mmcu=${AVR_MCU} -Wl,--gc-sections -Wl,--emit-relocs")
 
 # Nothing of the build host is a candidate for a part without an operating system.
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

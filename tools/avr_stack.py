@@ -27,6 +27,32 @@ image is byte for byte the same with or without them):
   cuts out of the stack pointer, plus what they call. And a call into libgcc that the graph
   does not list at all: avr-gcc calls its helpers, as __udivmodsi4 for a division of 32 bits,
   only after it wrote the graph, so each function's own instructions are read for them too.
+- **A call through a pointer as a call of every function whose address the program takes**, the
+  deepest of them counted. The graph says only that such a call is made, not where it goes, as
+  a virtual function, a function_ref or a table of handlers makes it. Where an address is taken
+  the linker writes a relocation, in a vtable or in the instructions that load a pointer; linked
+  with -Wl,--emit-relocs, as cmake/toolchains/avr-gcc.cmake does, the image keeps them, byte for
+  byte the same. An address no function of a size begins at is data, as the bounds of the table
+  of constructors, or no pointer at all, as 0.
+
+  That is more than any one call reaches, never less, and at times more than can be: a function
+  that calls through a pointer and whose own address is taken, as a trampoline of a function_ref
+  or Print::write(), is then taken to call itself, a recursion it never makes. A rule of the file
+  --never names says which functions a caller never reaches through a pointer, with its reason,
+  in TOML, a caller and a callee as avr-c++filt prints their names, the type a template returns
+  first, where * stands for any text. A rule is a fact of the project's programs, not of the
+  code in general, and its reason says why it holds there:
+
+      [[never]]
+      caller = "* utl::function_ref<*>::Call*"
+      callee = "* utl::function_ref<*>::Call*"
+      reason = "No function_ref here is made of another, so a trampoline never calls one."
+
+  A rule that does not hold makes the number a lower bound again, which is why each has its
+  reason. Where a recursion goes through a pointer, the failure names each such call as a rule
+  names it. --cuts adds each call through a pointer a rule cut to a file, for tools/stack_cuts.py,
+  which fails where they change: a rule holds of the programs as they are, and one whose cuts
+  change has its reason read again.
 
 A call pushes its return address: two bytes, or three on a part with more than 128 KiB of
 flash, as avr-gcc's __AVR_3_BYTE_PC__ says of it.
@@ -36,14 +62,16 @@ avr-size reports them. There is no heap to subtract: this fails if the program c
 as a heap is exactly what no static analysis can bound.
 
 It refuses rather than guesses where the sum would not hold: recursion, a call through a
-pointer the graph cannot follow, a frame of dynamic size, a call into code it cannot place.
+pointer in a program linked without its relocations, a frame of dynamic size, a call into code it
+cannot place.
 Each would make the number a lower bound, and a lower bound is the one answer this question
 cannot use.
 
 Out of Wordclock's tools/avr-stack.py, for the AVR128DA48 alone, made general.
 
 Usage:
-    tools/avr_stack.py --mcu atmega328p PROGRAM.elf GRAPH... [--paths]
+    tools/avr_stack.py --mcu atmega328p [--never RULES.toml [--cuts FILE --name NAME]]
+                       PROGRAM.elf GRAPH... [--paths]
 
 GRAPH is a .ci file or a folder searched for them.
 """
@@ -53,10 +81,16 @@ import bisect
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 # What a call pushes: set by main() for the part, two bytes or three.
 RETURN_ADDRESS_BYTES = 2
+
+# Where the call graph says a call goes through a pointer.
+INDIRECT_CALL = '__indirect_call'
+# What Stack.resolve() returns for it.
+INDIRECT = object()
 
 NODE = re.compile(r'node: \{ title: "([^"]+)" label: "([^"]*)"')
 EDGE = re.compile(r'edge: \{ sourcename: "([^"]+)" targetname: "([^"]+)"')
@@ -64,6 +98,11 @@ FRAME = re.compile(r'(\d+) bytes \((\w+)')
 CHUNK = re.compile(r'^([0-9a-f]+) <(.+)>:$')
 INSN = re.compile(r'^\s+[0-9a-f]+:\t(\S+)\t?(.*)$')
 TARGET_ADDRESS = re.compile(r'; 0x([0-9a-f]+) <')
+# A relocation of a program address, gs() or pm(), as avr-readelf -rW prints it: the value of
+# its symbol, the symbol, and the addend.
+TAKEN = re.compile(r'^\s*[0-9a-f]+\s+[0-9a-f]+\s+R_AVR_\w+_(?:PM|GS)\s+([0-9a-f]+)\s+\S+\s*'
+                   r'([+-])\s*([0-9a-f]+)')
+RULE_KEYS = {'caller', 'callee', 'reason'}
 
 
 def fail(message):
@@ -241,7 +280,7 @@ class Library:
 class Stack:
     """The deepest stack below each function, through the call graph and into the library."""
 
-    def __init__(self, graph, library, symbols):
+    def __init__(self, graph, library, symbols, taken, never):
         self.graph = graph
         self.library = library
         self.by_name = {symbol_name(title): title for title in graph.frames}
@@ -253,6 +292,71 @@ class Stack:
         self.symbols = symbols
         self.depths = {}
         self.deepest_callee = {}
+        self.never = never
+        self.taken = self.taken_functions(taken)
+        self.demangled = {}
+        if self.taken:
+            self.demangled = demangle([symbol_name(t) for t in graph.frames] + self.taken)
+        # The calls through a pointer followed so far, as (caller, callee) pairs.
+        self.through_pointer = set()
+        # The calls through a pointer a rule cut, as (rule, caller, callee), the rule by its index
+        # and the functions by their names.
+        self.cut = set()
+
+    def taken_functions(self, taken):
+        """The functions a call through a pointer may reach, those of the graph by their title
+        and those of the library by their name: every function at an address of `taken`."""
+        functions = []
+        for address in sorted(taken):
+            if address in self.by_address:
+                functions.append(self.by_address[address])
+            elif address in self.library.chunks:
+                functions.append(self.library.name_at[address])
+        return functions
+
+    def name(self, function):
+        """A function of the graph or the library as its name reads demangled."""
+        name = symbol_name(function)
+        return self.demangled.get(name, name)
+
+    def reached_through_pointer(self, title):
+        """What a call through a pointer of `title` may reach: every function whose address the
+        program takes, but those a rule of --never says it does not."""
+        caller = self.name(title)
+        for callee in self.taken:
+            rule = self.never.rule_for(caller, self.name(callee))
+            if rule is None:
+                self.through_pointer.add((title, callee))
+                yield callee
+            else:
+                self.cut.add((rule, caller, self.name(callee)))
+
+    def callees(self, title):
+        """What `title` calls: functions of the graph by their title, of the library by their
+        name."""
+        for target in self.graph.calls.get(title, []) + self.unlisted_calls(title):
+            callee = self.resolve(target)
+            if callee is INDIRECT:
+                yield from self.reached_through_pointer(title)
+            elif callee is None:
+                yield symbol_name(target)
+            elif callee != '':
+                yield callee
+
+    def refuse_recursion(self, title, active):
+        """Fails on the recursion of `title`, naming each call through a pointer it takes, as a
+        rule of --never names them, as it may be one that cannot happen."""
+        message = f'{self.graph.labels[title]} is recursive: ' + ' -> '.join(
+            self.graph.labels[t] for t in active)
+        cycle = active[active.index(title):] + (title,)
+        hops = [(caller, callee) for caller, callee in zip(cycle, cycle[1:])
+                if (caller, callee) in self.through_pointer]
+        if hops:
+            message += ('.\nThrough a pointer, taken to reach every function whose address the '
+                        'program takes; a rule of --never says where one does not:')
+            for caller, callee in hops:
+                message += f'\n  caller = "{self.name(caller)}"\n  callee = "{self.name(callee)}"'
+        fail(message)
 
     def resolve(self, target):
         """Where a call goes. Identical functions are folded into one, and the graph then
@@ -261,6 +365,8 @@ class Stack:
         if target in self.graph.frames:
             return target
         name = symbol_name(target)
+        if name == INDIRECT_CALL:
+            return INDIRECT
         if name in self.by_name:
             return self.by_name[name]
         address = self.symbols.get(name)
@@ -268,8 +374,6 @@ class Stack:
             return self.by_address[address]
         if name in self.library.names:
             return None
-        if 'indirect' in name:
-            fail('a call goes through a pointer, and the graph cannot say where')
         # Named in the graph, not in the image: a builtin the compiler expanded in place.
         return ''
 
@@ -295,17 +399,13 @@ class Stack:
         if title in self.depths:
             return self.depths[title]
         if title in active:
-            fail(f'{self.graph.labels[title]} is recursive: ' + ' -> '.join(self.graph.labels[t] for t in active))
+            self.refuse_recursion(title, active)
         deepest, deepest_callee = 0, None
-        for target in self.graph.calls.get(title, []) + self.unlisted_calls(title):
-            callee = self.resolve(target)
-            if callee == '':
-                continue
-            if callee is None:
-                below = RETURN_ADDRESS_BYTES + self.library.depth_of(symbol_name(target))
-                callee = symbol_name(target)
-            else:
+        for callee in self.callees(title):
+            if callee in self.graph.frames:
                 below = self.depth(callee, active + (title,))
+            else:
+                below = RETURN_ADDRESS_BYTES + self.library.depth_of(callee)
             if below > deepest:
                 deepest, deepest_callee = below, callee
         self.depths[title] = self.graph.frames[title] + deepest
@@ -365,6 +465,76 @@ def image_symbols(elf):
     return symbols
 
 
+def taken_addresses(elf):
+    """The addresses of functions the program takes, as its relocations of a program address
+    name them: those where a symbol of a size begins, as a function does; the rest is data or
+    0. None where it was linked without its relocations."""
+    relocations = run(['avr-readelf', '-rW', str(elf)])
+    if 'Relocation section' not in relocations:
+        return None
+    taken = set()
+    for line in relocations.splitlines():
+        relocation = TAKEN.match(line)
+        if relocation is None:
+            continue
+        value, sign, addend = relocation.groups()
+        offset = int(addend, 16) if sign == '+' else -int(addend, 16)
+        taken.add(int(value, 16) + offset)
+    begins = set()
+    for line in run(['avr-nm', '--defined-only', '-S', str(elf)]).splitlines():
+        parts = line.split()
+        if (len(parts) == 4) and (int(parts[1], 16) > 0):
+            begins.add(int(parts[0], 16))
+    return taken & begins
+
+
+def demangle(names):
+    """The names given, each mapped to itself demangled, as avr-c++filt reads them."""
+    names = sorted(set(names))
+    done = subprocess.run(['avr-c++filt'], input='\n'.join(names) + '\n', capture_output=True,
+                          text=True, check=True)
+    return dict(zip(names, done.stdout.splitlines()))
+
+
+def pattern(text):
+    """A name with * for any text, as a regular expression of the whole name."""
+    return re.compile('.*'.join(re.escape(part) for part in text.split('*')))
+
+
+class Never:
+    """The rules of --never: which functions a caller never reaches through a pointer."""
+
+    def __init__(self, path):
+        # Each rule's caller and callee as the file writes them, and as patterns.
+        self.rules = []
+        self.patterns = []
+        if path is None:
+            return
+        try:
+            tables = tomllib.loads(path.read_text())
+        except (OSError, tomllib.TOMLDecodeError) as error:
+            fail(f'{path}: {error}')
+        rules = tables.pop('never', [])
+        if tables or not isinstance(rules, list) or not all(isinstance(r, dict) for r in rules):
+            fail(f'{path}: holds nothing but [[never]] rules, each a table of its own')
+        for number, rule in enumerate(rules, 1):
+            if set(rule) != RULE_KEYS:
+                fail(f'{path}: rule {number} has {", ".join(sorted(rule))}; a rule has a caller, '
+                     'a callee and the reason why the one never reaches the other')
+            if not all(isinstance(rule[key], str) and rule[key].strip() for key in RULE_KEYS):
+                fail(f'{path}: rule {number}: its caller, callee and reason are texts, none empty')
+            self.rules.append((rule['caller'], rule['callee']))
+            self.patterns.append((pattern(rule['caller']), pattern(rule['callee'])))
+
+    def rule_for(self, caller, callee):
+        """The index of the first rule that says `caller` never reaches `callee` through a
+        pointer; None where none does."""
+        for index, (rule_caller, rule_callee) in enumerate(self.patterns):
+            if rule_caller.fullmatch(caller) and rule_callee.fullmatch(callee):
+                return index
+        return None
+
+
 def graph_files(paths):
     """The .ci files named, and those below the folders named."""
     files = []
@@ -381,6 +551,12 @@ def main():
     parser.add_argument('elf', type=Path, help='the program')
     parser.add_argument('graphs', type=Path, nargs='+', help='its .ci files, or folders of them')
     parser.add_argument('--paths', action='store_true', help='print the deepest paths frame by frame')
+    parser.add_argument('--never', type=Path,
+                        help='a TOML file of what a caller never reaches through a pointer')
+    parser.add_argument('--cuts', type=Path,
+                        help='a file to add the calls through a pointer each rule of --never cut '
+                        'to, a line each: --name, the rule\'s number, caller and callee, by tabs')
+    parser.add_argument('--name', default='', help='what names the program in --cuts')
     args = parser.parse_args()
 
     if not args.elf.is_file():
@@ -399,7 +575,13 @@ def main():
 
     graph = CallGraph(graphs)
     library = Library(args.elf)
-    stack = Stack(graph, library, symbols)
+    taken = set()
+    if any(INDIRECT_CALL in targets for targets in graph.calls.values()):
+        taken = taken_addresses(args.elf)
+        if taken is None:
+            fail('a call goes through a pointer, and the program was linked without the '
+                 'relocations that say which addresses it takes: link it with -Wl,--emit-relocs')
+    stack = Stack(graph, library, symbols, taken, Never(args.never))
 
     entries = [t for t in graph.frames
                if symbol_name(t) == 'main' or symbol_name(t).startswith('_GLOBAL__sub_I')]
@@ -425,6 +607,11 @@ def main():
         print(f'{graph.labels[handler]}: {stack.depth(handler)} bytes on top')
     print(f'worst case {worst} bytes of {free} free ({ram} on the {args.mcu} '
           f'less {used} of .data and .bss): {free - worst} to spare')
+
+    if args.cuts is not None:
+        with args.cuts.open('a') as cuts:
+            cuts.writelines(f'{args.name}\t{rule + 1}\t{caller}\t{callee}\n'
+                            for rule, caller, callee in sorted(stack.cut))
 
     if args.paths:
         for title in [deepest_entry] + deepest_handlers:

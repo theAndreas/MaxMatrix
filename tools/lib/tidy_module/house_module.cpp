@@ -10,6 +10,7 @@
 #include "braced_member_init_check.h"
 #include "braced_var_init_check.h"
 #include "clang-tidy/ClangTidyModule.h"
+#include "copy_move_signature_check.h"
 #include "else_if_without_else_check.h"
 #include "no_friend_check.h"
 #include "operator_form_check.h"
@@ -27,6 +28,8 @@ class HouseModule : public clang::tidy::ClangTidyModule {
         "house-bitwise-in-bit-class");
     factories.registerCheck<BracedMemberInitCheck>("house-braced-member-init");
     factories.registerCheck<BracedVarInitCheck>("house-braced-var-init");
+    factories.registerCheck<CopyMoveSignatureCheck>(
+        "house-copy-move-signature");
     factories.registerCheck<ElseIfWithoutElseCheck>(
         "house-else-if-without-else");
     factories.registerCheck<NoFriendCheck>("house-no-friend");

@@ -90,9 +90,10 @@ sizes: ## The table of flash and RAM in README.md against the last make examples
 self-check: ## examples/SelfCheck in simavr, for each target and variant
 	tools/self_check.sh
 
-# Where an AVR target is built by CMake: arduino:avr's avr-gcc 7.3 writes no call graph.
+# Where an AVR target is built by CMake: arduino:avr's avr-gcc 7.3 writes no call graph. What each
+# rule of tools/stack.toml cuts is checked against tools/stack_cuts.txt; FIX=1 writes it there.
 stack: ## The deepest stack of each program against the RAM it leaves, on each AVR target
-	tools/stack.sh
+	tools/stack.sh $(if $(FIX),--fix)
 
 # Built with clang, which brings libFuzzer, into build/fuzz; what each found before is the corpus
 # it goes on from.
